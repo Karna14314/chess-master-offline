@@ -8,6 +8,7 @@ import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
 import 'package:chess_master/screens/history/game_history_screen.dart';
+import 'package:chess_master/core/utils/pgn_handler.dart';
 
 /// Home screen - main tab for starting games
 class HomeScreen extends ConsumerStatefulWidget {
@@ -411,10 +412,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           (context) => _LoadPGNSheet(
             onLoad: (pgn) {
               Navigator.pop(context);
-              // TODO: Parse PGN and load game
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('PGN loading coming soon!')),
-              );
+              final gameState = PGNHandler.parsePgn(pgn);
+              if (gameState != null) {
+                ref.read(gameProvider.notifier).state = gameState;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const GameScreen()),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Invalid PGN!')),
+                );
+              }
             },
           ),
     );

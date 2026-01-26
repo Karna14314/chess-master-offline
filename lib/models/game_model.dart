@@ -96,6 +96,8 @@ class GameState {
   final Duration blackTime;
   final DateTime? startedAt;
   final String? openingName;
+  final ChessMove? hint;
+  final ChessMove? bestMove;
 
   GameState({
     required this.id,
@@ -118,6 +120,8 @@ class GameState {
     this.blackTime = Duration.zero,
     this.startedAt,
     this.openingName,
+    this.hint,
+    this.bestMove,
   })  : difficulty = difficulty ?? AppConstants.difficultyLevels[4],
         timeControl = timeControl ?? AppConstants.timeControls[0];
 
@@ -206,6 +210,8 @@ class GameState {
     Duration? blackTime,
     DateTime? startedAt,
     String? openingName,
+    ChessMove? hint,
+    ChessMove? bestMove,
     bool clearSelection = false,
     bool clearResult = false,
   }) {
@@ -230,6 +236,8 @@ class GameState {
       blackTime: blackTime ?? this.blackTime,
       startedAt: startedAt ?? this.startedAt,
       openingName: openingName ?? this.openingName,
+      hint: hint ?? this.hint,
+      bestMove: bestMove ?? this.bestMove,
     );
   }
 }

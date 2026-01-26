@@ -141,6 +141,8 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
       effectiveKingSquare = _findKingSquareInternal(gameState.isWhiteTurn);
     }
 
+    final hintMove = widget.useExternalState ? null : ref.watch(gameProvider).hint;
+
     final isInteractive = widget.useExternalState 
         ? (widget.onSquareTap != null || widget.onMove != null)
         : widget.interactive;
@@ -173,11 +175,23 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
                     isFlipped: effectiveFlipped,
                     showCoordinates: effectiveShowCoordinates,
                     bestMove: widget.bestMove,
-                    showHint: widget.showHint,
-                    hintSquare: widget.hintSquare,
+                    showHint: hintMove != null,
+                    hintSquare: hintMove?.from,
                     getPieceAt: _getPieceAt,
                   ),
                 ),
+                // Hint arrow
+                if (hintMove != null)
+                  CustomPaint(
+                    size: Size(boardSize, boardSize),
+                    painter: _ArrowPainter(
+                      from: hintMove.from,
+                      to: hintMove.to,
+                      color: Colors.blue.withOpacity(0.7),
+                      squareSize: squareSize,
+                      isFlipped: effectiveFlipped,
+                    ),
+                  ),
                 // Pieces
                 ...List.generate(64, (index) {
                   final file = index % 8;

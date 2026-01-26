@@ -431,7 +431,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ? '${AppConstants.maxHintsPerGame - gameState.hintsUsed}'
                 : null,
             onPressed: gameState.canRequestHint && gameState.isPlayerTurn
-                ? () => _requestHint(gameState)
+                ? _requestHint
                 : null,
           ),
           // Undo button
@@ -466,40 +466,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   /// Request a hint from the engine
-  Future<void> _requestHint(GameState gameState) async {
-    ref.read(gameProvider.notifier).useHint();
-    
-    try {
-      final engineNotifier = ref.read(engineProvider.notifier);
-      final result = await engineNotifier.getHint(fen: gameState.fen);
-      
-      if (result != null && result.isValid && mounted) {
-        final (from, to, _) = result.parsedMove;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.lightbulb, color: Colors.amber),
-                const SizedBox(width: 12),
-                Text('Best move: $from → $to'),
-              ],
-            ),
-            backgroundColor: AppTheme.cardDark,
-            duration: const Duration(seconds: 5),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to get hint: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  Future<void> _requestHint() async {
+    await ref.read(gameProvider.notifier).useHint(ref);
   }
 
   void _showExitConfirmation(BuildContext context) {

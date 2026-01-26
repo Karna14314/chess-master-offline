@@ -255,10 +255,33 @@ class GameNotifier extends StateNotifier<GameState> {
     );
   }
 
-  /// Request a hint (increment hint counter)
-  void useHint() {
+  /// Request a hint
+  Future<void> useHint(WidgetRef ref) async {
     if (!state.canRequestHint) return;
-    state = state.copyWith(hintsUsed: state.hintsUsed + 1);
+
+    final engineNotifier = ref.read(engineProvider.notifier);
+    final result = await engineNotifier.getHint(fen: state.fen);
+
+    if (result != null && result.isValid) {
+      final (from, to, promotion) = result.parsedMove;
+      final move = ChessMove(
+        from: from,
+        to: to,
+        promotion: promotion,
+        san: '', // SAN is not available from the engine
+        isCapture: false,
+        isCheck: false,
+        isCheckmate: false,
+        isCastle: false,
+        fen: '',
+      );
+      state = state.copyWith(hint: move, hintsUsed: state.hintsUsed + 1);
+    }
+  }
+
+  /// Clear the hint
+  void clearHint() {
+    state = state.copyWith(hint: null);
   }
 
   /// Resign the game
