@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/game_model.dart';
+import 'package:chess_master/providers/engine_provider.dart';
 import 'dart:math';
 
 /// Provider for the game state
@@ -61,27 +62,27 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   /// Select a square on the board
-  void selectSquare(String square) {
-    if (state.status != GameStatus.active) return;
-    if (!state.isPlayerTurn) return;
+  bool selectSquare(String square) {
+    if (state.status != GameStatus.active) return false;
+    if (!state.isPlayerTurn) return false;
 
     // If clicking on already selected square, deselect
     if (state.selectedSquare == square) {
       state = state.copyWith(clearSelection: true);
-      return;
+      return false;
     }
 
     // If a square is already selected and this is a legal move, make the move
     if (state.selectedSquare != null && state.legalMoves.contains(square)) {
       _makeMove(state.selectedSquare!, square);
-      return;
+      return true;
     }
 
     // Check if this square has a piece we can move
     final piece = state.board.get(square);
     if (piece == null) {
       state = state.copyWith(clearSelection: true);
-      return;
+      return false;
     }
 
     // Check if the piece belongs to the current player
@@ -92,7 +93,7 @@ class GameNotifier extends StateNotifier<GameState> {
 
     if (!canMove) {
       state = state.copyWith(clearSelection: true);
-      return;
+      return false;
     }
 
     // Get legal moves for this piece
@@ -103,6 +104,7 @@ class GameNotifier extends StateNotifier<GameState> {
       selectedSquare: square,
       legalMoves: legalSquares.cast<String>(),
     );
+    return false;
   }
 
   /// Make a move from one square to another

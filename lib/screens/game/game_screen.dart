@@ -11,6 +11,7 @@ import 'package:chess_master/screens/game/widgets/move_list.dart';
 import 'package:chess_master/screens/game/widgets/timer_widget.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/services/database_service.dart';
+import 'package:chess_master/core/services/audio_service.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
 
 /// Main game screen for playing chess
@@ -215,7 +216,24 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 interactive: gameState.status == GameStatus.active,
                 flipped: gameState.playerColor == PlayerColor.black,
                 onMoveCallback: () {
-                  // TODO: Play sound, trigger bot move
+                final gameState = ref.read(gameProvider);
+                final settings = ref.read(settingsProvider);
+                final audioService = ref.read(audioServiceProvider);
+
+                audioService.setEnabled(settings.soundEnabled);
+
+                if (gameState.moveHistory.isNotEmpty) {
+                  final lastMove = gameState.moveHistory.last;
+                  audioService.playMoveSound(
+                    isCapture: lastMove.isCapture,
+                    isCheck: lastMove.isCheck,
+                    isCheckmate: lastMove.isCheckmate,
+                    isCastle: lastMove.isCastle,
+                  );
+                }
+
+                // Trigger bot move
+                _checkBotMove();
                 },
               ),
             ),

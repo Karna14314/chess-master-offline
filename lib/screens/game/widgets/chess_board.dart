@@ -311,8 +311,10 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
     if (widget.useExternalState) {
       widget.onSquareTap?.call(square);
     } else {
-      ref.read(gameProvider.notifier).selectSquare(square);
-      widget.onMoveCallback?.call();
+      final moved = ref.read(gameProvider.notifier).selectSquare(square);
+      if (moved) {
+        widget.onMoveCallback?.call();
+      }
     }
   }
 
