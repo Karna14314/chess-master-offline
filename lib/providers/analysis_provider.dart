@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/models/game_model.dart';
@@ -150,14 +151,17 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   stockfish.StockfishService? _stockfish;
   bool _isInitialized = false;
 
-  AnalysisNotifier() : super(const AnalysisState());
+  @visibleForTesting
+  int stateUpdateCount = 0;
+
+  AnalysisNotifier([this._stockfish]) : super(const AnalysisState());
 
   /// Initialize engine for analysis
   Future<void> initialize() async {
     if (_isInitialized) return;
     
     try {
-      _stockfish = stockfish.StockfishService.instance;
+      _stockfish ??= stockfish.StockfishService.instance;
       await _stockfish!.initialize();
       _isInitialized = true;
     } catch (e) {
@@ -385,10 +389,15 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       prevEval = afterEval;
 
       // Update progress
-      state = state.copyWith(
-        analysisProgress: (i + 1) / moves.length,
-        analyzedMoves: List.from(analyzedMoves),
-      );
+      // Batch updates to improve performance (reduce UI rebuilds)
+      // Update every 5 moves or on the last move
+      if ((i + 1) % 5 == 0 || i == moves.length - 1) {
+        state = state.copyWith(
+          analysisProgress: (i + 1) / moves.length,
+          analyzedMoves: List.from(analyzedMoves),
+        );
+        stateUpdateCount++;
+      }
     }
 
     // Create full analysis result
