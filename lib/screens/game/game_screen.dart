@@ -12,6 +12,7 @@ import 'package:chess_master/screens/game/widgets/timer_widget.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
+import 'package:chess_master/screens/settings/settings_screen.dart';
 
 /// Main game screen for playing chess
 class GameScreen extends ConsumerStatefulWidget {
@@ -313,7 +314,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           icon: const Icon(Icons.settings_outlined),
           tooltip: 'Settings',
           onPressed: () {
-            // TODO: Navigate to settings
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            );
           },
         ),
       ],
