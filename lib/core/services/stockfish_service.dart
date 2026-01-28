@@ -12,6 +12,13 @@ class StockfishService {
   final StreamController<String> _outputController =
       StreamController<String>.broadcast();
 
+  // RegExps for parsing engine output
+  static final RegExp _scoreCpRegex = RegExp(r'score cp (-?\d+)');
+  static final RegExp _scoreMateRegex = RegExp(r'score mate (-?\d+)');
+  static final RegExp _multiPvRegex = RegExp(r'multipv (\d+)');
+  static final RegExp _depthRegex = RegExp(r'depth (\d+)');
+  static final RegExp _pvMovesRegex = RegExp(r'pv (.+)$');
+
   /// Singleton instance
   static StockfishService get instance {
     _instance ??= StockfishService._();
@@ -114,12 +121,12 @@ class StockfishService {
     subscription = _outputController.stream.listen((line) {
       // Parse evaluation from info line
       if (line.startsWith('info') && line.contains('score')) {
-        final scoreMatch = RegExp(r'score cp (-?\d+)').firstMatch(line);
+        final scoreMatch = _scoreCpRegex.firstMatch(line);
         if (scoreMatch != null) {
           evaluation = int.parse(scoreMatch.group(1)!);
         }
 
-        final mateMatch = RegExp(r'score mate (-?\d+)').firstMatch(line);
+        final mateMatch = _scoreMateRegex.firstMatch(line);
         if (mateMatch != null) {
           mateIn = int.parse(mateMatch.group(1)!);
         }
@@ -190,11 +197,11 @@ class StockfishService {
     late StreamSubscription subscription;
     subscription = _outputController.stream.listen((line) {
       if (line.startsWith('info') && line.contains('pv')) {
-        final pvMatch = RegExp(r'multipv (\d+)').firstMatch(line);
-        final depthMatch = RegExp(r'depth (\d+)').firstMatch(line);
-        final scoreMatch = RegExp(r'score cp (-?\d+)').firstMatch(line);
-        final mateMatch = RegExp(r'score mate (-?\d+)').firstMatch(line);
-        final pvMovesMatch = RegExp(r'pv (.+)$').firstMatch(line);
+        final pvMatch = _multiPvRegex.firstMatch(line);
+        final depthMatch = _depthRegex.firstMatch(line);
+        final scoreMatch = _scoreCpRegex.firstMatch(line);
+        final mateMatch = _scoreMateRegex.firstMatch(line);
+        final pvMovesMatch = _pvMovesRegex.firstMatch(line);
 
         if (pvMovesMatch != null) {
           final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
