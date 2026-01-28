@@ -198,27 +198,64 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   Future<void> goToMove(int moveIndex) async {
     if (moveIndex < -1 || moveIndex >= state.originalMoves.length) return;
 
-    // Rebuild board from start
-    final board = chess.Chess.fromFEN(state.startingFen);
-    
-    String? lastFrom;
-    String? lastTo;
+    // Optimization: Check if we can reach the target move incrementally
+    if (state.board != null && moveIndex == state.currentMoveIndex + 1) {
+      // Go to next move
+      final nextMove = state.originalMoves[moveIndex];
+      final board = state.board!.copy();
+      board.move({'from': nextMove.from, 'to': nextMove.to, 'promotion': nextMove.promotion});
 
-    // Apply moves up to the target index
-    for (int i = 0; i <= moveIndex && i < state.originalMoves.length; i++) {
-      final move = state.originalMoves[i];
-      board.move({'from': move.from, 'to': move.to, 'promotion': move.promotion});
-      lastFrom = move.from;
-      lastTo = move.to;
+      state = state.copyWith(
+        currentMoveIndex: moveIndex,
+        board: board,
+        lastMoveFrom: nextMove.from,
+        lastMoveTo: nextMove.to,
+        clearSelection: true,
+      );
+    } else if (state.board != null && moveIndex == state.currentMoveIndex - 1) {
+      // Go to previous move
+      final board = state.board!.copy();
+      board.undo();
+
+      String? lastFrom;
+      String? lastTo;
+
+      if (moveIndex >= 0) {
+        final lastMove = state.originalMoves[moveIndex];
+        lastFrom = lastMove.from;
+        lastTo = lastMove.to;
+      }
+
+      state = state.copyWith(
+        currentMoveIndex: moveIndex,
+        board: board,
+        lastMoveFrom: lastFrom,
+        lastMoveTo: lastTo,
+        clearSelection: true,
+      );
+    } else {
+      // Fallback: Rebuild board from start
+      final board = chess.Chess.fromFEN(state.startingFen);
+
+      String? lastFrom;
+      String? lastTo;
+
+      // Apply moves up to the target index
+      for (int i = 0; i <= moveIndex && i < state.originalMoves.length; i++) {
+        final move = state.originalMoves[i];
+        board.move({'from': move.from, 'to': move.to, 'promotion': move.promotion});
+        lastFrom = move.from;
+        lastTo = move.to;
+      }
+
+      state = state.copyWith(
+        currentMoveIndex: moveIndex,
+        board: board,
+        lastMoveFrom: moveIndex >= 0 ? lastFrom : null,
+        lastMoveTo: moveIndex >= 0 ? lastTo : null,
+        clearSelection: true,
+      );
     }
-
-    state = state.copyWith(
-      currentMoveIndex: moveIndex,
-      board: board,
-      lastMoveFrom: moveIndex >= 0 ? lastFrom : null,
-      lastMoveTo: moveIndex >= 0 ? lastTo : null,
-      clearSelection: true,
-    );
 
     // Analyze new position
     if (_isInitialized && state.isLiveAnalysis) {
