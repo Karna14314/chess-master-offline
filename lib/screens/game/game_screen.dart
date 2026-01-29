@@ -449,9 +449,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           _ControlButton(
             icon: Icons.lightbulb_outline,
             label: 'Hint',
-            badge: gameState.canRequestHint
-                ? '${AppConstants.maxHintsPerGame - gameState.hintsUsed}'
-                : null,
             onPressed: gameState.canRequestHint && gameState.isPlayerTurn
                 ? _requestHint
                 : null,

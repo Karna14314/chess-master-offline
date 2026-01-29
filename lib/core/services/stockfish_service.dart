@@ -40,9 +40,14 @@ class StockfishService {
     try {
       _stockfish = Stockfish();
 
+      bool uciOkReceived = false;
+
       // Listen to engine output
       _stockfish!.stdout.listen((line) {
         _outputController.add(line);
+        if (line.contains('uciok')) {
+          uciOkReceived = true;
+        }
         if (line.contains('readyok')) {
           _isReady = true;
         }
@@ -50,6 +55,13 @@ class StockfishService {
 
       // Initialize UCI mode
       _sendCommand('uci');
+
+      // Wait for uciok
+      int attempts = 0;
+      while (!uciOkReceived && attempts < 20) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+      }
 
       // Wait for engine to be ready with timeout
       await _waitForReady();
@@ -78,16 +90,17 @@ class StockfishService {
 
   /// Wait for engine to be ready
   Future<void> _waitForReady() async {
+    _isReady = false; // Reset ready state
     _sendCommand('isready');
 
     int attempts = 0;
-    while (!_isReady && attempts < 50) {
+    while (!_isReady && attempts < 100) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
     }
 
     if (!_isReady) {
-      throw Exception('Stockfish failed to initialize after 5 seconds');
+      throw Exception('Stockfish failed to initialize after 10 seconds');
     }
   }
 

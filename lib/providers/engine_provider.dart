@@ -100,6 +100,16 @@ class EngineNotifier extends StateNotifier<EngineState> {
   }) async {
     state = state.copyWith(isThinking: true);
 
+    // Initialize if not ready
+    if (!_service.isReady) {
+      await _service.initialize();
+      if (!_service.isReady) {
+        state = state.copyWith(isThinking: false);
+        debugPrint('Engine not ready, skipping move search');
+        return null;
+      }
+    }
+
     // Set engine strength
     _service.setSkillLevel(difficulty.elo);
 
@@ -108,11 +118,20 @@ class EngineNotifier extends StateNotifier<EngineState> {
       final minDelay = Duration(milliseconds: difficulty.thinkTimeMs ~/ 2);
       final startTime = DateTime.now();
 
-      final result = await _service.getBestMove(
-        fen: fen,
-        depth: difficulty.depth,
-        thinkTimeMs: difficulty.thinkTimeMs,
-      );
+      final result = await _service
+          .getBestMove(
+            fen: fen,
+            depth: difficulty.depth,
+            thinkTimeMs: difficulty.thinkTimeMs,
+          )
+          .timeout(
+            Duration(milliseconds: difficulty.thinkTimeMs + 2000),
+            onTimeout: () {
+              debugPrint('Engine timed out');
+              // Return a dummy result or throw exception
+              throw TimeoutException('Engine timed out');
+            },
+          );
 
       // Ensure minimum thinking time for realism
       final elapsed = DateTime.now().difference(startTime);

@@ -22,6 +22,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Pre-initialize engine
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(stockfishServiceProvider).initialize();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,

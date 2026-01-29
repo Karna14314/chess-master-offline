@@ -7,6 +7,7 @@ import 'package:chess_master/screens/puzzles/puzzle_screen.dart';
 /// Puzzle mode selection
 enum PuzzleMode {
   adaptive,   // Based on current rating
+  daily,      // Daily puzzle
   random,     // Random puzzles
   eloRange,   // Specific ELO range
   theme,      // By theme
@@ -74,6 +75,14 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
             ),
             const SizedBox(height: 12),
             _QuickPlayCard(
+              icon: Icons.calendar_today,
+              title: 'Daily Puzzle',
+              subtitle: 'New challenge every day',
+              color: Colors.orange,
+              onTap: () => _startPuzzles(PuzzleMode.daily),
+            ),
+            const SizedBox(height: 8),
+            _QuickPlayCard(
               icon: Icons.auto_awesome,
               title: 'Adaptive',
               subtitle: 'Puzzles matched to your rating',
@@ -84,7 +93,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
             _QuickPlayCard(
               icon: Icons.shuffle,
               title: 'Random',
-              subtitle: 'Any puzzle from our 2000+ collection',
+              subtitle: 'Any puzzle from our 5000+ collection',
               color: Colors.purple,
               onTap: () => _startPuzzles(PuzzleMode.random),
             ),
@@ -138,6 +147,9 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
     switch (mode) {
       case PuzzleMode.adaptive:
         notifier.setModeConfig(mode: PuzzleFilterMode.adaptive);
+        break;
+      case PuzzleMode.daily:
+        notifier.setModeConfig(mode: PuzzleFilterMode.daily);
         break;
       case PuzzleMode.random:
         notifier.setModeConfig(mode: PuzzleFilterMode.random);

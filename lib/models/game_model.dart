@@ -183,7 +183,7 @@ class GameState {
   int get fullMoveCount => moveHistory.length;
 
   /// Can request hint (only in bot mode)
-  bool get canRequestHint => !isLocalMultiplayer && hintsUsed < AppConstants.maxHintsPerGame;
+  bool get canRequestHint => !isLocalMultiplayer;
 
   /// Can undo move
   bool get canUndo => moveHistory.isNotEmpty && status == GameStatus.active && allowTakeback;

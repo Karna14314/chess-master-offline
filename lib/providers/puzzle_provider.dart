@@ -170,6 +170,7 @@ enum PuzzleFilterMode {
   random,     // Random puzzles
   eloRange,   // Specific ELO range
   theme,      // By theme
+  daily,      // Daily puzzle
 }
 
 /// Puzzle notifier managing puzzle logic
@@ -288,6 +289,14 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
               p.themes.any((t) => t.toLowerCase().contains(_themeFilter.toLowerCase()))).toList();
         }
         break;
+
+      case PuzzleFilterMode.daily:
+        // Daily puzzle based on date
+        final now = DateTime.now();
+        final seed = now.year * 10000 + now.month * 100 + now.day;
+        final dailyRandom = Random(seed);
+        if (_allPuzzles.isEmpty) return null;
+        return _allPuzzles[dailyRandom.nextInt(_allPuzzles.length)];
         
       case PuzzleFilterMode.adaptive:
       default:
