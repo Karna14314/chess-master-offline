@@ -109,7 +109,7 @@ class GameNotifier extends StateNotifier<GameState> {
 
   /// Make a move from one square to another
   void _makeMove(String from, String to, {String? promotion}) {
-    final board = chess.Chess.fromFEN(state.fen);
+    final board = state.board.copy();
 
     // Check if this is a pawn promotion
     final piece = board.get(from);
@@ -208,8 +208,7 @@ class GameNotifier extends StateNotifier<GameState> {
     if (state.status != GameStatus.active) return false;
     if (!state.isPlayerTurn) return false;
 
-    final board = chess.Chess.fromFEN(state.fen);
-    final moves = board.moves({'square': from, 'verbose': true});
+    final moves = state.board.moves({'square': from, 'verbose': true});
     final isLegal = moves.any((m) => (m as Map)['to'] == to);
 
     if (!isLegal) return false;
@@ -230,7 +229,7 @@ class GameNotifier extends StateNotifier<GameState> {
   void undoMove() {
     if (!state.canUndo) return;
 
-    final board = chess.Chess.fromFEN(state.fen);
+    final board = state.board.copy();
     board.undo();
 
     // Also undo bot's move if it was bot's turn after player's move
