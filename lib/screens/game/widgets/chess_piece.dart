@@ -31,13 +31,17 @@ class ChessPiece extends StatelessWidget {
     // Try to load SVG first
     final assetPath = pieceSet.getAssetPath(piece);
 
-    return SvgPicture.asset(
-      assetPath,
-      width: size * 0.9,
-      height: size * 0.9,
-      fit: BoxFit.contain,
-      placeholderBuilder: (context) => _buildFallbackPiece(),
-      colorFilter: null, // Don't apply color filter to preserve piece colors
+    // ⚡ Bolt: Using RepaintBoundary to isolate the piece from the board's pixels.
+    // This stops the 'Raster' thread from doing 64+ redraws per frame during a drag.
+    return RepaintBoundary(
+      child: SvgPicture.asset(
+        assetPath,
+        width: size * 0.9,
+        height: size * 0.9,
+        fit: BoxFit.contain,
+        placeholderBuilder: (context) => _buildFallbackPiece(),
+        colorFilter: null, // Don't apply color filter to preserve piece colors
+      ),
     );
   }
 
