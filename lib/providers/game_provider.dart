@@ -145,7 +145,10 @@ class GameNotifier extends StateNotifier<GameState> {
     final sanHistory = board.getHistory();
     final san = sanHistory.isNotEmpty ? sanHistory.last.toString() : '$from$to';
 
-    final isCapture = lastMove?['captured'] != null;
+    final captured = lastMove?['captured'];
+    final isCapture = captured != null;
+    final capturedPieceName = captured is chess.PieceType ? captured.name : null;
+
     final isCastle =
         lastMove?['flags']?.toString().contains('k') == true ||
         lastMove?['flags']?.toString().contains('q') == true;
@@ -156,6 +159,7 @@ class GameNotifier extends StateNotifier<GameState> {
       to: to,
       san: san,
       promotion: promotionPiece,
+      capturedPiece: capturedPieceName,
       isCapture: isCapture,
       isCheck: board.in_check,
       isCheckmate: board.in_checkmate,
@@ -265,12 +269,19 @@ class GameNotifier extends StateNotifier<GameState> {
 
     if (result != null && result.isValid) {
       final (from, to, promotion) = result.parsedMove;
+
+      // Check for capture (simple check, may miss en passant)
+      final targetPiece = state.board.get(to);
+      final capturedPieceName =
+          targetPiece != null ? targetPiece.type.name : null;
+
       final move = ChessMove(
         from: from,
         to: to,
         promotion: promotion,
         san: '', // SAN is not available from the engine
-        isCapture: false,
+        capturedPiece: capturedPieceName,
+        isCapture: targetPiece != null,
         isCheck: false,
         isCheckmate: false,
         isCastle: false,
