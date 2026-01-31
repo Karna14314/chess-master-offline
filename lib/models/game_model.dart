@@ -7,6 +7,7 @@ class ChessMove {
   final String to;
   final String san; // Standard Algebraic Notation
   final String? promotion;
+  final String? capturedPiece; // The captured piece type (p, n, b, r, q)
   final bool isCapture;
   final bool isCheck;
   final bool isCheckmate;
@@ -18,6 +19,7 @@ class ChessMove {
     required this.to,
     required this.san,
     this.promotion,
+    this.capturedPiece,
     required this.isCapture,
     required this.isCheck,
     required this.isCheckmate,
@@ -32,6 +34,7 @@ class ChessMove {
       to: move.toAlgebraic,
       san: game.move_to_san(move),
       promotion: move.promotion?.name,
+      capturedPiece: move.captured?.name,
       isCapture: move.captured != null,
       isCheck: game.in_check,
       isCheckmate: game.in_checkmate,
@@ -46,6 +49,7 @@ class ChessMove {
         'to': to,
         'san': san,
         'promotion': promotion,
+        'capturedPiece': capturedPiece,
         'isCapture': isCapture,
         'isCheck': isCheck,
         'isCheckmate': isCheckmate,
@@ -58,6 +62,7 @@ class ChessMove {
         to: json['to'],
         san: json['san'],
         promotion: json['promotion'],
+        capturedPiece: json['capturedPiece'],
         isCapture: json['isCapture'],
         isCheck: json['isCheck'],
         isCheckmate: json['isCheckmate'],

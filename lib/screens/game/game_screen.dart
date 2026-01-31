@@ -6,7 +6,9 @@ import 'package:chess_master/providers/game_provider.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/providers/timer_provider.dart';
+import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
+import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:chess_master/screens/game/widgets/move_list.dart';
 import 'package:chess_master/screens/game/widgets/timer_widget.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
@@ -425,14 +427,92 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   Widget _buildCapturedPieces(GameState gameState, {required bool forOpponent}) {
-    // TODO: Calculate captured pieces from move history
+    // Access settings to get current piece set
+    final settings = ref.watch(settingsProvider);
+    final pieceSet = settings.currentPieceSet;
+
+    // Calculate captured pieces
+    final whiteCaptures = <String>[];
+    final blackCaptures = <String>[];
+
+    for (int i = 0; i < gameState.moveHistory.length; i++) {
+      final move = gameState.moveHistory[i];
+      if (move.capturedPiece != null) {
+        // White moves on even indices (0, 2, ...), Black on odd (1, 3, ...)
+        if (i % 2 == 0) {
+          // White captured a black piece
+          whiteCaptures.add('b${move.capturedPiece!.toUpperCase()}');
+        } else {
+          // Black captured a white piece
+          blackCaptures.add('w${move.capturedPiece!.toUpperCase()}');
+        }
+      }
+    }
+
+    // Sort function: P < N < B < R < Q
+    int getPieceValue(String pieceCode) {
+      final type = pieceCode.substring(1);
+      switch (type) {
+        case 'P':
+          return 1;
+        case 'N':
+          return 2;
+        case 'B':
+          return 3;
+        case 'R':
+          return 4;
+        case 'Q':
+          return 5;
+        default:
+          return 0;
+      }
+    }
+
+    whiteCaptures.sort((a, b) => getPieceValue(a).compareTo(getPieceValue(b)));
+    blackCaptures.sort((a, b) => getPieceValue(a).compareTo(getPieceValue(b)));
+
+    // Determine which list to show
+    List<String> piecesToShow;
+    // Note: In local multiplayer, playerColor is usually white (bottom),
+    // so opponent (top) is black.
+    // The logic below assumes "Player" is bottom and "Opponent" is top.
+
+    if (forOpponent) {
+      // Opponent's captured pieces (what the opponent captured)
+      if (gameState.playerColor == PlayerColor.white) {
+        // I am White, Opponent is Black. Show what Black captured.
+        piecesToShow = blackCaptures;
+      } else {
+        // I am Black, Opponent is White. Show what White captured.
+        piecesToShow = whiteCaptures;
+      }
+    } else {
+      // Player's captured pieces (what I captured)
+      if (gameState.playerColor == PlayerColor.white) {
+        piecesToShow = whiteCaptures;
+      } else {
+        piecesToShow = blackCaptures;
+      }
+    }
+
     return Container(
-      height: 24,
+      height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
-      child: const Text(
-        '',
-        style: TextStyle(fontSize: 18),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: piecesToShow.map((piece) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 2),
+              child: ChessPiece(
+                piece: piece,
+                size: 20,
+                pieceSet: pieceSet,
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
