@@ -8,10 +8,107 @@ import 'package:chess_master/providers/game_provider.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
 
+/// State for game history
+class GameHistoryState {
+  final List<Map<String, dynamic>> games;
+  final bool hasMore;
+  final bool isLoadingMore;
+
+  const GameHistoryState({
+    this.games = const [],
+    this.hasMore = true,
+    this.isLoadingMore = false,
+  });
+
+  GameHistoryState copyWith({
+    List<Map<String, dynamic>>? games,
+    bool? hasMore,
+    bool? isLoadingMore,
+  }) {
+    return GameHistoryState(
+      games: games ?? this.games,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    );
+  }
+}
+
+/// Notifier for game history
+class GameHistoryNotifier extends StateNotifier<AsyncValue<GameHistoryState>> {
+  final DatabaseService _dbService;
+  static const int _pageSize = 20;
+
+  GameHistoryNotifier(this._dbService) : super(const AsyncValue.loading()) {
+    _loadInitial();
+  }
+
+  Future<void> _loadInitial() async {
+    try {
+      final games = await _dbService.getAllGames(limit: _pageSize, offset: 0);
+      if (mounted) {
+        state = AsyncValue.data(GameHistoryState(
+          games: games,
+          hasMore: games.length == _pageSize,
+        ));
+      }
+    } catch (e, st) {
+      if (mounted) {
+        state = AsyncValue.error(e, st);
+      }
+    }
+  }
+
+  Future<void> loadMore() async {
+    final currentState = state.value;
+    if (currentState == null || !currentState.hasMore || currentState.isLoadingMore) {
+      return;
+    }
+
+    state = AsyncValue.data(currentState.copyWith(isLoadingMore: true));
+
+    try {
+      final currentCount = currentState.games.length;
+      final newGames = await _dbService.getAllGames(
+        limit: _pageSize,
+        offset: currentCount,
+      );
+
+      if (mounted) {
+        state = AsyncValue.data(currentState.copyWith(
+          games: [...currentState.games, ...newGames],
+          hasMore: newGames.length == _pageSize,
+          isLoadingMore: false,
+        ));
+      }
+    } catch (e) {
+      // Revert loading state on error
+      if (mounted) {
+        state = AsyncValue.data(currentState.copyWith(isLoadingMore: false));
+      }
+    }
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    await _loadInitial();
+  }
+
+  Future<void> deleteGame(String id) async {
+     await _dbService.deleteGame(id);
+     final currentState = state.value;
+     if (currentState != null) {
+       final updatedGames = currentState.games.where((g) => g['id'] != id).toList();
+       if (mounted) {
+         state = AsyncValue.data(currentState.copyWith(games: updatedGames));
+       }
+     }
+  }
+}
+
 /// Provider for game history
-final gameHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final gameHistoryProvider = StateNotifierProvider<GameHistoryNotifier, AsyncValue<GameHistoryState>>((ref) {
   final dbService = ref.read(databaseServiceProvider);
-  return await dbService.getAllGames();
+  return GameHistoryNotifier(dbService);
 });
 
 /// Game history screen showing saved games
@@ -30,7 +127,7 @@ class GameHistoryScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.refresh(gameHistoryProvider),
+            onPressed: () => ref.read(gameHistoryProvider.notifier).refresh(),
             tooltip: 'Refresh',
           ),
         ],
@@ -46,17 +143,17 @@ class GameHistoryScreen extends ConsumerWidget {
               Text('Error loading games: $error'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref.refresh(gameHistoryProvider),
+                onPressed: () => ref.read(gameHistoryProvider.notifier).refresh(),
                 child: const Text('Retry'),
               ),
             ],
           ),
         ),
-        data: (games) {
-          if (games.isEmpty) {
+        data: (historyState) {
+          if (historyState.games.isEmpty) {
             return _buildEmptyState(context);
           }
-          return _buildGameList(context, ref, games);
+          return _buildGameList(context, ref, historyState);
         },
       ),
     );
@@ -94,8 +191,9 @@ class GameHistoryScreen extends ConsumerWidget {
   Widget _buildGameList(
     BuildContext context,
     WidgetRef ref,
-    List<Map<String, dynamic>> games,
+    GameHistoryState historyState,
   ) {
+    final games = historyState.games;
     // Group games by date
     final groupedGames = <String, List<Map<String, dynamic>>>{};
     final dateFormat = DateFormat('MMM d, yyyy');
@@ -109,27 +207,45 @@ class GameHistoryScreen extends ConsumerWidget {
       }
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: groupedGames.length,
-      itemBuilder: (context, index) {
-        final dateKey = groupedGames.keys.elementAt(index);
-        final dateGames = groupedGames[dateKey]!;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (index > 0) const SizedBox(height: 16),
-            _buildDateHeader(context, dateKey),
-            const SizedBox(height: 8),
-            ...dateGames.map((game) => _GameCard(
-                  game: game,
-                  onTap: () => _loadGame(context, ref, game),
-                  onDelete: () => _deleteGame(context, ref, game),
-                )),
-          ],
-        );
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollInfo) {
+        if (!historyState.isLoadingMore &&
+            historyState.hasMore &&
+            scrollInfo.metrics.pixels >=
+                scrollInfo.metrics.maxScrollExtent - 200) {
+          ref.read(gameHistoryProvider.notifier).loadMore();
+        }
+        return false;
       },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: groupedGames.length + (historyState.isLoadingMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == groupedGames.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final dateKey = groupedGames.keys.elementAt(index);
+          final dateGames = groupedGames[dateKey]!;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (index > 0) const SizedBox(height: 16),
+              _buildDateHeader(context, dateKey),
+              const SizedBox(height: 8),
+              ...dateGames.map((game) => _GameCard(
+                    game: game,
+                    onTap: () => _loadGame(context, ref, game),
+                    onDelete: () => _deleteGame(context, ref, game),
+                  )),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -258,8 +374,7 @@ class GameHistoryScreen extends ConsumerWidget {
 
     if (confirm != true) return;
 
-    await ref.read(databaseServiceProvider).deleteGame(game['id'] as String);
-    ref.refresh(gameHistoryProvider);
+    await ref.read(gameHistoryProvider.notifier).deleteGame(game['id'] as String);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
