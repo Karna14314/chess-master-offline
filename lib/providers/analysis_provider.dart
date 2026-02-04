@@ -311,6 +311,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     double prevEval = 0.0;
 
     // Get initial evaluation
+    stockfish.AnalysisResult? previousResult;
     try {
       final initialResult = await _stockfish!.analyzePosition(
         fen: board.fen,
@@ -318,6 +319,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         multiPv: 1,
       );
       prevEval = initialResult.evaluation / 100.0;  // Convert centipawns to pawns
+      previousResult = initialResult;
     } catch (e) {
       // Continue with 0.0
     }
@@ -328,14 +330,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       
       // Get best move before making the actual move
       String? bestMove;
-      try {
-        final bestMoveResult = await _stockfish!.getBestMove(
-          fen: board.fen,
-          depth: 15,
-        );
-        bestMove = bestMoveResult.bestMove;
-      } catch (e) {
-        // Continue without best move
+
+      // Use previous analysis result if available to save time
+      if (previousResult != null && previousResult.lines.isNotEmpty &&
+          previousResult.lines.first.moves.isNotEmpty) {
+        bestMove = previousResult.lines.first.moves.first;
+      } else {
+        try {
+          final bestMoveResult = await _stockfish!.getBestMove(
+            fen: board.fen,
+            depth: 15,
+          );
+          bestMove = bestMoveResult.bestMove;
+        } catch (e) {
+          // Continue without best move
+        }
       }
 
       // Apply the actual move
@@ -352,6 +361,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           multiPv: 3,
         );
         
+        previousResult = result;
         afterEval = result.evaluation / 100.0;  // Convert centipawns to pawns
         engineLines = result.lines.asMap().entries.map((entry) => EngineLine(
           rank: entry.key + 1,
