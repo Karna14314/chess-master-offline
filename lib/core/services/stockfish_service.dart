@@ -12,13 +12,6 @@ class StockfishService {
   final StreamController<String> _outputController =
       StreamController<String>.broadcast();
 
-  // RegExps for parsing engine output
-  static final RegExp _scoreCpRegex = RegExp(r'score cp (-?\d+)');
-  static final RegExp _scoreMateRegex = RegExp(r'score mate (-?\d+)');
-  static final RegExp _multiPvRegex = RegExp(r'multipv (\d+)');
-  static final RegExp _depthRegex = RegExp(r'depth (\d+)');
-  static final RegExp _pvMovesRegex = RegExp(r'pv (.+)$');
-
   /// Singleton instance
   static StockfishService get instance {
     _instance ??= StockfishService._();
@@ -134,14 +127,14 @@ class StockfishService {
     subscription = _outputController.stream.listen((line) {
       // Parse evaluation from info line
       if (line.startsWith('info') && line.contains('score')) {
-        final scoreMatch = _scoreCpRegex.firstMatch(line);
-        if (scoreMatch != null) {
-          evaluation = int.parse(scoreMatch.group(1)!);
+        final cpScore = _parseValue(line, ' score cp ');
+        if (cpScore != null) {
+          evaluation = cpScore;
         }
 
-        final mateMatch = _scoreMateRegex.firstMatch(line);
-        if (mateMatch != null) {
-          mateIn = int.parse(mateMatch.group(1)!);
+        final mateScore = _parseValue(line, ' score mate ');
+        if (mateScore != null) {
+          mateIn = mateScore;
         }
       }
 
@@ -209,28 +202,21 @@ class StockfishService {
 
     late StreamSubscription subscription;
     subscription = _outputController.stream.listen((line) {
-      if (line.startsWith('info') && line.contains('pv')) {
-        final pvMatch = _multiPvRegex.firstMatch(line);
-        final depthMatch = _depthRegex.firstMatch(line);
-        final scoreMatch = _scoreCpRegex.firstMatch(line);
-        final mateMatch = _scoreMateRegex.firstMatch(line);
-        final pvMovesMatch = _pvMovesRegex.firstMatch(line);
+      if (line.startsWith('info') && line.contains(' pv ')) {
+        final pvIndex = line.indexOf(' pv ');
+        if (pvIndex != -1) {
+          // Extract moves (part after ' pv ')
+          // +4 is length of ' pv '
+          final movesStr = line.substring(pvIndex + 4);
+          final moves = movesStr.split(' ');
 
-        if (pvMovesMatch != null) {
-          final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
-          final currentDepth =
-              depthMatch != null ? int.parse(depthMatch.group(1)!) : 0;
-          int? eval;
-          int? mate;
+          // Parse other info (part before ' pv ')
+          final infoPart = line.substring(0, pvIndex);
 
-          if (scoreMatch != null) {
-            eval = int.parse(scoreMatch.group(1)!);
-          }
-          if (mateMatch != null) {
-            mate = int.parse(mateMatch.group(1)!);
-          }
-
-          final moves = pvMovesMatch.group(1)!.split(' ');
+          final pvNumber = _parseValue(infoPart, ' multipv ') ?? 1;
+          final currentDepth = _parseValue(infoPart, ' depth ') ?? 0;
+          final eval = _parseValue(infoPart, ' score cp ');
+          final mate = _parseValue(infoPart, ' score mate ');
 
           // Store the main line evaluation
           if (pvNumber == 1) {
@@ -311,6 +297,18 @@ class StockfishService {
     _stockfish = null;
     _isReady = false;
     _outputController.close();
+  }
+
+  /// Helper to parse integer value after a key
+  int? _parseValue(String text, String key) {
+    final index = text.indexOf(key);
+    if (index != -1) {
+      final start = index + key.length;
+      int end = text.indexOf(' ', start);
+      if (end == -1) end = text.length;
+      return int.tryParse(text.substring(start, end));
+    }
+    return null;
   }
 }
 
