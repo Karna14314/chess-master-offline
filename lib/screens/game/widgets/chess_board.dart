@@ -164,7 +164,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
                 // Board squares
                 CustomPaint(
                   size: Size(boardSize, boardSize),
-                  painter: _BoardPainter(
+                  painter: BoardPainter(
                     theme: theme,
                     selectedSquare: effectiveSelectedSquare,
                     lastMoveFrom: effectiveLastMoveFrom,
@@ -374,7 +374,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
 }
 
 /// Custom painter for drawing the chess board
-class _BoardPainter extends CustomPainter {
+class BoardPainter extends CustomPainter {
   final BoardTheme theme;
   final String? selectedSquare;
   final String? lastMoveFrom;
@@ -389,7 +389,12 @@ class _BoardPainter extends CustomPainter {
   final String? hintSquare;
   final String? Function(String) getPieceAt;
 
-  _BoardPainter({
+  // Optimized paints
+  final Paint _squarePaint = Paint();
+  late final Paint _legalMoveDotPaint;
+  late final Paint _legalMoveRingPaint;
+
+  BoardPainter({
     required this.theme,
     this.selectedSquare,
     this.lastMoveFrom,
@@ -403,11 +408,18 @@ class _BoardPainter extends CustomPainter {
     this.showHint = false,
     this.hintSquare,
     required this.getPieceAt,
-  });
+  }) {
+    _legalMoveDotPaint = Paint()..color = theme.legalMoveDot;
+    _legalMoveRingPaint = Paint()
+      ..color = theme.legalMoveCapture
+      ..style = PaintingStyle.stroke;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final squareSize = size.width / 8;
+    // Update stroke width based on current size
+    _legalMoveRingPaint.strokeWidth = squareSize * 0.08;
 
     for (int rank = 0; rank < 8; rank++) {
       for (int file = 0; file < 8; file++) {
@@ -443,7 +455,8 @@ class _BoardPainter extends CustomPainter {
           color = theme.checkHighlight;
         }
 
-        canvas.drawRect(rect, Paint()..color = color);
+        _squarePaint.color = color;
+        canvas.drawRect(rect, _squarePaint);
 
         // Legal move indicators
         if (legalMoves.contains(square)) {
@@ -453,15 +466,10 @@ class _BoardPainter extends CustomPainter {
 
           if (isCapture) {
             // Capture indicator - ring
-            final ringPaint = Paint()
-              ..color = theme.legalMoveCapture
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = squareSize * 0.08;
-            canvas.drawCircle(center, squareSize * 0.4, ringPaint);
+            canvas.drawCircle(center, squareSize * 0.4, _legalMoveRingPaint);
           } else {
             // Move indicator - dot
-            final dotPaint = Paint()..color = theme.legalMoveDot;
-            canvas.drawCircle(center, squareSize * 0.15, dotPaint);
+            canvas.drawCircle(center, squareSize * 0.15, _legalMoveDotPaint);
           }
         }
 
@@ -527,7 +535,7 @@ class _BoardPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _BoardPainter oldDelegate) {
+  bool shouldRepaint(covariant BoardPainter oldDelegate) {
     return selectedSquare != oldDelegate.selectedSquare ||
         lastMoveFrom != oldDelegate.lastMoveFrom ||
         lastMoveTo != oldDelegate.lastMoveTo ||
