@@ -156,6 +156,7 @@ class GameNotifier extends StateNotifier<GameState> {
       to: to,
       san: san,
       promotion: promotionPiece,
+      capturedPiece: lastMove?['captured'],
       isCapture: isCapture,
       isCheck: board.in_check,
       isCheckmate: board.in_checkmate,
@@ -270,6 +271,7 @@ class GameNotifier extends StateNotifier<GameState> {
         to: to,
         promotion: promotion,
         san: '', // SAN is not available from the engine
+        capturedPiece: null,
         isCapture: false,
         isCheck: false,
         isCheckmate: false,

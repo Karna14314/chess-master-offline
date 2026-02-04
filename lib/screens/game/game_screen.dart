@@ -7,6 +7,7 @@ import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/providers/timer_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
+import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:chess_master/screens/game/widgets/move_list.dart';
 import 'package:chess_master/screens/game/widgets/timer_widget.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
@@ -425,14 +426,107 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   Widget _buildCapturedPieces(GameState gameState, {required bool forOpponent}) {
-    // TODO: Calculate captured pieces from move history
+    final whiteCaptured = <String>[]; // Pieces captured BY white (i.e. black pieces)
+    final blackCaptured = <String>[]; // Pieces captured BY black (i.e. white pieces)
+
+    for (int i = 0; i < gameState.moveHistory.length; i++) {
+      final move = gameState.moveHistory[i];
+      if (move.capturedPiece != null) {
+        // Determine who made the move based on the resulting FEN
+        // FEN format: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        // The second part ('w' or 'b') indicates who moves NEXT.
+        // So if it's 'w', Black just moved. If it's 'b', White just moved.
+        final fenParts = move.fen.split(' ');
+        final isWhiteMove = fenParts.length > 1 && fenParts[1] == 'b';
+
+        if (isWhiteMove) {
+          // White's move - captured a black piece
+          whiteCaptured.add('b${move.capturedPiece}');
+        } else {
+          // Black's move - captured a white piece
+          blackCaptured.add('w${move.capturedPiece}');
+        }
+      }
+    }
+
+    int getValue(String piece) {
+      final type = piece.substring(1).toLowerCase();
+      switch (type) {
+        case 'p': return 1;
+        case 'n': return 3;
+        case 'b': return 3;
+        case 'r': return 5;
+        case 'q': return 9;
+        default: return 0;
+      }
+    }
+
+    int whiteScore = whiteCaptured.fold(0, (sum, piece) => sum + getValue(piece));
+    int blackScore = blackCaptured.fold(0, (sum, piece) => sum + getValue(piece));
+
+    int whiteAdvantage = whiteScore - blackScore;
+    int blackAdvantage = blackScore - whiteScore;
+
+    final isPlayerWhite = gameState.playerColor == PlayerColor.white;
+
+    // Logic to determine which list to show
+    final List<String> piecesToShow;
+    final int scoreDifference;
+
+    if (forOpponent) {
+      // Show for Opponent
+      if (isPlayerWhite) {
+        // Opponent is Black
+        piecesToShow = blackCaptured;
+        scoreDifference = blackAdvantage;
+      } else {
+        // Opponent is White
+        piecesToShow = whiteCaptured;
+        scoreDifference = whiteAdvantage;
+      }
+    } else {
+      // Show for Player
+      if (isPlayerWhite) {
+        // Player is White
+        piecesToShow = whiteCaptured;
+        scoreDifference = whiteAdvantage;
+      } else {
+        // Player is Black
+        piecesToShow = blackCaptured;
+        scoreDifference = blackAdvantage;
+      }
+    }
+
+    // Sort pieces by value
+    piecesToShow.sort((a, b) => getValue(a).compareTo(getValue(b)));
+
     return Container(
-      height: 24,
+      height: 32,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
-      child: const Text(
-        '',
-        style: TextStyle(fontSize: 18),
+      child: Row(
+        children: [
+          ...piecesToShow.map((piece) => Align(
+            widthFactor: 0.6,
+            child: ChessPiece(
+              piece: piece,
+              size: 24,
+              pieceSet: ref.watch(settingsProvider).currentPieceSet,
+            ),
+          )),
+          if (scoreDifference > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(
+                '+$scoreDifference',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
