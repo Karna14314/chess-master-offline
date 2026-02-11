@@ -207,6 +207,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               isActive: !gameState.isPlayerTurn && gameState.status == GameStatus.active,
               isWhite: gameState.playerColor == PlayerColor.black, // Bot is opposite color
               isThinking: _isBotThinking,
+              engineState: engineState,
             ),
 
             // Captured pieces (opponent)
@@ -351,6 +352,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     required bool isActive,
     required bool isWhite,
     bool isThinking = false,
+    EngineState? engineState,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -399,7 +401,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         ),
                       if (isThinking) const SizedBox(width: 6),
                       Text(
-                        isThinking ? 'Thinking...' : 'Your turn',
+                        isThinking
+                            ? (engineState != null && engineState.depth > 0
+                                ? 'Thinking... (Depth ${engineState.depth})'
+                                : 'Thinking...')
+                            : 'Your turn',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppTheme.primaryLight,
                             ),

@@ -80,8 +80,46 @@ class EngineState {
 class EngineNotifier extends StateNotifier<EngineState> {
   final StockfishService _service;
   Timer? _thinkingTimer;
+  StreamSubscription<AnalysisInfo>? _infoSubscription;
 
-  EngineNotifier(this._service) : super(const EngineState());
+  EngineNotifier(this._service) : super(const EngineState()) {
+    _infoSubscription = _service.infoStream.listen(_onInfoUpdate);
+  }
+
+  void _onInfoUpdate(AnalysisInfo info) {
+    if (!state.isThinking && !state.isAnalyzing) return;
+
+    if (state.isThinking) {
+      if (info.multiPv == 1) {
+        state = state.copyWith(
+          depth: info.depth,
+          evaluation: info.evaluation,
+          mateIn: info.mateIn,
+        );
+      }
+    } else if (state.isAnalyzing) {
+      List<EngineLine> newLines = List.from(state.lines);
+      // Ensure size
+      while (newLines.length < info.multiPv) {
+        newLines.add(EngineLine(moves: [], depth: 0));
+      }
+
+      newLines[info.multiPv - 1] = EngineLine(
+        moves: info.pv,
+        evaluation: info.evaluation,
+        mateIn: info.mateIn,
+        depth: info.depth,
+      );
+
+      state = state.copyWith(
+        lines: newLines,
+        depth: info.depth,
+        // If multiPv=1, update main eval
+        evaluation: info.multiPv == 1 ? info.evaluation : state.evaluation,
+        mateIn: info.multiPv == 1 ? info.mateIn : state.mateIn,
+      );
+    }
+  }
 
   /// Initialize the engine
   Future<void> initialize() async {
@@ -185,6 +223,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
       currentFen: fen,
       clearBestMove: true,
       clearEvaluation: true,
+      lines: [], // Clear old lines
     );
 
     try {
@@ -224,6 +263,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
   @override
   void dispose() {
     _thinkingTimer?.cancel();
+    _infoSubscription?.cancel();
     super.dispose();
   }
 }

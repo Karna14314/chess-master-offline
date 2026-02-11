@@ -6,13 +6,18 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chess_master/main.dart';
 
 void main() {
   testWidgets('App launches and displays bottom navigation bar', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const ChessMasterApp());
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: ChessMasterApp(),
+      ),
+    );
 
     // Verify that the BottomNavigationBar is present.
     expect(find.byType(BottomNavigationBar), findsOneWidget);

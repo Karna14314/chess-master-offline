@@ -14,6 +14,9 @@ class MockStockfishService implements StockfishService {
   Stream<String> get outputStream => Stream.empty();
 
   @override
+  Stream<AnalysisInfo> get infoStream => Stream.empty();
+
+  @override
   Future<void> initialize() async {}
 
   @override

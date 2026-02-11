@@ -11,6 +11,8 @@ class StockfishService {
   bool _isReady = false;
   final StreamController<String> _outputController =
       StreamController<String>.broadcast();
+  final StreamController<AnalysisInfo> _infoController =
+      StreamController<AnalysisInfo>.broadcast();
 
   /// Singleton instance
   static StockfishService get instance {
@@ -20,8 +22,11 @@ class StockfishService {
 
   StockfishService._();
 
-  /// Stream of engine output
+  /// Stream of engine output (raw lines)
   Stream<String> get outputStream => _outputController.stream;
+
+  /// Stream of parsed analysis info
+  Stream<AnalysisInfo> get infoStream => _infoController.stream;
 
   /// Whether the engine is initialized and ready
   bool get isReady => _isReady;
@@ -38,6 +43,7 @@ class StockfishService {
       // Listen to engine output
       _stockfish!.stdout.listen((line) {
         _outputController.add(line);
+        _parseAndEmitInfo(line);
         if (line.contains('uciok')) {
           uciOkReceived = true;
         }
@@ -63,12 +69,42 @@ class StockfishService {
       _configureEngine();
     } catch (e) {
       // Engine initialization failed - this is acceptable for basic gameplay
-      // Games can still be played without engine (local multiplayer, manual analysis)
       debugPrint('Stockfish engine initialization failed: $e');
       debugPrint('Games can still be played in local multiplayer mode');
       _isReady = false;
-      // Don't rethrow - allow app to continue without engine
     }
+  }
+
+  /// Parse engine output line and emit AnalysisInfo if applicable
+  void _parseAndEmitInfo(String line) {
+    if (!line.startsWith('info') || !line.contains(' pv ')) return;
+
+    final pvIndex = line.indexOf(' pv ');
+    if (pvIndex == -1) return;
+
+    // Optimized parsing logic
+    // Extract moves (part after ' pv ')
+    final movesStr = line.substring(pvIndex + 4);
+    // Splitting moves is unavoidable but we limit it to the moves part
+    final moves = movesStr.split(' ');
+
+    // Parse other info (part before ' pv ')
+    final infoPart = line.substring(0, pvIndex);
+
+    final multiPv = _parseValue(infoPart, ' multipv ') ?? 1;
+    final depth = _parseValue(infoPart, ' depth ') ?? 0;
+    final eval = _parseValue(infoPart, ' score cp ');
+    final mate = _parseValue(infoPart, ' score mate ');
+
+    _infoController.add(
+      AnalysisInfo(
+        depth: depth,
+        multiPv: multiPv,
+        evaluation: eval,
+        mateIn: mate,
+        pv: moves,
+      ),
+    );
   }
 
   /// Configure engine options for optimal mobile performance
@@ -120,24 +156,19 @@ class StockfishService {
     final completer = Completer<BestMoveResult>();
     String? bestMove;
     String? ponderMove;
-    int? evaluation;
-    int? mateIn;
+    int? lastEvaluation;
+    int? lastMateIn;
 
-    late StreamSubscription subscription;
-    subscription = _outputController.stream.listen((line) {
-      // Parse evaluation from info line
-      if (line.startsWith('info') && line.contains('score')) {
-        final cpScore = _parseValue(line, ' score cp ');
-        if (cpScore != null) {
-          evaluation = cpScore;
-        }
-
-        final mateScore = _parseValue(line, ' score mate ');
-        if (mateScore != null) {
-          mateIn = mateScore;
-        }
+    // Listen for info updates to get evaluation
+    final infoSubscription = _infoController.stream.listen((info) {
+      if (info.multiPv == 1) {
+        lastEvaluation = info.evaluation;
+        lastMateIn = info.mateIn;
       }
+    });
 
+    late StreamSubscription outputSubscription;
+    outputSubscription = _outputController.stream.listen((line) {
       // Parse best move
       if (line.startsWith('bestmove')) {
         final parts = line.split(' ');
@@ -148,13 +179,14 @@ class StockfishService {
           ponderMove = parts[3];
         }
 
-        subscription.cancel();
+        infoSubscription.cancel();
+        outputSubscription.cancel();
         completer.complete(
           BestMoveResult(
             bestMove: bestMove ?? '',
             ponderMove: ponderMove,
-            evaluation: evaluation,
-            mateIn: mateIn,
+            evaluation: lastEvaluation,
+            mateIn: lastMateIn,
           ),
         );
       }
@@ -174,7 +206,8 @@ class StockfishService {
     return completer.future.timeout(
       const Duration(seconds: 30),
       onTimeout: () {
-        subscription.cancel();
+        infoSubscription.cancel();
+        outputSubscription.cancel();
         _sendCommand('stop');
         return BestMoveResult(bestMove: '', evaluation: 0);
       },
@@ -200,53 +233,38 @@ class StockfishService {
     // Set MultiPV for multiple lines
     _sendCommand('setoption name MultiPV value $multiPv');
 
-    late StreamSubscription subscription;
-    subscription = _outputController.stream.listen((line) {
-      if (line.startsWith('info') && line.contains(' pv ')) {
-        final pvIndex = line.indexOf(' pv ');
-        if (pvIndex != -1) {
-          // Extract moves (part after ' pv ')
-          // +4 is length of ' pv '
-          final movesStr = line.substring(pvIndex + 4);
-          final moves = movesStr.split(' ');
-
-          // Parse other info (part before ' pv ')
-          final infoPart = line.substring(0, pvIndex);
-
-          final pvNumber = _parseValue(infoPart, ' multipv ') ?? 1;
-          final currentDepth = _parseValue(infoPart, ' depth ') ?? 0;
-          final eval = _parseValue(infoPart, ' score cp ');
-          final mate = _parseValue(infoPart, ' score mate ');
-
-          // Store the main line evaluation
-          if (pvNumber == 1) {
-            mainEvaluation = eval;
-            mateIn = mate;
-          }
-
-          // Update or add line
-          if (lines.length >= pvNumber) {
-            lines[pvNumber - 1] = EngineLine(
-              moves: moves,
-              evaluation: eval,
-              mateIn: mate,
-              depth: currentDepth,
-            );
-          } else {
-            lines.add(
-              EngineLine(
-                moves: moves,
-                evaluation: eval,
-                mateIn: mate,
-                depth: currentDepth,
-              ),
-            );
-          }
-        }
+    late StreamSubscription infoSubscription;
+    infoSubscription = _infoController.stream.listen((info) {
+      // Store the main line evaluation
+      if (info.multiPv == 1) {
+        mainEvaluation = info.evaluation;
+        mateIn = info.mateIn;
       }
 
+      // Update or add line
+      final line = EngineLine(
+        moves: info.pv,
+        evaluation: info.evaluation,
+        mateIn: info.mateIn,
+        depth: info.depth,
+      );
+
+      if (lines.length >= info.multiPv) {
+        lines[info.multiPv - 1] = line;
+      } else {
+        // Ensure list is large enough (fill gaps if needed, though usually sequential)
+        while (lines.length < info.multiPv - 1) {
+          lines.add(EngineLine(moves: [], depth: 0));
+        }
+        lines.add(line);
+      }
+    });
+
+    late StreamSubscription outputSubscription;
+    outputSubscription = _outputController.stream.listen((line) {
       if (line.startsWith('bestmove')) {
-        subscription.cancel();
+        infoSubscription.cancel();
+        outputSubscription.cancel();
         // Reset MultiPV to 1
         _sendCommand('setoption name MultiPV value 1');
 
@@ -268,7 +286,8 @@ class StockfishService {
     return completer.future.timeout(
       const Duration(seconds: 60),
       onTimeout: () {
-        subscription.cancel();
+        infoSubscription.cancel();
+        outputSubscription.cancel();
         _sendCommand('stop');
         _sendCommand('setoption name MultiPV value 1');
         return AnalysisResult(evaluation: 0, lines: [], depth: 0);
@@ -297,6 +316,7 @@ class StockfishService {
     _stockfish = null;
     _isReady = false;
     _outputController.close();
+    _infoController.close();
   }
 
   /// Helper to parse integer value after a key
@@ -310,6 +330,26 @@ class StockfishService {
     }
     return null;
   }
+}
+
+/// Information parsed from engine output 'info' line
+class AnalysisInfo {
+  final int depth;
+  final int multiPv;
+  final int? evaluation;
+  final int? mateIn;
+  final List<String> pv;
+
+  AnalysisInfo({
+    required this.depth,
+    required this.multiPv,
+    this.evaluation,
+    this.mateIn,
+    required this.pv,
+  });
+
+  /// Get evaluation in pawns
+  double get evalInPawns => (evaluation ?? 0) / 100.0;
 }
 
 /// Result of a best move search
