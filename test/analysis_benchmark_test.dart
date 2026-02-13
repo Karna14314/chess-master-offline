@@ -7,11 +7,16 @@ import 'package:chess/chess.dart' as chess_lib;
 
 // Mock Service
 class MockStockfishService implements StockfishService {
+  final _analysisController = StreamController<AnalysisResult>.broadcast();
+
   @override
   bool get isReady => true;
 
   @override
   Stream<String> get outputStream => Stream.empty();
+
+  @override
+  Stream<AnalysisResult> get analysisStream => _analysisController.stream;
 
   @override
   Future<void> initialize() async {}

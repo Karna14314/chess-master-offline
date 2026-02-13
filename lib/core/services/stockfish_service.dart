@@ -11,6 +11,8 @@ class StockfishService {
   bool _isReady = false;
   final StreamController<String> _outputController =
       StreamController<String>.broadcast();
+  final StreamController<AnalysisResult> _analysisStreamController =
+      StreamController<AnalysisResult>.broadcast();
 
   /// Singleton instance
   static StockfishService get instance {
@@ -22,6 +24,9 @@ class StockfishService {
 
   /// Stream of engine output
   Stream<String> get outputStream => _outputController.stream;
+
+  /// Stream of progressive analysis results
+  Stream<AnalysisResult> get analysisStream => _analysisStreamController.stream;
 
   /// Whether the engine is initialized and ready
   bool get isReady => _isReady;
@@ -177,6 +182,7 @@ class StockfishService {
 
   /// Analyze a position and get multiple lines
   /// Returns evaluation and top engine lines
+  /// Also emits intermediate results to [analysisStream]
   Future<AnalysisResult> analyzePosition({
     required String fen,
     int depth = AppConstants.analysisDepth,
@@ -188,6 +194,9 @@ class StockfishService {
 
     final completer = Completer<AnalysisResult>();
     final lines = <EngineLine>[];
+    // Keep track of latest evaluations for each line to construct partial results
+    final currentLines = <int, EngineLine>{};
+
     int? mainEvaluation;
     int? mateIn;
 
@@ -211,24 +220,36 @@ class StockfishService {
             mateIn = mate;
           }
 
-          // Update or add line
+          final engineLine = EngineLine(
+            moves: info.moves!,
+            evaluation: eval,
+            mateIn: mate,
+            depth: currentDepth,
+          );
+
+          // Update lines map
+          currentLines[pvNumber] = engineLine;
+
+          // Update final list (for legacy compatibility)
           if (lines.length >= pvNumber) {
-            lines[pvNumber - 1] = EngineLine(
-              moves: info.moves!,
-              evaluation: eval,
-              mateIn: mate,
-              depth: currentDepth,
-            );
+            lines[pvNumber - 1] = engineLine;
           } else {
-            lines.add(
-              EngineLine(
-                moves: info.moves!,
-                evaluation: eval,
-                mateIn: mate,
-                depth: currentDepth,
-              ),
-            );
+            lines.add(engineLine);
           }
+
+          // Emit progressive update
+          _analysisStreamController.add(
+            AnalysisResult(
+              evaluation: mainEvaluation ?? 0,
+              mateIn: mateIn,
+              lines: currentLines.values.toList()..sort((a, b) {
+                // Heuristic sort based on evaluation if available, otherwise keep order
+                // But typically multipv comes in order 1..N
+                return 0;
+              }),
+              depth: currentDepth,
+            )
+          );
         }
       }
 
@@ -258,12 +279,12 @@ class StockfishService {
         subscription.cancel();
         _sendCommand('stop');
         _sendCommand('setoption name MultiPV value 1');
-        return AnalysisResult(evaluation: 0, lines: [], depth: 0);
+        return AnalysisResult(evaluation: mainEvaluation ?? 0, lines: lines, depth: 0);
       },
     );
   }
 
-  /// Helper to parse info line efficiently
+  /// Helper to parse info line efficiently using indexOf
   ({int? depth, int? multipv, int? cp, int? mate, List<String>? moves}) _parseInfoLine(String line) {
     int? depth;
     int? multipv;
@@ -271,28 +292,40 @@ class StockfishService {
     int? mate;
     List<String>? moves;
 
-    // Split by space - fast and simple
-    final parts = line.split(' ');
+    // Optimized parsing using indexOf and substring
+    // Keys usually have spaces around them
 
-    for (int i = 0; i < parts.length; i++) {
-      final part = parts[i];
-      if (part == 'depth' && i + 1 < parts.length) {
-        depth = int.tryParse(parts[i + 1]);
-      } else if (part == 'multipv' && i + 1 < parts.length) {
-        multipv = int.tryParse(parts[i + 1]);
-      } else if (part == 'score' && i + 2 < parts.length) {
-        if (parts[i + 1] == 'cp') {
-          cp = int.tryParse(parts[i + 2]);
-        } else if (parts[i + 1] == 'mate') {
-          mate = int.tryParse(parts[i + 2]);
-        }
-        i += 2; // Skip next two tokens
-      } else if (part == 'pv') {
-        moves = parts.sublist(i + 1);
-        break; // pv is usually at the end
-      }
+    // Depth
+    depth = _parseValue(line, ' depth ');
+
+    // MultiPV
+    multipv = _parseValue(line, ' multipv ');
+
+    // Score
+    cp = _parseValue(line, ' score cp ');
+    mate = _parseValue(line, ' score mate ');
+
+    // PV moves
+    final pvIndex = line.indexOf(' pv ');
+    if (pvIndex != -1) {
+      final movesStr = line.substring(pvIndex + 4);
+      // split is still okay for moves list as it's the end of line and not too long
+      moves = movesStr.split(' ');
     }
+
     return (depth: depth, multipv: multipv, cp: cp, mate: mate, moves: moves);
+  }
+
+  /// Helper to parse integer value after a key
+  int? _parseValue(String text, String key) {
+    final index = text.indexOf(key);
+    if (index != -1) {
+      final start = index + key.length;
+      int end = text.indexOf(' ', start);
+      if (end == -1) end = text.length;
+      return int.tryParse(text.substring(start, end));
+    }
+    return null;
   }
 
   /// Set the engine skill level (affects playing strength)
@@ -316,18 +349,7 @@ class StockfishService {
     _stockfish = null;
     _isReady = false;
     _outputController.close();
-  }
-
-  /// Helper to parse integer value after a key
-  int? _parseValue(String text, String key) {
-    final index = text.indexOf(key);
-    if (index != -1) {
-      final start = index + key.length;
-      int end = text.indexOf(' ', start);
-      if (end == -1) end = text.length;
-      return int.tryParse(text.substring(start, end));
-    }
-    return null;
+    _analysisStreamController.close();
   }
 }
 

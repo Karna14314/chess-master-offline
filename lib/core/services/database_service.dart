@@ -28,7 +28,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -94,6 +94,21 @@ class DatabaseService {
       'last_updated': DateTime.now().millisecondsSinceEpoch,
     });
 
+    // Puzzles table
+    await db.execute('''
+      CREATE TABLE puzzles (
+        id INTEGER PRIMARY KEY,
+        fen TEXT,
+        moves TEXT,
+        rating INTEGER,
+        themes TEXT,
+        popularity INTEGER
+      )
+    ''');
+
+    // Index on rating for fast lookup
+    await db.execute('CREATE INDEX idx_puzzles_rating ON puzzles(rating)');
+
     // Puzzle progress table
     await db.execute('''
       CREATE TABLE puzzle_progress (
@@ -119,7 +134,90 @@ class DatabaseService {
 
   /// Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle future migrations
+    if (oldVersion < 2) {
+      // Add puzzles table
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS puzzles (
+          id INTEGER PRIMARY KEY,
+          fen TEXT,
+          moves TEXT,
+          rating INTEGER,
+          themes TEXT,
+          popularity INTEGER
+        )
+      ''');
+
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_puzzles_rating ON puzzles(rating)');
+    }
+  }
+
+  // ==================== PUZZLE OPERATIONS ====================
+
+  /// Insert puzzles in batch
+  Future<void> insertPuzzles(List<Map<String, dynamic>> puzzles) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final puzzle in puzzles) {
+        batch.insert(
+          'puzzles',
+          puzzle,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
+  /// Get puzzles with filters
+  Future<List<Map<String, dynamic>>> getPuzzles({
+    int? minRating,
+    int? maxRating,
+    String? theme,
+    int limit = 100,
+    bool random = true,
+    int? offset,
+  }) async {
+    final db = await database;
+    String? where;
+    List<dynamic> whereArgs = [];
+
+    final conditions = <String>[];
+
+    if (minRating != null) {
+      conditions.add('rating >= ?');
+      whereArgs.add(minRating);
+    }
+
+    if (maxRating != null) {
+      conditions.add('rating <= ?');
+      whereArgs.add(maxRating);
+    }
+
+    if (theme != null && theme != 'all') {
+      conditions.add('themes LIKE ?');
+      whereArgs.add('%$theme%');
+    }
+
+    if (conditions.isNotEmpty) {
+      where = conditions.join(' AND ');
+    }
+
+    return await db.query(
+      'puzzles',
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: random ? 'RANDOM()' : 'id',
+      limit: limit,
+      offset: offset,
+    );
+  }
+
+  /// Get total puzzle count
+  Future<int> getPuzzleCount() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM puzzles');
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 
   // ==================== GAME OPERATIONS ====================

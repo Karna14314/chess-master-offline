@@ -204,12 +204,27 @@ class EngineNotifier extends StateNotifier<EngineState> {
       clearEvaluation: true,
     );
 
+    // Subscribe to progressive updates
+    final subscription = _service.analysisStream.listen((result) {
+      // Only update if we are still analyzing this FEN
+      if (state.currentFen == fen && state.isAnalyzing) {
+        state = state.copyWith(
+          evaluation: result.evaluation,
+          mateIn: result.mateIn,
+          lines: result.lines,
+          depth: result.depth,
+        );
+      }
+    });
+
     try {
       final result = await _service.analyzePosition(
         fen: fen,
         depth: depth,
         multiPv: multiPv,
       );
+
+      subscription.cancel();
 
       state = state.copyWith(
         isAnalyzing: false,
@@ -219,6 +234,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
         depth: result.depth,
       );
     } catch (e) {
+      subscription.cancel();
       state = state.copyWith(isAnalyzing: false);
       print('Error analyzing position: $e');
     }

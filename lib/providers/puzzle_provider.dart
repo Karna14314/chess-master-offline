@@ -177,7 +177,6 @@ enum PuzzleFilterMode {
 /// Puzzle notifier managing puzzle logic
 class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   final Ref _ref;
-  List<Puzzle> _allPuzzles = [];
   final Random _random = Random();
   
   // Puzzle mode configuration
@@ -206,7 +205,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     state = state.copyWith(isLoading: true);
     
     try {
-      await _loadPuzzles();
+      await _checkAndLoadPuzzles();
       final stats = await _ref.read(databaseServiceProvider).getStatistics();
       final rating = stats?['current_puzzle_rating'] as int? ?? 1200;
       
@@ -222,38 +221,42 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     }
   }
 
-  /// Load puzzles from assets
-  Future<void> _loadPuzzles() async {
-    try {
-      final String jsonString = await rootBundle.loadString('assets/puzzles/puzzles.json');
-      _allPuzzles = await compute(_parsePuzzles, jsonString);
-    } catch (e) {
-      // If JSON doesn't exist, use empty list
-      _allPuzzles = [];
+  /// Check if DB has puzzles, if not load from assets
+  Future<void> _checkAndLoadPuzzles() async {
+    final db = _ref.read(databaseServiceProvider);
+    final count = await db.getPuzzleCount();
+
+    if (count == 0) {
+      try {
+        final String jsonString = await rootBundle.loadString('assets/puzzles/puzzles.json');
+        // Parse in isolate
+        final puzzles = await compute(_parsePuzzles, jsonString);
+
+        // Convert to map for DB insert
+        final puzzleMaps = puzzles.map((p) => p.toJson()).toList();
+
+        // Insert in batches
+        const batchSize = 500;
+        for (var i = 0; i < puzzleMaps.length; i += batchSize) {
+          final end = (i + batchSize < puzzleMaps.length) ? i + batchSize : puzzleMaps.length;
+          await db.insertPuzzles(puzzleMaps.sublist(i, end));
+        }
+      } catch (e) {
+        debugPrint('Error loading initial puzzles: $e');
+      }
     }
   }
 
   /// Start a new puzzle session
   Future<void> startNewPuzzle({int? targetRating}) async {
-    if (_allPuzzles.isEmpty) {
-      await _loadPuzzles();
-      if (_allPuzzles.isEmpty) {
-        state = state.copyWith(
-          errorMessage: 'No puzzles available',
-          state: PuzzleState.loading,
-        );
-        return;
-      }
-    }
-
     final rating = targetRating ?? state.currentRating;
     
-    // Find a puzzle close to current rating
-    final puzzle = _selectPuzzleByRating(rating);
+    // Find a puzzle from DB
+    final puzzle = await _fetchPuzzle(rating);
     
     if (puzzle == null) {
       state = state.copyWith(
-        errorMessage: 'No suitable puzzle found',
+        errorMessage: 'No suitable puzzle found. Try changing filters.',
         state: PuzzleState.loading,
       );
       return;
@@ -262,58 +265,77 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     await _loadPuzzle(puzzle);
   }
 
-  /// Select puzzle based on current mode and filters
-  Puzzle? _selectPuzzleByRating(int targetRating) {
-    if (_allPuzzles.isEmpty) return null;
+  /// Fetch puzzle from DB based on criteria
+  Future<Puzzle?> _fetchPuzzle(int targetRating) async {
+    final db = _ref.read(databaseServiceProvider);
 
-    List<Puzzle> candidates;
+    int? minRating;
+    int? maxRating;
+    String? theme;
     
     switch (_mode) {
       case PuzzleFilterMode.random:
-        // Any puzzle from the collection
-        candidates = List.from(_allPuzzles);
+        // No filters
         break;
         
       case PuzzleFilterMode.eloRange:
-        // Filter by custom ELO range
-        candidates = _allPuzzles.where((p) =>
-            p.rating >= _minRating && p.rating <= _maxRating).toList();
+        minRating = _minRating;
+        maxRating = _maxRating;
         break;
         
       case PuzzleFilterMode.theme:
-        // Filter by theme
-        if (_themeFilter == 'all') {
-          candidates = List.from(_allPuzzles);
-        } else {
-          candidates = _allPuzzles.where((p) =>
-              p.themes.any((t) => t.toLowerCase().contains(_themeFilter.toLowerCase()))).toList();
-        }
+        theme = _themeFilter;
         break;
 
       case PuzzleFilterMode.daily:
-        // Daily puzzle based on date
+        // Daily puzzle logic needs stable random selection based on date
+        // For DB implementation, we can pick based on ID offset
         final now = DateTime.now();
         final seed = now.year * 10000 + now.month * 100 + now.day;
         final dailyRandom = Random(seed);
-        if (_allPuzzles.isEmpty) return null;
-        return _allPuzzles[dailyRandom.nextInt(_allPuzzles.length)];
+
+        // Get total count
+        final count = await db.getPuzzleCount();
+        if (count == 0) return null;
+
+        // Offset
+        final offset = dailyRandom.nextInt(count);
+        final results = await db.getPuzzles(
+          limit: 1,
+          random: false,
+          offset: offset,
+        );
+        return (results.isNotEmpty) ? Puzzle.fromJson(results.first) : null;
         
       case PuzzleFilterMode.adaptive:
       default:
-        // Adaptive: within ±200 of current rating
-        final minRating = targetRating - 200;
-        final maxRating = targetRating + 200;
-        candidates = _allPuzzles.where((p) =>
-            p.rating >= minRating && p.rating <= maxRating).toList();
+        minRating = targetRating - 200;
+        maxRating = targetRating + 200;
         break;
     }
     
-    if (candidates.isEmpty) {
-      // Fall back to any puzzle
-      return _allPuzzles[_random.nextInt(_allPuzzles.length)];
+    final results = await db.getPuzzles(
+      minRating: minRating,
+      maxRating: maxRating,
+      theme: theme,
+      limit: 1, // Get one random
+      random: true,
+    );
+
+    // If adaptive failed (too narrow), widen search
+    if (results.isEmpty && _mode == PuzzleFilterMode.adaptive) {
+      final widenedResults = await db.getPuzzles(
+        minRating: targetRating - 500,
+        maxRating: targetRating + 500,
+        limit: 1,
+        random: true,
+      );
+      if (widenedResults.isNotEmpty) {
+        return Puzzle.fromJson(widenedResults.first);
+      }
     }
     
-    return candidates[_random.nextInt(candidates.length)];
+    return results.isNotEmpty ? Puzzle.fromJson(results.first) : null;
   }
 
   /// Load a specific puzzle

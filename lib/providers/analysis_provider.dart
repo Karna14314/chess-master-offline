@@ -5,10 +5,18 @@ import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/core/services/stockfish_service.dart' as stockfish;
 import 'package:chess_master/core/constants/app_constants.dart';
+import 'package:chess_master/providers/engine_provider.dart' as package_engine_provider;
 
 /// Provider for analysis state
 final analysisProvider = StateNotifierProvider<AnalysisNotifier, AnalysisState>((ref) {
-  return AnalysisNotifier();
+  // Use the service from the provider (which can be overridden in tests)
+  // Instead of direct singleton access
+  // We use read here to avoid rebuilding notifier when service changes (it shouldn't generally)
+  // But strictly speaking watch is safer for overrides.
+  // However, stockfishServiceProvider is a simple Provider returning instance.
+  // In tests, we override it.
+  final service = ref.watch(package_engine_provider.stockfishServiceProvider);
+  return AnalysisNotifier(service);
 });
 
 /// Analysis state

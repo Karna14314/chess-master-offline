@@ -436,8 +436,9 @@ class BoardPainter extends CustomPainter {
 
   // Optimized paints
   final Paint _squarePaint = Paint();
-  late final Paint _legalMoveDotPaint;
-  late final Paint _legalMoveRingPaint;
+  final Paint _legalMoveDotPaint = Paint();
+  final Paint _legalMoveRingPaint = Paint()..style = PaintingStyle.stroke;
+  final Paint _highlightPaint = Paint();
 
   BoardPainter({
     required this.theme,
@@ -454,10 +455,8 @@ class BoardPainter extends CustomPainter {
     this.hintSquare,
     required this.getPieceAt,
   }) {
-    _legalMoveDotPaint = Paint()..color = theme.legalMoveDot;
-    _legalMoveRingPaint = Paint()
-      ..color = theme.legalMoveCapture
-      ..style = PaintingStyle.stroke;
+    _legalMoveDotPaint.color = theme.legalMoveDot;
+    _legalMoveRingPaint.color = theme.legalMoveCapture;
   }
 
   @override
@@ -470,12 +469,6 @@ class BoardPainter extends CustomPainter {
       for (int file = 0; file < 8; file++) {
         final isLight = (rank + file) % 2 == 0;
         final square = _getSquare(file, rank);
-        final rect = Rect.fromLTWH(
-          file * squareSize,
-          rank * squareSize,
-          squareSize,
-          squareSize,
-        );
 
         // Base square color
         Color color = isLight ? theme.lightSquare : theme.darkSquare;
@@ -501,13 +494,24 @@ class BoardPainter extends CustomPainter {
         }
 
         _squarePaint.color = color;
-        canvas.drawRect(rect, _squarePaint);
+        canvas.drawRect(
+          Rect.fromLTWH(
+            file * squareSize,
+            rank * squareSize,
+            squareSize,
+            squareSize,
+          ),
+          _squarePaint,
+        );
 
         // Legal move indicators
         if (legalMoves.contains(square)) {
           final piece = getPieceAt(square);
           final isCapture = piece != null;
-          final center = rect.center;
+          final center = Offset(
+            (file + 0.5) * squareSize,
+            (rank + 0.5) * squareSize,
+          );
 
           if (isCapture) {
             // Capture indicator - ring
@@ -537,6 +541,12 @@ class BoardPainter extends CustomPainter {
   }
 
   void _drawCoordinates(Canvas canvas, int file, int rank, double squareSize, bool isLight) {
+    // Only draw on edges
+    final isBottomEdge = isFlipped ? rank == 0 : rank == 7;
+    final isLeftEdge = file == 0;
+
+    if (!isBottomEdge && !isLeftEdge) return;
+
     final textStyle = TextStyle(
       color: isLight ? theme.coordinateLight : theme.coordinateDark,
       fontSize: squareSize * 0.15,
@@ -544,10 +554,14 @@ class BoardPainter extends CustomPainter {
     );
 
     // Draw file letters on bottom row
-    if ((isFlipped ? rank == 0 : rank == 7)) {
+    if (isBottomEdge) {
       final fileLabel = isFlipped
           ? String.fromCharCode('h'.codeUnitAt(0) - file)
           : String.fromCharCode('a'.codeUnitAt(0) + file);
+
+      // We create a new TextPainter here because caching might be premature optimization
+      // without proper cache invalidation, but at least we don't recreate the style unnecessarily?
+      // Actually, standard optimization is to just paint.
       final textSpan = TextSpan(text: fileLabel, style: textStyle);
       final textPainter = TextPainter(
         text: textSpan,
@@ -564,7 +578,7 @@ class BoardPainter extends CustomPainter {
     }
 
     // Draw rank numbers on left column
-    if (file == 0) {
+    if (isLeftEdge) {
       final rankLabel = isFlipped ? (rank + 1).toString() : (8 - rank).toString();
       final textSpan = TextSpan(text: rankLabel, style: textStyle);
       final textPainter = TextPainter(
@@ -604,6 +618,14 @@ class _ArrowPainter extends CustomPainter {
   final double squareSize;
   final bool isFlipped;
 
+  // Optimized reusable objects
+  final Paint _linePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round;
+  final Paint _arrowPaint = Paint()
+    ..style = PaintingStyle.fill;
+  final Path _arrowPath = Path();
+
   _ArrowPainter({
     required this.from,
     required this.to,
@@ -619,40 +641,39 @@ class _ArrowPainter extends CustomPainter {
 
     if (fromPos == null || toPos == null) return;
 
-    final paint = Paint()
+    _linePaint
       ..color = color
-      ..strokeWidth = squareSize * 0.15
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = squareSize * 0.15;
 
     // Draw line
-    canvas.drawLine(fromPos, toPos, paint);
+    canvas.drawLine(fromPos, toPos, _linePaint);
 
     // Draw arrowhead
-    final arrowPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    _arrowPaint.color = color;
 
     final angle = (toPos - fromPos).direction;
     final arrowSize = squareSize * 0.3;
+    final dx = toPos.dx - fromPos.dx;
+    final dy = toPos.dy - fromPos.dy;
+    final distance = (toPos - fromPos).distance;
 
-    final path = Path();
-    path.moveTo(toPos.dx, toPos.dy);
-    path.lineTo(
-      toPos.dx - arrowSize * 1.5 * (toPos - fromPos).dx / (toPos - fromPos).distance 
-          + arrowSize * 0.5 * (toPos - fromPos).dy / (toPos - fromPos).distance,
-      toPos.dy - arrowSize * 1.5 * (toPos - fromPos).dy / (toPos - fromPos).distance 
-          - arrowSize * 0.5 * (toPos - fromPos).dx / (toPos - fromPos).distance,
-    );
-    path.lineTo(
-      toPos.dx - arrowSize * 1.5 * (toPos - fromPos).dx / (toPos - fromPos).distance 
-          - arrowSize * 0.5 * (toPos - fromPos).dy / (toPos - fromPos).distance,
-      toPos.dy - arrowSize * 1.5 * (toPos - fromPos).dy / (toPos - fromPos).distance 
-          + arrowSize * 0.5 * (toPos - fromPos).dx / (toPos - fromPos).distance,
-    );
-    path.close();
+    if (distance == 0) return;
 
-    canvas.drawPath(path, arrowPaint);
+    // Use pre-allocated path, but reset it
+    _arrowPath.reset();
+    _arrowPath.moveTo(toPos.dx, toPos.dy);
+
+    // Calculate arrow points
+    final x1 = toPos.dx - arrowSize * 1.5 * dx / distance + arrowSize * 0.5 * dy / distance;
+    final y1 = toPos.dy - arrowSize * 1.5 * dy / distance - arrowSize * 0.5 * dx / distance;
+    final x2 = toPos.dx - arrowSize * 1.5 * dx / distance - arrowSize * 0.5 * dy / distance;
+    final y2 = toPos.dy - arrowSize * 1.5 * dy / distance + arrowSize * 0.5 * dx / distance;
+
+    _arrowPath.lineTo(x1, y1);
+    _arrowPath.lineTo(x2, y2);
+    _arrowPath.close();
+
+    canvas.drawPath(_arrowPath, _arrowPaint);
   }
 
   Offset? _squareToPosition(String square) {
