@@ -99,7 +99,14 @@ class EngineNotifier extends StateNotifier<EngineState> {
     required String fen,
     required DifficultyLevel difficulty,
   }) async {
-    state = state.copyWith(isThinking: true);
+    // Clear previous state and set thinking
+    state = state.copyWith(
+      isThinking: true,
+      currentFen: fen,
+      clearBestMove: true,
+      clearEvaluation: true,
+      depth: 0,
+    );
 
     // 1. Check Opening Book first
     final bookMove = OpeningBookService.instance.getMove(fen);
@@ -108,11 +115,13 @@ class EngineNotifier extends StateNotifier<EngineState> {
       final delay = Duration(milliseconds: 500 + (difficulty.thinkTimeMs ~/ 4));
       await Future.delayed(delay);
 
-      state = state.copyWith(
-        isThinking: false,
-        bestMove: bookMove,
-        evaluation: 0, // Book moves are theoretically roughly equal
-      );
+      if (mounted) {
+        state = state.copyWith(
+          isThinking: false,
+          bestMove: bookMove,
+          evaluation: 0, // Book moves are theoretically roughly equal
+        );
+      }
 
       return BestMoveResult(bestMove: bookMove, evaluation: 0);
     }
@@ -121,7 +130,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
     if (!_service.isReady) {
       await _service.initialize();
       if (!_service.isReady) {
-        state = state.copyWith(isThinking: false);
+        if (mounted) state = state.copyWith(isThinking: false);
         debugPrint('Engine not ready, skipping move search');
         return null;
       }
@@ -129,6 +138,22 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
     // Set engine strength
     _service.setSkillLevel(difficulty.elo);
+
+    // Subscribe to progressive updates from the engine
+    // This allows the UI to show "Thinking... Depth: 10 Eval: +0.5"
+    final subscription = _service.infoStream.listen((info) {
+      if (!mounted) return;
+
+      // Only update if it's the main line (multipv 1 or null)
+      if (info.multipv == null || info.multipv == 1) {
+        state = state.copyWith(
+          evaluation: info.cp,
+          mateIn: info.mate,
+          depth: info.depth,
+          isThinking: true,
+        );
+      }
+    });
 
     try {
       // Add artificial delay for more human-like feel
@@ -150,22 +175,27 @@ class EngineNotifier extends StateNotifier<EngineState> {
             },
           );
 
+      subscription.cancel();
+
       // Ensure minimum thinking time for realism
       final elapsed = DateTime.now().difference(startTime);
       if (elapsed < minDelay) {
         await Future.delayed(minDelay - elapsed);
       }
 
-      state = state.copyWith(
-        isThinking: false,
-        bestMove: result.bestMove,
-        evaluation: result.evaluation,
-        mateIn: result.mateIn,
-      );
+      if (mounted) {
+        state = state.copyWith(
+          isThinking: false,
+          bestMove: result.bestMove,
+          evaluation: result.evaluation,
+          mateIn: result.mateIn,
+        );
+      }
 
       return result;
     } catch (e) {
-      state = state.copyWith(isThinking: false);
+      subscription.cancel();
+      if (mounted) state = state.copyWith(isThinking: false);
       print('Error getting bot move: $e');
       return null;
     }
@@ -173,16 +203,18 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
   /// Get a hint for the player
   Future<BestMoveResult?> getHint({required String fen, int depth = 15}) async {
-    state = state.copyWith(isThinking: true);
+    state = state.copyWith(isThinking: true, currentFen: fen);
 
     try {
       final result = await _service.getBestMove(fen: fen, depth: depth);
 
-      state = state.copyWith(isThinking: false, bestMove: result.bestMove);
+      if (mounted) {
+        state = state.copyWith(isThinking: false, bestMove: result.bestMove);
+      }
 
       return result;
     } catch (e) {
-      state = state.copyWith(isThinking: false);
+      if (mounted) state = state.copyWith(isThinking: false);
       print('Error getting hint: $e');
       return null;
     }
@@ -207,7 +239,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
     // Subscribe to progressive updates
     final subscription = _service.analysisStream.listen((result) {
       // Only update if we are still analyzing this FEN
-      if (state.currentFen == fen && state.isAnalyzing) {
+      if (mounted && state.currentFen == fen && state.isAnalyzing) {
         state = state.copyWith(
           evaluation: result.evaluation,
           mateIn: result.mateIn,
@@ -226,16 +258,18 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
       subscription.cancel();
 
-      state = state.copyWith(
-        isAnalyzing: false,
-        evaluation: result.evaluation,
-        mateIn: result.mateIn,
-        lines: result.lines,
-        depth: result.depth,
-      );
+      if (mounted) {
+        state = state.copyWith(
+          isAnalyzing: false,
+          evaluation: result.evaluation,
+          mateIn: result.mateIn,
+          lines: result.lines,
+          depth: result.depth,
+        );
+      }
     } catch (e) {
       subscription.cancel();
-      state = state.copyWith(isAnalyzing: false);
+      if (mounted) state = state.copyWith(isAnalyzing: false);
       print('Error analyzing position: $e');
     }
   }

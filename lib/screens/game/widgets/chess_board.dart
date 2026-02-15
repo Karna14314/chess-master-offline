@@ -76,10 +76,13 @@ class ChessBoard extends ConsumerStatefulWidget {
 }
 
 class _ChessBoardState extends ConsumerState<ChessBoard> {
-  // Drag state managed via ValueNotifier to avoid full rebuilds
-  final ValueNotifier<_DragState> _dragState = ValueNotifier(
-    _DragState.empty(),
+  // Separate notifiers for drag start/end (piece, fromSquare) and drag position
+  // This prevents rebuilding the entire board when dragging a piece
+  final ValueNotifier<_DragStartEndState> _dragStartEndNotifier = ValueNotifier(
+    _DragStartEndState.empty(),
   );
+  final ValueNotifier<Offset?> _dragPositionNotifier = ValueNotifier(null);
+
   chess.Chess? _externalBoard;
 
   @override
@@ -98,7 +101,8 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
 
   @override
   void dispose() {
-    _dragState.dispose();
+    _dragStartEndNotifier.dispose();
+    _dragPositionNotifier.dispose();
     super.dispose();
   }
 
@@ -234,9 +238,11 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
                   ),
 
                 // 4. Pieces Layer
-                ValueListenableBuilder<_DragState>(
-                  valueListenable: _dragState,
-                  builder: (context, dragState, child) {
+                // Only rebuilds when drag starts/ends (to hide/show pieces)
+                // Does NOT rebuild during drag motion
+                ValueListenableBuilder<_DragStartEndState>(
+                  valueListenable: _dragStartEndNotifier,
+                  builder: (context, dragStartEnd, child) {
                     return Stack(
                       children: List.generate(64, (index) {
                         final file = index % 8;
@@ -245,8 +251,10 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
                         final piece = _getPieceAt(square);
 
                         // Don't render the piece being dragged at its original position
-                        if (piece == null || square == dragState.fromSquare)
+                        if (piece == null ||
+                            square == dragStartEnd.fromSquare) {
                           return const SizedBox.shrink();
+                        }
 
                         final x = file * squareSize;
                         final y = rank * squareSize;
@@ -283,20 +291,22 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
                   ),
 
                 // 6. Dragged Piece Layer (Optimized)
-                ValueListenableBuilder<_DragState>(
-                  valueListenable: _dragState,
-                  builder: (context, dragState, child) {
-                    if (dragState.piece == null || dragState.position == null) {
+                // Only rebuilds on drag position update
+                ValueListenableBuilder<Offset?>(
+                  valueListenable: _dragPositionNotifier,
+                  builder: (context, position, child) {
+                    final dragStartEnd = _dragStartEndNotifier.value;
+                    if (dragStartEnd.piece == null || position == null) {
                       return const SizedBox.shrink();
                     }
 
                     return Positioned(
-                      left: dragState.position!.dx - squareSize / 2,
-                      top: dragState.position!.dy - squareSize / 2,
+                      left: position.dx - squareSize / 2,
+                      top: position.dy - squareSize / 2,
                       width: squareSize * 1.2,
                       height: squareSize * 1.2,
                       child: ChessPiece(
-                        piece: dragState.piece!,
+                        piece: dragStartEnd.piece!,
                         size: squareSize * 1.2,
                         pieceSet: settings.currentPieceSet,
                       ),
@@ -392,11 +402,11 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
     final piece = _getPieceAt(square);
 
     if (piece != null) {
-      _dragState.value = _DragState(
+      _dragStartEndNotifier.value = _DragStartEndState(
         fromSquare: square,
-        position: details.localPosition,
         piece: piece,
       );
+      _dragPositionNotifier.value = details.localPosition;
 
       if (widget.useExternalState) {
         widget.onSquareTap?.call(square);
@@ -407,27 +417,27 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
   }
 
   void _onDragUpdate(DragUpdateDetails details) {
-    if (_dragState.value.fromSquare != null) {
-      _dragState.value = _dragState.value.copyWith(
-        position: details.localPosition,
-      );
+    if (_dragStartEndNotifier.value.fromSquare != null) {
+      _dragPositionNotifier.value = details.localPosition;
     }
   }
 
   void _onDragEnd(double squareSize, bool isFlipped) {
-    final state = _dragState.value;
-    if (state.fromSquare != null && state.position != null) {
-      final file = (state.position!.dx / squareSize).floor().clamp(0, 7);
-      final rank = (state.position!.dy / squareSize).floor().clamp(0, 7);
+    final dragStartEnd = _dragStartEndNotifier.value;
+    final position = _dragPositionNotifier.value;
+
+    if (dragStartEnd.fromSquare != null && position != null) {
+      final file = (position.dx / squareSize).floor().clamp(0, 7);
+      final rank = (position.dy / squareSize).floor().clamp(0, 7);
       final targetSquare = _getSquare(file, rank, isFlipped);
 
-      if (targetSquare != state.fromSquare) {
+      if (targetSquare != dragStartEnd.fromSquare) {
         if (widget.useExternalState) {
-          widget.onMove?.call(state.fromSquare!, targetSquare);
+          widget.onMove?.call(dragStartEnd.fromSquare!, targetSquare);
         } else {
           final success = ref
               .read(gameProvider.notifier)
-              .tryMove(state.fromSquare!, targetSquare);
+              .tryMove(dragStartEnd.fromSquare!, targetSquare);
           if (success) {
             widget.onMoveCallback?.call();
           }
@@ -435,26 +445,18 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
       }
     }
 
-    _dragState.value = _DragState.empty();
+    _dragStartEndNotifier.value = _DragStartEndState.empty();
+    _dragPositionNotifier.value = null;
   }
 }
 
-class _DragState {
+class _DragStartEndState {
   final String? fromSquare;
-  final Offset? position;
   final String? piece;
 
-  const _DragState({this.fromSquare, this.position, this.piece});
+  const _DragStartEndState({this.fromSquare, this.piece});
 
-  factory _DragState.empty() => const _DragState();
-
-  _DragState copyWith({String? fromSquare, Offset? position, String? piece}) {
-    return _DragState(
-      fromSquare: fromSquare ?? this.fromSquare,
-      position: position ?? this.position,
-      piece: piece ?? this.piece,
-    );
-  }
+  factory _DragStartEndState.empty() => const _DragStartEndState();
 }
 
 /// Custom painter for drawing coordinates separately

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chess_master/core/services/stockfish_service.dart';
 
 void main() {
   test('Stockfish parsing benchmark and correctness', () {
@@ -46,39 +47,15 @@ void main() {
     print('Baseline parsing 10000 lines took: ${baselineTime}ms');
     print('Baseline count (known buggy): $processedCount');
 
-    // --- Optimized (New String Parsing Implementation) ---
+    // --- Optimized (Actual Implementation) ---
     final stopwatchOptimized = Stopwatch()..start();
     int processedCountOptimized = 0;
 
-    // Logic matching the one in StockfishService._parseValue
-    int? _parseValue(String text, String key) {
-      final index = text.indexOf(key);
-      if (index != -1) {
-        final start = index + key.length;
-        int end = text.indexOf(' ', start);
-        if (end == -1) end = text.length;
-        return int.tryParse(text.substring(start, end));
-      }
-      return null;
-    }
-
     for (final line in lines) {
-      if (line.startsWith('info') && line.contains(' pv ')) {
-        final pvIndex = line.indexOf(' pv ');
-        if (pvIndex != -1) {
-          // Extract moves
-          final movesStr = line.substring(pvIndex + 4);
-          final moves = movesStr.split(' ');
-
-          final infoPart = line.substring(0, pvIndex);
-
-          _parseValue(infoPart, ' multipv ');
-          _parseValue(infoPart, ' depth ');
-          _parseValue(infoPart, ' score cp ');
-          _parseValue(infoPart, ' score mate ');
-
-          processedCountOptimized += moves.length;
-        }
+      // We use the actual production parser
+      final info = StockfishParser.parse(line);
+      if (info.moves.isNotEmpty) {
+        processedCountOptimized += info.moves.length;
       }
     }
 
@@ -89,6 +66,8 @@ void main() {
 
     // Assertions
     // 1. Correctness: The generated lines have 4 moves each. 10000 * 4 = 40000.
+    // However, some lines might be skipped if they are not 'info'.
+    // Our test data only generates 'info' lines.
     expect(
       processedCountOptimized,
       40000,
@@ -96,8 +75,8 @@ void main() {
     );
 
     // 2. Performance: Optimized should be faster.
-    // Note: In extremely slow environments (CI), this might be flaky if diff is small, but here diff is ~3x.
-    // We put a lenient check.
+    // Note: In extremely slow environments (CI), this might be flaky if diff is small.
+    // But string splitting vs regex should be significant.
     expect(
       optimizedTime < baselineTime,
       isTrue,
@@ -105,7 +84,7 @@ void main() {
     );
 
     // 3. Bug verification: Baseline matches 'pv 1 ...' inside 'multipv 1' so it returns garbage moves.
-    // Baseline count is 190000 (19 items per line) vs 40000 (4 items per line).
+    // Baseline count is typically much higher or wrong.
     expect(
       processedCount,
       isNot(40000),

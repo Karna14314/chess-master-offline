@@ -9,8 +9,12 @@ class StockfishService {
   static StockfishService? _instance;
   Stockfish? _stockfish;
   bool _isReady = false;
+  bool _isBusy = false;
+
   final StreamController<String> _outputController =
       StreamController<String>.broadcast();
+  final StreamController<AnalysisInfo> _infoController =
+      StreamController<AnalysisInfo>.broadcast();
   final StreamController<AnalysisResult> _analysisStreamController =
       StreamController<AnalysisResult>.broadcast();
 
@@ -22,10 +26,13 @@ class StockfishService {
 
   StockfishService._();
 
-  /// Stream of engine output
+  /// Stream of engine output (raw lines)
   Stream<String> get outputStream => _outputController.stream;
 
-  /// Stream of progressive analysis results
+  /// Stream of parsed analysis info
+  Stream<AnalysisInfo> get infoStream => _infoController.stream;
+
+  /// Stream of progressive analysis results (aggregated)
   Stream<AnalysisResult> get analysisStream => _analysisStreamController.stream;
 
   /// Whether the engine is initialized and ready
@@ -43,6 +50,17 @@ class StockfishService {
       // Listen to engine output
       _stockfish!.stdout.listen((line) {
         _outputController.add(line);
+
+        // Parse info lines centrally
+        if (line.startsWith('info') && !line.contains('string')) {
+          try {
+            final info = StockfishParser.parse(line);
+            _infoController.add(info);
+          } catch (e) {
+            // Ignore parse errors for malformed lines
+          }
+        }
+
         if (line.contains('uciok')) {
           uciOkReceived = true;
         }
@@ -67,28 +85,21 @@ class StockfishService {
       // Configure engine for mobile performance
       _configureEngine();
     } catch (e) {
-      // Engine initialization failed - this is acceptable for basic gameplay
-      // Games can still be played without engine (local multiplayer, manual analysis)
       debugPrint('Stockfish engine initialization failed: $e');
-      debugPrint('Games can still be played in local multiplayer mode');
       _isReady = false;
-      // Don't rethrow - allow app to continue without engine
     }
   }
 
   /// Configure engine options for optimal mobile performance
   void _configureEngine() {
-    // Limit threads for mobile
     _sendCommand('setoption name Threads value 2');
-    // Limit hash table size
     _sendCommand('setoption name Hash value 64');
-    // Enable skill level control
     _sendCommand('setoption name UCI_LimitStrength value true');
   }
 
   /// Wait for engine to be ready
   Future<void> _waitForReady() async {
-    _isReady = false; // Reset ready state
+    _isReady = false;
     _sendCommand('isready');
 
     int attempts = 0;
@@ -110,9 +121,6 @@ class StockfishService {
   }
 
   /// Get the best move for a given position
-  /// [fen] - Position in FEN notation
-  /// [depth] - Search depth (1-22)
-  /// [thinkTimeMs] - Optional think time limit in milliseconds
   Future<BestMoveResult> getBestMove({
     required String fen,
     required int depth,
@@ -122,7 +130,14 @@ class StockfishService {
       await initialize();
     }
 
-    // Ensure engine settings are correct for play
+    // Busy check
+    if (_isBusy) {
+      stopAnalysis();
+      // Give it a moment to stop
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    _isBusy = true;
+
     _sendCommand('setoption name UCI_LimitStrength value true');
 
     final completer = Completer<BestMoveResult>();
@@ -131,33 +146,35 @@ class StockfishService {
     int? evaluation;
     int? mateIn;
 
-    // Track best move found so far in case of timeout
     String bestMoveSoFar = '';
 
-    StreamSubscription<String>? subscription;
+    StreamSubscription<String>? outputSub;
+    StreamSubscription<AnalysisInfo>? infoSub;
 
     void cleanup() {
-      subscription?.cancel();
-      subscription = null;
+      outputSub?.cancel();
+      infoSub?.cancel();
+      outputSub = null;
+      infoSub = null;
+      _isBusy = false;
     }
 
-    subscription = _outputController.stream.listen(
+    // Listen to parsed info for progressive updates
+    infoSub = _infoController.stream.listen((info) {
+      if (info.cp != null) evaluation = info.cp;
+      if (info.mate != null) mateIn = info.mate;
+
+      // We only care about the best move from the main line (multipv 1 or null)
+      if ((info.multipv == null || info.multipv == 1) &&
+          info.moves.isNotEmpty) {
+        bestMoveSoFar = info.moves.first;
+      }
+    });
+
+    outputSub = _outputController.stream.listen(
       (line) {
-        // Parse evaluation from info line
-        if (line.startsWith('info') && line.contains('score')) {
-          final info = parseInfoLine(line);
-          if (info.cp != null) evaluation = info.cp;
-          if (info.mate != null) mateIn = info.mate;
-
-          // Capture best move from pv if available as fallback
-          if (info.moves != null && info.moves!.isNotEmpty) {
-            bestMoveSoFar = info.moves!.first;
-          }
-        }
-
-        // Parse best move
         if (line.startsWith('bestmove')) {
-          final parts = line.split(' '); // Keep split here as it's short
+          final parts = line.split(' ');
           if (parts.length >= 2) {
             bestMove = parts[1];
           }
@@ -184,17 +201,14 @@ class StockfishService {
       },
     );
 
-    // Set position
     _sendCommand('position fen $fen');
 
-    // Start search
     if (thinkTimeMs != null) {
       _sendCommand('go depth $depth movetime $thinkTimeMs');
     } else {
       _sendCommand('go depth $depth');
     }
 
-    // Timeout after 30 seconds
     return completer.future.timeout(
       const Duration(seconds: 30),
       onTimeout: () {
@@ -206,8 +220,6 @@ class StockfishService {
   }
 
   /// Analyze a position and get multiple lines
-  /// Returns evaluation and top engine lines
-  /// Also emits intermediate results to [analysisStream]
   Future<AnalysisResult> analyzePosition({
     required String fen,
     int depth = AppConstants.analysisDepth,
@@ -217,78 +229,76 @@ class StockfishService {
       await initialize();
     }
 
+    if (_isBusy) {
+      stopAnalysis();
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    _isBusy = true;
+
     final completer = Completer<AnalysisResult>();
     final lines = <EngineLine>[];
-    // Keep track of latest evaluations for each line to construct partial results
     final currentLines = <int, EngineLine>{};
 
     int? mainEvaluation;
     int? mateIn;
 
-    StreamSubscription<String>? subscription;
+    StreamSubscription<String>? outputSub;
+    StreamSubscription<AnalysisInfo>? infoSub;
 
     void cleanup() {
-      subscription?.cancel();
-      subscription = null;
+      outputSub?.cancel();
+      infoSub?.cancel();
+      outputSub = null;
+      infoSub = null;
+      _isBusy = false;
     }
 
-    // Set MultiPV for multiple lines
     _sendCommand('setoption name MultiPV value $multiPv');
 
-    subscription = _outputController.stream.listen(
-      (line) {
-        if (line.startsWith('info') && line.contains(' pv ')) {
-          final info = parseInfoLine(line);
+    // Listen to info stream for analysis updates
+    infoSub = _infoController.stream.listen((info) {
+      if (info.moves.isNotEmpty) {
+        final pvNumber = info.multipv ?? 1;
+        final currentDepth = info.depth ?? 0;
+        final eval = info.cp;
+        final mate = info.mate;
 
-          if (info.moves != null) {
-            final pvNumber = info.multipv ?? 1;
-            final currentDepth = info.depth ?? 0;
-            final eval = info.cp;
-            final mate = info.mate;
-
-            // Store the main line evaluation
-            if (pvNumber == 1) {
-              mainEvaluation = eval;
-              mateIn = mate;
-            }
-
-            final engineLine = EngineLine(
-              moves: info.moves!,
-              evaluation: eval,
-              mateIn: mate,
-              depth: currentDepth,
-            );
-
-            // Update lines map
-            currentLines[pvNumber] = engineLine;
-
-            // Update final list (for legacy compatibility)
-            if (lines.length >= pvNumber) {
-              lines[pvNumber - 1] = engineLine;
-            } else {
-              lines.add(engineLine);
-            }
-
-            // Emit progressive update
-            _analysisStreamController.add(
-              AnalysisResult(
-                evaluation: mainEvaluation ?? 0,
-                mateIn: mateIn,
-                lines:
-                    currentLines.values.toList()..sort((a, b) {
-                      // Heuristic sort based on evaluation if available, otherwise keep order
-                      // But typically multipv comes in order 1..N
-                      return 0;
-                    }),
-                depth: currentDepth,
-              ),
-            );
-          }
+        if (pvNumber == 1) {
+          mainEvaluation = eval;
+          mateIn = mate;
         }
 
+        final engineLine = EngineLine(
+          moves: info.moves,
+          evaluation: eval,
+          mateIn: mate,
+          depth: currentDepth,
+        );
+
+        currentLines[pvNumber] = engineLine;
+
+        // Reconstruct lines list from map
+        lines.clear();
+        final sortedKeys = currentLines.keys.toList()..sort();
+        for (final key in sortedKeys) {
+          lines.add(currentLines[key]!);
+        }
+
+        _analysisStreamController.add(
+          AnalysisResult(
+            evaluation: mainEvaluation ?? 0,
+            mateIn: mateIn,
+            lines: List.from(lines),
+            depth: currentDepth,
+          ),
+        );
+      }
+    });
+
+    outputSub = _outputController.stream.listen(
+      (line) {
         if (line.startsWith('bestmove')) {
           cleanup();
-          // Reset MultiPV to 1
           _sendCommand('setoption name MultiPV value 1');
 
           if (!completer.isCompleted) {
@@ -309,7 +319,6 @@ class StockfishService {
       },
     );
 
-    // Set position and analyze
     _sendCommand('position fen $fen');
     _sendCommand('go depth $depth');
 
@@ -328,91 +337,133 @@ class StockfishService {
     );
   }
 
-  /// Helper to parse info line efficiently using indexOf
-  @visibleForTesting
-  ({int? depth, int? multipv, int? cp, int? mate, List<String>? moves})
-  parseInfoLine(String line) {
-    int? depth;
-    int? multipv;
-    int? cp;
-    int? mate;
-    List<String>? moves;
-
-    // Optimized parsing using indexOf and substring
-    // Keys usually have spaces around them
-
-    // Depth
-    depth = _parseValue(line, ' depth ');
-
-    // MultiPV
-    multipv = _parseValue(line, ' multipv ');
-
-    // Score
-    cp = _parseValue(line, ' score cp ');
-    mate = _parseValue(line, ' score mate ');
-
-    // PV moves
-    final pvIndex = line.indexOf(' pv ');
-    if (pvIndex != -1) {
-      final movesStr = line.substring(pvIndex + 4);
-      moves = <String>[];
-      int startIndex = 0;
-      while (startIndex < movesStr.length) {
-        int spaceIndex = movesStr.indexOf(' ', startIndex);
-        if (spaceIndex == -1) {
-          if (startIndex < movesStr.length) {
-            moves.add(movesStr.substring(startIndex));
-          }
-          break;
-        }
-        if (spaceIndex > startIndex) {
-          moves.add(movesStr.substring(startIndex, spaceIndex));
-        }
-        startIndex = spaceIndex + 1;
-      }
-    }
-
-    return (depth: depth, multipv: multipv, cp: cp, mate: mate, moves: moves);
-  }
-
-  /// Helper to parse integer value after a key
-  int? _parseValue(String text, String key) {
-    final index = text.indexOf(key);
-    if (index != -1) {
-      final start = index + key.length;
-      int end = text.indexOf(' ', start);
-      if (end == -1) end = text.length;
-      return int.tryParse(text.substring(start, end));
-    }
-    return null;
-  }
-
-  /// Set the engine skill level (affects playing strength)
   void setSkillLevel(int elo) {
     _sendCommand('setoption name UCI_Elo value $elo');
   }
 
-  /// Stop any ongoing analysis
   void stopAnalysis() {
-    _sendCommand('stop');
+    if (_isBusy) {
+      _sendCommand('stop');
+      // We don't set _isBusy = false here immediately because engine takes time to stop
+      // and emit bestmove. The command just signals it to stop.
+    }
   }
 
-  /// Start a new game
   void newGame() {
     _sendCommand('ucinewgame');
+    _isBusy = false;
   }
 
-  /// Dispose the engine
   void dispose() {
     _stockfish?.dispose();
     _stockfish = null;
     _isReady = false;
     _outputController.close();
+    _infoController.close();
     _analysisStreamController.close();
+  }
+
+  // Expose parser for testing
+  @visibleForTesting
+  static AnalysisInfo parseInfoLine(String line) => StockfishParser.parse(line);
+}
+
+/// Helper class for parsing Stockfish output efficiently
+class StockfishParser {
+  /// Parse an info line into structured data
+  /// [maxMoves] - Optional limit on number of PV moves to parse (optimization)
+  static AnalysisInfo parse(String line, {int? maxMoves}) {
+    // "info depth 20 ... pv e2e4 ..."
+
+    // Quick check if line has relevant info
+    if (!line.startsWith('info')) return AnalysisInfo.empty();
+
+    // We can use indexOf from the start for keys, but since we scan sequentially,
+    // we can optimize by only searching forward if keys are ordered.
+    // But Stockfish keys order is not strictly guaranteed (though usually consistent).
+    // Using simple indexOf is O(N) per key, which is fine for line length < 1000.
+
+    // Parse numeric values
+    final depth = _parseValue(line, ' depth ');
+    final multipv = _parseValue(line, ' multipv ');
+    final cp = _parseValue(line, ' score cp ');
+    final mate = _parseValue(line, ' score mate ');
+
+    // Parse PV moves
+    List<String> moves = [];
+    final pvIndex = line.indexOf(' pv ');
+    if (pvIndex != -1) {
+      // Moves start after " pv "
+      int startIndex = pvIndex + 4;
+      final length = line.length;
+
+      // Optimization: Manual parsing to avoid creating intermediate substrings/lists
+      // and to support maxMoves limit
+
+      int movesFound = 0;
+      while (startIndex < length) {
+        // Skip leading spaces
+        while (startIndex < length && line[startIndex] == ' ') {
+          startIndex++;
+        }
+        if (startIndex >= length) break;
+
+        // Find end of move
+        int endIndex = line.indexOf(' ', startIndex);
+        if (endIndex == -1) endIndex = length;
+
+        // Extract move
+        if (endIndex > startIndex) {
+          moves.add(line.substring(startIndex, endIndex));
+          movesFound++;
+
+          if (maxMoves != null && movesFound >= maxMoves) break;
+        }
+
+        startIndex = endIndex + 1;
+      }
+    }
+
+    return AnalysisInfo(
+      depth: depth,
+      multipv: multipv,
+      cp: cp,
+      mate: mate,
+      moves: moves,
+    );
+  }
+
+  static int? _parseValue(String text, String key) {
+    final index = text.indexOf(key);
+    if (index != -1) {
+      final start = index + key.length;
+      int end = text.indexOf(' ', start);
+      if (end == -1) end = text.length;
+      // Use tryParse to be safe
+      return int.tryParse(text.substring(start, end));
+    }
+    return null;
   }
 }
 
-/// Result of a best move search
+class AnalysisInfo {
+  final int? depth;
+  final int? multipv;
+  final int? cp;
+  final int? mate;
+  final List<String> moves;
+
+  const AnalysisInfo({
+    this.depth,
+    this.multipv,
+    this.cp,
+    this.mate,
+    this.moves = const [],
+  });
+
+  factory AnalysisInfo.empty() => const AnalysisInfo();
+}
+
 class BestMoveResult {
   final String bestMove;
   final String? ponderMove;
@@ -426,21 +477,17 @@ class BestMoveResult {
     this.mateIn,
   });
 
-  /// Parse UCI move format (e.g., "e2e4") to from/to squares
   (String from, String to, String? promotion) get parsedMove {
     if (bestMove.length < 4) return ('', '', null);
-
     final from = bestMove.substring(0, 2);
     final to = bestMove.substring(2, 4);
     final promotion = bestMove.length > 4 ? bestMove.substring(4, 5) : null;
-
     return (from, to, promotion);
   }
 
   bool get isValid => bestMove.isNotEmpty && bestMove.length >= 4;
 }
 
-/// Result of position analysis
 class AnalysisResult {
   final int evaluation;
   final int? mateIn;
@@ -454,20 +501,9 @@ class AnalysisResult {
     required this.depth,
   });
 
-  /// Get evaluation in pawns (centipawns / 100)
   double get evalInPawns => evaluation / 100.0;
-
-  /// Get formatted evaluation string
-  String get formattedEval {
-    if (mateIn != null) {
-      return mateIn! > 0 ? 'M$mateIn' : '-M${mateIn!.abs()}';
-    }
-    final sign = evaluation >= 0 ? '+' : '';
-    return '$sign${evalInPawns.toStringAsFixed(1)}';
-  }
 }
 
-/// A single engine analysis line
 class EngineLine {
   final List<String> moves;
   final int? evaluation;
@@ -481,15 +517,5 @@ class EngineLine {
     required this.depth,
   });
 
-  /// Get evaluation in pawns
   double get evalInPawns => (evaluation ?? 0) / 100.0;
-
-  /// Get formatted evaluation string
-  String get formattedEval {
-    if (mateIn != null) {
-      return mateIn! > 0 ? 'M$mateIn' : '-M${mateIn!.abs()}';
-    }
-    final sign = (evaluation ?? 0) >= 0 ? '+' : '';
-    return '$sign${evalInPawns.toStringAsFixed(1)}';
-  }
 }

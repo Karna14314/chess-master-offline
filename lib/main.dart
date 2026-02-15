@@ -9,8 +9,8 @@ import 'package:chess_master/core/theme/board_themes.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Preload piece assets
-  await PieceAssets.preloadAssets(PieceSet.traditional);
+  // Preload piece assets in background
+  PieceAssets.preloadAssets(PieceSet.traditional);
 
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
