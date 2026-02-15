@@ -46,10 +46,9 @@ class GameHistoryNotifier extends StateNotifier<AsyncValue<GameHistoryState>> {
     try {
       final games = await _dbService.getAllGames(limit: _pageSize, offset: 0);
       if (mounted) {
-        state = AsyncValue.data(GameHistoryState(
-          games: games,
-          hasMore: games.length == _pageSize,
-        ));
+        state = AsyncValue.data(
+          GameHistoryState(games: games, hasMore: games.length == _pageSize),
+        );
       }
     } catch (e, st) {
       if (mounted) {
@@ -60,7 +59,9 @@ class GameHistoryNotifier extends StateNotifier<AsyncValue<GameHistoryState>> {
 
   Future<void> loadMore() async {
     final currentState = state.value;
-    if (currentState == null || !currentState.hasMore || currentState.isLoadingMore) {
+    if (currentState == null ||
+        !currentState.hasMore ||
+        currentState.isLoadingMore) {
       return;
     }
 
@@ -74,11 +75,13 @@ class GameHistoryNotifier extends StateNotifier<AsyncValue<GameHistoryState>> {
       );
 
       if (mounted) {
-        state = AsyncValue.data(currentState.copyWith(
-          games: [...currentState.games, ...newGames],
-          hasMore: newGames.length == _pageSize,
-          isLoadingMore: false,
-        ));
+        state = AsyncValue.data(
+          currentState.copyWith(
+            games: [...currentState.games, ...newGames],
+            hasMore: newGames.length == _pageSize,
+            isLoadingMore: false,
+          ),
+        );
       }
     } catch (e) {
       // Revert loading state on error
@@ -94,22 +97,26 @@ class GameHistoryNotifier extends StateNotifier<AsyncValue<GameHistoryState>> {
   }
 
   Future<void> deleteGame(String id) async {
-     await _dbService.deleteGame(id);
-     final currentState = state.value;
-     if (currentState != null) {
-       final updatedGames = currentState.games.where((g) => g['id'] != id).toList();
-       if (mounted) {
-         state = AsyncValue.data(currentState.copyWith(games: updatedGames));
-       }
-     }
+    await _dbService.deleteGame(id);
+    final currentState = state.value;
+    if (currentState != null) {
+      final updatedGames =
+          currentState.games.where((g) => g['id'] != id).toList();
+      if (mounted) {
+        state = AsyncValue.data(currentState.copyWith(games: updatedGames));
+      }
+    }
   }
 }
 
 /// Provider for game history
-final gameHistoryProvider = StateNotifierProvider<GameHistoryNotifier, AsyncValue<GameHistoryState>>((ref) {
-  final dbService = ref.read(databaseServiceProvider);
-  return GameHistoryNotifier(dbService);
-});
+final gameHistoryProvider =
+    StateNotifierProvider<GameHistoryNotifier, AsyncValue<GameHistoryState>>((
+      ref,
+    ) {
+      final dbService = ref.read(databaseServiceProvider);
+      return GameHistoryNotifier(dbService);
+    });
 
 /// Game history screen showing saved games
 class GameHistoryScreen extends ConsumerWidget {
@@ -134,21 +141,23 @@ class GameHistoryScreen extends ConsumerWidget {
       ),
       body: gamesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading games: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.read(gameHistoryProvider.notifier).refresh(),
-                child: const Text('Retry'),
+        error:
+            (error, stack) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Error loading games: $error'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed:
+                        () => ref.read(gameHistoryProvider.notifier).refresh(),
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
         data: (historyState) {
           if (historyState.games.isEmpty) {
             return _buildEmptyState(context);
@@ -172,16 +181,16 @@ class GameHistoryScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(
             'No games yet',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 8),
           Text(
             'Play some games to see your history',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textHint,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textHint),
           ),
         ],
       ),
@@ -199,7 +208,8 @@ class GameHistoryScreen extends ConsumerWidget {
     final dateFormat = DateFormat('MMM d, yyyy');
 
     for (final game in games) {
-      final timestamp = game['updated_at'] as int? ?? game['created_at'] as int?;
+      final timestamp =
+          game['updated_at'] as int? ?? game['created_at'] as int?;
       if (timestamp != null) {
         final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
         final dateKey = dateFormat.format(date);
@@ -237,11 +247,13 @@ class GameHistoryScreen extends ConsumerWidget {
               if (index > 0) const SizedBox(height: 16),
               _buildDateHeader(context, dateKey),
               const SizedBox(height: 8),
-              ...dateGames.map((game) => _GameCard(
-                    game: game,
-                    onTap: () => _loadGame(context, ref, game),
-                    onDelete: () => _deleteGame(context, ref, game),
-                  )),
+              ...dateGames.map(
+                (game) => _GameCard(
+                  game: game,
+                  onTap: () => _loadGame(context, ref, game),
+                  onDelete: () => _deleteGame(context, ref, game),
+                ),
+              ),
             ],
           );
         },
@@ -265,9 +277,9 @@ class GameHistoryScreen extends ConsumerWidget {
           const SizedBox(width: 8),
           Text(
             date,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -280,7 +292,7 @@ class GameHistoryScreen extends ConsumerWidget {
     Map<String, dynamic> game,
   ) async {
     final isCompleted = game['is_completed'] == 1;
-    
+
     if (isCompleted) {
       // Show game for review/analysis
       ScaffoldMessenger.of(context).showSnackBar(
@@ -292,20 +304,21 @@ class GameHistoryScreen extends ConsumerWidget {
     // Resume game
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Resume Game?'),
-        content: const Text('Do you want to continue this game?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Resume Game?'),
+            content: const Text('Do you want to continue this game?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Resume'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Resume'),
-          ),
-        ],
-      ),
     );
 
     if (confirm != true) return;
@@ -317,8 +330,9 @@ class GameHistoryScreen extends ConsumerWidget {
 
     // Start game from saved position
     final playerColorStr = game['player_color'] as String? ?? 'white';
-    final playerColor = playerColorStr == 'white' ? PlayerColor.white : PlayerColor.black;
-    
+    final playerColor =
+        playerColorStr == 'white' ? PlayerColor.white : PlayerColor.black;
+
     final botElo = game['bot_elo'] as int? ?? 1200;
     final difficultyIndex = AppConstants.difficultyLevels
         .indexWhere((d) => d.elo == botElo)
@@ -333,7 +347,9 @@ class GameHistoryScreen extends ConsumerWidget {
 
     final fenCurrent = game['fen_current'] as String?;
 
-    ref.read(gameProvider.notifier).startNewGame(
+    ref
+        .read(gameProvider.notifier)
+        .startNewGame(
           playerColor: playerColor,
           difficulty: difficulty,
           timeControl: timeControl,
@@ -355,31 +371,34 @@ class GameHistoryScreen extends ConsumerWidget {
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Game?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Game?'),
+            content: const Text('This action cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirm != true) return;
 
-    await ref.read(gameHistoryProvider.notifier).deleteGame(game['id'] as String);
+    await ref
+        .read(gameHistoryProvider.notifier)
+        .deleteGame(game['id'] as String);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Game deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Game deleted')));
     }
   }
 }
@@ -408,9 +427,10 @@ class _GameCard extends StatelessWidget {
     final name = game['name'] as String?;
 
     final timestamp = game['updated_at'] as int? ?? game['created_at'] as int?;
-    final dateTime = timestamp != null
-        ? DateTime.fromMillisecondsSinceEpoch(timestamp)
-        : null;
+    final dateTime =
+        timestamp != null
+            ? DateTime.fromMillisecondsSinceEpoch(timestamp)
+            : null;
     final timeFormat = DateFormat('HH:mm');
 
     // Determine result display
@@ -524,9 +544,9 @@ class _GameCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '$moveCount moves • ${playerColor == 'white' ? '♔' : '♚'} as ${playerColor.capitalize()} • ${dateTime != null ? timeFormat.format(dateTime) : ''}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textHint,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppTheme.textHint),
                     ),
                   ],
                 ),
@@ -539,18 +559,19 @@ class _GameCard extends StatelessWidget {
                     onDelete();
                   }
                 },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete'),
-                      ],
-                    ),
-                  ),
-                ],
+                itemBuilder:
+                    (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete'),
+                          ],
+                        ),
+                      ),
+                    ],
               ),
             ],
           ),

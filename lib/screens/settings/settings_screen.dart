@@ -93,19 +93,16 @@ class SettingsScreen extends ConsumerWidget {
             // About Section
             _buildSectionHeader(context, 'About', Icons.info),
             _buildSettingsCard([
-              _InfoRow(
-                title: 'App Version',
-                value: AppConstants.appVersion,
-              ),
+              _InfoRow(title: 'App Version', value: AppConstants.appVersion),
               const Divider(color: AppTheme.surfaceDark),
-              _InfoRow(
-                title: 'Engine',
-                value: 'Stockfish',
-              ),
+              _InfoRow(title: 'Engine', value: 'Stockfish'),
               const Divider(color: AppTheme.surfaceDark),
               ListTile(
                 title: const Text('Licenses'),
-                trailing: const Icon(Icons.chevron_right, color: AppTheme.textHint),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: AppTheme.textHint,
+                ),
                 onTap: () => _showLicenses(context),
               ),
             ]),
@@ -116,7 +113,11 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Row(
@@ -126,9 +127,9 @@ class SettingsScreen extends ConsumerWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                ),
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
           ),
         ],
       ),
@@ -171,79 +172,94 @@ class _BoardThemeSelector extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Board Theme',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Board Theme', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Row(
-            children: BoardThemeType.values.map((theme) {
-              final boardTheme = BoardTheme.fromType(theme);
-              final isSelected = currentTheme == theme;
+            children:
+                BoardThemeType.values.map((theme) {
+                  final boardTheme = BoardTheme.fromType(theme);
+                  final isSelected = currentTheme == theme;
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => onChanged(theme),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                        width: 2,
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => onChanged(theme),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color:
+                                isSelected
+                                    ? AppTheme.primaryColor
+                                    : Colors.transparent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            // Mini board preview
+                            SizedBox(
+                              height: 48,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            color: boardTheme.lightSquare,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Container(
+                                            color: boardTheme.darkSquare,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            color: boardTheme.darkSquare,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Container(
+                                            color: boardTheme.lightSquare,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              boardTheme.name,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                color:
+                                    isSelected
+                                        ? AppTheme.primaryColor
+                                        : AppTheme.textPrimary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
-                      children: [
-                        // Mini board preview
-                        SizedBox(
-                          height: 48,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                      child: Container(color: boardTheme.lightSquare),
-                                    ),
-                                    Expanded(
-                                      child: Container(color: boardTheme.darkSquare),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                      child: Container(color: boardTheme.darkSquare),
-                                    ),
-                                    Expanded(
-                                      child: Container(color: boardTheme.lightSquare),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          boardTheme.name,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? AppTheme.primaryColor : AppTheme.textPrimary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -256,10 +272,7 @@ class _PieceSetSelector extends StatelessWidget {
   final PieceSetType currentSet;
   final ValueChanged<PieceSetType> onChanged;
 
-  const _PieceSetSelector({
-    required this.currentSet,
-    required this.onChanged,
-  });
+  const _PieceSetSelector({required this.currentSet, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -268,57 +281,65 @@ class _PieceSetSelector extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Piece Set',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Piece Set', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Row(
-            children: PieceSetType.values.map((set) {
-              final pieceSet = PieceSet.fromType(set);
-              final isSelected = currentSet == set;
+            children:
+                PieceSetType.values.map((set) {
+                  final pieceSet = PieceSet.fromType(set);
+                  final isSelected = currentSet == set;
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => onChanged(set),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      color: isSelected
-                          ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                          : Colors.transparent,
-                    ),
-                    child: Column(
-                      children: [
-                        // Piece preview using Unicode
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Text('♔', style: TextStyle(fontSize: 28)),
-                            Text('♚', style: TextStyle(fontSize: 28)),
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => onChanged(set),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color:
+                                isSelected
+                                    ? AppTheme.primaryColor
+                                    : Colors.transparent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          color:
+                              isSelected
+                                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                                  : Colors.transparent,
+                        ),
+                        child: Column(
+                          children: [
+                            // Piece preview using Unicode
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Text('♔', style: TextStyle(fontSize: 28)),
+                                Text('♚', style: TextStyle(fontSize: 28)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              pieceSet.name,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                color:
+                                    isSelected
+                                        ? AppTheme.primaryColor
+                                        : AppTheme.textPrimary,
+                              ),
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          pieceSet.name,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? AppTheme.primaryColor : AppTheme.textPrimary,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -353,41 +374,49 @@ class _AnimationSpeedSelector extends StatelessWidget {
               Text(
                 currentSpeed.label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
-            children: AnimationSpeed.values.map((speed) {
-              final isSelected = currentSpeed == speed;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => onChanged(speed),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppTheme.primaryColor
-                          : AppTheme.surfaceDark,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        speed.label,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppTheme.textPrimary,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            children:
+                AnimationSpeed.values.map((speed) {
+                  final isSelected = currentSpeed == speed;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => onChanged(speed),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color:
+                              isSelected
+                                  ? AppTheme.primaryColor
+                                  : AppTheme.surfaceDark,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            speed.label,
+                            style: TextStyle(
+                              color:
+                                  isSelected
+                                      ? Colors.white
+                                      : AppTheme.textPrimary,
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -413,10 +442,7 @@ class _SwitchSetting extends StatelessWidget {
   Widget build(BuildContext context) {
     return SwitchListTile(
       title: Text(title),
-      subtitle: Text(
-        subtitle,
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
+      subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
       value: value,
       onChanged: onChanged,
       activeColor: AppTheme.primaryColor,
@@ -429,10 +455,7 @@ class _InfoRow extends StatelessWidget {
   final String title;
   final String value;
 
-  const _InfoRow({
-    required this.title,
-    required this.value,
-  });
+  const _InfoRow({required this.title, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -444,9 +467,9 @@ class _InfoRow extends StatelessWidget {
           Text(title),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
           ),
         ],
       ),

@@ -66,9 +66,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: cardDark,
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -108,9 +106,7 @@ class AppTheme {
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          foregroundColor: textPrimary,
-        ),
+        style: IconButton.styleFrom(foregroundColor: textPrimary),
       ),
       textTheme: TextTheme(
         displayLarge: GoogleFonts.poppins(
@@ -180,11 +176,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: GoogleFonts.poppins(
-          color: textHint,
-          fontSize: 14,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
         ),
+        hintStyle: GoogleFonts.poppins(color: textHint, fontSize: 14),
       ),
       sliderTheme: SliderThemeData(
         activeTrackColor: primaryColor,
@@ -200,9 +196,7 @@ class AppTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: surfaceDark,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titleTextStyle: GoogleFonts.poppins(
           fontSize: 20,
           fontWeight: FontWeight.w600,
@@ -211,13 +205,8 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: cardDark,
-        contentTextStyle: GoogleFonts.poppins(
-          color: textPrimary,
-          fontSize: 14,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        contentTextStyle: GoogleFonts.poppins(color: textPrimary, fontSize: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
@@ -229,9 +218,7 @@ class AppTheme {
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: GoogleFonts.poppins(
-          fontSize: 12,
-        ),
+        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 12),
       ),
       dividerTheme: const DividerThemeData(
         color: Color(0xFF333333),

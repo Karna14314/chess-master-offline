@@ -11,7 +11,9 @@ void main() {
 
   final jsonString = file.readAsStringSync();
 
-  print('Starting benchmark for JSON parsing (Size: ${(jsonString.length / 1024).toStringAsFixed(2)} KB)...');
+  print(
+    'Starting benchmark for JSON parsing (Size: ${(jsonString.length / 1024).toStringAsFixed(2)} KB)...',
+  );
 
   final stopwatch = Stopwatch()..start();
 

@@ -50,11 +50,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   void _initializeTimer() {
     final gameState = ref.read(gameProvider);
     final timerNotifier = ref.read(timerProvider.notifier);
-    
+
     timerNotifier.initialize(gameState.timeControl);
     timerNotifier.setTurn(gameState.isWhiteTurn);
-    
-    if (gameState.timeControl.hasTimer && gameState.status == GameStatus.active) {
+
+    if (gameState.timeControl.hasTimer &&
+        gameState.status == GameStatus.active) {
       timerNotifier.start();
     }
   }
@@ -64,9 +65,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     try {
       final gameState = ref.read(gameProvider);
       final timerState = ref.read(timerProvider);
-      
+
       if (gameState.moveHistory.isEmpty) return;
-      
+
       final dbService = ref.read(databaseServiceProvider);
       await dbService.saveGame({
         'id': gameState.id,
@@ -74,12 +75,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         'fen_current': gameState.fen,
         'result': gameState.result?.pgn,
         'result_reason': gameState.resultReason,
-        'player_color': gameState.playerColor == PlayerColor.white ? 'white' : 'black',
+        'player_color':
+            gameState.playerColor == PlayerColor.white ? 'white' : 'black',
         'bot_elo': gameState.difficulty.elo,
         'time_control': gameState.timeControl.name,
         'white_time_remaining': timerState.whiteTime.inMilliseconds,
         'black_time_remaining': timerState.blackTime.inMilliseconds,
-        'created_at': gameState.startedAt?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch,
+        'created_at':
+            gameState.startedAt?.millisecondsSinceEpoch ??
+            DateTime.now().millisecondsSinceEpoch,
         'updated_at': DateTime.now().millisecondsSinceEpoch,
         'move_count': gameState.moveHistory.length,
         'is_completed': gameState.status == GameStatus.finished ? 1 : 0,
@@ -94,31 +98,36 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   String _generatePGN(GameState gameState) {
     final buffer = StringBuffer();
     buffer.writeln('[Event "ChessMaster Offline"]');
-    buffer.writeln('[Date "${DateTime.now().toIso8601String().split('T')[0]}"]');
-    buffer.writeln('[White "${gameState.playerColor == PlayerColor.white ? 'Player' : 'Bot (${gameState.difficulty.elo})'}"]');
-    buffer.writeln('[Black "${gameState.playerColor == PlayerColor.black ? 'Player' : 'Bot (${gameState.difficulty.elo})'}"]');
+    buffer.writeln(
+      '[Date "${DateTime.now().toIso8601String().split('T')[0]}"]',
+    );
+    buffer.writeln(
+      '[White "${gameState.playerColor == PlayerColor.white ? 'Player' : 'Bot (${gameState.difficulty.elo})'}"]',
+    );
+    buffer.writeln(
+      '[Black "${gameState.playerColor == PlayerColor.black ? 'Player' : 'Bot (${gameState.difficulty.elo})'}"]',
+    );
     buffer.writeln('[Result "${gameState.result?.pgn ?? '*'}"]');
     buffer.writeln();
-    
+
     for (int i = 0; i < gameState.moveHistory.length; i++) {
       if (i % 2 == 0) {
         buffer.write('${(i ~/ 2) + 1}. ');
       }
       buffer.write('${gameState.moveHistory[i].san} ');
     }
-    
+
     if (gameState.result != null) {
       buffer.write(gameState.result!.pgn);
     }
-    
+
     return buffer.toString();
   }
-
 
   /// Check if it's bot's turn and trigger bot move
   Future<void> _checkBotMove() async {
     final gameState = ref.read(gameProvider);
-    
+
     if (gameState.status != GameStatus.active) return;
     if (gameState.isPlayerTurn) return;
     if (_isBotThinking) return;
@@ -134,7 +143,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
       if (result != null && result.isValid) {
         final (from, to, promotion) = result.parsedMove;
-        ref.read(gameProvider.notifier).applyBotMove(from, to, promotion: promotion);
+        ref
+            .read(gameProvider.notifier)
+            .applyBotMove(from, to, promotion: promotion);
       }
     } catch (e) {
       print('Error getting bot move: $e');
@@ -162,8 +173,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     }
 
     // Trigger bot move when it's bot's turn
-    if (gameState.status == GameStatus.active && 
-        !gameState.isPlayerTurn && 
+    if (gameState.status == GameStatus.active &&
+        !gameState.isPlayerTurn &&
         !_isBotThinking &&
         !engineState.isThinking) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -172,7 +183,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     }
 
     // Stop timer and show game over dialog when game ends
-    if (gameState.status == GameStatus.finished && gameState.result != null && !_dialogShown) {
+    if (gameState.status == GameStatus.finished &&
+        gameState.result != null &&
+        !_dialogShown) {
       _dialogShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(timerProvider.notifier).stop();
@@ -204,8 +217,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               context,
               isOpponent: true,
               name: 'Bot (${gameState.difficulty.elo})',
-              isActive: !gameState.isPlayerTurn && gameState.status == GameStatus.active,
-              isWhite: gameState.playerColor == PlayerColor.black, // Bot is opposite color
+              isActive:
+                  !gameState.isPlayerTurn &&
+                  gameState.status == GameStatus.active,
+              isWhite:
+                  gameState.playerColor ==
+                  PlayerColor.black, // Bot is opposite color
               isThinking: _isBotThinking,
             ),
 
@@ -219,24 +236,24 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 interactive: gameState.status == GameStatus.active,
                 flipped: gameState.playerColor == PlayerColor.black,
                 onMoveCallback: () {
-                final gameState = ref.read(gameProvider);
-                final settings = ref.read(settingsProvider);
-                final audioService = ref.read(audioServiceProvider);
+                  final gameState = ref.read(gameProvider);
+                  final settings = ref.read(settingsProvider);
+                  final audioService = ref.read(audioServiceProvider);
 
-                audioService.setEnabled(settings.soundEnabled);
+                  audioService.setEnabled(settings.soundEnabled);
 
-                if (gameState.moveHistory.isNotEmpty) {
-                  final lastMove = gameState.moveHistory.last;
-                  audioService.playMoveSound(
-                    isCapture: lastMove.isCapture,
-                    isCheck: lastMove.isCheck,
-                    isCheckmate: lastMove.isCheckmate,
-                    isCastle: lastMove.isCastle,
-                  );
-                }
+                  if (gameState.moveHistory.isNotEmpty) {
+                    final lastMove = gameState.moveHistory.last;
+                    audioService.playMoveSound(
+                      isCapture: lastMove.isCapture,
+                      isCheck: lastMove.isCheck,
+                      isCheckmate: lastMove.isCheckmate,
+                      isCastle: lastMove.isCastle,
+                    );
+                  }
 
-                // Trigger bot move
-                _checkBotMove();
+                  // Trigger bot move
+                  _checkBotMove();
                 },
               ),
             ),
@@ -248,8 +265,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             _buildPlayerBar(
               context,
               isOpponent: false,
-              name: 'You (${gameState.playerColor == PlayerColor.white ? "White" : "Black"})',
-              isActive: gameState.isPlayerTurn && gameState.status == GameStatus.active,
+              name:
+                  'You (${gameState.playerColor == PlayerColor.white ? "White" : "Black"})',
+              isActive:
+                  gameState.isPlayerTurn &&
+                  gameState.status == GameStatus.active,
               isWhite: gameState.playerColor == PlayerColor.white,
               isThinking: false,
             ),
@@ -269,7 +289,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
-                          const Icon(Icons.history, size: 18, color: AppTheme.textSecondary),
+                          const Icon(
+                            Icons.history,
+                            size: 18,
+                            color: AppTheme.textSecondary,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Moves',
@@ -363,9 +387,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             decoration: BoxDecoration(
               color: isActive ? AppTheme.primaryColor : AppTheme.cardDark,
               borderRadius: BorderRadius.circular(8),
-              border: isActive
-                  ? Border.all(color: AppTheme.primaryLight, width: 2)
-                  : null,
+              border:
+                  isActive
+                      ? Border.all(color: AppTheme.primaryLight, width: 2)
+                      : null,
             ),
             child: Icon(
               isOpponent ? Icons.smart_toy : Icons.person,
@@ -381,8 +406,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 Text(
                   name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                      ),
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  ),
                 ),
                 if (isActive && isOpponent)
                   Row(
@@ -401,8 +426,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       Text(
                         isThinking ? 'Thinking...' : 'Your turn',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.primaryLight,
-                            ),
+                          color: AppTheme.primaryLight,
+                        ),
                       ),
                     ],
                   )
@@ -410,23 +435,23 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   Text(
                     'Your turn',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.primaryLight,
-                        ),
+                      color: AppTheme.primaryLight,
+                    ),
                   ),
               ],
             ),
           ),
           // Timer widget
-          ChessTimerWidget(
-            isWhite: isWhite,
-            isActive: isActive,
-          ),
+          ChessTimerWidget(isWhite: isWhite, isActive: isActive),
         ],
       ),
     );
   }
 
-  Widget _buildCapturedPieces(GameState gameState, {required bool forOpponent}) {
+  Widget _buildCapturedPieces(
+    GameState gameState, {
+    required bool forOpponent,
+  }) {
     // Access settings to get current piece set
     final settings = ref.watch(settingsProvider);
     final pieceSet = settings.currentPieceSet;
@@ -502,16 +527,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children: piecesToShow.map((piece) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 2),
-              child: ChessPiece(
-                piece: piece,
-                size: 20,
-                pieceSet: pieceSet,
-              ),
-            );
-          }).toList(),
+          children:
+              piecesToShow.map((piece) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 2),
+                  child: ChessPiece(piece: piece, size: 20, pieceSet: pieceSet),
+                );
+              }).toList(),
         ),
       ),
     );
@@ -529,35 +551,39 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           _ControlButton(
             icon: Icons.lightbulb_outline,
             label: 'Hint',
-            onPressed: gameState.canRequestHint && gameState.isPlayerTurn
-                ? _requestHint
-                : null,
+            onPressed:
+                gameState.canRequestHint && gameState.isPlayerTurn
+                    ? _requestHint
+                    : null,
           ),
           // Undo button
           _ControlButton(
             icon: Icons.undo,
             label: 'Undo',
-            onPressed: gameState.canUndo
-                ? () {
-                    gameNotifier.undoMove();
-                  }
-                : null,
+            onPressed:
+                gameState.canUndo
+                    ? () {
+                      gameNotifier.undoMove();
+                    }
+                    : null,
           ),
           // Draw button
           _ControlButton(
             icon: Icons.handshake_outlined,
             label: 'Draw',
-            onPressed: gameState.status == GameStatus.active
-                ? () => _showDrawConfirmation(context)
-                : null,
+            onPressed:
+                gameState.status == GameStatus.active
+                    ? () => _showDrawConfirmation(context)
+                    : null,
           ),
           // Resign button
           _ControlButton(
             icon: Icons.flag_outlined,
             label: 'Resign',
-            onPressed: gameState.status == GameStatus.active
-                ? () => _showResignConfirmation(context)
-                : null,
+            onPressed:
+                gameState.status == GameStatus.active
+                    ? () => _showResignConfirmation(context)
+                    : null,
           ),
         ],
       ),
@@ -572,77 +598,81 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   void _showExitConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Leave Game?'),
-        content: const Text('Your progress will be saved automatically.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Leave Game?'),
+            content: const Text('Your progress will be saved automatically.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                child: const Text('Leave'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Leave'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showResignConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Resign?'),
-        content: const Text('Are you sure you want to resign this game?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Resign?'),
+            content: const Text('Are you sure you want to resign this game?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.error,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(gameProvider.notifier).resign();
+                },
+                child: const Text('Resign'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.error,
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(gameProvider.notifier).resign();
-            },
-            child: const Text('Resign'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showDrawConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Offer Draw?'),
-        content: const Text('The bot will consider your draw offer.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Offer Draw?'),
+            content: const Text('The bot will consider your draw offer.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(gameProvider.notifier).offerDraw();
+                },
+                child: const Text('Offer Draw'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(gameProvider.notifier).offerDraw();
-            },
-            child: const Text('Offer Draw'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showGameOverDialog(BuildContext context, GameState gameState) {
-    final isWin = (gameState.result == GameResult.whiteWins &&
+    final isWin =
+        (gameState.result == GameResult.whiteWins &&
             gameState.playerColor == PlayerColor.white) ||
         (gameState.result == GameResult.blackWins &&
             gameState.playerColor == PlayerColor.black);
@@ -651,80 +681,84 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              isWin
-                  ? Icons.emoji_events
-                  : isDraw
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  isWin
+                      ? Icons.emoji_events
+                      : isDraw
                       ? Icons.handshake
                       : Icons.sentiment_dissatisfied,
-              color: isWin
-                  ? Colors.amber
-                  : isDraw
-                      ? Colors.blue
-                      : Colors.grey,
-              size: 32,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              isWin
-                  ? 'Victory!'
-                  : isDraw
+                  color:
+                      isWin
+                          ? Colors.amber
+                          : isDraw
+                          ? Colors.blue
+                          : Colors.grey,
+                  size: 32,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  isWin
+                      ? 'Victory!'
+                      : isDraw
                       ? 'Draw'
                       : 'Defeat',
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(gameState.resultReason ?? ''),
-            const SizedBox(height: 16),
-            Text(
-              '${gameState.moveHistory.length} moves played',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Home'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AnalysisScreen(
-                    moves: gameState.moveHistory,
-                  ),
                 ),
-              );
-            },
-            child: const Text('Analyze'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Start new game with same settings
-              ref.read(gameProvider.notifier).startNewGame(
-                    playerColor: gameState.playerColor,
-                    difficulty: gameState.difficulty,
-                    timeControl: gameState.timeControl,
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(gameState.resultReason ?? ''),
+                const SizedBox(height: 16),
+                Text(
+                  '${gameState.moveHistory.length} moves played',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                child: const Text('Home'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              AnalysisScreen(moves: gameState.moveHistory),
+                    ),
                   );
-            },
-            child: const Text('Rematch'),
+                },
+                child: const Text('Analyze'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Start new game with same settings
+                  ref
+                      .read(gameProvider.notifier)
+                      .startNewGame(
+                        playerColor: gameState.playerColor,
+                        difficulty: gameState.difficulty,
+                        timeControl: gameState.timeControl,
+                      );
+                },
+                child: const Text('Rematch'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -768,7 +802,10 @@ class _ControlButton extends StatelessWidget {
                     right: -8,
                     top: -4,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.primaryColor,
                         borderRadius: BorderRadius.circular(8),

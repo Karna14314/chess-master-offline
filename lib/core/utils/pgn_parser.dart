@@ -90,7 +90,9 @@ class PgnParser {
     if (token == '...') return false;
 
     // Move should contain chess notation characters
-    final validChars = RegExp(r'^[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8][=QRBN]?[+#]?$');
+    final validChars = RegExp(
+      r'^[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8][=QRBN]?[+#]?$',
+    );
     final castling = RegExp(r'^O-O(-O)?[+#]?$');
 
     return validChars.hasMatch(token) || castling.hasMatch(token);
@@ -122,7 +124,8 @@ class PgnParser {
     if (eco != null) {
       buffer.writeln('[ECO "$eco"]');
     }
-    if (fen != null && fen != 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
+    if (fen != null &&
+        fen != 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
       buffer.writeln('[FEN "$fen"]');
       buffer.writeln('[SetUp "1"]');
     }
@@ -175,7 +178,10 @@ class PgnParser {
     }
 
     if (game.moves.isEmpty && game.rawMoves.isEmpty) {
-      return ValidationResult(isValid: false, error: 'No valid moves found in PGN');
+      return ValidationResult(
+        isValid: false,
+        error: 'No valid moves found in PGN',
+      );
     }
 
     return ValidationResult(isValid: true, game: game);
@@ -211,7 +217,9 @@ class PgnGame {
   });
 
   /// Check if this is a custom starting position
-  bool get hasCustomStart => fen != null && fen != 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  bool get hasCustomStart =>
+      fen != null &&
+      fen != 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   /// Get a display title for this game
   String get displayTitle {
@@ -231,9 +239,5 @@ class ValidationResult {
   final String? error;
   final PgnGame? game;
 
-  const ValidationResult({
-    required this.isValid,
-    this.error,
-    this.game,
-  });
+  const ValidationResult({required this.isValid, this.error, this.game});
 }

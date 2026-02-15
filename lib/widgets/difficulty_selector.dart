@@ -70,9 +70,13 @@ class DifficultySelector extends StatelessWidget {
                   activeTrackColor: _getDifficultyColor(selectedLevel),
                   inactiveTrackColor: theme.colorScheme.surfaceContainerHighest,
                   thumbColor: _getDifficultyColor(selectedLevel),
-                  overlayColor: _getDifficultyColor(selectedLevel).withOpacity(0.2),
+                  overlayColor: _getDifficultyColor(
+                    selectedLevel,
+                  ).withOpacity(0.2),
                   trackHeight: 8,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 12,
+                  ),
                 ),
                 child: Slider(
                   value: selectedLevel.toDouble(),
@@ -107,26 +111,30 @@ class DifficultySelector extends StatelessWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: AppConstants.difficultyLevels.map((difficulty) {
-              final isSelected = difficulty.level == selectedLevel;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _DifficultyChip(
-                  difficulty: difficulty,
-                  isSelected: isSelected,
-                  onTap: () => onChanged(difficulty),
-                ),
-              );
-            }).toList(),
+            children:
+                AppConstants.difficultyLevels.map((difficulty) {
+                  final isSelected = difficulty.level == selectedLevel;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _DifficultyChip(
+                      difficulty: difficulty,
+                      isSelected: isSelected,
+                      onTap: () => onChanged(difficulty),
+                    ),
+                  );
+                }).toList(),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDifficultyDetails(BuildContext context, DifficultyLevel difficulty) {
+  Widget _buildDifficultyDetails(
+    BuildContext context,
+    DifficultyLevel difficulty,
+  ) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -169,17 +177,18 @@ class DifficultySelector extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value, IconData icon) {
+  Widget _buildStatItem(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     final theme = Theme.of(context);
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: theme.colorScheme.primary,
-        ),
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
         const SizedBox(height: 4),
         Text(
           value,
@@ -236,16 +245,18 @@ class _DifficultyChip extends StatelessWidget {
               Text(
                 'Lv ${difficulty.level}',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                  color:
+                      isSelected ? Colors.white : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 '${difficulty.elo}',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: isSelected 
-                      ? Colors.white.withOpacity(0.8) 
-                      : theme.colorScheme.onSurface.withOpacity(0.6),
+                  color:
+                      isSelected
+                          ? Colors.white.withOpacity(0.8)
+                          : theme.colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ],
@@ -297,7 +308,9 @@ class DifficultyBadge extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            compact ? 'Lv${difficulty.level}' : '${difficulty.name} (${difficulty.elo})',
+            compact
+                ? 'Lv${difficulty.level}'
+                : '${difficulty.name} (${difficulty.elo})',
             style: theme.textTheme.bodySmall?.copyWith(
               color: color,
               fontWeight: FontWeight.bold,

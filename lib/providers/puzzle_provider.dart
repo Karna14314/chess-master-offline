@@ -8,7 +8,9 @@ import 'package:chess_master/models/puzzle_model.dart';
 import 'package:chess_master/core/services/database_service.dart';
 
 /// Provider for puzzle state
-final puzzleProvider = StateNotifierProvider<PuzzleNotifier, PuzzleGameState>((ref) {
+final puzzleProvider = StateNotifierProvider<PuzzleNotifier, PuzzleGameState>((
+  ref,
+) {
   return PuzzleNotifier(ref);
 });
 
@@ -16,7 +18,7 @@ final puzzleProvider = StateNotifierProvider<PuzzleNotifier, PuzzleGameState>((r
 final puzzleStatsProvider = FutureProvider<PuzzleStats>((ref) async {
   final db = ref.read(databaseServiceProvider);
   final stats = await db.getStatistics();
-  
+
   if (stats == null) {
     return PuzzleStats(
       currentRating: 1200,
@@ -24,7 +26,7 @@ final puzzleStatsProvider = FutureProvider<PuzzleStats>((ref) async {
       puzzlesAttempted: 0,
     );
   }
-  
+
   return PuzzleStats(
     currentRating: stats['current_puzzle_rating'] as int? ?? 1200,
     puzzlesSolved: stats['puzzles_solved'] as int? ?? 0,
@@ -43,9 +45,9 @@ class PuzzleGameState {
   final String? lastMoveFrom;
   final String? lastMoveTo;
   final bool showingHint;
-  final String? hintFromSquare;  // Full hint: from square
-  final String? hintToSquare;    // Full hint: to square
-  final bool showingSolution;    // Show complete solution
+  final String? hintFromSquare; // Full hint: from square
+  final String? hintToSquare; // Full hint: to square
+  final bool showingSolution; // Show complete solution
   final int hintsUsed;
   final int currentRating;
   final int streak;
@@ -105,12 +107,14 @@ class PuzzleGameState {
       currentPuzzle: currentPuzzle ?? this.currentPuzzle,
       board: board ?? this.board,
       currentMoveIndex: currentMoveIndex ?? this.currentMoveIndex,
-      selectedSquare: clearSelection ? null : (selectedSquare ?? this.selectedSquare),
+      selectedSquare:
+          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
       showingHint: clearHint ? false : (showingHint ?? this.showingHint),
-      hintFromSquare: clearHint ? null : (hintFromSquare ?? this.hintFromSquare),
+      hintFromSquare:
+          clearHint ? null : (hintFromSquare ?? this.hintFromSquare),
       hintToSquare: clearHint ? null : (hintToSquare ?? this.hintToSquare),
       showingSolution: showingSolution ?? this.showingSolution,
       hintsUsed: hintsUsed ?? this.hintsUsed,
@@ -134,7 +138,7 @@ class PuzzleGameState {
     if (board == null) return null;
     final piece = board!.get(square);
     if (piece == null) return null;
-    
+
     final colorPrefix = piece.color == chess.Color.WHITE ? 'w' : 'b';
     final pieceChar = piece.type.name.toUpperCase();
     return '$colorPrefix$pieceChar';
@@ -167,18 +171,18 @@ class PuzzleStats {
 
 /// Puzzle mode enum
 enum PuzzleFilterMode {
-  adaptive,   // Based on current rating
-  random,     // Random puzzles
-  eloRange,   // Specific ELO range
-  theme,      // By theme
-  daily,      // Daily puzzle
+  adaptive, // Based on current rating
+  random, // Random puzzles
+  eloRange, // Specific ELO range
+  theme, // By theme
+  daily, // Daily puzzle
 }
 
 /// Puzzle notifier managing puzzle logic
 class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   final Ref _ref;
   final Random _random = Random();
-  
+
   // Puzzle mode configuration
   PuzzleFilterMode _mode = PuzzleFilterMode.adaptive;
   int _minRating = 400;
@@ -203,16 +207,13 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   /// Initialize and load puzzles
   Future<void> initialize() async {
     state = state.copyWith(isLoading: true);
-    
+
     try {
       await _checkAndLoadPuzzles();
       final stats = await _ref.read(databaseServiceProvider).getStatistics();
       final rating = stats?['current_puzzle_rating'] as int? ?? 1200;
-      
-      state = state.copyWith(
-        currentRating: rating,
-        isLoading: false,
-      );
+
+      state = state.copyWith(currentRating: rating, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Failed to load puzzles: $e',
@@ -228,7 +229,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
     if (count == 0) {
       try {
-        final String jsonString = await rootBundle.loadString('assets/puzzles/puzzles.json');
+        final String jsonString = await rootBundle.loadString(
+          'assets/puzzles/puzzles.json',
+        );
         // Parse in isolate
         final puzzles = await compute(_parsePuzzles, jsonString);
 
@@ -238,7 +241,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         // Insert in batches
         const batchSize = 500;
         for (var i = 0; i < puzzleMaps.length; i += batchSize) {
-          final end = (i + batchSize < puzzleMaps.length) ? i + batchSize : puzzleMaps.length;
+          final end =
+              (i + batchSize < puzzleMaps.length)
+                  ? i + batchSize
+                  : puzzleMaps.length;
           await db.insertPuzzles(puzzleMaps.sublist(i, end));
         }
       } catch (e) {
@@ -250,10 +256,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   /// Start a new puzzle session
   Future<void> startNewPuzzle({int? targetRating}) async {
     final rating = targetRating ?? state.currentRating;
-    
+
     // Find a puzzle from DB
     final puzzle = await _fetchPuzzle(rating);
-    
+
     if (puzzle == null) {
       state = state.copyWith(
         errorMessage: 'No suitable puzzle found. Try changing filters.',
@@ -272,17 +278,17 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     int? minRating;
     int? maxRating;
     String? theme;
-    
+
     switch (_mode) {
       case PuzzleFilterMode.random:
         // No filters
         break;
-        
+
       case PuzzleFilterMode.eloRange:
         minRating = _minRating;
         maxRating = _maxRating;
         break;
-        
+
       case PuzzleFilterMode.theme:
         theme = _themeFilter;
         break;
@@ -306,14 +312,14 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
           offset: offset,
         );
         return (results.isNotEmpty) ? Puzzle.fromJson(results.first) : null;
-        
+
       case PuzzleFilterMode.adaptive:
       default:
         minRating = targetRating - 200;
         maxRating = targetRating + 200;
         break;
     }
-    
+
     final results = await db.getPuzzles(
       minRating: minRating,
       maxRating: maxRating,
@@ -334,14 +340,14 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         return Puzzle.fromJson(widenedResults.first);
       }
     }
-    
+
     return results.isNotEmpty ? Puzzle.fromJson(results.first) : null;
   }
 
   /// Load a specific puzzle
   Future<void> _loadPuzzle(Puzzle puzzle) async {
     final board = chess.Chess.fromFEN(puzzle.fen);
-    
+
     state = state.copyWith(
       currentPuzzle: puzzle,
       board: board,
@@ -373,11 +379,8 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     if (setupMove == null) return;
 
     _applyUciMove(setupMove);
-    
-    state = state.copyWith(
-      state: PuzzleState.playing,
-      isPlayerTurn: true,
-    );
+
+    state = state.copyWith(state: PuzzleState.playing, isPlayerTurn: true);
   }
 
   /// Apply a UCI format move
@@ -396,11 +399,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
     // Create new board with same state
     final newBoard = chess.Chess.fromFEN(state.board!.fen);
-    state = state.copyWith(
-      board: newBoard,
-      lastMoveFrom: from,
-      lastMoveTo: to,
-    );
+    state = state.copyWith(board: newBoard, lastMoveFrom: from, lastMoveTo: to);
     return true;
   }
 
@@ -423,11 +422,8 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       // Get legal moves for this piece
       final moves = board.moves({'square': square, 'verbose': true});
       final legalSquares = moves.map((m) => m['to'] as String).toList();
-      
-      state = state.copyWith(
-        selectedSquare: square,
-        legalMoves: legalSquares,
-      );
+
+      state = state.copyWith(selectedSquare: square, legalMoves: legalSquares);
     } else {
       state = state.copyWith(clearSelection: true);
     }
@@ -441,10 +437,12 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     // Check if this is the expected move
     final uciMove = '$from$to${promotion ?? ''}';
     final expectedMove = puzzle.getExpectedMove(state.currentMoveIndex);
-    
+
     if (expectedMove == null) return;
 
-    final isCorrect = expectedMove.toLowerCase().startsWith(uciMove.toLowerCase());
+    final isCorrect = expectedMove.toLowerCase().startsWith(
+      uciMove.toLowerCase(),
+    );
 
     if (!isCorrect) {
       // Wrong move
@@ -453,7 +451,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         errorMessage: 'Not the best move. Try again!',
         clearSelection: true,
       );
-      
+
       // Reset to try again after delay
       Future.delayed(const Duration(seconds: 1), () {
         if (state.state == PuzzleState.incorrect) {
@@ -468,17 +466,18 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     }
 
     // Check for promotion
-    final expectedPromotion = expectedMove.length > 4 ? expectedMove.substring(4) : null;
+    final expectedPromotion =
+        expectedMove.length > 4 ? expectedMove.substring(4) : null;
     final finalMove = '$from$to${expectedPromotion ?? promotion ?? ''}';
 
     // Apply the correct move
     if (!_applyUciMove(finalMove)) return;
 
     final newMoveIndex = state.currentMoveIndex + 1;
-    
+
     // Check if puzzle is completed
     final nextExpectedMove = puzzle.getExpectedMove(newMoveIndex);
-    
+
     if (nextExpectedMove == null) {
       // Puzzle completed!
       _onPuzzleCompleted(true);
@@ -502,7 +501,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     if (!_applyUciMove(uciMove)) return;
 
     final newMoveIndex = state.currentMoveIndex + 1;
-    
+
     // Check if there are more moves for player
     if (state.currentPuzzle?.getExpectedMove(newMoveIndex) == null) {
       // Puzzle completed!
@@ -510,10 +509,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       return;
     }
 
-    state = state.copyWith(
-      currentMoveIndex: newMoveIndex,
-      isPlayerTurn: true,
-    );
+    state = state.copyWith(currentMoveIndex: newMoveIndex, isPlayerTurn: true);
   }
 
   /// Handle puzzle completion
@@ -525,16 +521,19 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     int ratingChange = 0;
     final currentRating = state.currentRating;
     final puzzleRating = puzzle.rating;
-    
+
     if (solved) {
       // K-factor style rating change
-      final expectedScore = 1 / (1 + pow(10, (puzzleRating - currentRating) / 400));
+      final expectedScore =
+          1 / (1 + pow(10, (puzzleRating - currentRating) / 400));
       ratingChange = (32 * (1 - expectedScore)).round();
       if (state.hintsUsed > 0) {
-        ratingChange = (ratingChange * 0.5).round(); // Reduce gain if hints used
+        ratingChange =
+            (ratingChange * 0.5).round(); // Reduce gain if hints used
       }
     } else {
-      final expectedScore = 1 / (1 + pow(10, (puzzleRating - currentRating) / 400));
+      final expectedScore =
+          1 / (1 + pow(10, (puzzleRating - currentRating) / 400));
       ratingChange = -(32 * expectedScore).round();
     }
 
@@ -552,15 +551,18 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     final db = _ref.read(databaseServiceProvider);
     await db.updateStatistics({
       'current_puzzle_rating': newRating,
-      'puzzles_attempted': (await db.getStatistics())?['puzzles_attempted'] ?? 0 + 1,
-      if (solved) 'puzzles_solved': (await db.getStatistics())?['puzzles_solved'] ?? 0 + 1,
+      'puzzles_attempted':
+          (await db.getStatistics())?['puzzles_attempted'] ?? 0 + 1,
+      if (solved)
+        'puzzles_solved':
+            (await db.getStatistics())?['puzzles_solved'] ?? 0 + 1,
     });
   }
 
   /// Show hint for current position - shows full move with arrow
   void showHint() {
     if (state.state != PuzzleState.playing || !state.isPlayerTurn) return;
-    
+
     final puzzle = state.currentPuzzle;
     if (puzzle == null) return;
 
@@ -569,7 +571,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
     final fromSquare = expectedMove.substring(0, 2);
     final toSquare = expectedMove.substring(2, 4);
-    
+
     state = state.copyWith(
       showingHint: true,
       hintFromSquare: fromSquare,
@@ -588,7 +590,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   /// Show complete solution for the puzzle
   void showSolution() {
     if (state.currentPuzzle == null) return;
-    
+
     state = state.copyWith(
       showingSolution: true,
       hintsUsed: state.hintsUsed + 1, // Count as hint usage
@@ -604,7 +606,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   List<String> getSolutionMoves() {
     final puzzle = state.currentPuzzle;
     if (puzzle == null) return [];
-    
+
     return puzzle.moves;
   }
 
@@ -635,13 +637,13 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   /// Check if a move needs promotion dialog
   bool needsPromotion(String from, String to) {
     if (state.board == null) return false;
-    
+
     final piece = state.board!.get(from);
     if (piece == null || piece.type != chess.PieceType.PAWN) return false;
-    
+
     final toRank = int.parse(to[1]);
     final isWhite = piece.color == chess.Color.WHITE;
-    
+
     return (isWhite && toRank == 8) || (!isWhite && toRank == 1);
   }
 
@@ -649,10 +651,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   List<Map<String, String>> getAllLegalMoves() {
     if (state.board == null) return [];
     final moves = state.board!.moves({'verbose': true});
-    return moves.map((m) => {
-      'from': m['from'] as String,
-      'to': m['to'] as String,
-    }).toList().cast<Map<String, String>>();
+    return moves
+        .map((m) => {'from': m['from'] as String, 'to': m['to'] as String})
+        .toList()
+        .cast<Map<String, String>>();
   }
 
   /// Check if square is a legal move target

@@ -9,16 +9,76 @@ class AppConstants {
 
   // Difficulty Levels (ELO and Engine Depth)
   static const List<DifficultyLevel> difficultyLevels = [
-    DifficultyLevel(level: 1, elo: 800, depth: 1, thinkTimeMs: 500, name: 'Beginner'),
-    DifficultyLevel(level: 2, elo: 1000, depth: 3, thinkTimeMs: 800, name: 'Novice'),
-    DifficultyLevel(level: 3, elo: 1200, depth: 5, thinkTimeMs: 1000, name: 'Casual'),
-    DifficultyLevel(level: 4, elo: 1400, depth: 8, thinkTimeMs: 1200, name: 'Intermediate'),
-    DifficultyLevel(level: 5, elo: 1600, depth: 10, thinkTimeMs: 1500, name: 'Club Player'),
-    DifficultyLevel(level: 6, elo: 1800, depth: 12, thinkTimeMs: 1500, name: 'Advanced'),
-    DifficultyLevel(level: 7, elo: 2000, depth: 15, thinkTimeMs: 1800, name: 'Expert'),
-    DifficultyLevel(level: 8, elo: 2200, depth: 18, thinkTimeMs: 2000, name: 'Master'),
-    DifficultyLevel(level: 9, elo: 2400, depth: 20, thinkTimeMs: 2000, name: 'Grandmaster'),
-    DifficultyLevel(level: 10, elo: 2800, depth: 22, thinkTimeMs: 2500, name: 'Maximum'),
+    DifficultyLevel(
+      level: 1,
+      elo: 800,
+      depth: 1,
+      thinkTimeMs: 500,
+      name: 'Beginner',
+    ),
+    DifficultyLevel(
+      level: 2,
+      elo: 1000,
+      depth: 3,
+      thinkTimeMs: 800,
+      name: 'Novice',
+    ),
+    DifficultyLevel(
+      level: 3,
+      elo: 1200,
+      depth: 5,
+      thinkTimeMs: 1000,
+      name: 'Casual',
+    ),
+    DifficultyLevel(
+      level: 4,
+      elo: 1400,
+      depth: 8,
+      thinkTimeMs: 1200,
+      name: 'Intermediate',
+    ),
+    DifficultyLevel(
+      level: 5,
+      elo: 1600,
+      depth: 10,
+      thinkTimeMs: 1500,
+      name: 'Club Player',
+    ),
+    DifficultyLevel(
+      level: 6,
+      elo: 1800,
+      depth: 12,
+      thinkTimeMs: 1500,
+      name: 'Advanced',
+    ),
+    DifficultyLevel(
+      level: 7,
+      elo: 2000,
+      depth: 15,
+      thinkTimeMs: 1800,
+      name: 'Expert',
+    ),
+    DifficultyLevel(
+      level: 8,
+      elo: 2200,
+      depth: 18,
+      thinkTimeMs: 2000,
+      name: 'Master',
+    ),
+    DifficultyLevel(
+      level: 9,
+      elo: 2400,
+      depth: 20,
+      thinkTimeMs: 2000,
+      name: 'Grandmaster',
+    ),
+    DifficultyLevel(
+      level: 10,
+      elo: 2800,
+      depth: 22,
+      thinkTimeMs: 2500,
+      name: 'Maximum',
+    ),
   ];
 
   // Timer Presets
@@ -115,9 +175,9 @@ enum PlayerColor {
 
 /// Game mode type
 enum GameMode {
-  bot,             // Play against AI
+  bot, // Play against AI
   localMultiplayer, // 2 players on same device
-  analysis,        // Analysis mode
+  analysis, // Analysis mode
 }
 
 /// Game result types

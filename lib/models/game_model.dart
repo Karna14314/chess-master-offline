@@ -38,46 +38,42 @@ class ChessMove {
       isCapture: move.captured != null,
       isCheck: game.in_check,
       isCheckmate: game.in_checkmate,
-      isCastle: move.flags & chess.Chess.BITS_KSIDE_CASTLE != 0 ||
+      isCastle:
+          move.flags & chess.Chess.BITS_KSIDE_CASTLE != 0 ||
           move.flags & chess.Chess.BITS_QSIDE_CASTLE != 0,
       fen: game.fen,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'from': from,
-        'to': to,
-        'san': san,
-        'promotion': promotion,
-        'capturedPiece': capturedPiece,
-        'isCapture': isCapture,
-        'isCheck': isCheck,
-        'isCheckmate': isCheckmate,
-        'isCastle': isCastle,
-        'fen': fen,
-      };
+    'from': from,
+    'to': to,
+    'san': san,
+    'promotion': promotion,
+    'capturedPiece': capturedPiece,
+    'isCapture': isCapture,
+    'isCheck': isCheck,
+    'isCheckmate': isCheckmate,
+    'isCastle': isCastle,
+    'fen': fen,
+  };
 
   factory ChessMove.fromJson(Map<String, dynamic> json) => ChessMove(
-        from: json['from'],
-        to: json['to'],
-        san: json['san'],
-        promotion: json['promotion'],
-        capturedPiece: json['capturedPiece'],
-        isCapture: json['isCapture'],
-        isCheck: json['isCheck'],
-        isCheckmate: json['isCheckmate'],
-        isCastle: json['isCastle'],
-        fen: json['fen'],
-      );
+    from: json['from'],
+    to: json['to'],
+    san: json['san'],
+    promotion: json['promotion'],
+    capturedPiece: json['capturedPiece'],
+    isCapture: json['isCapture'],
+    isCheck: json['isCheck'],
+    isCheckmate: json['isCheckmate'],
+    isCastle: json['isCastle'],
+    fen: json['fen'],
+  );
 }
 
 /// Game state enumeration
-enum GameStatus {
-  setup,
-  active,
-  paused,
-  finished,
-}
+enum GameStatus { setup, active, paused, finished }
 
 /// Represents the current game state
 class GameState {
@@ -127,8 +123,8 @@ class GameState {
     this.openingName,
     this.hint,
     this.bestMove,
-  })  : difficulty = difficulty ?? AppConstants.difficultyLevels[4],
-        timeControl = timeControl ?? AppConstants.timeControls[0];
+  }) : difficulty = difficulty ?? AppConstants.difficultyLevels[4],
+       timeControl = timeControl ?? AppConstants.timeControls[0];
 
   /// Create initial game state
   factory GameState.initial() {
@@ -157,7 +153,8 @@ class GameState {
 
   /// Is it the player's turn (in local multiplayer, always true since both players use same device)
   bool get isPlayerTurn {
-    if (isLocalMultiplayer) return true; // Both players take turns on same device
+    if (isLocalMultiplayer)
+      return true; // Both players take turns on same device
     if (playerColor == PlayerColor.white) {
       return isWhiteTurn;
     } else if (playerColor == PlayerColor.black) {
@@ -191,7 +188,8 @@ class GameState {
   bool get canRequestHint => !isLocalMultiplayer;
 
   /// Can undo move
-  bool get canUndo => moveHistory.isNotEmpty && status == GameStatus.active && allowTakeback;
+  bool get canUndo =>
+      moveHistory.isNotEmpty && status == GameStatus.active && allowTakeback;
 
   /// Copy with new values
   GameState copyWith({
@@ -231,7 +229,8 @@ class GameState {
       gameMode: gameMode ?? this.gameMode,
       allowTakeback: allowTakeback ?? this.allowTakeback,
       hintsUsed: hintsUsed ?? this.hintsUsed,
-      selectedSquare: clearSelection ? null : (selectedSquare ?? this.selectedSquare),
+      selectedSquare:
+          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
@@ -280,34 +279,34 @@ class SavedGame {
   });
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'pgn': pgn,
-        'fen_start': fenStart,
-        'result': result,
-        'player_color': playerColor,
-        'bot_elo': botElo,
-        'time_control': timeControl,
-        'created_at': createdAt.millisecondsSinceEpoch,
-        'duration_seconds': durationSeconds,
-        'move_count': moveCount,
-        'is_saved': isSaved ? 1 : 0,
-        'opening_name': openingName,
-      };
+    'id': id,
+    'name': name,
+    'pgn': pgn,
+    'fen_start': fenStart,
+    'result': result,
+    'player_color': playerColor,
+    'bot_elo': botElo,
+    'time_control': timeControl,
+    'created_at': createdAt.millisecondsSinceEpoch,
+    'duration_seconds': durationSeconds,
+    'move_count': moveCount,
+    'is_saved': isSaved ? 1 : 0,
+    'opening_name': openingName,
+  };
 
   factory SavedGame.fromMap(Map<String, dynamic> map) => SavedGame(
-        id: map['id'],
-        name: map['name'],
-        pgn: map['pgn'],
-        fenStart: map['fen_start'],
-        result: map['result'],
-        playerColor: map['player_color'],
-        botElo: map['bot_elo'],
-        timeControl: map['time_control'],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
-        durationSeconds: map['duration_seconds'],
-        moveCount: map['move_count'],
-        isSaved: map['is_saved'] == 1,
-        openingName: map['opening_name'],
-      );
+    id: map['id'],
+    name: map['name'],
+    pgn: map['pgn'],
+    fenStart: map['fen_start'],
+    result: map['result'],
+    playerColor: map['player_color'],
+    botElo: map['bot_elo'],
+    timeControl: map['time_control'],
+    createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
+    durationSeconds: map['duration_seconds'],
+    moveCount: map['move_count'],
+    isSaved: map['is_saved'] == 1,
+    openingName: map['opening_name'],
+  );
 }

@@ -4,7 +4,9 @@ import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 
 /// Provider for user settings
-final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {
+final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
+  ref,
+) {
   return SettingsNotifier();
 });
 
@@ -53,8 +55,10 @@ class AppSettings {
 
   BoardTheme get currentBoardTheme => BoardTheme.fromType(boardTheme);
   PieceSet get currentPieceSet => PieceSet.fromType(pieceSet);
-  DifficultyLevel get lastDifficulty => AppConstants.difficultyLevels[lastDifficultyLevel - 1];
-  TimeControl get lastTimeControl => AppConstants.timeControls[lastTimeControlIndex];
+  DifficultyLevel get lastDifficulty =>
+      AppConstants.difficultyLevels[lastDifficultyLevel - 1];
+  TimeControl get lastTimeControl =>
+      AppConstants.timeControls[lastTimeControlIndex];
 
   AppSettings copyWith({
     BoardThemeType? boardTheme,
@@ -102,7 +106,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       showCoordinates: prefs.getBool('showCoordinates') ?? true,
       showLegalMoves: prefs.getBool('showLegalMoves') ?? true,
       showLastMove: prefs.getBool('showLastMove') ?? true,
-      animationSpeed: AnimationSpeed.values[prefs.getInt('animationSpeed') ?? 2],
+      animationSpeed:
+          AnimationSpeed.values[prefs.getInt('animationSpeed') ?? 2],
       soundEnabled: prefs.getBool('soundEnabled') ?? true,
       vibrationEnabled: prefs.getBool('vibrationEnabled') ?? true,
       boardFlipped: prefs.getBool('boardFlipped') ?? false,

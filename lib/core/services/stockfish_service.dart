@@ -122,42 +122,67 @@ class StockfishService {
       await initialize();
     }
 
+    // Ensure engine settings are correct for play
+    _sendCommand('setoption name UCI_LimitStrength value true');
+
     final completer = Completer<BestMoveResult>();
     String? bestMove;
     String? ponderMove;
     int? evaluation;
     int? mateIn;
 
-    late StreamSubscription subscription;
-    subscription = _outputController.stream.listen((line) {
-      // Parse evaluation from info line
-      if (line.startsWith('info') && line.contains('score')) {
-        final info = _parseInfoLine(line);
-        if (info.cp != null) evaluation = info.cp;
-        if (info.mate != null) mateIn = info.mate;
-      }
+    // Track best move found so far in case of timeout
+    String bestMoveSoFar = '';
 
-      // Parse best move
-      if (line.startsWith('bestmove')) {
-        final parts = line.split(' ');
-        if (parts.length >= 2) {
-          bestMove = parts[1];
-        }
-        if (parts.length >= 4 && parts[2] == 'ponder') {
-          ponderMove = parts[3];
+    StreamSubscription<String>? subscription;
+
+    void cleanup() {
+      subscription?.cancel();
+      subscription = null;
+    }
+
+    subscription = _outputController.stream.listen(
+      (line) {
+        // Parse evaluation from info line
+        if (line.startsWith('info') && line.contains('score')) {
+          final info = parseInfoLine(line);
+          if (info.cp != null) evaluation = info.cp;
+          if (info.mate != null) mateIn = info.mate;
+
+          // Capture best move from pv if available as fallback
+          if (info.moves != null && info.moves!.isNotEmpty) {
+            bestMoveSoFar = info.moves!.first;
+          }
         }
 
-        subscription.cancel();
-        completer.complete(
-          BestMoveResult(
-            bestMove: bestMove ?? '',
-            ponderMove: ponderMove,
-            evaluation: evaluation,
-            mateIn: mateIn,
-          ),
-        );
-      }
-    });
+        // Parse best move
+        if (line.startsWith('bestmove')) {
+          final parts = line.split(' '); // Keep split here as it's short
+          if (parts.length >= 2) {
+            bestMove = parts[1];
+          }
+          if (parts.length >= 4 && parts[2] == 'ponder') {
+            ponderMove = parts[3];
+          }
+
+          cleanup();
+          if (!completer.isCompleted) {
+            completer.complete(
+              BestMoveResult(
+                bestMove: bestMove ?? bestMoveSoFar,
+                ponderMove: ponderMove,
+                evaluation: evaluation,
+                mateIn: mateIn,
+              ),
+            );
+          }
+        }
+      },
+      onError: (e) {
+        cleanup();
+        if (!completer.isCompleted) completer.completeError(e);
+      },
+    );
 
     // Set position
     _sendCommand('position fen $fen');
@@ -173,9 +198,9 @@ class StockfishService {
     return completer.future.timeout(
       const Duration(seconds: 30),
       onTimeout: () {
-        subscription.cancel();
+        cleanup();
         _sendCommand('stop');
-        return BestMoveResult(bestMove: '', evaluation: 0);
+        return BestMoveResult(bestMove: bestMoveSoFar, evaluation: evaluation);
       },
     );
   }
@@ -200,74 +225,89 @@ class StockfishService {
     int? mainEvaluation;
     int? mateIn;
 
+    StreamSubscription<String>? subscription;
+
+    void cleanup() {
+      subscription?.cancel();
+      subscription = null;
+    }
+
     // Set MultiPV for multiple lines
     _sendCommand('setoption name MultiPV value $multiPv');
 
-    late StreamSubscription subscription;
-    subscription = _outputController.stream.listen((line) {
-      if (line.startsWith('info') && line.contains(' pv ')) {
-        final info = _parseInfoLine(line);
+    subscription = _outputController.stream.listen(
+      (line) {
+        if (line.startsWith('info') && line.contains(' pv ')) {
+          final info = parseInfoLine(line);
 
-        if (info.moves != null) {
-          final pvNumber = info.multipv ?? 1;
-          final currentDepth = info.depth ?? 0;
-          final eval = info.cp;
-          final mate = info.mate;
+          if (info.moves != null) {
+            final pvNumber = info.multipv ?? 1;
+            final currentDepth = info.depth ?? 0;
+            final eval = info.cp;
+            final mate = info.mate;
 
-          // Store the main line evaluation
-          if (pvNumber == 1) {
-            mainEvaluation = eval;
-            mateIn = mate;
-          }
+            // Store the main line evaluation
+            if (pvNumber == 1) {
+              mainEvaluation = eval;
+              mateIn = mate;
+            }
 
-          final engineLine = EngineLine(
-            moves: info.moves!,
-            evaluation: eval,
-            mateIn: mate,
-            depth: currentDepth,
-          );
-
-          // Update lines map
-          currentLines[pvNumber] = engineLine;
-
-          // Update final list (for legacy compatibility)
-          if (lines.length >= pvNumber) {
-            lines[pvNumber - 1] = engineLine;
-          } else {
-            lines.add(engineLine);
-          }
-
-          // Emit progressive update
-          _analysisStreamController.add(
-            AnalysisResult(
-              evaluation: mainEvaluation ?? 0,
-              mateIn: mateIn,
-              lines: currentLines.values.toList()..sort((a, b) {
-                // Heuristic sort based on evaluation if available, otherwise keep order
-                // But typically multipv comes in order 1..N
-                return 0;
-              }),
+            final engineLine = EngineLine(
+              moves: info.moves!,
+              evaluation: eval,
+              mateIn: mate,
               depth: currentDepth,
-            )
-          );
+            );
+
+            // Update lines map
+            currentLines[pvNumber] = engineLine;
+
+            // Update final list (for legacy compatibility)
+            if (lines.length >= pvNumber) {
+              lines[pvNumber - 1] = engineLine;
+            } else {
+              lines.add(engineLine);
+            }
+
+            // Emit progressive update
+            _analysisStreamController.add(
+              AnalysisResult(
+                evaluation: mainEvaluation ?? 0,
+                mateIn: mateIn,
+                lines:
+                    currentLines.values.toList()..sort((a, b) {
+                      // Heuristic sort based on evaluation if available, otherwise keep order
+                      // But typically multipv comes in order 1..N
+                      return 0;
+                    }),
+                depth: currentDepth,
+              ),
+            );
+          }
         }
-      }
 
-      if (line.startsWith('bestmove')) {
-        subscription.cancel();
-        // Reset MultiPV to 1
-        _sendCommand('setoption name MultiPV value 1');
+        if (line.startsWith('bestmove')) {
+          cleanup();
+          // Reset MultiPV to 1
+          _sendCommand('setoption name MultiPV value 1');
 
-        completer.complete(
-          AnalysisResult(
-            evaluation: mainEvaluation ?? 0,
-            mateIn: mateIn,
-            lines: lines,
-            depth: depth,
-          ),
-        );
-      }
-    });
+          if (!completer.isCompleted) {
+            completer.complete(
+              AnalysisResult(
+                evaluation: mainEvaluation ?? 0,
+                mateIn: mateIn,
+                lines: lines,
+                depth: depth,
+              ),
+            );
+          }
+        }
+      },
+      onError: (e) {
+        cleanup();
+        if (!completer.isCompleted) completer.completeError(e);
+      },
+    );
 
     // Set position and analyze
     _sendCommand('position fen $fen');
@@ -276,16 +316,22 @@ class StockfishService {
     return completer.future.timeout(
       const Duration(seconds: 60),
       onTimeout: () {
-        subscription.cancel();
+        cleanup();
         _sendCommand('stop');
         _sendCommand('setoption name MultiPV value 1');
-        return AnalysisResult(evaluation: mainEvaluation ?? 0, lines: lines, depth: 0);
+        return AnalysisResult(
+          evaluation: mainEvaluation ?? 0,
+          lines: lines,
+          depth: 0,
+        );
       },
     );
   }
 
   /// Helper to parse info line efficiently using indexOf
-  ({int? depth, int? multipv, int? cp, int? mate, List<String>? moves}) _parseInfoLine(String line) {
+  @visibleForTesting
+  ({int? depth, int? multipv, int? cp, int? mate, List<String>? moves})
+  parseInfoLine(String line) {
     int? depth;
     int? multipv;
     int? cp;
@@ -309,8 +355,21 @@ class StockfishService {
     final pvIndex = line.indexOf(' pv ');
     if (pvIndex != -1) {
       final movesStr = line.substring(pvIndex + 4);
-      // split is still okay for moves list as it's the end of line and not too long
-      moves = movesStr.split(' ');
+      moves = <String>[];
+      int startIndex = 0;
+      while (startIndex < movesStr.length) {
+        int spaceIndex = movesStr.indexOf(' ', startIndex);
+        if (spaceIndex == -1) {
+          if (startIndex < movesStr.length) {
+            moves.add(movesStr.substring(startIndex));
+          }
+          break;
+        }
+        if (spaceIndex > startIndex) {
+          moves.add(movesStr.substring(startIndex, spaceIndex));
+        }
+        startIndex = spaceIndex + 1;
+      }
     }
 
     return (depth: depth, multipv: multipv, cp: cp, mate: mate, moves: moves);

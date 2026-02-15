@@ -8,7 +8,7 @@ class AudioService {
   final AudioPlayer _capturePlayer = AudioPlayer();
   final AudioPlayer _checkPlayer = AudioPlayer();
   final AudioPlayer _gameEndPlayer = AudioPlayer();
-  
+
   bool _enabled = true;
   bool _initialized = false;
 
@@ -22,20 +22,20 @@ class AudioService {
   /// Initialize audio players with sources
   Future<void> initialize() async {
     if (_initialized) return;
-    
+
     try {
       // Preload sounds for faster playback
       await _movePlayer.setSource(AssetSource('sounds/move.mp3'));
       await _capturePlayer.setSource(AssetSource('sounds/capture.mp3'));
       await _checkPlayer.setSource(AssetSource('sounds/check.mp3'));
       await _gameEndPlayer.setSource(AssetSource('sounds/game_end.mp3'));
-      
+
       // Reset players after preloading
       await _movePlayer.stop();
       await _capturePlayer.stop();
       await _checkPlayer.stop();
       await _gameEndPlayer.stop();
-      
+
       _initialized = true;
     } catch (e) {
       print('Failed to initialize audio service: $e');

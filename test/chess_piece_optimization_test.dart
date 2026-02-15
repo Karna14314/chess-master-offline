@@ -4,7 +4,9 @@ import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
 
 void main() {
-  testWidgets('ChessPiece is wrapped in RepaintBoundary', (WidgetTester tester) async {
+  testWidgets('ChessPiece is wrapped in RepaintBoundary', (
+    WidgetTester tester,
+  ) async {
     // Build the ChessPiece widget
     await tester.pumpWidget(
       MaterialApp(

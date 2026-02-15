@@ -67,19 +67,16 @@ class TimerSelector extends StatelessWidget {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: List.generate(
-            AppConstants.timeControls.length,
-            (index) {
-              final control = AppConstants.timeControls[index];
-              final isSelected = index == selectedIndex;
+          children: List.generate(AppConstants.timeControls.length, (index) {
+            final control = AppConstants.timeControls[index];
+            final isSelected = index == selectedIndex;
 
-              return _TimeControlChip(
-                control: control,
-                isSelected: isSelected,
-                onTap: () => onChanged(index),
-              );
-            },
-          ),
+            return _TimeControlChip(
+              control: control,
+              isSelected: isSelected,
+              onTap: () => onChanged(index),
+            );
+          }),
         ),
       ],
     );
@@ -122,7 +119,9 @@ class _TimeControlChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                control.hasTimer ? Icons.timer_rounded : Icons.timer_off_rounded,
+                control.hasTimer
+                    ? Icons.timer_rounded
+                    : Icons.timer_off_rounded,
                 size: 24,
                 color: isSelected ? Colors.white : color,
               ),
@@ -130,7 +129,8 @@ class _TimeControlChip extends StatelessWidget {
               Text(
                 control.displayString,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                  color:
+                      isSelected ? Colors.white : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -138,9 +138,10 @@ class _TimeControlChip extends StatelessWidget {
                 Text(
                   _getCategory(),
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: isSelected
-                        ? Colors.white.withOpacity(0.8)
-                        : theme.colorScheme.onSurface.withOpacity(0.6),
+                    color:
+                        isSelected
+                            ? Colors.white.withOpacity(0.8)
+                            : theme.colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
             ],

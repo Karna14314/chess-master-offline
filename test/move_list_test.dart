@@ -9,34 +9,60 @@ void main() {
     // Create dummy moves
     final moves = [
       ChessMove(
-        from: 'e2', to: 'e4', san: 'e4',
-        isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'fen1',
+        from: 'e2',
+        to: 'e4',
+        san: 'e4',
+        isCapture: false,
+        isCheck: false,
+        isCheckmate: false,
+        isCastle: false,
+        fen: 'fen1',
       ),
       ChessMove(
-        from: 'e7', to: 'e5', san: 'e5',
-        isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'fen2',
+        from: 'e7',
+        to: 'e5',
+        san: 'e5',
+        isCapture: false,
+        isCheck: false,
+        isCheckmate: false,
+        isCastle: false,
+        fen: 'fen2',
       ),
       ChessMove(
-        from: 'g1', to: 'f3', san: 'Nf3',
-        isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'fen3',
+        from: 'g1',
+        to: 'f3',
+        san: 'Nf3',
+        isCapture: false,
+        isCheck: false,
+        isCheckmate: false,
+        isCastle: false,
+        fen: 'fen3',
       ),
       ChessMove(
-        from: 'b8', to: 'c6', san: 'Nc6',
-        isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'fen4',
+        from: 'b8',
+        to: 'c6',
+        san: 'Nc6',
+        isCapture: false,
+        isCheck: false,
+        isCheckmate: false,
+        isCastle: false,
+        fen: 'fen4',
       ),
       ChessMove(
-        from: 'f1', to: 'b5', san: 'Bb5',
-        isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'fen5',
+        from: 'f1',
+        to: 'b5',
+        san: 'Bb5',
+        isCapture: false,
+        isCheck: false,
+        isCheckmate: false,
+        isCastle: false,
+        fen: 'fen5',
       ),
     ];
 
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(
-          home: Scaffold(
-            body: MoveList(moves: moves),
-          ),
-        ),
+        child: MaterialApp(home: Scaffold(body: MoveList(moves: moves))),
       ),
     );
 

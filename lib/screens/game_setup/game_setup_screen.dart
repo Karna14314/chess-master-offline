@@ -36,7 +36,7 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('New Game'),
@@ -92,16 +92,17 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
                 // Start button
                 FilledButton.icon(
                   onPressed: _isLoading ? null : _startGame,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.play_arrow_rounded),
+                  icon:
+                      _isLoading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Icon(Icons.play_arrow_rounded),
                   label: Text(
                     _isLoading ? 'Starting...' : 'Start Game',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -127,9 +128,7 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
           if (_isLoading)
             Container(
               color: Colors.black26,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
         ],
       ),
@@ -138,7 +137,7 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
 
   Widget _buildSection({required Widget child}) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -154,7 +153,8 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
 
   Widget _buildGameSummary() {
     final theme = Theme.of(context);
-    final difficulty = AppConstants.difficultyLevels[_selectedDifficultyLevel - 1];
+    final difficulty =
+        AppConstants.difficultyLevels[_selectedDifficultyLevel - 1];
     final timeControl = AppConstants.timeControls[_selectedTimeControlIndex];
 
     return Container(
@@ -208,7 +208,7 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
     required String value,
   }) {
     final theme = Theme.of(context);
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -292,8 +292,12 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
 
     try {
       // Save settings for next time
-      ref.read(settingsProvider.notifier).setLastDifficulty(_selectedDifficultyLevel);
-      ref.read(settingsProvider.notifier).setLastTimeControl(_selectedTimeControlIndex);
+      ref
+          .read(settingsProvider.notifier)
+          .setLastDifficulty(_selectedDifficultyLevel);
+      ref
+          .read(settingsProvider.notifier)
+          .setLastTimeControl(_selectedTimeControlIndex);
 
       // Initialize engine
       final engineNotifier = ref.read(engineProvider.notifier);
@@ -303,27 +307,29 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
       // Resolve random color
       PlayerColor actualColor = _selectedColor;
       if (_selectedColor == PlayerColor.random) {
-        actualColor = DateTime.now().millisecond % 2 == 0
-            ? PlayerColor.white
-            : PlayerColor.black;
+        actualColor =
+            DateTime.now().millisecond % 2 == 0
+                ? PlayerColor.white
+                : PlayerColor.black;
       }
 
       // Start new game
-      final difficulty = AppConstants.difficultyLevels[_selectedDifficultyLevel - 1];
+      final difficulty =
+          AppConstants.difficultyLevels[_selectedDifficultyLevel - 1];
       final timeControl = AppConstants.timeControls[_selectedTimeControlIndex];
 
-      ref.read(gameProvider.notifier).startNewGame(
-        playerColor: actualColor,
-        difficulty: difficulty,
-        timeControl: timeControl,
-      );
+      ref
+          .read(gameProvider.notifier)
+          .startNewGame(
+            playerColor: actualColor,
+            difficulty: difficulty,
+            timeControl: timeControl,
+          );
 
       // Navigate to game screen
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const GameScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const GameScreen()),
         );
       }
     } catch (e) {

@@ -30,17 +30,21 @@ class MockStockfishService implements StockfishService {
   Future<void> initialize() async {}
 
   @override
-  Future<BestMoveResult> getBestMove({required String fen, required int depth, int? thinkTimeMs}) async {
+  Future<BestMoveResult> getBestMove({
+    required String fen,
+    required int depth,
+    int? thinkTimeMs,
+  }) async {
     return BestMoveResult(bestMove: 'e2e4');
   }
 
   @override
-  Future<AnalysisResult> analyzePosition({required String fen, int depth = 15, int multiPv = 1}) async {
-    return AnalysisResult(
-      evaluation: 0,
-      lines: [],
-      depth: depth,
-    );
+  Future<AnalysisResult> analyzePosition({
+    required String fen,
+    int depth = 15,
+    int multiPv = 1,
+  }) async {
+    return AnalysisResult(evaluation: 0, lines: [], depth: depth);
   }
 
   @override
@@ -59,7 +63,9 @@ class MockStockfishService implements StockfishService {
 }
 
 void main() {
-  testWidgets('App launches and displays bottom navigation bar', (WidgetTester tester) async {
+  testWidgets('App launches and displays bottom navigation bar', (
+    WidgetTester tester,
+  ) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       ProviderScope(

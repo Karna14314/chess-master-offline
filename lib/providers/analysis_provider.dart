@@ -5,10 +5,14 @@ import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/core/services/stockfish_service.dart' as stockfish;
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:chess_master/providers/engine_provider.dart' as package_engine_provider;
+import 'package:chess_master/providers/engine_provider.dart'
+    as package_engine_provider;
 
 /// Provider for analysis state
-final analysisProvider = StateNotifierProvider<AnalysisNotifier, AnalysisState>((ref) {
+final analysisProvider = StateNotifierProvider<
+  AnalysisNotifier,
+  AnalysisState
+>((ref) {
   // Use the service from the provider (which can be overridden in tests)
   // Instead of direct singleton access
   // We use read here to avoid rebuilding notifier when service changes (it shouldn't generally)
@@ -57,7 +61,8 @@ class AnalysisState {
     this.errorMessage,
     this.analysisProgress = 0.0,
     this.isLiveAnalysis = false,
-    this.startingFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    this.startingFen =
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     this.gameId,
   });
 
@@ -90,7 +95,8 @@ class AnalysisState {
       fullAnalysis: fullAnalysis ?? this.fullAnalysis,
       board: board ?? this.board,
       originalMoves: originalMoves ?? this.originalMoves,
-      selectedSquare: clearSelection ? null : (selectedSquare ?? this.selectedSquare),
+      selectedSquare:
+          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
@@ -122,13 +128,15 @@ class AnalysisState {
 
   /// Current move if any
   ChessMove? get currentMove {
-    if (currentMoveIndex < 0 || currentMoveIndex >= originalMoves.length) return null;
+    if (currentMoveIndex < 0 || currentMoveIndex >= originalMoves.length)
+      return null;
     return originalMoves[currentMoveIndex];
   }
 
   /// Current move analysis if available
   MoveAnalysis? get currentMoveAnalysis {
-    if (currentMoveIndex < 0 || currentMoveIndex >= analyzedMoves.length) return null;
+    if (currentMoveIndex < 0 || currentMoveIndex >= analyzedMoves.length)
+      return null;
     return analyzedMoves[currentMoveIndex];
   }
 
@@ -137,7 +145,7 @@ class AnalysisState {
     if (board == null) return null;
     final piece = board!.get(square);
     if (piece == null) return null;
-    
+
     final colorPrefix = piece.color == chess.Color.WHITE ? 'w' : 'b';
     final pieceChar = piece.type.name.toUpperCase();
     return '$colorPrefix$pieceChar';
@@ -167,7 +175,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   /// Initialize engine for analysis
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       _stockfish ??= stockfish.StockfishService.instance;
       await _stockfish!.initialize();
@@ -182,10 +190,11 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   /// Load a game for analysis
   Future<void> loadGame({
     required List<ChessMove> moves,
-    String startingFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    String startingFen =
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
   }) async {
     final board = chess.Chess.fromFEN(startingFen);
-    
+
     state = state.copyWith(
       originalMoves: moves,
       board: board,
@@ -212,14 +221,18 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
     // Rebuild board from start
     final board = chess.Chess.fromFEN(state.startingFen);
-    
+
     String? lastFrom;
     String? lastTo;
 
     // Apply moves up to the target index
     for (int i = 0; i <= moveIndex && i < state.originalMoves.length; i++) {
       final move = state.originalMoves[i];
-      board.move({'from': move.from, 'to': move.to, 'promotion': move.promotion});
+      board.move({
+        'from': move.from,
+        'to': move.to,
+        'promotion': move.promotion,
+      });
       lastFrom = move.from;
       lastTo = move.to;
     }
@@ -279,19 +292,29 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         multiPv: AppConstants.topEngineLinesCount,
       );
 
-      final engineLines = result.lines.asMap().entries.map((entry) => EngineLine(
-        rank: entry.key + 1,
-        evaluation: (entry.value.evaluation ?? 0) / 100.0,  // Convert centipawns to pawns
-        depth: entry.value.depth,
-        moves: entry.value.moves,
-        isMate: entry.value.mateIn != null,
-        mateIn: entry.value.mateIn,
-      )).toList();
+      final engineLines =
+          result.lines
+              .asMap()
+              .entries
+              .map(
+                (entry) => EngineLine(
+                  rank: entry.key + 1,
+                  evaluation:
+                      (entry.value.evaluation ?? 0) /
+                      100.0, // Convert centipawns to pawns
+                  depth: entry.value.depth,
+                  moves: entry.value.moves,
+                  isMate: entry.value.mateIn != null,
+                  mateIn: entry.value.mateIn,
+                ),
+              )
+              .toList();
 
       state = state.copyWith(
-        currentEval: result.evaluation / 100.0,  // Convert centipawns to pawns
+        currentEval: result.evaluation / 100.0, // Convert centipawns to pawns
         currentEngineLines: engineLines,
-        bestMove: result.lines.isNotEmpty ? result.lines.first.moves.first : null,
+        bestMove:
+            result.lines.isNotEmpty ? result.lines.first.moves.first : null,
       );
     } catch (e) {
       // Silently fail for live analysis
@@ -303,7 +326,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     if (_stockfish == null) {
       await initialize();
     }
-    
+
     if (_stockfish == null || state.originalMoves.isEmpty) return;
 
     state = state.copyWith(
@@ -315,7 +338,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     final moves = state.originalMoves;
     final analyzedMoves = <MoveAnalysis>[];
     final board = chess.Chess.fromFEN(state.startingFen);
-    
+
     double prevEval = 0.0;
 
     // Get initial evaluation
@@ -326,7 +349,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         depth: 15,
         multiPv: 1,
       );
-      prevEval = initialResult.evaluation / 100.0;  // Convert centipawns to pawns
+      prevEval =
+          initialResult.evaluation / 100.0; // Convert centipawns to pawns
       previousResult = initialResult;
     } catch (e) {
       // Continue with 0.0
@@ -335,12 +359,13 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     for (int i = 0; i < moves.length; i++) {
       final move = moves[i];
       final isWhiteMove = board.turn == chess.Color.WHITE;
-      
+
       // Get best move before making the actual move
       String? bestMove;
 
       // Use previous analysis result if available to save time
-      if (previousResult != null && previousResult.lines.isNotEmpty &&
+      if (previousResult != null &&
+          previousResult.lines.isNotEmpty &&
           previousResult.lines.first.moves.isNotEmpty) {
         bestMove = previousResult.lines.first.moves.first;
       } else {
@@ -356,29 +381,40 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       }
 
       // Apply the actual move
-      board.move({'from': move.from, 'to': move.to, 'promotion': move.promotion});
+      board.move({
+        'from': move.from,
+        'to': move.to,
+        'promotion': move.promotion,
+      });
 
       // Get evaluation after move
       double afterEval = 0.0;
       List<EngineLine> engineLines = [];
-      
+
       try {
         final result = await _stockfish!.analyzePosition(
           fen: board.fen,
           depth: 15,
           multiPv: 3,
         );
-        
+
         previousResult = result;
-        afterEval = result.evaluation / 100.0;  // Convert centipawns to pawns
-        engineLines = result.lines.asMap().entries.map((entry) => EngineLine(
-          rank: entry.key + 1,
-          evaluation: (entry.value.evaluation ?? 0) / 100.0,
-          depth: entry.value.depth,
-          moves: entry.value.moves,
-          isMate: entry.value.mateIn != null,
-          mateIn: entry.value.mateIn,
-        )).toList();
+        afterEval = result.evaluation / 100.0; // Convert centipawns to pawns
+        engineLines =
+            result.lines
+                .asMap()
+                .entries
+                .map(
+                  (entry) => EngineLine(
+                    rank: entry.key + 1,
+                    evaluation: (entry.value.evaluation ?? 0) / 100.0,
+                    depth: entry.value.depth,
+                    moves: entry.value.moves,
+                    isMate: entry.value.mateIn != null,
+                    mateIn: entry.value.mateIn,
+                  ),
+                )
+                .toList();
       } catch (e) {
         // Continue with 0.0
       }
@@ -392,17 +428,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
       );
 
-      analyzedMoves.add(MoveAnalysis(
-        moveIndex: i,
-        san: move.san,
-        fen: board.fen,
-        evalBefore: prevEval,
-        evalAfter: afterEval,
-        bestMove: bestMove,
-        classification: classification,
-        engineLines: engineLines,
-        isWhiteMove: isWhiteMove,
-      ));
+      analyzedMoves.add(
+        MoveAnalysis(
+          moveIndex: i,
+          san: move.san,
+          fen: board.fen,
+          evalBefore: prevEval,
+          evalAfter: afterEval,
+          bestMove: bestMove,
+          classification: classification,
+          engineLines: engineLines,
+          isWhiteMove: isWhiteMove,
+        ),
+      );
 
       prevEval = afterEval;
 

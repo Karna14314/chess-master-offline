@@ -69,9 +69,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
 
   Widget _buildBody(PuzzleGameState state) {
     if (state.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (state.errorMessage != null && state.currentPuzzle == null) {
@@ -79,11 +77,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: AppTheme.error,
-              size: 48,
-            ),
+            Icon(Icons.error_outline, color: AppTheme.error, size: 48),
             const SizedBox(height: 16),
             Text(
               state.errorMessage!,
@@ -101,9 +95,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     }
 
     if (state.currentPuzzle == null || state.board == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Column(
@@ -236,14 +228,17 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             // Hint button - no limit
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: state.isPlayerTurn && !state.showingHint
-                    ? () => notifier.showHint()
-                    : null,
+                onPressed:
+                    state.isPlayerTurn && !state.showingHint
+                        ? () => notifier.showHint()
+                        : null,
                 icon: const Icon(Icons.lightbulb_outline),
                 label: const Text('Hint'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.accentColor,
-                  side: BorderSide(color: AppTheme.accentColor.withOpacity(0.5)),
+                  side: BorderSide(
+                    color: AppTheme.accentColor.withOpacity(0.5),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
@@ -288,133 +283,143 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: Row(
-          children: [
-            const Icon(Icons.lightbulb, color: Colors.orange),
-            const SizedBox(width: 8),
-            const Text('Solution'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Complete solution moves:',
-              style: TextStyle(color: AppTheme.textSecondary),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: Row(
+              children: [
+                const Icon(Icons.lightbulb, color: Colors.orange),
+                const SizedBox(width: 8),
+                const Text('Solution'),
+              ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.cardDark,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (int i = 0; i < puzzle.moves.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: i % 2 == 0 
-                                  ? AppTheme.primaryColor.withOpacity(0.3)
-                                  : Colors.grey.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${i + 1}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Complete solution moves:',
+                  style: TextStyle(color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardDark,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int i = 0; i < puzzle.moves.length; i++)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color:
+                                      i % 2 == 0
+                                          ? AppTheme.primaryColor.withOpacity(
+                                            0.3,
+                                          )
+                                          : Colors.grey.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${i + 1}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              Text(
+                                puzzle.moves[i],
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 16,
+                                  fontWeight:
+                                      i % 2 == 0
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                  color:
+                                      i % 2 == 0
+                                          ? Colors.white
+                                          : AppTheme.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                i % 2 == 0 ? '(Your move)' : '(Response)',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.textHint,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            puzzle.moves[i],
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 16,
-                              fontWeight: i % 2 == 0 ? FontWeight.bold : FontWeight.normal,
-                              color: i % 2 == 0 ? Colors.white : AppTheme.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            i % 2 == 0 ? '(Your move)' : '(Response)',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.textHint,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Note: Viewing solution counts as a hint.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textHint,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Note: Viewing solution counts as a hint.',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textHint,
-                fontStyle: FontStyle.italic,
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(puzzleProvider.notifier).showSolution();
+                },
+                child: const Text('Got it'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(puzzleProvider.notifier).showSolution();
-            },
-            child: const Text('Got it'),
+            ],
           ),
-        ],
-      ),
     );
   }
-
 
   void _showSkipConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text('Skip Puzzle?'),
-        content: const Text(
-          'Skipping will count as an incorrect attempt and may lower your rating.',
-          style: TextStyle(color: AppTheme.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(puzzleProvider.notifier).skipPuzzle();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.error,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('Skip Puzzle?'),
+            content: const Text(
+              'Skipping will count as an incorrect attempt and may lower your rating.',
+              style: TextStyle(color: AppTheme.textSecondary),
             ),
-            child: const Text('Skip'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(puzzleProvider.notifier).skipPuzzle();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.error,
+                ),
+                child: const Text('Skip'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -424,10 +429,7 @@ class _PuzzleBoard extends StatelessWidget {
   final PuzzleGameState state;
   final WidgetRef ref;
 
-  const _PuzzleBoard({
-    required this.state,
-    required this.ref,
-  });
+  const _PuzzleBoard({required this.state, required this.ref});
 
   @override
   Widget build(BuildContext context) {
@@ -444,43 +446,56 @@ class _PuzzleBoard extends StatelessWidget {
       lastMoveTo: state.lastMoveTo,
       showHint: state.showingHint,
       hintSquare: state.selectedSquare,
-      onSquareTap: state.isPlayerTurn ? (square) {
-        ref.read(puzzleProvider.notifier).selectSquare(square);
-      } : null,
-      onMove: state.isPlayerTurn ? (from, to) async {
-        final notifier = ref.read(puzzleProvider.notifier);
-        
-        // Check for promotion
-        if (notifier.needsPromotion(from, to)) {
-          final promotion = await _showPromotionDialog(context, state.isWhiteTurn);
-          if (promotion != null) {
-            notifier.tryMove(from, to, promotion: promotion);
-          }
-        } else {
-          notifier.tryMove(from, to);
-        }
-      } : null,
+      onSquareTap:
+          state.isPlayerTurn
+              ? (square) {
+                ref.read(puzzleProvider.notifier).selectSquare(square);
+              }
+              : null,
+      onMove:
+          state.isPlayerTurn
+              ? (from, to) async {
+                final notifier = ref.read(puzzleProvider.notifier);
+
+                // Check for promotion
+                if (notifier.needsPromotion(from, to)) {
+                  final promotion = await _showPromotionDialog(
+                    context,
+                    state.isWhiteTurn,
+                  );
+                  if (promotion != null) {
+                    notifier.tryMove(from, to, promotion: promotion);
+                  }
+                } else {
+                  notifier.tryMove(from, to);
+                }
+              }
+              : null,
       showCoordinates: true,
     );
   }
 
-  Future<String?> _showPromotionDialog(BuildContext context, bool isWhite) async {
+  Future<String?> _showPromotionDialog(
+    BuildContext context,
+    bool isWhite,
+  ) async {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text('Promote Pawn'),
-        content: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
-            _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
-            _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
-            _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
-          ],
-        ),
-      ),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('Promote Pawn'),
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
+                _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
+                _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
+                _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
+              ],
+            ),
+          ),
     );
   }
 }
@@ -506,10 +521,7 @@ class _PromotionButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              _getPieceSymbol(),
-              style: const TextStyle(fontSize: 32),
-            ),
+            Text(_getPieceSymbol(), style: const TextStyle(fontSize: 32)),
             const SizedBox(height: 4),
             Text(
               label,

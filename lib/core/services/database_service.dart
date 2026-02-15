@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class DatabaseService {
   static DatabaseService? _instance;
   Database? _database;
-  
+
   static DatabaseService get instance {
     _instance ??= DatabaseService._();
     return _instance!;
@@ -63,7 +64,9 @@ class DatabaseService {
     ''');
 
     // Create indexes
-    await db.execute('CREATE INDEX idx_games_created ON games(created_at DESC)');
+    await db.execute(
+      'CREATE INDEX idx_games_created ON games(created_at DESC)',
+    );
     await db.execute('CREATE INDEX idx_games_saved ON games(is_saved)');
     await db.execute('CREATE INDEX idx_games_completed ON games(is_completed)');
 
@@ -147,7 +150,9 @@ class DatabaseService {
         )
       ''');
 
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_puzzles_rating ON puzzles(rating)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_puzzles_rating ON puzzles(rating)',
+      );
     }
   }
 
@@ -203,13 +208,53 @@ class DatabaseService {
       where = conditions.join(' AND ');
     }
 
+    // Optimization: Avoid ORDER BY RANDOM() on large tables if possible
+    int? queryOffset = offset;
+    String orderBy = 'id'; // Default order
+
+    if (random) {
+      if (offset == null) {
+        // If no offset provided, calculate a random offset based on count
+        try {
+          final countResult = await db.query(
+            'puzzles',
+            columns: ['COUNT(*) as count'],
+            where: where,
+            whereArgs: whereArgs,
+          );
+
+          final count = Sqflite.firstIntValue(countResult) ?? 0;
+
+          if (count > limit) {
+            final randomGenerator = Random();
+            // Ensure we have enough items for the limit
+            final maxOffset = count - limit;
+            if (maxOffset > 0) {
+              queryOffset = randomGenerator.nextInt(maxOffset + 1);
+            }
+          }
+          // If we calculated a random offset, order by ID (sequential from random start)
+          orderBy = 'id';
+        } catch (e) {
+          // Fallback to random sort on error
+          orderBy = 'RANDOM()';
+        }
+      } else {
+        // If explicit offset provided with random=true, fallback to RANDOM()
+        // (This is rare/odd but supported for compatibility)
+        orderBy = 'RANDOM()';
+      }
+    } else {
+      orderBy = 'id';
+    }
+
     return await db.query(
       'puzzles',
       where: where,
       whereArgs: whereArgs,
-      orderBy: random ? 'RANDOM()' : 'id',
+      orderBy: orderBy,
       limit: limit,
-      offset: offset,
+      offset: queryOffset,
     );
   }
 
@@ -263,10 +308,10 @@ class DatabaseService {
     int? offset,
   }) async {
     final db = await database;
-    
+
     String? where;
     List<dynamic>? whereArgs;
-    
+
     if (savedOnly && completedOnly) {
       where = 'is_saved = 1 AND is_completed = 1';
     } else if (savedOnly) {
@@ -288,11 +333,7 @@ class DatabaseService {
   /// Get recent games
   Future<List<Map<String, dynamic>>> getRecentGames({int limit = 10}) async {
     final db = await database;
-    return await db.query(
-      'games',
-      orderBy: 'updated_at DESC',
-      limit: limit,
-    );
+    return await db.query('games', orderBy: 'updated_at DESC', limit: limit);
   }
 
   /// Get the most recent unfinished game
@@ -310,11 +351,7 @@ class DatabaseService {
   /// Delete a game
   Future<void> deleteGame(String id) async {
     final db = await database;
-    await db.delete(
-      'games',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('games', where: 'id = ?', whereArgs: [id]);
   }
 
   /// Delete all games
@@ -332,10 +369,7 @@ class DatabaseService {
     return await db.query(
       'games',
       where: 'created_at >= ? AND created_at <= ?',
-      whereArgs: [
-        start.millisecondsSinceEpoch,
-        end.millisecondsSinceEpoch,
-      ],
+      whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
       orderBy: 'created_at DESC',
     );
   }
@@ -354,20 +388,22 @@ class DatabaseService {
   // ==================== ANALYSIS OPERATIONS ====================
 
   /// Save analysis result
-  Future<void> saveAnalysis(String gameId, String fen, String moves, String analysisJson, int depth) async {
+  Future<void> saveAnalysis(
+    String gameId,
+    String fen,
+    String moves,
+    String analysisJson,
+    int depth,
+  ) async {
     final db = await database;
-    await db.insert(
-      'analysis_cache',
-      {
-        'game_id': gameId,
-        'fen': fen,
-        'moves': moves,
-        'analysis_json': analysisJson,
-        'engine_depth': depth,
-        'analyzed_at': DateTime.now().millisecondsSinceEpoch,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('analysis_cache', {
+      'game_id': gameId,
+      'fen': fen,
+      'moves': moves,
+      'analysis_json': analysisJson,
+      'engine_depth': depth,
+      'analyzed_at': DateTime.now().millisecondsSinceEpoch,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   /// Get analysis result
@@ -394,11 +430,10 @@ class DatabaseService {
   /// Update statistics
   Future<void> updateStatistics(Map<String, dynamic> updates) async {
     final db = await database;
-    await db.update(
-      'statistics',
-      {...updates, 'last_updated': DateTime.now().millisecondsSinceEpoch},
-      where: 'id = 1',
-    );
+    await db.update('statistics', {
+      ...updates,
+      'last_updated': DateTime.now().millisecondsSinceEpoch,
+    }, where: 'id = 1');
   }
 
   /// Increment game count

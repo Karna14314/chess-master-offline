@@ -3,9 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/bottom_nav/bottom_nav_screen.dart';
+import 'package:chess_master/screens/game/widgets/chess_piece.dart';
+import 'package:chess_master/core/theme/board_themes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Preload piece assets
+  await PieceAssets.preloadAssets(PieceSet.traditional);
 
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -23,11 +28,7 @@ void main() async {
     ),
   );
 
-  runApp(
-    const ProviderScope(
-      child: ChessMasterApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: ChessMasterApp()));
 }
 
 class ChessMasterApp extends StatelessWidget {
@@ -43,4 +44,3 @@ class ChessMasterApp extends StatelessWidget {
     );
   }
 }
-

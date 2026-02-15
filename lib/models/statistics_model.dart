@@ -46,8 +46,7 @@ class StatisticsModel {
       puzzlesAttempted > 0 ? (puzzlesSolved / puzzlesAttempted) * 100 : 0;
 
   /// Average game length in moves
-  double get averageGameLength =>
-      totalGames > 0 ? totalMoves / totalGames : 0;
+  double get averageGameLength => totalGames > 0 ? totalMoves / totalGames : 0;
 
   /// Average game time in minutes
   double get averageGameTimeMinutes =>
@@ -58,9 +57,12 @@ class StatisticsModel {
     Map<int, EloStats> gamesByElo = {};
     if (map['games_by_elo'] != null) {
       try {
-        final decoded = jsonDecode(map['games_by_elo'] as String) as Map<String, dynamic>;
+        final decoded =
+            jsonDecode(map['games_by_elo'] as String) as Map<String, dynamic>;
         decoded.forEach((key, value) {
-          gamesByElo[int.parse(key)] = EloStats.fromMap(value as Map<String, dynamic>);
+          gamesByElo[int.parse(key)] = EloStats.fromMap(
+            value as Map<String, dynamic>,
+          );
         });
       } catch (_) {}
     }
@@ -68,7 +70,9 @@ class StatisticsModel {
     Map<String, int> openingsPlayed = {};
     if (map['openings_played'] != null) {
       try {
-        final decoded = jsonDecode(map['openings_played'] as String) as Map<String, dynamic>;
+        final decoded =
+            jsonDecode(map['openings_played'] as String)
+                as Map<String, dynamic>;
         decoded.forEach((key, value) {
           openingsPlayed[key] = value as int;
         });
@@ -155,11 +159,7 @@ class EloStats {
   final int losses;
   final int draws;
 
-  const EloStats({
-    this.wins = 0,
-    this.losses = 0,
-    this.draws = 0,
-  });
+  const EloStats({this.wins = 0, this.losses = 0, this.draws = 0});
 
   int get total => wins + losses + draws;
 

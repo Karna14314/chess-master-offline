@@ -60,16 +60,17 @@ class TimerState {
   bool get isTimedOut => whiteTimedOut || blackTimedOut;
 
   /// Check if current player is in low time (< 10 seconds)
-  bool get isLowTime => currentPlayerTime.inSeconds <= 10 && currentPlayerTime.inSeconds > 0;
+  bool get isLowTime =>
+      currentPlayerTime.inSeconds <= 10 && currentPlayerTime.inSeconds > 0;
 
   /// Format time for display
   static String formatDuration(Duration duration) {
     if (duration.isNegative) return "0:00";
-    
+
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
     final tenths = (duration.inMilliseconds % 1000) ~/ 100;
-    
+
     if (minutes > 0) {
       return "$minutes:${seconds.toString().padLeft(2, '0')}";
     } else if (seconds <= 10) {
@@ -93,11 +94,13 @@ class TimerNotifier extends StateNotifier<TimerState> {
     required TimeControl timeControl,
     this.onTimeout,
     this.onLowTime,
-  }) : super(TimerState(
-          whiteTime: timeControl.initialDuration,
-          blackTime: timeControl.initialDuration,
-          timeControl: timeControl,
-        ));
+  }) : super(
+         TimerState(
+           whiteTime: timeControl.initialDuration,
+           blackTime: timeControl.initialDuration,
+           timeControl: timeControl,
+         ),
+       );
 
   /// Initialize timer with time control
   void initialize(TimeControl timeControl) {
@@ -112,10 +115,10 @@ class TimerNotifier extends StateNotifier<TimerState> {
   /// Start the timer
   void start() {
     if (!state.hasTimer || state.isTimedOut) return;
-    
+
     _timer?.cancel();
     state = state.copyWith(isRunning: true, isPaused: false);
-    
+
     _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       _tick();
     });
@@ -142,12 +145,12 @@ class TimerNotifier extends StateNotifier<TimerState> {
   /// Switch turn (called after a move)
   void switchTurn() {
     if (!state.hasTimer) return;
-    
+
     // Add increment to the player who just moved
     final increment = state.timeControl.incrementDuration;
     Duration newWhiteTime = state.whiteTime;
     Duration newBlackTime = state.blackTime;
-    
+
     if (state.isWhiteTurn) {
       // White just moved, add increment
       newWhiteTime = state.whiteTime + increment;
@@ -155,7 +158,7 @@ class TimerNotifier extends StateNotifier<TimerState> {
       // Black just moved, add increment
       newBlackTime = state.blackTime + increment;
     }
-    
+
     state = state.copyWith(
       isWhiteTurn: !state.isWhiteTurn,
       whiteTime: newWhiteTime,
@@ -172,11 +175,11 @@ class TimerNotifier extends StateNotifier<TimerState> {
   /// Tick the timer
   void _tick() {
     if (!state.isRunning || state.isTimedOut) return;
-    
+
     const tickDuration = Duration(milliseconds: 100);
     Duration newWhiteTime = state.whiteTime;
     Duration newBlackTime = state.blackTime;
-    
+
     if (state.isWhiteTurn) {
       newWhiteTime = state.whiteTime - tickDuration;
       if (newWhiteTime.isNegative) {
@@ -188,24 +191,24 @@ class TimerNotifier extends StateNotifier<TimerState> {
         newBlackTime = Duration.zero;
       }
     }
-    
+
     // Check for timeout
     bool whiteTimedOut = newWhiteTime <= Duration.zero;
     bool blackTimedOut = newBlackTime <= Duration.zero;
-    
+
     state = state.copyWith(
       whiteTime: newWhiteTime,
       blackTime: newBlackTime,
       whiteTimedOut: whiteTimedOut,
       blackTimedOut: blackTimedOut,
     );
-    
+
     // Handle timeout
     if (whiteTimedOut || blackTimedOut) {
       stop();
       onTimeout?.call(whiteTimedOut);
     }
-    
+
     // Low time warning
     if (state.isLowTime && !state.lowTimeWarningShown) {
       state = state.copyWith(lowTimeWarningShown: true);
@@ -241,14 +244,14 @@ class TimerNotifier extends StateNotifier<TimerState> {
 /// Provider for the chess timer
 final timerProvider = StateNotifierProvider<TimerNotifier, TimerState>((ref) {
   // Default to no timer, will be initialized when game starts
-  return TimerNotifier(
-    timeControl: AppConstants.timeControls[0],
-  );
+  return TimerNotifier(timeControl: AppConstants.timeControls[0]);
 });
 
 /// Provider family for creating timer with specific time control
-final timerProviderFamily = StateNotifierProvider.family<TimerNotifier, TimerState, TimeControl>(
-  (ref, timeControl) {
-    return TimerNotifier(timeControl: timeControl);
-  },
-);
+final timerProviderFamily =
+    StateNotifierProvider.family<TimerNotifier, TimerState, TimeControl>((
+      ref,
+      timeControl,
+    ) {
+      return TimerNotifier(timeControl: timeControl);
+    });

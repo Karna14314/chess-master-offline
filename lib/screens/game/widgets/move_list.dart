@@ -41,7 +41,7 @@ class MoveList extends ConsumerWidget {
 
   Widget _buildCompactList(BuildContext context) {
     final moveText = _buildMoveString();
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -66,14 +66,14 @@ class MoveList extends ConsumerWidget {
 
   String _buildMoveString() {
     final buffer = StringBuffer();
-    
+
     for (int i = 0; i < moves.length; i++) {
       if (i % 2 == 0) {
         buffer.write('${(i ~/ 2) + 1}. ');
       }
       buffer.write('${moves[i].san} ');
     }
-    
+
     return buffer.toString().trim();
   }
 
@@ -119,13 +119,14 @@ class MoveList extends ConsumerWidget {
               ),
               // Black's move
               Expanded(
-                child: blackMove != null
-                    ? _buildMoveButton(
-                        blackMove,
-                        blackIndex,
-                        isCurrentMove: currentMoveIndex == blackIndex,
-                      )
-                    : const SizedBox.shrink(),
+                child:
+                    blackMove != null
+                        ? _buildMoveButton(
+                          blackMove,
+                          blackIndex,
+                          isCurrentMove: currentMoveIndex == blackIndex,
+                        )
+                        : const SizedBox.shrink(),
               ),
             ],
           ),
@@ -134,14 +135,21 @@ class MoveList extends ConsumerWidget {
     );
   }
 
-  Widget _buildMoveButton(ChessMove move, int index, {bool isCurrentMove = false}) {
+  Widget _buildMoveButton(
+    ChessMove move,
+    int index, {
+    bool isCurrentMove = false,
+  }) {
     return InkWell(
       onTap: onMoveTap != null ? () => onMoveTap!(index) : null,
       borderRadius: BorderRadius.circular(4),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isCurrentMove ? Colors.blue.withValues(alpha: 0.3) : Colors.transparent,
+          color:
+              isCurrentMove
+                  ? Colors.blue.withValues(alpha: 0.3)
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -157,7 +165,11 @@ class MoveList extends ConsumerWidget {
               ),
             ),
             if (move.isCheck && !move.isCheckmate)
-              const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange),
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 14,
+                color: Colors.orange,
+              ),
             if (move.isCheckmate)
               const Icon(Icons.stars, size: 14, color: Colors.amber),
           ],
@@ -199,9 +211,10 @@ class MoveNotation extends StatelessWidget {
             text: san,
             style: TextStyle(
               fontWeight: isCheckmate ? FontWeight.bold : FontWeight.normal,
-              color: isCheckmate
-                  ? Colors.amber
-                  : isCheck
+              color:
+                  isCheckmate
+                      ? Colors.amber
+                      : isCheck
                       ? Colors.orange
                       : Colors.white,
             ),

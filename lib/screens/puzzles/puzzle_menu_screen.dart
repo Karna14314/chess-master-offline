@@ -6,11 +6,11 @@ import 'package:chess_master/screens/puzzles/puzzle_screen.dart';
 
 /// Puzzle mode selection
 enum PuzzleMode {
-  adaptive,   // Based on current rating
-  daily,      // Daily puzzle
-  random,     // Random puzzles
-  eloRange,   // Specific ELO range
-  theme,      // By theme
+  adaptive, // Based on current rating
+  daily, // Daily puzzle
+  random, // Random puzzles
+  eloRange, // Specific ELO range
+  theme, // By theme
 }
 
 /// Puzzle menu screen for selecting puzzle mode
@@ -25,7 +25,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
   int _minElo = 800;
   int _maxElo = 1600;
   String _selectedTheme = 'all';
-  
+
   final List<String> _themes = [
     'all',
     'mateIn1',
@@ -131,7 +131,8 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
             _ThemeSelector(
               themes: _themes,
               selectedTheme: _selectedTheme,
-              onThemeSelected: (theme) => setState(() => _selectedTheme = theme),
+              onThemeSelected:
+                  (theme) => setState(() => _selectedTheme = theme),
               onStart: () => _startPuzzles(PuzzleMode.theme),
             ),
           ],
@@ -142,7 +143,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
 
   void _startPuzzles(PuzzleMode mode) {
     final notifier = ref.read(puzzleProvider.notifier);
-    
+
     // Configure based on mode
     switch (mode) {
       case PuzzleMode.adaptive:
@@ -206,7 +207,11 @@ class _StatsCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    const Icon(Icons.star, color: AppTheme.accentColor, size: 32),
+                    const Icon(
+                      Icons.star,
+                      color: AppTheme.accentColor,
+                      size: 32,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       '${stats.currentRating}',
@@ -218,7 +223,10 @@ class _StatsCard extends StatelessWidget {
                     ),
                     const Text(
                       'Rating',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -232,7 +240,11 @@ class _StatsCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.green, size: 32),
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 32,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       '${stats.puzzlesSolved}',
@@ -244,7 +256,10 @@ class _StatsCard extends StatelessWidget {
                     ),
                     const Text(
                       'Solved',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -270,7 +285,10 @@ class _StatsCard extends StatelessWidget {
                     ),
                     const Text(
                       'Success',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -295,9 +313,7 @@ class _StatsCardLoading extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       height: 120,
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 }
@@ -409,7 +425,10 @@ class _EloRangeSelector extends StatelessWidget {
                   children: [
                     const Text(
                       'Min Rating',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -430,7 +449,10 @@ class _EloRangeSelector extends StatelessWidget {
                   children: [
                     const Text(
                       'Max Rating',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -518,10 +540,7 @@ class _PresetButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _PresetButton({
-    required this.label,
-    required this.onTap,
-  });
+  const _PresetButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -561,20 +580,21 @@ class _ThemeSelector extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: themes.map((theme) {
-              final isSelected = theme == selectedTheme;
-              return ChoiceChip(
-                label: Text(_formatTheme(theme)),
-                selected: isSelected,
-                onSelected: (_) => onThemeSelected(theme),
-                selectedColor: AppTheme.primaryColor,
-                backgroundColor: AppTheme.surfaceDark,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.textSecondary,
-                  fontSize: 12,
-                ),
-              );
-            }).toList(),
+            children:
+                themes.map((theme) {
+                  final isSelected = theme == selectedTheme;
+                  return ChoiceChip(
+                    label: Text(_formatTheme(theme)),
+                    selected: isSelected,
+                    onSelected: (_) => onThemeSelected(theme),
+                    selectedColor: AppTheme.primaryColor,
+                    backgroundColor: AppTheme.surfaceDark,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : AppTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  );
+                }).toList(),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -601,10 +621,13 @@ class _ThemeSelector extends StatelessWidget {
       RegExp(r'([A-Z])'),
       (match) => ' ${match.group(1)}',
     );
-    return words.trim().split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+    return words
+        .trim()
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ');
   }
 }
-

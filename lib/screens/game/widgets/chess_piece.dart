@@ -49,7 +49,7 @@ class ChessPiece extends StatelessWidget {
     // Unicode chess symbols as fallback
     final isWhite = piece.startsWith('w');
     final pieceType = piece.substring(1);
-    
+
     final symbols = {
       'K': isWhite ? '♔' : '♚',
       'Q': isWhite ? '♕' : '♛',
@@ -100,7 +100,7 @@ class PieceAssets {
   static String getPieceName(String code) => _pieceNames[code] ?? 'Unknown';
 
   /// Preload all SVG assets for faster rendering
-  static Future<void> preloadAssets(BuildContext context, PieceSet pieceSet) async {
+  static Future<void> preloadAssets(PieceSet pieceSet) async {
     for (final piece in allPieceCodes) {
       try {
         final loader = SvgAssetLoader(pieceSet.getAssetPath(piece));

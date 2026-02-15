@@ -53,10 +53,7 @@ class EvalGraph extends StatelessWidget {
             horizontalInterval: 5,
             getDrawingHorizontalLine: (value) {
               if (value == 0) {
-                return FlLine(
-                  color: Colors.grey[500]!,
-                  strokeWidth: 1,
-                );
+                return FlLine(color: Colors.grey[500]!, strokeWidth: 1);
               }
               return FlLine(
                 color: Colors.grey[800]!,
@@ -67,8 +64,12 @@ class EvalGraph extends StatelessWidget {
           ),
           titlesData: FlTitlesData(
             show: true,
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -83,10 +84,7 @@ class EvalGraph extends StatelessWidget {
                     meta: meta,
                     child: Text(
                       '$moveNum',
-                      style: TextStyle(
-                        color: AppTheme.textHint,
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: AppTheme.textHint, fontSize: 10),
                     ),
                   );
                 },
@@ -105,10 +103,7 @@ class EvalGraph extends StatelessWidget {
                     meta: meta,
                     child: Text(
                       value.toInt().toString(),
-                      style: TextStyle(
-                        color: AppTheme.textHint,
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: AppTheme.textHint, fontSize: 10),
                     ),
                   );
                 },
@@ -139,12 +134,12 @@ class EvalGraph extends StatelessWidget {
                 checkToShowDot: (spot, barData) {
                   // Show fewer dots for long games
                   if (evaluations.length > 60) {
-                    return spot.x.toInt() == currentMoveIndex || 
-                           spot.x.toInt() % 10 == 0;
+                    return spot.x.toInt() == currentMoveIndex ||
+                        spot.x.toInt() % 10 == 0;
                   }
                   if (evaluations.length > 30) {
-                    return spot.x.toInt() == currentMoveIndex || 
-                           spot.x.toInt() % 5 == 0;
+                    return spot.x.toInt() == currentMoveIndex ||
+                        spot.x.toInt() % 5 == 0;
                   }
                   return true;
                 },
@@ -194,10 +189,7 @@ class EvalGraph extends StatelessWidget {
                   final sign = spot.y >= 0 ? '+' : '';
                   return LineTooltipItem(
                     'Move $moveNum${isWhiteMove ? '' : '...'}\n$sign${spot.y.toStringAsFixed(2)}',
-                    const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
+                    const TextStyle(color: Colors.white, fontSize: 12),
                   );
                 }).toList();
               },
@@ -205,22 +197,19 @@ class EvalGraph extends StatelessWidget {
           ),
           extraLinesData: ExtraLinesData(
             horizontalLines: [
-              HorizontalLine(
-                y: 0,
-                color: Colors.grey[500]!,
-                strokeWidth: 1,
-              ),
+              HorizontalLine(y: 0, color: Colors.grey[500]!, strokeWidth: 1),
             ],
-            verticalLines: currentMoveIndex != null
-                ? [
-                    VerticalLine(
-                      x: currentMoveIndex!.toDouble(),
-                      color: AppTheme.primaryColor,
-                      strokeWidth: 2,
-                      dashArray: [5, 3],
-                    ),
-                  ]
-                : [],
+            verticalLines:
+                currentMoveIndex != null
+                    ? [
+                      VerticalLine(
+                        x: currentMoveIndex!.toDouble(),
+                        color: AppTheme.primaryColor,
+                        strokeWidth: 2,
+                        dashArray: [5, 3],
+                      ),
+                    ]
+                    : [],
           ),
         ),
       ),

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Chess board visual themes
-enum BoardThemeType {
-  classicWood,
-  modernBlue,
-  forestGreen,
-}
+enum BoardThemeType { classicWood, modernBlue, forestGreen }
 
 /// Configuration for a chess board theme
 class BoardTheme {
@@ -104,27 +100,21 @@ class BoardTheme {
 
   /// Get all available themes
   static List<BoardTheme> get allThemes => [
-        classicWood,
-        modernBlue,
-        forestGreen,
-      ];
+    classicWood,
+    modernBlue,
+    forestGreen,
+  ];
 }
 
 /// Piece set types
-enum PieceSetType {
-  traditional,
-  modern,
-}
+enum PieceSetType { traditional, modern }
 
 /// Configuration for a piece set
 class PieceSet {
   final String name;
   final String assetPath;
 
-  const PieceSet({
-    required this.name,
-    required this.assetPath,
-  });
+  const PieceSet({required this.name, required this.assetPath});
 
   static const PieceSet traditional = PieceSet(
     name: 'Traditional',

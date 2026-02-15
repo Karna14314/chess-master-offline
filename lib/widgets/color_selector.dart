@@ -28,21 +28,22 @@ class ColorSelector extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Row(
-          children: PlayerColor.values.map((color) {
-            final isSelected = color == selectedColor;
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: color != PlayerColor.random ? 8 : 0,
-                ),
-                child: _ColorOptionCard(
-                  color: color,
-                  isSelected: isSelected,
-                  onTap: () => onChanged(color),
-                ),
-              ),
-            );
-          }).toList(),
+          children:
+              PlayerColor.values.map((color) {
+                final isSelected = color == selectedColor;
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: color != PlayerColor.random ? 8 : 0,
+                    ),
+                    child: _ColorOptionCard(
+                      color: color,
+                      isSelected: isSelected,
+                      onTap: () => onChanged(color),
+                    ),
+                  ),
+                );
+              }).toList(),
         ),
       ],
     );
@@ -65,9 +66,10 @@ class _ColorOptionCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      color: isSelected
-          ? theme.colorScheme.primary
-          : theme.colorScheme.surfaceContainerHighest,
+      color:
+          isSelected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(16),
       elevation: isSelected ? 4 : 0,
       child: InkWell(
@@ -83,9 +85,10 @@ class _ColorOptionCard extends StatelessWidget {
               Text(
                 color.displayName,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isSelected
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.onSurface,
+                  color:
+                      isSelected
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -98,9 +101,8 @@ class _ColorOptionCard extends StatelessWidget {
 
   Widget _buildPieceIcon(BuildContext context) {
     final theme = Theme.of(context);
-    final iconColor = isSelected
-        ? theme.colorScheme.onPrimary
-        : theme.colorScheme.onSurface;
+    final iconColor =
+        isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface;
 
     switch (color) {
       case PlayerColor.white:
@@ -170,11 +172,7 @@ class _ColorOptionCard extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: Icon(
-              Icons.shuffle_rounded,
-              size: 28,
-              color: iconColor,
-            ),
+            child: Icon(Icons.shuffle_rounded, size: 28, color: iconColor),
           ),
         );
     }
@@ -186,11 +184,7 @@ class ColorBadge extends StatelessWidget {
   final PlayerColor color;
   final bool compact;
 
-  const ColorBadge({
-    super.key,
-    required this.color,
-    this.compact = false,
-  });
+  const ColorBadge({super.key, required this.color, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -213,16 +207,18 @@ class ColorBadge extends StatelessWidget {
             width: compact ? 14 : 16,
             height: compact ? 14 : 16,
             decoration: BoxDecoration(
-              color: color == PlayerColor.white
-                  ? Colors.white
-                  : color == PlayerColor.black
+              color:
+                  color == PlayerColor.white
+                      ? Colors.white
+                      : color == PlayerColor.black
                       ? Colors.grey.shade800
                       : null,
-              gradient: color == PlayerColor.random
-                  ? LinearGradient(
-                      colors: [Colors.white, Colors.grey.shade800],
-                    )
-                  : null,
+              gradient:
+                  color == PlayerColor.random
+                      ? LinearGradient(
+                        colors: [Colors.white, Colors.grey.shade800],
+                      )
+                      : null,
               shape: BoxShape.circle,
               border: Border.all(color: _getBorderColor(), width: 1),
             ),

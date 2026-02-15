@@ -99,10 +99,7 @@ class GameAnalysis {
   });
 
   factory GameAnalysis.empty() {
-    return const GameAnalysis(
-      moves: [],
-      averageAccuracy: 0.0,
-    );
+    return const GameAnalysis(moves: [], averageAccuracy: 0.0);
   }
 
   /// Calculate accuracy from moves

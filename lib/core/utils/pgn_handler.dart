@@ -28,10 +28,7 @@ class PGNHandler {
     final game = chess.Chess();
 
     for (final move in gameState.moveHistory) {
-      final moveMap = {
-        'from': move.from,
-        'to': move.to,
-      };
+      final moveMap = {'from': move.from, 'to': move.to};
       if (move.promotion != null) {
         moveMap['promotion'] = move.promotion!;
       }

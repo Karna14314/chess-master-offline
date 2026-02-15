@@ -1,4 +1,3 @@
-
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -22,7 +21,7 @@ void main() {
     int processedCount = 0;
 
     for (final line in lines) {
-       if (line.startsWith('info') && line.contains('pv')) {
+      if (line.startsWith('info') && line.contains('pv')) {
         final pvMatch = _multiPvRegex.firstMatch(line);
         final depthMatch = _depthRegex.firstMatch(line);
         final scoreMatch = _scoreCpRegex.firstMatch(line);
@@ -90,15 +89,27 @@ void main() {
 
     // Assertions
     // 1. Correctness: The generated lines have 4 moves each. 10000 * 4 = 40000.
-    expect(processedCountOptimized, 40000, reason: "Optimized parser should correctly identify 4 moves per line");
+    expect(
+      processedCountOptimized,
+      40000,
+      reason: "Optimized parser should correctly identify 4 moves per line",
+    );
 
     // 2. Performance: Optimized should be faster.
     // Note: In extremely slow environments (CI), this might be flaky if diff is small, but here diff is ~3x.
     // We put a lenient check.
-    expect(optimizedTime < baselineTime, isTrue, reason: "Optimized parser should be faster than baseline");
+    expect(
+      optimizedTime < baselineTime,
+      isTrue,
+      reason: "Optimized parser should be faster than baseline",
+    );
 
     // 3. Bug verification: Baseline matches 'pv 1 ...' inside 'multipv 1' so it returns garbage moves.
     // Baseline count is 190000 (19 items per line) vs 40000 (4 items per line).
-    expect(processedCount, isNot(40000), reason: "Baseline parser incorrectly parses multipv lines");
+    expect(
+      processedCount,
+      isNot(40000),
+      reason: "Baseline parser incorrectly parses multipv lines",
+    );
   });
 }

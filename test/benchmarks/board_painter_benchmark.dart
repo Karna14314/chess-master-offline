@@ -63,7 +63,11 @@ void main() {
 
     stopwatch.stop();
 
-    print('Benchmark finished: ${stopwatch.elapsedMilliseconds}ms for $iterations iterations');
-    print('Average time per paint: ${stopwatch.elapsedMicroseconds / iterations}µs');
+    print(
+      'Benchmark finished: ${stopwatch.elapsedMilliseconds}ms for $iterations iterations',
+    );
+    print(
+      'Average time per paint: ${stopwatch.elapsedMicroseconds / iterations}µs',
+    );
   });
 }

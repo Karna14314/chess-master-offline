@@ -10,12 +10,14 @@ void main() {
       return {
         'id': 'game_$index',
         // Distribute dates over the last year
-        'created_at': DateTime.now()
-            .subtract(Duration(hours: index))
-            .millisecondsSinceEpoch,
-        'updated_at': DateTime.now()
-            .subtract(Duration(hours: index))
-            .millisecondsSinceEpoch,
+        'created_at':
+            DateTime.now()
+                .subtract(Duration(hours: index))
+                .millisecondsSinceEpoch,
+        'updated_at':
+            DateTime.now()
+                .subtract(Duration(hours: index))
+                .millisecondsSinceEpoch,
         'player_color': index % 2 == 0 ? 'white' : 'black',
         'result': '1-0',
         'is_completed': 1,
@@ -34,7 +36,8 @@ void main() {
     final dateFormat = DateFormat('MMM d, yyyy');
 
     for (final game in allGames) {
-      final timestamp = game['updated_at'] as int? ?? game['created_at'] as int?;
+      final timestamp =
+          game['updated_at'] as int? ?? game['created_at'] as int?;
       if (timestamp != null) {
         final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
         final dateKey = dateFormat.format(date);
@@ -55,7 +58,8 @@ void main() {
 
     final groupedChunk = <String, List<Map<String, dynamic>>>{};
     for (final game in chunk) {
-       final timestamp = game['updated_at'] as int? ?? game['created_at'] as int?;
+      final timestamp =
+          game['updated_at'] as int? ?? game['created_at'] as int?;
       if (timestamp != null) {
         final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
         final dateKey = dateFormat.format(date);
@@ -67,6 +71,8 @@ void main() {
     final paginatedTime = stopwatch.elapsedMilliseconds;
     print('Paginated (20 items): ${paginatedTime} ms');
 
-    print('Improvement: ${(baselineTime / paginatedTime).toStringAsFixed(1)}x faster processing');
+    print(
+      'Improvement: ${(baselineTime / paginatedTime).toStringAsFixed(1)}x faster processing',
+    );
   });
 }

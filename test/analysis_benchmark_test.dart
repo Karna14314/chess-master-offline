@@ -22,20 +22,24 @@ class MockStockfishService implements StockfishService {
   Future<void> initialize() async {}
 
   @override
-  Future<BestMoveResult> getBestMove({required String fen, required int depth, int? thinkTimeMs}) async {
+  Future<BestMoveResult> getBestMove({
+    required String fen,
+    required int depth,
+    int? thinkTimeMs,
+  }) async {
     return BestMoveResult(bestMove: 'e2e4');
   }
 
   @override
-  Future<AnalysisResult> analyzePosition({required String fen, int depth = 15, int multiPv = 1}) async {
+  Future<AnalysisResult> analyzePosition({
+    required String fen,
+    int depth = 15,
+    int multiPv = 1,
+  }) async {
     return AnalysisResult(
       evaluation: 50,
       lines: [
-        EngineLine(
-          evaluation: 50,
-          depth: depth,
-          moves: ['e2e4'],
-        )
+        EngineLine(evaluation: 50, depth: depth, moves: ['e2e4']),
       ],
       depth: depth,
     );
@@ -75,17 +79,19 @@ void main() {
       final san = game.move_to_san(moveObj);
 
       game.move(moveObj);
-      moves.add(ChessMove(
-        from: moveObj.fromAlgebraic,
-        to: moveObj.toAlgebraic,
-        san: san,
-        promotion: moveObj.promotion?.name,
-        isCapture: moveObj.captured != null,
-        isCheck: game.in_check,
-        isCheckmate: game.in_checkmate,
-        isCastle: false,
-        fen: game.fen,
-      ));
+      moves.add(
+        ChessMove(
+          from: moveObj.fromAlgebraic,
+          to: moveObj.toAlgebraic,
+          san: san,
+          promotion: moveObj.promotion?.name,
+          isCapture: moveObj.captured != null,
+          isCheck: game.in_check,
+          isCheckmate: game.in_checkmate,
+          isCastle: false,
+          fen: game.fen,
+        ),
+      );
       moveCount++;
     }
 
@@ -109,7 +115,11 @@ void main() {
     // 5. Verify optimized updates
     // Batch size is 5.
     final expectedUpdates = (moves.length / 5).ceil();
-    expect(notifier.stateUpdateCount, expectedUpdates, reason: 'State should update every 5 moves');
+    expect(
+      notifier.stateUpdateCount,
+      expectedUpdates,
+      reason: 'State should update every 5 moves',
+    );
 
     // Verify results
     expect(notifier.state.analyzedMoves.length, moves.length);

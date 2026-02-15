@@ -47,7 +47,10 @@ class PuzzleInfo extends StatelessWidget {
               const Spacer(),
               if (streak > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.accentColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -79,22 +82,26 @@ class PuzzleInfo extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 4,
-              children: puzzle.themes.take(4).map((theme) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceDark,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _formatTheme(theme),
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                );
-              }).toList(),
+              children:
+                  puzzle.themes.take(4).map((theme) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceDark,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _formatTheme(theme),
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    );
+                  }).toList(),
             ),
         ],
       ),
@@ -115,10 +122,14 @@ class PuzzleInfo extends StatelessWidget {
       RegExp(r'([A-Z])'),
       (match) => ' ${match.group(1)}',
     );
-    return words.trim().split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+    return words
+        .trim()
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ');
   }
 }
 
@@ -154,10 +165,7 @@ class _InfoChip extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: color.withOpacity(0.7),
-                  fontSize: 10,
-                ),
+                style: TextStyle(color: color.withOpacity(0.7), fontSize: 10),
               ),
               Text(
                 value,
@@ -197,12 +205,10 @@ class PuzzleResultDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPositive = ratingChange >= 0;
-    
+
     return Dialog(
       backgroundColor: AppTheme.surfaceDark,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -213,9 +219,10 @@ class PuzzleResultDialog extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: solved 
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.red.withOpacity(0.2),
+                color:
+                    solved
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.red.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -241,10 +248,7 @@ class PuzzleResultDialog extends StatelessWidget {
               children: [
                 const Text(
                   'Rating: ',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 16),
                 ),
                 Text(
                   '$newRating',
@@ -269,7 +273,10 @@ class PuzzleResultDialog extends StatelessWidget {
             if (solved && streak > 1) ...[
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.accentColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(16),
@@ -340,10 +347,7 @@ class PuzzleResultDialog extends StatelessWidget {
 class ToPlayIndicator extends StatelessWidget {
   final bool isWhiteToPlay;
 
-  const ToPlayIndicator({
-    super.key,
-    required this.isWhiteToPlay,
-  });
+  const ToPlayIndicator({super.key, required this.isWhiteToPlay});
 
   @override
   Widget build(BuildContext context) {

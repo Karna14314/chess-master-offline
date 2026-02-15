@@ -26,7 +26,9 @@ void main() {
   }
   stopwatchFen.stop();
   print('Method 1 (fromFEN): ${stopwatchFen.elapsedMilliseconds} ms');
-  print('  Avg per op: ${(stopwatchFen.elapsedMicroseconds / iterations).toStringAsFixed(2)} us');
+  print(
+    '  Avg per op: ${(stopwatchFen.elapsedMicroseconds / iterations).toStringAsFixed(2)} us',
+  );
 
   // Benchmark 2: Optimized approach (copy)
   final stopwatchCopy = Stopwatch()..start();
@@ -35,11 +37,16 @@ void main() {
   }
   stopwatchCopy.stop();
   print('Method 2 (copy): ${stopwatchCopy.elapsedMilliseconds} ms');
-  print('  Avg per op: ${(stopwatchCopy.elapsedMicroseconds / iterations).toStringAsFixed(2)} us');
+  print(
+    '  Avg per op: ${(stopwatchCopy.elapsedMicroseconds / iterations).toStringAsFixed(2)} us',
+  );
 
-  final ratio = stopwatchFen.elapsedMicroseconds / stopwatchCopy.elapsedMicroseconds;
+  final ratio =
+      stopwatchFen.elapsedMicroseconds / stopwatchCopy.elapsedMicroseconds;
   print('Improvement: ${ratio.toStringAsFixed(2)}x faster');
 
-  final savingsPerOp = (stopwatchFen.elapsedMicroseconds - stopwatchCopy.elapsedMicroseconds) / iterations;
+  final savingsPerOp =
+      (stopwatchFen.elapsedMicroseconds - stopwatchCopy.elapsedMicroseconds) /
+      iterations;
   print('Time saved per operation: ${savingsPerOp.toStringAsFixed(2)} us');
 }

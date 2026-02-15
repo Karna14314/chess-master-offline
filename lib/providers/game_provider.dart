@@ -147,7 +147,8 @@ class GameNotifier extends StateNotifier<GameState> {
 
     final captured = lastMove?['captured'];
     final isCapture = captured != null;
-    final capturedPieceName = captured is chess.PieceType ? captured.name : null;
+    final capturedPieceName =
+        captured is chess.PieceType ? captured.name : null;
 
     final isCastle =
         lastMove?['flags']?.toString().contains('k') == true ||
@@ -250,9 +251,10 @@ class GameNotifier extends StateNotifier<GameState> {
 
     // Rebuild move history
     final newHistoryLength = state.moveHistory.length - movesToUndo;
-    final newHistory = newHistoryLength > 0
-        ? state.moveHistory.sublist(0, newHistoryLength)
-        : <ChessMove>[];
+    final newHistory =
+        newHistoryLength > 0
+            ? state.moveHistory.sublist(0, newHistoryLength)
+            : <ChessMove>[];
 
     final lastMove = newHistory.isNotEmpty ? newHistory.last : null;
 
