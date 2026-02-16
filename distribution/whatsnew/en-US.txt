@@ -1,0 +1,4 @@
+- Performance improvements and bug fixes
+- Enhanced puzzle system with more puzzles
+- Improved Stockfish engine integration
+- Better game analysis experience
