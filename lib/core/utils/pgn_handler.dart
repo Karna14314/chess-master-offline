@@ -22,9 +22,8 @@ class PGNHandler {
             isCheck: m['flags']?.toString().contains('+') ?? false,
             isCheckmate: m['flags']?.toString().contains('#') ?? false,
             isCastle:
-                m['flags']?.toString().contains('k') ??
-                false || m['flags']?.toString().contains('q') ??
-                false,
+                (m['flags']?.toString().contains('k') ?? false) ||
+                (m['flags']?.toString().contains('q') ?? false),
             fen: game.fen,
           ),
         );
@@ -38,6 +37,6 @@ class PGNHandler {
 
   static String exportPgn(GameState gameState) {
     final game = chess.Chess.fromFEN(gameState.fen);
-    return game.pgn;
+    return game.pgn();
   }
 }

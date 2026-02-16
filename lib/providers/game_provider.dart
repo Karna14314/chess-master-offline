@@ -147,7 +147,8 @@ class GameNotifier extends StateNotifier<GameState> {
 
     final captured = lastMove?['captured'];
     final isCapture = captured != null;
-    final capturedPieceName = captured is chess.PieceType ? captured.name : null;
+    final capturedPieceName =
+        captured is chess.PieceType ? captured.name : null;
 
     final isCastle =
         lastMove?['flags']?.toString().contains('k') == true ||
@@ -490,8 +491,29 @@ class GameNotifier extends StateNotifier<GameState> {
     if (piece == null) return null;
 
     final color = piece.color == chess.Color.WHITE ? 'w' : 'b';
-    final type = piece.type.name.toUpperCase();
+    // Map piece type to single character
+    final type = _pieceTypeToChar(piece.type);
     return '$color$type';
+  }
+
+  /// Convert piece type to single character
+  String _pieceTypeToChar(chess.PieceType type) {
+    switch (type) {
+      case chess.PieceType.PAWN:
+        return 'P';
+      case chess.PieceType.KNIGHT:
+        return 'N';
+      case chess.PieceType.BISHOP:
+        return 'B';
+      case chess.PieceType.ROOK:
+        return 'R';
+      case chess.PieceType.QUEEN:
+        return 'Q';
+      case chess.PieceType.KING:
+        return 'K';
+      default:
+        return 'P'; // Fallback to pawn
+    }
   }
 
   /// Check if square has a legal move indicator
