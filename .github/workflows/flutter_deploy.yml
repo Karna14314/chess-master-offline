@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 # Cancel any in-progress runs for the same branch
 concurrency:
@@ -101,7 +102,13 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
           PREFIX: ${{ env.VERSION_PREFIX }}
         run: |
-          # Use shell arithmetic
+          # Use shell arithmetic with defaults
+          OFFSET=${OFFSET:-10}
+          RUN_NUM=${RUN_NUM:-1}
+          PREFIX=${PREFIX:-1.0}
+          
+          echo "DEBUG: OFFSET='$OFFSET', RUN_NUM='$RUN_NUM', PREFIX='$PREFIX'"
+          
           BUILD_NUMBER=$(( RUN_NUM + OFFSET ))
           VERSION_NAME="${PREFIX}.${BUILD_NUMBER}"
           
