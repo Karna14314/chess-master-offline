@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
-import 'package:chess_master/screens/bottom_nav/bottom_nav_screen.dart';
+import 'package:chess_master/screens/home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,11 +23,7 @@ void main() async {
     ),
   );
 
-  runApp(
-    const ProviderScope(
-      child: ChessMasterApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: ChessMasterApp()));
 }
 
 class ChessMasterApp extends StatelessWidget {
@@ -39,8 +35,7 @@ class ChessMasterApp extends StatelessWidget {
       title: 'ChessMaster Offline',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: BottomNavScreen(),
+      home: const HomeScreen(),
     );
   }
 }
-
