@@ -107,6 +107,23 @@ class OpeningBookService {
     return null;
   }
 
+  /// Check if a move is a book move for the given position
+  bool isBookMove(String fen, String move) {
+    final normalizedFen = _normalizeFen(fen);
+
+    // Check normalized FEN
+    if (_book.containsKey(normalizedFen)) {
+      return _book[normalizedFen]!.contains(move);
+    }
+
+    // Fallback check for raw FEN
+    if (_book.containsKey(fen)) {
+      return _book[fen]!.contains(move);
+    }
+
+    return false;
+  }
+
   /// Normalize FEN by keeping only the first 4 fields
   /// (Board state, turn, castling rights, en passant target)
   String _normalizeFen(String fen) {

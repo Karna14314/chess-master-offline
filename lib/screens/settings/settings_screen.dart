@@ -4,6 +4,7 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/settings_provider.dart';
+import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 
 /// Settings screen for app customization
 class SettingsScreen extends ConsumerWidget {
@@ -311,12 +312,21 @@ class _PieceSetSelector extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
-                            // Piece preview using Unicode
+                            // Piece preview using Assets
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Text('♔', style: TextStyle(fontSize: 28)),
-                                Text('♚', style: TextStyle(fontSize: 28)),
+                              children: [
+                                ChessPiece(
+                                  piece: 'wK',
+                                  size: 32,
+                                  pieceSet: pieceSet,
+                                ),
+                                const SizedBox(width: 8),
+                                ChessPiece(
+                                  piece: 'bK',
+                                  size: 32,
+                                  pieceSet: pieceSet,
+                                ),
                               ],
                             ),
                             const SizedBox(height: 8),

@@ -1,4 +1,5 @@
 import 'package:chess_master/core/constants/app_constants.dart';
+import 'package:chess_master/core/services/opening_book_service.dart';
 
 /// Model for move analysis data
 class MoveAnalysis {
@@ -176,7 +177,13 @@ MoveClassification classifyMove({
   required bool isWhiteMove,
   required String? bestMove,
   required String actualMove,
+  required String fenBefore,
 }) {
+  // Check if it's a book move first
+  if (OpeningBookService.instance.isBookMove(fenBefore, actualMove)) {
+    return MoveClassification.book;
+  }
+
   // If it was the best move
   if (bestMove != null && actualMove.toLowerCase() == bestMove.toLowerCase()) {
     return MoveClassification.best;

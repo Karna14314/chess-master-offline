@@ -5,6 +5,7 @@ import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/core/services/stockfish_service.dart' as stockfish;
 import 'package:chess_master/core/constants/app_constants.dart';
+import 'dart:async';
 import 'package:chess_master/providers/engine_provider.dart'
     as package_engine_provider;
 
@@ -166,6 +167,7 @@ class AnalysisState {
 class AnalysisNotifier extends StateNotifier<AnalysisState> {
   stockfish.StockfishService? _stockfish;
   bool _isInitialized = false;
+  StreamSubscription? _analysisSubscription;
 
   @visibleForTesting
   int stateUpdateCount = 0;
@@ -286,8 +288,14 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     if (_stockfish == null || !_isInitialized) return;
 
     try {
+      // Cancel existing subscription first to prevent race conditions
+      await _analysisSubscription?.cancel();
+      _analysisSubscription = null;
+
       // Subscribe to live analysis updates
-      final subscription = _stockfish!.analysisStream.listen((result) {
+      _analysisSubscription = _stockfish!.analysisStream.listen((result) {
+        if (!mounted) return;
+
         final engineLines =
             result.lines
                 .asMap()
@@ -320,7 +328,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       );
 
       // Cancel subscription when done
-      await subscription.cancel();
+      await _analysisSubscription?.cancel();
+      _analysisSubscription = null;
+
+      if (!mounted) return;
 
       // Final update
       final engineLines =
@@ -346,7 +357,14 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             result.lines.isNotEmpty ? result.lines.first.moves.first : null,
       );
     } catch (e) {
-      // Silently fail for live analysis
+      // Clean up subscription on error
+      await _analysisSubscription?.cancel();
+      _analysisSubscription = null;
+
+      // Update state with error if mounted
+      if (mounted) {
+         state = state.copyWith(errorMessage: 'Analysis failed: $e');
+      }
     }
   }
 
@@ -388,6 +406,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     for (int i = 0; i < moves.length; i++) {
       final move = moves[i];
       final isWhiteMove = board.turn == chess.Color.WHITE;
+      final fenBefore = board.fen;
 
       // Get best move before making the actual move
       String? bestMove;
@@ -455,6 +474,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         isWhiteMove: isWhiteMove,
         bestMove: bestMove,
         actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
+        fenBefore: fenBefore,
       );
 
       analyzedMoves.add(
@@ -510,6 +530,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   /// Dispose
   @override
   void dispose() {
+    _analysisSubscription?.cancel();
     _stockfish?.dispose();
     super.dispose();
   }

@@ -27,16 +27,25 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'chess_master.db');
 
-    return await openDatabase(
+    final db = await openDatabase(
       path,
       version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+
+    // Ensure critical tables exist (fix for missing table issues)
+    await _ensureTables(db);
+    return db;
   }
 
   /// Create database tables
   Future<void> _onCreate(Database db, int version) async {
+    await _ensureTables(db);
+  }
+
+  /// Ensure all tables exist
+  Future<void> _ensureTables(Database db) async {
     // Games table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS games (
@@ -151,9 +160,9 @@ class DatabaseService {
       );
     }
     
+    // Version 3 ensures all tables exist
     if (oldVersion < 3) {
-      // Ensure all tables exist (fix for missing tables issue)
-      await _onCreate(db, newVersion);
+      await _ensureTables(db);
     }
   }
 

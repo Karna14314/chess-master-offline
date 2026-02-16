@@ -87,6 +87,7 @@ class StockfishService {
     } catch (e) {
       debugPrint('Stockfish engine initialization failed: $e');
       _isReady = false;
+      rethrow; // Re-throw so consumers know initialization failed
     }
   }
 
