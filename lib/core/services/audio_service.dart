@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Service for playing chess game sounds
@@ -8,7 +9,7 @@ class AudioService {
   final AudioPlayer _capturePlayer = AudioPlayer();
   final AudioPlayer _checkPlayer = AudioPlayer();
   final AudioPlayer _gameEndPlayer = AudioPlayer();
-  
+
   bool _enabled = true;
   bool _initialized = false;
 
@@ -22,23 +23,23 @@ class AudioService {
   /// Initialize audio players with sources
   Future<void> initialize() async {
     if (_initialized) return;
-    
+
     try {
       // Preload sounds for faster playback
       await _movePlayer.setSource(AssetSource('sounds/move.mp3'));
       await _capturePlayer.setSource(AssetSource('sounds/capture.mp3'));
       await _checkPlayer.setSource(AssetSource('sounds/check.mp3'));
       await _gameEndPlayer.setSource(AssetSource('sounds/game_end.mp3'));
-      
+
       // Reset players after preloading
       await _movePlayer.stop();
       await _capturePlayer.stop();
       await _checkPlayer.stop();
       await _gameEndPlayer.stop();
-      
+
       _initialized = true;
     } catch (e) {
-      print('Failed to initialize audio service: $e');
+      debugPrint('Failed to initialize audio service: $e');
       // Continue without sound if initialization fails
     }
   }
@@ -55,7 +56,7 @@ class AudioService {
       await _movePlayer.stop();
       await _movePlayer.play(AssetSource('sounds/move.mp3'));
     } catch (e) {
-      print('Error playing move sound: $e');
+      debugPrint('Error playing move sound: $e');
     }
   }
 
@@ -66,7 +67,7 @@ class AudioService {
       await _capturePlayer.stop();
       await _capturePlayer.play(AssetSource('sounds/capture.mp3'));
     } catch (e) {
-      print('Error playing capture sound: $e');
+      debugPrint('Error playing capture sound: $e');
     }
   }
 
@@ -77,7 +78,7 @@ class AudioService {
       await _checkPlayer.stop();
       await _checkPlayer.play(AssetSource('sounds/check.mp3'));
     } catch (e) {
-      print('Error playing check sound: $e');
+      debugPrint('Error playing check sound: $e');
     }
   }
 
@@ -93,7 +94,7 @@ class AudioService {
       await _movePlayer.stop();
       await _movePlayer.play(AssetSource('sounds/game_start.mp3'));
     } catch (e) {
-      print('Error playing game start sound: $e');
+      debugPrint('Error playing game start sound: $e');
     }
   }
 
@@ -104,7 +105,7 @@ class AudioService {
       await _gameEndPlayer.stop();
       await _gameEndPlayer.play(AssetSource('sounds/game_end.mp3'));
     } catch (e) {
-      print('Error playing game end sound: $e');
+      debugPrint('Error playing game end sound: $e');
     }
   }
 
@@ -115,7 +116,7 @@ class AudioService {
       await _movePlayer.stop();
       await _movePlayer.play(AssetSource('sounds/low_time.mp3'));
     } catch (e) {
-      print('Error playing low time sound: $e');
+      debugPrint('Error playing low time sound: $e');
     }
   }
 

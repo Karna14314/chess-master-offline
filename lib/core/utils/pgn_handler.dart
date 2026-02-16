@@ -4,12 +4,30 @@ import 'package:chess_master/models/game_model.dart';
 class PGNHandler {
   static GameState? parsePgn(String pgn) {
     try {
-      final game = chess.Chess.fromPgn(pgn);
-      if (game == null) return null;
+      final game = chess.Chess();
+      game.load_pgn(pgn);
 
       final moves = <ChessMove>[];
-      for (final move in game.history) {
-        moves.add(ChessMove.fromChessMove(move, game));
+      final history = game.getHistory({'verbose': true});
+      for (final move in history) {
+        final m = move as Map;
+        moves.add(
+          ChessMove(
+            from: m['from'] as String,
+            to: m['to'] as String,
+            san: m['san'] as String,
+            promotion: m['promotion']?.toString(),
+            capturedPiece: m['captured']?.toString(),
+            isCapture: m['captured'] != null,
+            isCheck: m['flags']?.toString().contains('+') ?? false,
+            isCheckmate: m['flags']?.toString().contains('#') ?? false,
+            isCastle:
+                m['flags']?.toString().contains('k') ??
+                false || m['flags']?.toString().contains('q') ??
+                false,
+            fen: game.fen,
+          ),
+        );
       }
 
       return GameState.fromFen(game.fen).copyWith(moveHistory: moves);
@@ -20,6 +38,6 @@ class PGNHandler {
 
   static String exportPgn(GameState gameState) {
     final game = chess.Chess.fromFEN(gameState.fen);
-    return game.pgn() ?? '';
+    return game.pgn;
   }
 }

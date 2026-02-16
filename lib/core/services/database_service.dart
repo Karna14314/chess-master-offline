@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Database service for game persistence
@@ -34,7 +35,7 @@ class DatabaseService {
         onUpgrade: _onUpgrade,
       );
     } catch (e) {
-      print('Database initialization error: $e');
+      debugPrint('Database initialization error: $e');
       rethrow;
     }
   }
@@ -126,7 +127,7 @@ class DatabaseService {
 
   /// Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    print('Upgrading database from version $oldVersion to $newVersion');
+    debugPrint('Upgrading database from version $oldVersion to $newVersion');
 
     // Handle migrations between versions
     for (int version = oldVersion + 1; version <= newVersion; version++) {
@@ -157,7 +158,7 @@ class DatabaseService {
     );
 
     if (tables.isEmpty) {
-      print('Creating missing tables during migration...');
+      debugPrint('Creating missing tables during migration...');
       await _onCreate(db, 1);
     }
   }
@@ -324,7 +325,7 @@ class DatabaseService {
       final results = await db.query('statistics', where: 'id = 1');
       return results.isNotEmpty ? results.first : null;
     } catch (e) {
-      print('Error getting statistics: $e');
+      debugPrint('Error getting statistics: $e');
       // Return default statistics if table doesn't exist
       return {
         'id': 1,

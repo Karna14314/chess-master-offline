@@ -149,7 +149,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
       return result;
     } catch (e) {
       state = state.copyWith(isThinking: false);
-      print('Error getting bot move: $e');
+      debugPrint('Error getting bot move: $e');
       return null;
     }
   }
@@ -166,7 +166,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
       return result;
     } catch (e) {
       state = state.copyWith(isThinking: false);
-      print('Error getting hint: $e');
+      debugPrint('Error getting hint: $e');
       return null;
     }
   }
@@ -203,7 +203,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
       );
     } catch (e) {
       state = state.copyWith(isAnalyzing: false);
-      print('Error analyzing position: $e');
+      debugPrint('Error analyzing position: $e');
     }
   }
 
