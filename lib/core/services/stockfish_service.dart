@@ -11,6 +11,7 @@ class StockfishService {
   bool _isReady = false;
   final StreamController<String> _outputController =
       StreamController<String>.broadcast();
+  Completer<void>? _initCompleter;
 
   // RegExps for parsing engine output
   static final RegExp _scoreCpRegex = RegExp(r'score cp (-?\d+)');
@@ -35,7 +36,10 @@ class StockfishService {
 
   /// Initialize the Stockfish engine
   Future<void> initialize() async {
-    if (_stockfish != null && _isReady) return;
+    if (_isReady) return;
+    if (_initCompleter != null) return _initCompleter!.future;
+
+    _initCompleter = Completer<void>();
 
     try {
       _stockfish = Stockfish();
@@ -44,12 +48,14 @@ class StockfishService {
 
       // Listen to engine output
       _stockfish!.stdout.listen((line) {
-        _outputController.add(line);
-        if (line.contains('uciok')) {
-          uciOkReceived = true;
-        }
-        if (line.contains('readyok')) {
-          _isReady = true;
+        if (line.trim().isNotEmpty) {
+           _outputController.add(line);
+           if (line.contains('uciok')) {
+             uciOkReceived = true;
+           }
+           if (line.contains('readyok')) {
+             _isReady = true;
+           }
         }
       });
 
@@ -68,23 +74,20 @@ class StockfishService {
 
       // Configure engine for mobile performance
       _configureEngine();
+      
+      _initCompleter?.complete();
     } catch (e) {
-      // Engine initialization failed - this is acceptable for basic gameplay
-      // Games can still be played without engine (local multiplayer, manual analysis)
       debugPrint('Stockfish engine initialization failed: $e');
-      debugPrint('Games can still be played in local multiplayer mode');
       _isReady = false;
-      // Don't rethrow - allow app to continue without engine
+      _initCompleter?.completeError(e);
+      _initCompleter = null; // Allow retry
     }
   }
 
   /// Configure engine options for optimal mobile performance
   void _configureEngine() {
-    // Limit threads for mobile
     _sendCommand('setoption name Threads value 2');
-    // Limit hash table size
     _sendCommand('setoption name Hash value 64');
-    // Enable skill level control
     _sendCommand('setoption name UCI_LimitStrength value true');
   }
 
@@ -107,7 +110,7 @@ class StockfishService {
   /// Send a command to the engine
   void _sendCommand(String command) {
     if (_stockfish != null) {
-      _stockfish?.stdin = command;
+      _stockfish?.stdin = '$command\n';
     }
   }
 
@@ -132,22 +135,24 @@ class StockfishService {
 
     late StreamSubscription subscription;
     subscription = _outputController.stream.listen((line) {
+      final trimmedLine = line.trim();
+      
       // Parse evaluation from info line
-      if (line.startsWith('info') && line.contains('score')) {
-        final scoreMatch = _scoreCpRegex.firstMatch(line);
+      if (trimmedLine.startsWith('info') && trimmedLine.contains('score')) {
+        final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
         if (scoreMatch != null) {
           evaluation = int.parse(scoreMatch.group(1)!);
         }
 
-        final mateMatch = _scoreMateRegex.firstMatch(line);
+        final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
         if (mateMatch != null) {
           mateIn = int.parse(mateMatch.group(1)!);
         }
       }
 
       // Parse best move
-      if (line.startsWith('bestmove')) {
-        final parts = line.split(' ');
+      if (trimmedLine.startsWith('bestmove')) {
+        final parts = trimmedLine.split(' ');
         if (parts.length >= 2) {
           bestMove = parts[1];
         }
@@ -209,12 +214,14 @@ class StockfishService {
 
     late StreamSubscription subscription;
     subscription = _outputController.stream.listen((line) {
-      if (line.startsWith('info') && line.contains('pv')) {
-        final pvMatch = _multiPvRegex.firstMatch(line);
-        final depthMatch = _depthRegex.firstMatch(line);
-        final scoreMatch = _scoreCpRegex.firstMatch(line);
-        final mateMatch = _scoreMateRegex.firstMatch(line);
-        final pvMovesMatch = _pvMovesRegex.firstMatch(line);
+      final trimmedLine = line.trim();
+      
+      if (trimmedLine.startsWith('info') && trimmedLine.contains('pv')) {
+        final pvMatch = _multiPvRegex.firstMatch(trimmedLine);
+        final depthMatch = _depthRegex.firstMatch(trimmedLine);
+        final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
+        final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
+        final pvMovesMatch = _pvMovesRegex.firstMatch(trimmedLine);
 
         if (pvMovesMatch != null) {
           final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
@@ -259,7 +266,7 @@ class StockfishService {
         }
       }
 
-      if (line.startsWith('bestmove')) {
+      if (trimmedLine.startsWith('bestmove')) {
         subscription.cancel();
         // Reset MultiPV to 1
         _sendCommand('setoption name MultiPV value 1');

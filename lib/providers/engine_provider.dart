@@ -148,6 +148,8 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
       return result;
     } catch (e) {
+      // Ensure engine is stopped if something goes wrong or times out
+      _service.stopAnalysis();
       state = state.copyWith(isThinking: false);
       debugPrint('Error getting bot move: $e');
       return null;
