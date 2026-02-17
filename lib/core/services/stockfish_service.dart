@@ -41,46 +41,66 @@ class StockfishService {
 
     _initCompleter = Completer<void>();
 
-    try {
-      _stockfish = Stockfish();
+    int retryCount = 0;
+    const maxRetries = 3;
 
-      bool uciOkReceived = false;
+    while (retryCount < maxRetries) {
+      try {
+        _stockfish = Stockfish();
 
-      // Listen to engine output
-      _stockfish!.stdout.listen((line) {
-        if (line.trim().isNotEmpty) {
-           _outputController.add(line);
-           if (line.contains('uciok')) {
-             uciOkReceived = true;
-           }
-           if (line.contains('readyok')) {
-             _isReady = true;
-           }
+        bool uciOkReceived = false;
+
+        // Listen to engine output
+        _stockfish!.stdout.listen((line) {
+          if (line.trim().isNotEmpty) {
+            _outputController.add(line);
+            if (line.contains('uciok')) {
+              uciOkReceived = true;
+            }
+            if (line.contains('readyok')) {
+              _isReady = true;
+            }
+          }
+        });
+
+        // Initialize UCI mode
+        _sendCommand('uci');
+
+        // Wait for uciok
+        int attempts = 0;
+        while (!uciOkReceived && attempts < 20) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          attempts++;
         }
-      });
 
-      // Initialize UCI mode
-      _sendCommand('uci');
+        // Wait for engine to be ready with timeout
+        await _waitForReady();
 
-      // Wait for uciok
-      int attempts = 0;
-      while (!uciOkReceived && attempts < 20) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        attempts++;
+        // Configure engine for mobile performance
+        _configureEngine();
+
+        _initCompleter?.complete();
+        return;
+      } catch (e) {
+        retryCount++;
+        debugPrint(
+          'Stockfish engine initialization failed (attempt $retryCount): $e',
+        );
+
+        // Dispose only the engine instance, keep the controller open
+        _stockfish?.dispose();
+        _stockfish = null;
+        _isReady = false;
+
+        if (retryCount >= maxRetries) {
+          _initCompleter?.completeError(e);
+          _initCompleter = null; // Allow retry later
+          return;
+        }
+
+        // Small delay before retry
+        await Future.delayed(const Duration(milliseconds: 200));
       }
-
-      // Wait for engine to be ready with timeout
-      await _waitForReady();
-
-      // Configure engine for mobile performance
-      _configureEngine();
-      
-      _initCompleter?.complete();
-    } catch (e) {
-      debugPrint('Stockfish engine initialization failed: $e');
-      _isReady = false;
-      _initCompleter?.completeError(e);
-      _initCompleter = null; // Allow retry
     }
   }
 
@@ -97,13 +117,14 @@ class StockfishService {
     _sendCommand('isready');
 
     int attempts = 0;
-    while (!_isReady && attempts < 100) {
+    // Timeout after 3 seconds (30 * 100ms)
+    while (!_isReady && attempts < 30) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
     }
 
     if (!_isReady) {
-      throw Exception('Stockfish failed to initialize after 10 seconds');
+      throw Exception('Stockfish failed to initialize after 3 seconds');
     }
   }
 
