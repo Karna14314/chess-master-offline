@@ -1,4 +1,5 @@
-- Performance improvements and bug fixes
-- Enhanced puzzle system with more puzzles
-- Improved Stockfish engine integration
-- Better game analysis experience
+Fixed a critical issue where the chess engine would get stuck on some devices.
+Restored missing features: Puzzles, Game Analysis, and Statistics.
+Improved navigation with a new bottom bar for easier access to all game modes.
+Enhanced stability and performance for smoother gameplay.
+Fixed various UI glitches and missing icons.
