@@ -1,6 +1,1 @@
-Implemented engine watchdog to automatically restart the AI if it becomes unresponsive.
-Fixed a critical issue where the chess engine would get stuck on some devices.
-Restored missing features: Puzzles, Game Analysis, and Statistics.
-Improved navigation with a new bottom bar for easier access to all game modes.
-Enhanced stability and performance for smoother gameplay.
-Fixed various UI glitches and missing icons.
+Fixed issue where the engine would freeze and not recover (Watchdog Mechanism added).
