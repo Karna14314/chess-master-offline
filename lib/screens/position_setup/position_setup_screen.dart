@@ -277,12 +277,13 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
               child: Container(
                 color: isLight ? theme.lightSquare : theme.darkSquare,
                 child: Center(
-                  child: piece != null
-                      ? Text(
-                          _getPieceUnicode(piece),
-                          style: const TextStyle(fontSize: 32),
-                        )
-                      : null,
+                  child:
+                      piece != null
+                          ? Text(
+                            _getPieceUnicode(piece),
+                            style: const TextStyle(fontSize: 32),
+                          )
+                          : null,
                 ),
               ),
             );
@@ -513,24 +514,26 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: isValid
-                ? () => Navigator.pop(context, {
-                    'action': 'analyze',
-                    'fen': _generateFen(),
-                  })
-                : null,
+            onPressed:
+                isValid
+                    ? () => Navigator.pop(context, {
+                      'action': 'analyze',
+                      'fen': _generateFen(),
+                    })
+                    : null,
             child: const Text('Analyze'),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton(
-            onPressed: isValid
-                ? () => Navigator.pop(context, {
-                    'action': 'play',
-                    'fen': _generateFen(),
-                  })
-                : null,
+            onPressed:
+                isValid
+                    ? () => Navigator.pop(context, {
+                      'action': 'play',
+                      'fen': _generateFen(),
+                    })
+                    : null,
             child: const Text('Play'),
           ),
         ),

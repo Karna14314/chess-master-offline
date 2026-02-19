@@ -126,12 +126,10 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
     if (widget.useExternalState) {
       effectiveFlipped = widget.isFlipped ^ settings.boardFlipped;
       effectiveSelectedSquare = widget.selectedSquare;
-      effectiveLegalMoves = settings.showLegalMoves
-          ? (widget.legalMoves ?? [])
-          : [];
-      effectiveLastMoveFrom = settings.showLastMove
-          ? widget.lastMoveFrom
-          : null;
+      effectiveLegalMoves =
+          settings.showLegalMoves ? (widget.legalMoves ?? []) : [];
+      effectiveLastMoveFrom =
+          settings.showLastMove ? widget.lastMoveFrom : null;
       effectiveLastMoveTo = settings.showLastMove ? widget.lastMoveTo : null;
       effectiveShowCoordinates = widget.showCoordinates;
       effectiveInCheck = _externalBoard?.in_check ?? false;
@@ -141,22 +139,21 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
       effectiveFlipped = widget.flipped ^ settings.boardFlipped;
       effectiveSelectedSquare = gameState.selectedSquare;
       effectiveLegalMoves = settings.showLegalMoves ? gameState.legalMoves : [];
-      effectiveLastMoveFrom = settings.showLastMove
-          ? gameState.lastMoveFrom
-          : null;
+      effectiveLastMoveFrom =
+          settings.showLastMove ? gameState.lastMoveFrom : null;
       effectiveLastMoveTo = settings.showLastMove ? gameState.lastMoveTo : null;
       effectiveShowCoordinates = settings.showCoordinates;
       effectiveInCheck = gameState.inCheck;
       effectiveKingSquare = _findKingSquareInternal(gameState.isWhiteTurn);
     }
 
-    final hintMove = widget.useExternalState
-        ? null
-        : ref.watch(gameProvider).hint;
+    final hintMove =
+        widget.useExternalState ? null : ref.watch(gameProvider).hint;
 
-    final isInteractive = widget.useExternalState
-        ? (widget.onSquareTap != null || widget.onMove != null)
-        : widget.interactive;
+    final isInteractive =
+        widget.useExternalState
+            ? (widget.onSquareTap != null || widget.onMove != null)
+            : widget.interactive;
 
     return AspectRatio(
       aspectRatio: 1,
@@ -166,19 +163,21 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
           final squareSize = boardSize / 8;
 
           return GestureDetector(
-            onPanStart: isInteractive
-                ? (details) =>
-                      _onDragStart(details, squareSize, effectiveFlipped)
-                : null,
-            onPanUpdate: isInteractive
-                ? (details) => _onDragUpdate(details)
-                : null,
-            onPanEnd: isInteractive
-                ? (details) => _onDragEnd(squareSize, effectiveFlipped)
-                : null,
-            onTapUp: isInteractive
-                ? (details) => _onTap(details, squareSize, effectiveFlipped)
-                : null,
+            onPanStart:
+                isInteractive
+                    ? (details) =>
+                        _onDragStart(details, squareSize, effectiveFlipped)
+                    : null,
+            onPanUpdate:
+                isInteractive ? (details) => _onDragUpdate(details) : null,
+            onPanEnd:
+                isInteractive
+                    ? (details) => _onDragEnd(squareSize, effectiveFlipped)
+                    : null,
+            onTapUp:
+                isInteractive
+                    ? (details) => _onTap(details, squareSize, effectiveFlipped)
+                    : null,
             child: Stack(
               children: [
                 // Board squares
@@ -477,16 +476,14 @@ class _BoardPainter extends CustomPainter {
 
         // Last move highlight
         if (square == lastMoveFrom || square == lastMoveTo) {
-          color = isLight
-              ? theme.lastMoveLightSquare
-              : theme.lastMoveDarkSquare;
+          color =
+              isLight ? theme.lastMoveLightSquare : theme.lastMoveDarkSquare;
         }
 
         // Selected square highlight
         if (square == selectedSquare) {
-          color = isLight
-              ? theme.lightSquareHighlight
-              : theme.darkSquareHighlight;
+          color =
+              isLight ? theme.lightSquareHighlight : theme.darkSquareHighlight;
         }
 
         // Hint highlight
@@ -515,10 +512,11 @@ class _BoardPainter extends CustomPainter {
 
           if (isCapture) {
             // Capture indicator - ring
-            final ringPaint = Paint()
-              ..color = theme.legalMoveCapture
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = squareSize * 0.08;
+            final ringPaint =
+                Paint()
+                  ..color = theme.legalMoveCapture
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = squareSize * 0.08;
             canvas.drawCircle(center, squareSize * 0.4, ringPaint);
           } else {
             // Move indicator - dot
@@ -560,9 +558,10 @@ class _BoardPainter extends CustomPainter {
 
     // Draw file letters on bottom row
     if ((isFlipped ? rank == 0 : rank == 7)) {
-      final fileLabel = isFlipped
-          ? String.fromCharCode('h'.codeUnitAt(0) - file)
-          : String.fromCharCode('a'.codeUnitAt(0) + file);
+      final fileLabel =
+          isFlipped
+              ? String.fromCharCode('h'.codeUnitAt(0) - file)
+              : String.fromCharCode('a'.codeUnitAt(0) + file);
       final textSpan = TextSpan(text: fileLabel, style: textStyle);
       final textPainter = TextPainter(
         text: textSpan,
@@ -580,9 +579,8 @@ class _BoardPainter extends CustomPainter {
 
     // Draw rank numbers on left column
     if (file == 0) {
-      final rankLabel = isFlipped
-          ? (rank + 1).toString()
-          : (8 - rank).toString();
+      final rankLabel =
+          isFlipped ? (rank + 1).toString() : (8 - rank).toString();
       final textSpan = TextSpan(text: rankLabel, style: textStyle);
       final textPainter = TextPainter(
         text: textSpan,
@@ -633,19 +631,21 @@ class _ArrowPainter extends CustomPainter {
 
     if (fromPos == null || toPos == null) return;
 
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = squareSize * 0.15
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = squareSize * 0.15
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
 
     // Draw line
     canvas.drawLine(fromPos, toPos, paint);
 
     // Draw arrowhead
-    final arrowPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    final arrowPaint =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
 
     final arrowSize = squareSize * 0.3;
 

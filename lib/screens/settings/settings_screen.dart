@@ -106,8 +106,8 @@ class SettingsScreen extends ConsumerWidget {
                 _buildSettingsCard(context, [
                   _AnimationSpeedSelector(
                     currentSpeed: settings.animationSpeed,
-                    onChanged: (speed) =>
-                        settingsNotifier.setAnimationSpeed(speed),
+                    onChanged:
+                        (speed) => settingsNotifier.setAnimationSpeed(speed),
                   ),
                   const Divider(color: AppTheme.borderColor),
                   _SwitchSetting(
@@ -258,9 +258,10 @@ class _BoardThemeSelector extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected
-                              ? AppTheme.primaryColor
-                              : Colors.grey.withOpacity(0.3),
+                          color:
+                              isSelected
+                                  ? AppTheme.primaryColor
+                                  : Colors.grey.withOpacity(0.3),
                           width: isSelected ? 3 : 1,
                         ),
                         gradient: LinearGradient(
@@ -272,14 +273,17 @@ class _BoardThemeSelector extends StatelessWidget {
                           ],
                           stops: const [0.5, 0.5],
                         ),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: AppTheme.primaryColor.withOpacity(0.4),
-                                  blurRadius: 8,
-                                ),
-                              ]
-                            : null,
+                        boxShadow:
+                            isSelected
+                                ? [
+                                  BoxShadow(
+                                    color: AppTheme.primaryColor.withOpacity(
+                                      0.4,
+                                    ),
+                                    blurRadius: 8,
+                                  ),
+                                ]
+                                : null,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -287,12 +291,12 @@ class _BoardThemeSelector extends StatelessWidget {
                       boardTheme.name,
                       style: GoogleFonts.inter(
                         fontSize: 10,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isSelected
-                            ? AppTheme.primaryColor
-                            : AppTheme.textSecondary,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        color:
+                            isSelected
+                                ? AppTheme.primaryColor
+                                : AppTheme.textSecondary,
                       ),
                     ),
                   ],
@@ -347,14 +351,16 @@ class _PieceSetSelector extends StatelessWidget {
                 child: Container(
                   width: 80,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.primaryColor.withOpacity(0.1)
-                        : Colors.transparent,
+                    color:
+                        isSelected
+                            ? AppTheme.primaryColor.withOpacity(0.1)
+                            : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected
-                          ? AppTheme.primaryColor
-                          : Colors.transparent,
+                      color:
+                          isSelected
+                              ? AppTheme.primaryColor
+                              : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -375,12 +381,12 @@ class _PieceSetSelector extends StatelessWidget {
                         pieceSet.name,
                         style: GoogleFonts.inter(
                           fontSize: 11,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isSelected
-                              ? AppTheme.primaryColor
-                              : AppTheme.textSecondary,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          color:
+                              isSelected
+                                  ? AppTheme.primaryColor
+                                  : AppTheme.textSecondary,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -432,35 +438,39 @@ class _AnimationSpeedSelector extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
-              children: AnimationSpeed.values.map((speed) {
-                final isSelected = currentSpeed == speed;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => onChanged(speed),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppTheme.primaryColor
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        speed.label,
-                        style: GoogleFonts.inter(
-                          color: isSelected
-                              ? Colors.white
-                              : AppTheme.textSecondary,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          fontSize: 12,
+              children:
+                  AnimationSpeed.values.map((speed) {
+                    final isSelected = currentSpeed == speed;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => onChanged(speed),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color:
+                                isSelected
+                                    ? AppTheme.primaryColor
+                                    : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            speed.label,
+                            style: GoogleFonts.inter(
+                              color:
+                                  isSelected
+                                      ? Colors.white
+                                      : AppTheme.textSecondary,
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ),
         ],
