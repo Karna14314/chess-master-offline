@@ -91,7 +91,11 @@ class _PgnImportDialogState extends State<PgnImportDialog> {
                 if (_parsedGame != null)
                   Row(
                     children: [
-                      const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${_parsedGame!.moves.length} moves',
@@ -162,9 +166,9 @@ class PgnExportDialog extends StatelessWidget {
 
   void _copyToClipboard(BuildContext context) {
     Clipboard.setData(ClipboardData(text: pgn));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PGN copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('PGN copied to clipboard')));
   }
 
   void _share(BuildContext context) async {
@@ -205,10 +209,7 @@ class PgnExportDialog extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 child: SelectableText(
                   pgn,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                 ),
               ),
             ),

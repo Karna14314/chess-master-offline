@@ -114,9 +114,7 @@ class AppTheme {
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          foregroundColor: textPrimary,
-        ),
+        style: IconButton.styleFrom(foregroundColor: textPrimary),
       ),
       textTheme: TextTheme(
         displayLarge: GoogleFonts.inter(
@@ -186,11 +184,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        hintStyle: GoogleFonts.inter(
-          color: textHint,
-          fontSize: 14,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
         ),
+        hintStyle: GoogleFonts.inter(color: textHint, fontSize: 14),
       ),
       sliderTheme: SliderThemeData(
         activeTrackColor: primaryColor,
@@ -218,10 +216,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: cardDark,
-        contentTextStyle: GoogleFonts.inter(
-          color: textPrimary,
-          fontSize: 14,
-        ),
+        contentTextStyle: GoogleFonts.inter(color: textPrimary, fontSize: 14),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: borderColor, width: 1),
@@ -237,14 +232,9 @@ class AppTheme {
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
-        unselectedLabelStyle: GoogleFonts.inter(
-          fontSize: 12,
-        ),
+        unselectedLabelStyle: GoogleFonts.inter(fontSize: 12),
       ),
-      dividerTheme: const DividerThemeData(
-        color: borderColor,
-        thickness: 1,
-      ),
+      dividerTheme: const DividerThemeData(color: borderColor, thickness: 1),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: primaryColor,
       ),

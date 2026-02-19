@@ -19,11 +19,11 @@ class EngineStatusIndicator extends ConsumerWidget {
         switch (status) {
           case EngineStatus.ready:
             color = Colors.green;
-            tooltip = 'Stockfish Ready';
+            tooltip = 'Stockfish Active';
             break;
           case EngineStatus.usingFallback:
             color = Colors.amber;
-            tooltip = 'Using Basic Bot (Stockfish Unavailable)';
+            tooltip = 'Simple Bot (Stockfish Offline)';
             break;
           case EngineStatus.initializing:
             color = Colors.blue;
@@ -31,7 +31,7 @@ class EngineStatusIndicator extends ConsumerWidget {
             break;
           case EngineStatus.failed:
             color = Colors.red;
-            tooltip = 'Engine Failed';
+            tooltip = 'Engine Error';
             break;
           case EngineStatus.disposed:
             color = Colors.grey;
@@ -48,7 +48,10 @@ class EngineStatusIndicator extends ConsumerWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: color.withOpacity(0.5),

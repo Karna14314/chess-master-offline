@@ -27,7 +27,11 @@ void main() {
     expect(moveSuccess, true, reason: 'Move e2-e4 should be legal');
 
     gameState = container.read(gameProvider);
-    expect(gameState.fen, isNot(equals(initialFen)), reason: 'FEN should change after move');
+    expect(
+      gameState.fen,
+      isNot(equals(initialFen)),
+      reason: 'FEN should change after move',
+    );
     expect(gameState.moveHistory.length, 1);
 
     // Undo the move
@@ -36,8 +40,16 @@ void main() {
     gameState = container.read(gameProvider);
 
     // This expectation is expected to fail with the bug
-    expect(gameState.fen, equals(initialFen), reason: 'FEN should match initial FEN after undo');
-    expect(gameState.moveHistory.length, 0, reason: 'History should be empty after undo');
+    expect(
+      gameState.fen,
+      equals(initialFen),
+      reason: 'FEN should match initial FEN after undo',
+    );
+    expect(
+      gameState.moveHistory.length,
+      0,
+      reason: 'History should be empty after undo',
+    );
 
     container.dispose();
   });

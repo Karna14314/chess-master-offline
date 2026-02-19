@@ -10,17 +10,12 @@ import 'package:chess_master/screens/analysis/widgets/engine_lines.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/models/analysis_model.dart';
 
-
 /// Post-game analysis screen
 class AnalysisScreen extends ConsumerStatefulWidget {
   final List<ChessMove>? moves;
   final String? startingFen;
 
-  const AnalysisScreen({
-    super.key,
-    this.moves,
-    this.startingFen,
-  });
+  const AnalysisScreen({super.key, this.moves, this.startingFen});
 
   @override
   ConsumerState<AnalysisScreen> createState() => _AnalysisScreenState();
@@ -40,11 +35,12 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   Future<void> _initializeAnalysis() async {
     final notifier = ref.read(analysisProvider.notifier);
     await notifier.initialize();
-    
+
     if (widget.moves != null && widget.moves!.isNotEmpty) {
       await notifier.loadGame(
         moves: widget.moves!,
-        startingFen: widget.startingFen ?? 
+        startingFen:
+            widget.startingFen ??
             'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       );
     }
@@ -84,7 +80,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
             LinearProgressIndicator(
               value: state.analysisProgress,
               backgroundColor: AppTheme.surfaceDark,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppTheme.primaryColor,
+              ),
             ),
 
           Expanded(
@@ -100,9 +98,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                         // Eval bar
                         SizedBox(
                           height: MediaQuery.of(context).size.width - 48,
-                          child: EvalBar(
-                            evaluation: state.currentEval,
-                          ),
+                          child: EvalBar(evaluation: state.currentEval),
                         ),
                         const SizedBox(width: 8),
                         // Chess board
@@ -128,10 +124,14 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                     canGoNext: state.canGoNext,
                     currentMove: state.currentMoveIndex + 1,
                     totalMoves: state.totalMoves,
-                    onFirst: () => ref.read(analysisProvider.notifier).firstMove(),
-                    onPrevious: () => ref.read(analysisProvider.notifier).previousMove(),
-                    onNext: () => ref.read(analysisProvider.notifier).nextMove(),
-                    onLast: () => ref.read(analysisProvider.notifier).lastMove(),
+                    onFirst: () =>
+                        ref.read(analysisProvider.notifier).firstMove(),
+                    onPrevious: () =>
+                        ref.read(analysisProvider.notifier).previousMove(),
+                    onNext: () =>
+                        ref.read(analysisProvider.notifier).nextMove(),
+                    onLast: () =>
+                        ref.read(analysisProvider.notifier).lastMove(),
                   ),
 
                   // Evaluation graph (only show if we have analysis data)
@@ -152,11 +152,13 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                           const SizedBox(height: 8),
                           EvalGraph(
                             evaluations: state.evaluations,
-                            currentMoveIndex: state.currentMoveIndex >= 0 
-                                ? state.currentMoveIndex + 1 
+                            currentMoveIndex: state.currentMoveIndex >= 0
+                                ? state.currentMoveIndex + 1
                                 : 0,
                             onMoveSelected: (index) {
-                              ref.read(analysisProvider.notifier).goToMove(index - 1);
+                              ref
+                                  .read(analysisProvider.notifier)
+                                  .goToMove(index - 1);
                             },
                           ),
                         ],
@@ -168,7 +170,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: EngineLines(
                       lines: state.currentEngineLines,
-                      isLoading: state.isLiveAnalysis && state.currentEngineLines.isEmpty,
+                      isLoading:
+                          state.isLiveAnalysis &&
+                          state.currentEngineLines.isEmpty,
                     ),
                   ),
 
@@ -255,11 +259,7 @@ class _MoveClassificationBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            _getIcon(classification),
-            color: color,
-            size: 20,
-          ),
+          Icon(_getIcon(classification), color: color, size: 20),
           const SizedBox(width: 8),
           Text(
             '${analysis.san} - ${classification.name}',
@@ -283,13 +283,10 @@ class _MoveClassificationBadge extends StatelessWidget {
           if (analysis.evalLoss.abs() > 0.1) ...[
             const SizedBox(width: 12),
             Text(
-              analysis.evalLoss > 0 
+              analysis.evalLoss > 0
                   ? '-${analysis.evalLoss.toStringAsFixed(1)}'
                   : '+${analysis.evalLoss.abs().toStringAsFixed(1)}',
-              style: TextStyle(
-                color: color.withOpacity(0.8),
-                fontSize: 12,
-              ),
+              style: TextStyle(color: color.withOpacity(0.8), fontSize: 12),
             ),
           ],
         ],
@@ -421,9 +418,16 @@ class _AnalysisSummary extends StatelessWidget {
           // Accuracy
           Row(
             children: [
-              const Icon(Icons.analytics, color: AppTheme.primaryColor, size: 20),
+              const Icon(
+                Icons.analytics,
+                color: AppTheme.primaryColor,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              const Text('Accuracy:', style: TextStyle(color: AppTheme.textSecondary)),
+              const Text(
+                'Accuracy:',
+                style: TextStyle(color: AppTheme.textSecondary),
+              ),
               const Spacer(),
               Text(
                 '${analysis.averageAccuracy.toStringAsFixed(1)}%',
@@ -503,10 +507,7 @@ class _StatChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              color: color.withOpacity(0.8),
-              fontSize: 12,
-            ),
+            style: TextStyle(color: color.withOpacity(0.8), fontSize: 12),
           ),
         ],
       ),
@@ -553,8 +554,8 @@ class _MoveList extends StatelessWidget {
             runSpacing: 4,
             children: List.generate(moves.length, (index) {
               final move = moves[index];
-              final analysis = index < analyzedMoves.length 
-                  ? analyzedMoves[index] 
+              final analysis = index < analyzedMoves.length
+                  ? analyzedMoves[index]
                   : null;
               final isSelected = index == currentIndex;
               final isWhiteMove = index % 2 == 0;
@@ -569,25 +570,30 @@ class _MoveList extends StatelessWidget {
               return GestureDetector(
                 onTap: () => onMoveSelected(index),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected 
+                    color: isSelected
                         ? AppTheme.primaryColor.withOpacity(0.3)
                         : classificationColor?.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
-                    border: isSelected 
+                    border: isSelected
                         ? Border.all(color: AppTheme.primaryColor, width: 2)
                         : classificationColor != null
-                            ? Border.all(color: classificationColor.withOpacity(0.3))
-                            : null,
+                        ? Border.all(
+                            color: classificationColor.withOpacity(0.3),
+                          )
+                        : null,
                   ),
                   child: Text(
-                    isWhiteMove 
-                        ? '$moveNum. ${move.san}'
-                        : move.san,
+                    isWhiteMove ? '$moveNum. ${move.san}' : move.san,
                     style: TextStyle(
                       color: classificationColor ?? AppTheme.textPrimary,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       fontSize: 13,
                     ),
                   ),

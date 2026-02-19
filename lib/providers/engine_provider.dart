@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/core/services/stockfish_service.dart';
-import 'package:chess_master/core/services/lightweight_engine_service.dart';
+import 'package:chess_master/core/services/simple_bot_service.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 
 /// Provider for the Stockfish engine service
@@ -123,8 +123,10 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
       // If Stockfish failed to init or is not ready, use fallback
       if (!_service.isReady) {
-        final fallbackResult = await LightweightEngineService.instance
-            .getBestMove(fen, difficulty.depth);
+        final fallbackResult = await SimpleBotService.instance.getBestMove(
+          fen: fen,
+          depth: difficulty.depth,
+        );
 
         if (currentSearchId != _searchId) return null;
 
@@ -133,7 +135,10 @@ class EngineNotifier extends StateNotifier<EngineState> {
           bestMove: fallbackResult.bestMove,
           evaluation: fallbackResult.evaluation,
         );
-        return fallbackResult;
+        return BestMoveResult(
+          bestMove: fallbackResult.bestMove,
+          evaluation: fallbackResult.evaluation,
+        );
       }
 
       // Set engine strength
@@ -180,8 +185,10 @@ class EngineNotifier extends StateNotifier<EngineState> {
       debugPrint('Error with Stockfish: $e. Switching to lightweight engine.');
 
       try {
-        final fallbackResult = await LightweightEngineService.instance
-            .getBestMove(fen, difficulty.depth);
+        final fallbackResult = await SimpleBotService.instance.getBestMove(
+          fen: fen,
+          depth: difficulty.depth,
+        );
 
         if (currentSearchId != _searchId) return null;
 
@@ -190,7 +197,10 @@ class EngineNotifier extends StateNotifier<EngineState> {
           bestMove: fallbackResult.bestMove,
           evaluation: fallbackResult.evaluation,
         );
-        return fallbackResult;
+        return BestMoveResult(
+          bestMove: fallbackResult.bestMove,
+          evaluation: fallbackResult.evaluation,
+        );
       } catch (fallbackError) {
         debugPrint('Fallback engine also failed: $fallbackError');
         state = state.copyWith(isThinking: false);
@@ -232,15 +242,18 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
       debugPrint('Error getting hint from Stockfish: $e. Using fallback.');
       try {
-        final result = await LightweightEngineService.instance.getBestMove(
-          fen,
-          depth,
+        final result = await SimpleBotService.instance.getBestMove(
+          fen: fen,
+          depth: depth,
         );
 
         if (currentSearchId != _searchId) return null;
 
         state = state.copyWith(isThinking: false, bestMove: result.bestMove);
-        return result;
+        return BestMoveResult(
+          bestMove: result.bestMove,
+          evaluation: result.evaluation,
+        );
       } catch (fallbackError) {
         state = state.copyWith(isThinking: false);
         return null;

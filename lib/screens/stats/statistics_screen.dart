@@ -22,7 +22,8 @@ class StatisticsScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.read(statisticsProvider.notifier).loadStatistics(),
+            onPressed: () =>
+                ref.read(statisticsProvider.notifier).loadStatistics(),
           ),
           PopupMenuButton<String>(
             onSelected: (value) async {
@@ -32,7 +33,9 @@ class StatisticsScreen extends ConsumerWidget {
                   builder: (ctx) => AlertDialog(
                     backgroundColor: AppTheme.surfaceDark,
                     title: const Text('Reset Statistics'),
-                    content: const Text('Are you sure you want to reset all statistics? This cannot be undone.'),
+                    content: const Text(
+                      'Are you sure you want to reset all statistics? This cannot be undone.',
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
@@ -40,7 +43,10 @@ class StatisticsScreen extends ConsumerWidget {
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Reset', style: TextStyle(color: Colors.red)),
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(color: Colors.red),
+                        ),
                       ),
                     ],
                   ),
@@ -105,9 +111,9 @@ class StatisticsScreen extends ConsumerWidget {
       children: [
         Text(
           'Overview',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Row(
@@ -173,9 +179,9 @@ class StatisticsScreen extends ConsumerWidget {
         children: [
           Text(
             'Game Results',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -230,11 +236,23 @@ class StatisticsScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _LegendItem(color: Colors.green, label: 'Wins', value: stats.wins),
+                    _LegendItem(
+                      color: Colors.green,
+                      label: 'Wins',
+                      value: stats.wins,
+                    ),
                     const SizedBox(height: 12),
-                    _LegendItem(color: Colors.red, label: 'Losses', value: stats.losses),
+                    _LegendItem(
+                      color: Colors.red,
+                      label: 'Losses',
+                      value: stats.losses,
+                    ),
                     const SizedBox(height: 12),
-                    _LegendItem(color: Colors.grey, label: 'Draws', value: stats.draws),
+                    _LegendItem(
+                      color: Colors.grey,
+                      label: 'Draws',
+                      value: stats.draws,
+                    ),
                   ],
                 ),
               ],
@@ -261,9 +279,9 @@ class StatisticsScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 'Puzzles',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -275,10 +293,7 @@ class StatisticsScreen extends ConsumerWidget {
                 label: 'Attempted',
                 value: stats.puzzlesAttempted.toString(),
               ),
-              _StatItem(
-                label: 'Solved',
-                value: stats.puzzlesSolved.toString(),
-              ),
+              _StatItem(label: 'Solved', value: stats.puzzlesSolved.toString()),
               _StatItem(
                 label: 'Solve Rate',
                 value: '${stats.puzzleSolveRate.toStringAsFixed(1)}%',
@@ -312,15 +327,17 @@ class StatisticsScreen extends ConsumerWidget {
         children: [
           Text(
             'Performance by Difficulty',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ...sortedElos.map((elo) {
             final eloStats = stats.gamesByElo[elo]!;
-            final difficultyLevel = AppConstants.difficultyLevels
-                .firstWhere((d) => d.elo == elo, orElse: () => AppConstants.difficultyLevels.first);
+            final difficultyLevel = AppConstants.difficultyLevels.firstWhere(
+              (d) => d.elo == elo,
+              orElse: () => AppConstants.difficultyLevels.first,
+            );
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -337,8 +354,8 @@ class StatisticsScreen extends ConsumerWidget {
                       Text(
                         '${eloStats.winRate.toStringAsFixed(0)}% win rate',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: _getWinRateColor(eloStats.winRate),
-                            ),
+                          color: _getWinRateColor(eloStats.winRate),
+                        ),
                       ),
                     ],
                   ),
@@ -351,18 +368,18 @@ class StatisticsScreen extends ConsumerWidget {
                           height: 8,
                           decoration: BoxDecoration(
                             color: Colors.green,
-                            borderRadius: eloStats.losses == 0 && eloStats.draws == 0
+                            borderRadius:
+                                eloStats.losses == 0 && eloStats.draws == 0
                                 ? BorderRadius.circular(4)
-                                : const BorderRadius.horizontal(left: Radius.circular(4)),
+                                : const BorderRadius.horizontal(
+                                    left: Radius.circular(4),
+                                  ),
                           ),
                         ),
                       ),
                       Expanded(
                         flex: eloStats.draws,
-                        child: Container(
-                          height: 8,
-                          color: Colors.grey,
-                        ),
+                        child: Container(height: 8, color: Colors.grey),
                       ),
                       Expanded(
                         flex: eloStats.losses,
@@ -370,9 +387,12 @@ class StatisticsScreen extends ConsumerWidget {
                           height: 8,
                           decoration: BoxDecoration(
                             color: Colors.red,
-                            borderRadius: eloStats.wins == 0 && eloStats.draws == 0
+                            borderRadius:
+                                eloStats.wins == 0 && eloStats.draws == 0
                                 ? BorderRadius.circular(4)
-                                : const BorderRadius.horizontal(right: Radius.circular(4)),
+                                : const BorderRadius.horizontal(
+                                    right: Radius.circular(4),
+                                  ),
                           ),
                         ),
                       ),
@@ -404,9 +424,9 @@ class StatisticsScreen extends ConsumerWidget {
         children: [
           Text(
             'Game Details',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           _DetailRow(
@@ -419,16 +439,15 @@ class StatisticsScreen extends ConsumerWidget {
           ),
           _DetailRow(
             label: 'Total Playing Time',
-            value: _formatDuration(Duration(seconds: stats.totalGameTimeSeconds)),
+            value: _formatDuration(
+              Duration(seconds: stats.totalGameTimeSeconds),
+            ),
           ),
           _DetailRow(
             label: 'Average Game Time',
             value: '${stats.averageGameTimeMinutes.toStringAsFixed(1)} min',
           ),
-          _DetailRow(
-            label: 'Hints Used',
-            value: stats.hintsUsed.toString(),
-          ),
+          _DetailRow(label: 'Hints Used', value: stats.hintsUsed.toString()),
         ],
       ),
     );
@@ -451,30 +470,32 @@ class StatisticsScreen extends ConsumerWidget {
         children: [
           Text(
             'Most Played Openings',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          ...topOpenings.map((entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        entry.key,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+          ...topOpenings.map(
+            (entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      entry.key,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      '${entry.value} games',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              )),
+                  ),
+                  Text(
+                    '${entry.value} games',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -492,10 +513,7 @@ class StatisticsScreen extends ConsumerWidget {
           children: [
             const Icon(Icons.bar_chart, size: 48, color: AppTheme.textHint),
             const SizedBox(height: 12),
-            Text(
-              message,
-              style: const TextStyle(color: AppTheme.textHint),
-            ),
+            Text(message, style: const TextStyle(color: AppTheme.textHint)),
           ],
         ),
       ),
@@ -547,15 +565,12 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text(title, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
@@ -598,10 +613,7 @@ class _StatItem extends StatelessWidget {
   final String label;
   final String value;
 
-  const _StatItem({
-    required this.label,
-    required this.value,
-  });
+  const _StatItem({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -609,15 +621,12 @@ class _StatItem extends StatelessWidget {
       children: [
         Text(
           value,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
@@ -628,10 +637,7 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -642,15 +648,15 @@ class _DetailRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
           ),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),

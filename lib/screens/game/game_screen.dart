@@ -79,8 +79,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         'fen_current': gameState.fen,
         'result': gameState.result?.pgn,
         'result_reason': gameState.resultReason,
-        'player_color':
-            gameState.playerColor == PlayerColor.white ? 'white' : 'black',
+        'player_color': gameState.playerColor == PlayerColor.white
+            ? 'white'
+            : 'black',
         'bot_elo': gameState.difficulty.elo,
         'game_mode': gameState.isLocalMultiplayer ? 'local' : 'bot',
         'time_control': gameState.timeControl.name,
@@ -142,11 +143,18 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     try {
       final engineNotifier = ref.read(engineProvider.notifier);
+      final currentVersion = gameState.version;
+
       final result = await engineNotifier.getBotMove(
         fen: gameState.fen,
         difficulty: gameState.difficulty,
         botType: gameState.botType,
       );
+
+      // Check for race condition - if board state changed, discard move
+      if (ref.read(gameProvider).version != currentVersion) {
+        return;
+      }
 
       if (result != null && result.isValid) {
         final (from, to, promotion) = result.parsedMove;
@@ -240,12 +248,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   _buildCompactPlayerBar(
                     context,
                     isOpponent: true,
-                    name:
-                        gameState.isLocalMultiplayer
-                            ? (gameState.playerColor == PlayerColor.white
-                                ? 'Player 2'
-                                : 'Player 1')
-                            : '${gameState.botType.displayName} (${gameState.difficulty.elo})',
+                    name: gameState.isLocalMultiplayer
+                        ? (gameState.playerColor == PlayerColor.white
+                              ? 'Player 2'
+                              : 'Player 1')
+                        : '${gameState.botType.displayName} (${gameState.difficulty.elo})',
                     isActive:
                         !gameState.isPlayerTurn &&
                         gameState.status == GameStatus.active,
@@ -288,12 +295,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   _buildCompactPlayerBar(
                     context,
                     isOpponent: false,
-                    name:
-                        gameState.isLocalMultiplayer
-                            ? (gameState.playerColor == PlayerColor.white
-                                ? 'Player 1'
-                                : 'Player 2')
-                            : 'You',
+                    name: gameState.isLocalMultiplayer
+                        ? (gameState.playerColor == PlayerColor.white
+                              ? 'Player 1'
+                              : 'Player 2')
+                        : 'You',
                     isActive:
                         gameState.isPlayerTurn &&
                         gameState.status == GameStatus.active,
@@ -387,43 +393,42 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   break;
               }
             },
-            itemBuilder:
-                (context) => [
-                  PopupMenuItem(
-                    value: 'save_exit',
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.save,
-                          color: AppTheme.textPrimary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Save & Exit',
-                          style: GoogleFonts.inter(color: AppTheme.textPrimary),
-                        ),
-                      ],
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'save_exit',
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.save,
+                      color: AppTheme.textPrimary,
+                      size: 20,
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.settings_outlined,
-                          color: AppTheme.textPrimary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Settings',
-                          style: GoogleFonts.inter(color: AppTheme.textPrimary),
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    Text(
+                      'Save & Exit',
+                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.settings_outlined,
+                      color: AppTheme.textPrimary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Settings',
+                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -455,15 +460,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 color: isActive ? AppTheme.primaryLight : Colors.transparent,
                 width: 2,
               ),
-              boxShadow:
-                  isActive
-                      ? [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.4),
-                          blurRadius: 8,
-                        ),
-                      ]
-                      : null,
+              boxShadow: isActive
+                  ? [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withOpacity(0.4),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : null,
             ),
             child: Icon(
               isOpponent ? Icons.smart_toy : Icons.person,
@@ -497,10 +501,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             decoration: BoxDecoration(
               color: AppTheme.cardDark,
               borderRadius: BorderRadius.circular(8),
-              border:
-                  isActive
-                      ? Border.all(color: AppTheme.primaryColor, width: 1)
-                      : null,
+              border: isActive
+                  ? Border.all(color: AppTheme.primaryColor, width: 1)
+                  : null,
             ),
             child: ChessTimerWidget(isWhite: isWhite, isActive: isActive),
           ),
@@ -576,47 +579,39 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       // In local multiplayer, show pieces captured by each player
       if (forOpponent) {
         // Opponent's captures
-        piecesToShow =
-            gameState.playerColor == PlayerColor.white
-                ? blackCaptures
-                : whiteCaptures;
-        materialAdvantage =
-            gameState.playerColor == PlayerColor.white
-                ? blackMaterial - whiteMaterial
-                : whiteMaterial - blackMaterial;
+        piecesToShow = gameState.playerColor == PlayerColor.white
+            ? blackCaptures
+            : whiteCaptures;
+        materialAdvantage = gameState.playerColor == PlayerColor.white
+            ? blackMaterial - whiteMaterial
+            : whiteMaterial - blackMaterial;
       } else {
         // Current player's captures
-        piecesToShow =
-            gameState.playerColor == PlayerColor.white
-                ? whiteCaptures
-                : blackCaptures;
-        materialAdvantage =
-            gameState.playerColor == PlayerColor.white
-                ? whiteMaterial - blackMaterial
-                : blackMaterial - whiteMaterial;
+        piecesToShow = gameState.playerColor == PlayerColor.white
+            ? whiteCaptures
+            : blackCaptures;
+        materialAdvantage = gameState.playerColor == PlayerColor.white
+            ? whiteMaterial - blackMaterial
+            : blackMaterial - whiteMaterial;
       }
     } else {
       // In bot games, show pieces captured by each side
       if (forOpponent) {
         // Bot's captures (pieces bot captured from player)
-        piecesToShow =
-            gameState.playerColor == PlayerColor.white
-                ? blackCaptures
-                : whiteCaptures;
-        materialAdvantage =
-            gameState.playerColor == PlayerColor.white
-                ? blackMaterial - whiteMaterial
-                : whiteMaterial - blackMaterial;
+        piecesToShow = gameState.playerColor == PlayerColor.white
+            ? blackCaptures
+            : whiteCaptures;
+        materialAdvantage = gameState.playerColor == PlayerColor.white
+            ? blackMaterial - whiteMaterial
+            : whiteMaterial - blackMaterial;
       } else {
         // Player's captures (pieces player captured from bot)
-        piecesToShow =
-            gameState.playerColor == PlayerColor.white
-                ? whiteCaptures
-                : blackCaptures;
-        materialAdvantage =
-            gameState.playerColor == PlayerColor.white
-                ? whiteMaterial - blackMaterial
-                : blackMaterial - whiteMaterial;
+        piecesToShow = gameState.playerColor == PlayerColor.white
+            ? whiteCaptures
+            : blackCaptures;
+        materialAdvantage = gameState.playerColor == PlayerColor.white
+            ? whiteMaterial - blackMaterial
+            : blackMaterial - whiteMaterial;
       }
     }
 
@@ -639,10 +634,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     padding: const EdgeInsets.only(right: 2),
                     child: Container(
                       decoration: BoxDecoration(
-                        color:
-                            isBlackPiece
-                                ? Colors.white.withOpacity(0.9)
-                                : Colors.black.withOpacity(0.7),
+                        color: isBlackPiece
+                            ? Colors.white.withOpacity(0.9)
+                            : Colors.black.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(2),
                       ),
                       padding: const EdgeInsets.all(1),
@@ -693,10 +687,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           final whiteIndex = index * 2;
           final blackIndex = index * 2 + 1;
           final whiteMove = gameState.moveHistory[whiteIndex];
-          final blackMove =
-              blackIndex < gameState.moveHistory.length
-                  ? gameState.moveHistory[blackIndex]
-                  : null;
+          final blackMove = blackIndex < gameState.moveHistory.length
+              ? gameState.moveHistory[blackIndex]
+              : null;
 
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -777,25 +770,24 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   void _showExitConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            title: const Text('Leave Game?'),
-            content: const Text('Your progress will be saved automatically.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                },
-                child: const Text('Leave'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text('Leave Game?'),
+        content: const Text('Your progress will be saved automatically.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -829,53 +821,49 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   void _showResignConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            title: const Text('Resign?'),
-            content: const Text('Are you sure you want to resign this game?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.error,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  ref.read(gameProvider.notifier).resign();
-                },
-                child: const Text('Resign'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text('Resign?'),
+        content: const Text('Are you sure you want to resign this game?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(gameProvider.notifier).resign();
+            },
+            child: const Text('Resign'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showDrawConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            title: const Text('Offer Draw?'),
-            content: const Text('The bot will consider your draw offer.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ref.read(gameProvider.notifier).offerDraw();
-                },
-                child: const Text('Offer Draw'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text('Offer Draw?'),
+        content: const Text('The bot will consider your draw offer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(gameProvider.notifier).offerDraw();
+            },
+            child: const Text('Offer Draw'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -890,105 +878,102 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            title: Row(
-              children: [
-                Icon(
-                  isWin
-                      ? Icons.emoji_events
-                      : isDraw
-                      ? Icons.handshake
-                      : Icons.sentiment_dissatisfied,
-                  color:
-                      isWin
-                          ? Colors.amber
-                          : isDraw
-                          ? Colors.blue
-                          : Colors.grey,
-                  size: 32,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  isWin
-                      ? 'Victory!'
-                      : isDraw
-                      ? 'Draw'
-                      : 'Defeat',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                ),
-              ],
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: Row(
+          children: [
+            Icon(
+              isWin
+                  ? Icons.emoji_events
+                  : isDraw
+                  ? Icons.handshake
+                  : Icons.sentiment_dissatisfied,
+              color: isWin
+                  ? Colors.amber
+                  : isDraw
+                  ? Colors.blue
+                  : Colors.grey,
+              size: 32,
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  gameState.resultReason ?? '',
-                  style: TextStyle(color: AppTheme.textPrimary),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '${gameState.moveHistory.length} moves played',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+            const SizedBox(width: 12),
+            Text(
+              isWin
+                  ? 'Victory!'
+                  : isDraw
+                  ? 'Draw'
+                  : 'Defeat',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Dialog
-                  Navigator.pop(context); // Game Screen
-                },
-                child: const Text('Home'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Ensure we have moves before navigating
-                  if (gameState.moveHistory.isNotEmpty) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => AnalysisScreen(
-                              moves: gameState.moveHistory,
-                              startingFen:
-                                  'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-                            ),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'No moves to analyze',
-                          style: GoogleFonts.inter(color: Colors.white),
-                        ),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Analyze'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Start new game with same settings
-                  ref
-                      .read(gameProvider.notifier)
-                      .startNewGame(
-                        playerColor: gameState.playerColor,
-                        difficulty: gameState.difficulty,
-                        timeControl: gameState.timeControl,
-                      );
-                },
-                child: const Text('Rematch'),
-              ),
-            ],
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              gameState.resultReason ?? '',
+              style: TextStyle(color: AppTheme.textPrimary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '${gameState.moveHistory.length} moves played',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Dialog
+              Navigator.pop(context); // Game Screen
+            },
+            child: const Text('Home'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Ensure we have moves before navigating
+              if (gameState.moveHistory.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AnalysisScreen(
+                      moves: gameState.moveHistory,
+                      startingFen:
+                          'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'No moves to analyze',
+                      style: GoogleFonts.inter(color: Colors.white),
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            },
+            child: const Text('Analyze'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Start new game with same settings
+              ref
+                  .read(gameProvider.notifier)
+                  .startNewGame(
+                    playerColor: gameState.playerColor,
+                    difficulty: gameState.difficulty,
+                    timeControl: gameState.timeControl,
+                  );
+            },
+            child: const Text('Rematch'),
+          ),
+        ],
+      ),
     );
   }
 }

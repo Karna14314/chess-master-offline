@@ -170,11 +170,7 @@ class _ColorOptionCard extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: Icon(
-              Icons.shuffle_rounded,
-              size: 28,
-              color: iconColor,
-            ),
+            child: Icon(Icons.shuffle_rounded, size: 28, color: iconColor),
           ),
         );
     }
@@ -186,11 +182,7 @@ class ColorBadge extends StatelessWidget {
   final PlayerColor color;
   final bool compact;
 
-  const ColorBadge({
-    super.key,
-    required this.color,
-    this.compact = false,
-  });
+  const ColorBadge({super.key, required this.color, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -216,12 +208,10 @@ class ColorBadge extends StatelessWidget {
               color: color == PlayerColor.white
                   ? Colors.white
                   : color == PlayerColor.black
-                      ? Colors.grey.shade800
-                      : null,
+                  ? Colors.grey.shade800
+                  : null,
               gradient: color == PlayerColor.random
-                  ? LinearGradient(
-                      colors: [Colors.white, Colors.grey.shade800],
-                    )
+                  ? LinearGradient(colors: [Colors.white, Colors.grey.shade800])
                   : null,
               shape: BoxShape.circle,
               border: Border.all(color: _getBorderColor(), width: 1),

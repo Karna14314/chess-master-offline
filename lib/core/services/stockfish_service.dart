@@ -3,7 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:stockfish_chess_engine/stockfish_chess_engine.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/models/chess_models.dart';
-import 'package:chess_master/core/services/lightweight_engine_service.dart';
+import 'package:chess_master/core/services/simple_bot_service.dart';
+import 'package:chess_master/core/services/basic_evaluator_service.dart';
 
 /// Service class for interacting with the Stockfish chess engine
 /// Uses UCI (Universal Chess Interface) protocol
@@ -13,8 +14,14 @@ class StockfishService {
   bool _isReady = false;
   bool _useFallback = false;
 
-  final StreamController<String> _outputController = StreamController<String>.broadcast();
-  final ValueNotifier<EngineStatus> statusNotifier = ValueNotifier(EngineStatus.initializing);
+  // Flag to simulate binary check failure for testing or if on unsupported platform
+  bool _forceFallback = false;
+
+  final StreamController<String> _outputController =
+      StreamController<String>.broadcast();
+  final ValueNotifier<EngineStatus> statusNotifier = ValueNotifier(
+    EngineStatus.initializing,
+  );
 
   Completer<void>? _initCompleter;
 
@@ -42,6 +49,10 @@ class StockfishService {
   /// Whether using fallback engine
   bool get isUsingFallback => _useFallback;
 
+  /// Set force fallback for testing
+  @visibleForTesting
+  set forceFallback(bool value) => _forceFallback = value;
+
   /// Initialize the Stockfish engine
   Future<void> initialize() async {
     if (_isReady || _useFallback) return;
@@ -50,6 +61,22 @@ class StockfishService {
     _initCompleter = Completer<void>();
     statusNotifier.value = EngineStatus.initializing;
 
+    // 1. Verify binary exists (Mock check as plugin handles it)
+    bool binaryExists = true;
+    try {
+      // In a real scenario, we might check file existence if we bundled it manually.
+      // Since we use a plugin, we assume it exists unless init fails.
+      if (_forceFallback) binaryExists = false;
+    } catch (e) {
+      binaryExists = false;
+    }
+
+    if (!binaryExists) {
+      _enableFallback('Binary verification failed');
+      return;
+    }
+
+    // 2. Try to init Stockfish
     int retryCount = 0;
     const maxRetries = 2;
 
@@ -61,7 +88,7 @@ class StockfishService {
         bool uciOkReceived = false;
 
         // Listen to engine output
-        _stockfish!.stdout.listen((line) {
+        final sub = _stockfish!.stdout.listen((line) {
           if (line.trim().isNotEmpty) {
             _outputController.add(line);
             if (line.contains('uciok')) {
@@ -108,11 +135,7 @@ class StockfishService {
         _isReady = false;
 
         if (retryCount >= maxRetries) {
-          debugPrint('Stockfish init failed after retries. Switching to fallback.');
-          _useFallback = true;
-          statusNotifier.value = EngineStatus.usingFallback;
-          _initCompleter?.complete(); // Resolve successfully as we have a fallback
-          _initCompleter = null;
+          _enableFallback('Initialization failed after retries: $e');
           return;
         }
 
@@ -120,6 +143,15 @@ class StockfishService {
         await Future.delayed(const Duration(milliseconds: 200));
       }
     }
+  }
+
+  void _enableFallback(String reason) {
+    debugPrint('Switching to fallback engine: $reason');
+    _useFallback = true;
+    _isReady = false;
+    statusNotifier.value = EngineStatus.usingFallback;
+    _initCompleter?.complete();
+    _initCompleter = null;
   }
 
   /// Configure engine options for optimal mobile performance
@@ -168,12 +200,7 @@ class StockfishService {
 
     // If using fallback (SimpleBot)
     if (_useFallback) {
-      // Small artificial delay to simulate thinking if needed
-      if (thinkTimeMs != null && thinkTimeMs > 500) {
-        final delay = thinkTimeMs ~/ 2;
-        await Future.delayed(Duration(milliseconds: delay));
-      }
-      return LightweightEngineService.instance.getBestMove(fen, depth);
+      return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
     final completer = Completer<BestMoveResult>();
@@ -231,24 +258,43 @@ class StockfishService {
       _sendCommand('go depth $depth');
     }
 
-    // Timeout after 30 seconds (Stockfish) or shorter if preferred
+    // 5-second timeout for Stockfish response
     return completer.future.timeout(
-      const Duration(seconds: 30),
+      const Duration(seconds: 5),
       onTimeout: () {
         subscription.cancel();
         _sendCommand('stop');
 
         // Reset engine state on timeout so it re-initializes next time
         // But mark as fallback now
-        _isReady = false;
         _stockfish?.dispose();
         _stockfish = null;
-        _useFallback = true;
-        statusNotifier.value = EngineStatus.usingFallback;
+        _enableFallback('Engine timeout');
 
         // Fallback immediate
-        return LightweightEngineService.instance.getBestMove(fen, depth);
+        return _getSimpleBotMove(fen, depth, thinkTimeMs);
       },
+    );
+  }
+
+  Future<BestMoveResult> _getSimpleBotMove(
+    String fen,
+    int depth,
+    int? thinkTimeMs,
+  ) async {
+    // Small artificial delay to simulate thinking if needed
+    if (thinkTimeMs != null && thinkTimeMs > 500) {
+      final delay = thinkTimeMs ~/ 2;
+      await Future.delayed(Duration(milliseconds: delay));
+    }
+
+    final result = await SimpleBotService.instance.getBestMove(
+      fen: fen,
+      depth: depth,
+    );
+    return BestMoveResult(
+      bestMove: result.bestMove,
+      evaluation: result.evaluation,
     );
   }
 
@@ -266,7 +312,8 @@ class StockfishService {
     // Fallback doesn't support full analysis yet
     // Throw error to let AnalysisProvider handle it with BasicEvaluator
     if (_useFallback) {
-       throw Exception('Stockfish analysis unavailable. Using basic evaluator.');
+      // Use BasicEvaluatorService instead of throwing raw exception for smoother UX
+      return BasicEvaluatorService.instance.analyze(fen);
     }
 
     final completer = Completer<AnalysisResult>();
@@ -290,8 +337,9 @@ class StockfishService {
 
         if (pvMovesMatch != null) {
           final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
-          final currentDepth =
-              depthMatch != null ? int.parse(depthMatch.group(1)!) : 0;
+          final currentDepth = depthMatch != null
+              ? int.parse(depthMatch.group(1)!)
+              : 0;
           int? eval;
           int? mate;
 
@@ -349,20 +397,20 @@ class StockfishService {
     _sendCommand('go depth $depth');
 
     return completer.future.timeout(
-      const Duration(seconds: 60),
+      const Duration(
+        seconds: 10,
+      ), // Short timeout for analysis to switch to basic if stuck
       onTimeout: () {
         subscription.cancel();
         _sendCommand('stop');
         _sendCommand('setoption name MultiPV value 1');
 
         // Reset engine state on timeout
-        _isReady = false;
         _stockfish?.dispose();
         _stockfish = null;
-        _useFallback = true;
-        statusNotifier.value = EngineStatus.usingFallback;
+        _enableFallback('Analysis timeout');
 
-        throw Exception('Stockfish analysis timed out.');
+        return BasicEvaluatorService.instance.analyze(fen);
       },
     );
   }

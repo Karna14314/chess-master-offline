@@ -233,10 +233,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             // Hint button - no limit
             Expanded(
               child: OutlinedButton.icon(
-                onPressed:
-                    state.isPlayerTurn && !state.showingHint
-                        ? () => notifier.showHint()
-                        : null,
+                onPressed: state.isPlayerTurn && !state.showingHint
+                    ? () => notifier.showHint()
+                    : null,
                 icon: const Icon(Icons.lightbulb_outline, size: 20),
                 label: const Text('Hint'),
                 style: OutlinedButton.styleFrom(
@@ -308,49 +307,46 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
   void _showSkipConfirmation() {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              'Skip Puzzle?',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-            ),
-            content: Text(
-              'Skipping will count as an incorrect attempt and may lower your rating.',
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Skip Puzzle?',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Skipping will count as an incorrect attempt and may lower your rating.',
+          style: GoogleFonts.inter(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
               style: GoogleFonts.inter(color: AppTheme.textSecondary),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'Cancel',
-                  style: GoogleFonts.inter(color: AppTheme.textSecondary),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ref.read(puzzleProvider.notifier).skipPuzzle();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.error,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  'Skip',
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
           ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(puzzleProvider.notifier).skipPuzzle();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.error,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Skip',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -538,31 +534,30 @@ class _PuzzleBoard extends StatelessWidget {
       bestMove: hintMove, // Show hint as arrow
       showHint: state.showingHint,
       hintSquare: state.hintFromSquare,
-      onSquareTap:
-          state.isPlayerTurn
-              ? (square) {
-                ref.read(puzzleProvider.notifier).selectSquare(square);
-              }
-              : null,
-      onMove:
-          state.isPlayerTurn
-              ? (from, to) async {
-                final notifier = ref.read(puzzleProvider.notifier);
+      highlightedSquares: state.highlightedSquares,
+      onSquareTap: state.isPlayerTurn
+          ? (square) {
+              ref.read(puzzleProvider.notifier).selectSquare(square);
+            }
+          : null,
+      onMove: state.isPlayerTurn
+          ? (from, to) async {
+              final notifier = ref.read(puzzleProvider.notifier);
 
-                // Check for promotion
-                if (notifier.needsPromotion(from, to)) {
-                  final promotion = await _showPromotionDialog(
-                    context,
-                    state.isWhiteTurn,
-                  );
-                  if (promotion != null) {
-                    notifier.tryMove(from, to, promotion: promotion);
-                  }
-                } else {
-                  notifier.tryMove(from, to);
+              // Check for promotion
+              if (notifier.needsPromotion(from, to)) {
+                final promotion = await _showPromotionDialog(
+                  context,
+                  state.isWhiteTurn,
+                );
+                if (promotion != null) {
+                  notifier.tryMove(from, to, promotion: promotion);
                 }
+              } else {
+                notifier.tryMove(from, to);
               }
-              : null,
+            }
+          : null,
       showCoordinates: true,
     );
   }
@@ -574,26 +569,23 @@ class _PuzzleBoard extends StatelessWidget {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              'Promote Pawn',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-            ),
-            content: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
-                _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
-                _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
-                _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
-              ],
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Promote Pawn',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
+            _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
+            _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
+            _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
+          ],
+        ),
+      ),
     );
   }
 }

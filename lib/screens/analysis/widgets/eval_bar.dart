@@ -20,12 +20,12 @@ class EvalBar extends StatelessWidget {
   Widget build(BuildContext context) {
     // Clamp evaluation between -10 and +10 for display
     final clampedEval = evaluation.clamp(-10.0, 10.0);
-    
+
     // Convert to percentage (0.0 to 1.0 where 0.5 is equal)
     // When eval is +10, white portion should be ~90%
     // When eval is -10, white portion should be ~10%
     double whitePercentage;
-    
+
     if (isMate && mateIn != null) {
       whitePercentage = mateIn! > 0 ? 0.95 : 0.05;
     } else {
@@ -154,7 +154,7 @@ class EvalBar extends StatelessWidget {
     }
     final absEval = evaluation.abs();
     if (absEval < 0.1) return '0.0';
-    
+
     final sign = evaluation >= 0 ? '+' : '-';
     return '$sign${absEval.toStringAsFixed(1)}';
   }

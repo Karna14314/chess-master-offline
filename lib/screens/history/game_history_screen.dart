@@ -9,7 +9,9 @@ import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
 
 /// Provider for game history
-final gameHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final gameHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
   final dbService = ref.read(databaseServiceProvider);
   return await dbService.getAllGames();
 });
@@ -46,7 +48,10 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                   const SizedBox(height: 16),
 
                   // Game Mode Filter
-                  Text('Game Mode', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Game Mode',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -54,24 +59,30 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                       _FilterChip(
                         label: 'All',
                         selected: _filterGameMode == 'all',
-                        onSelected: (_) => setSheetState(() => _filterGameMode = 'all'),
+                        onSelected: (_) =>
+                            setSheetState(() => _filterGameMode = 'all'),
                       ),
                       _FilterChip(
                         label: 'Bot',
                         selected: _filterGameMode == 'bot',
-                        onSelected: (_) => setSheetState(() => _filterGameMode = 'bot'),
+                        onSelected: (_) =>
+                            setSheetState(() => _filterGameMode = 'bot'),
                       ),
                       _FilterChip(
                         label: 'Local Multiplayer',
                         selected: _filterGameMode == 'local',
-                        onSelected: (_) => setSheetState(() => _filterGameMode = 'local'),
+                        onSelected: (_) =>
+                            setSheetState(() => _filterGameMode = 'local'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // Result Filter
-                  Text('Result', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Result',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -79,22 +90,26 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                       _FilterChip(
                         label: 'All',
                         selected: _filterResult == 'all',
-                        onSelected: (_) => setSheetState(() => _filterResult = 'all'),
+                        onSelected: (_) =>
+                            setSheetState(() => _filterResult = 'all'),
                       ),
                       _FilterChip(
                         label: 'Win',
                         selected: _filterResult == 'win',
-                        onSelected: (_) => setSheetState(() => _filterResult = 'win'),
+                        onSelected: (_) =>
+                            setSheetState(() => _filterResult = 'win'),
                       ),
                       _FilterChip(
                         label: 'Loss',
                         selected: _filterResult == 'loss',
-                        onSelected: (_) => setSheetState(() => _filterResult = 'loss'),
+                        onSelected: (_) =>
+                            setSheetState(() => _filterResult = 'loss'),
                       ),
                       _FilterChip(
                         label: 'Draw',
                         selected: _filterResult == 'draw',
-                        onSelected: (_) => setSheetState(() => _filterResult = 'draw'),
+                        onSelected: (_) =>
+                            setSheetState(() => _filterResult = 'draw'),
                       ),
                     ],
                   ),
@@ -190,12 +205,14 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
         if (_filterResult == 'draw') {
           if (result != '1/2-1/2') return false;
         } else if (_filterResult == 'win') {
-          final won = (playerColor == 'white' && result == '1-0') ||
-                      (playerColor == 'black' && result == '0-1');
+          final won =
+              (playerColor == 'white' && result == '1-0') ||
+              (playerColor == 'black' && result == '0-1');
           if (!won) return false;
         } else if (_filterResult == 'loss') {
-          final lost = (playerColor == 'white' && result == '0-1') ||
-                       (playerColor == 'black' && result == '1-0');
+          final lost =
+              (playerColor == 'white' && result == '0-1') ||
+              (playerColor == 'black' && result == '1-0');
           if (!lost) return false;
         }
       }
@@ -217,16 +234,16 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
           const SizedBox(height: 16),
           Text(
             'No games found',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 8),
           Text(
             'Try changing your filters',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textHint,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textHint),
           ),
         ],
       ),
@@ -242,7 +259,8 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     final dateFormat = DateFormat('MMM d, yyyy');
 
     for (final game in games) {
-      final timestamp = game['updated_at'] as int? ?? game['created_at'] as int?;
+      final timestamp =
+          game['updated_at'] as int? ?? game['created_at'] as int?;
       if (timestamp != null) {
         final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
         final dateKey = dateFormat.format(date);
@@ -263,11 +281,13 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
             if (index > 0) const SizedBox(height: 16),
             _buildDateHeader(context, dateKey),
             const SizedBox(height: 8),
-            ...dateGames.map((game) => _GameCard(
-                  game: game,
-                  onTap: () => _loadGame(context, ref, game),
-                  onDelete: () => _deleteGame(context, ref, game),
-                )),
+            ...dateGames.map(
+              (game) => _GameCard(
+                game: game,
+                onTap: () => _loadGame(context, ref, game),
+                onDelete: () => _deleteGame(context, ref, game),
+              ),
+            ),
           ],
         );
       },
@@ -290,9 +310,9 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
           const SizedBox(width: 8),
           Text(
             date,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -305,7 +325,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     Map<String, dynamic> game,
   ) async {
     final isCompleted = game['is_completed'] == 1;
-    
+
     if (isCompleted) {
       // Show game for review/analysis
       ScaffoldMessenger.of(context).showSnackBar(
@@ -342,8 +362,10 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
 
     // Start game from saved position
     final playerColorStr = game['player_color'] as String? ?? 'white';
-    final playerColor = playerColorStr == 'white' ? PlayerColor.white : PlayerColor.black;
-    
+    final playerColor = playerColorStr == 'white'
+        ? PlayerColor.white
+        : PlayerColor.black;
+
     final botElo = game['bot_elo'] as int? ?? 1200;
     final difficultyIndex = AppConstants.difficultyLevels
         .indexWhere((d) => d.elo == botElo)
@@ -358,7 +380,9 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
 
     final fenCurrent = game['fen_current'] as String?;
 
-    ref.read(gameProvider.notifier).startNewGame(
+    ref
+        .read(gameProvider.notifier)
+        .startNewGame(
           playerColor: playerColor,
           difficulty: difficulty,
           timeControl: timeControl,
@@ -403,9 +427,9 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     ref.refresh(gameHistoryProvider);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Game deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Game deleted')));
     }
   }
 }
@@ -578,9 +602,9 @@ class _GameCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '$moveCount moves • ${playerColor == 'white' ? '♔' : '♚'} as ${playerColor.capitalize()} • ${dateTime != null ? timeFormat.format(dateTime) : ''}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textHint,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppTheme.textHint),
                     ),
                   ],
                 ),

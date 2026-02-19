@@ -1,4 +1,3 @@
-
 class FlSpot {
   final double x;
   final double y;
@@ -31,7 +30,11 @@ void main() {
   stopwatchOptimized.stop();
   print('Optimized: ${stopwatchOptimized.elapsedMicroseconds} us');
 
-  final improvement = (stopwatchBaseline.elapsedMicroseconds - stopwatchOptimized.elapsedMicroseconds) / stopwatchBaseline.elapsedMicroseconds * 100;
+  final improvement =
+      (stopwatchBaseline.elapsedMicroseconds -
+          stopwatchOptimized.elapsedMicroseconds) /
+      stopwatchBaseline.elapsedMicroseconds *
+      100;
   print('Improvement: ${improvement.toStringAsFixed(2)}%');
 }
 

@@ -100,10 +100,4 @@ class AnalysisResult {
 }
 
 /// Engine status enum
-enum EngineStatus {
-  initializing,
-  ready,
-  failed,
-  usingFallback,
-  disposed
-}
+enum EngineStatus { initializing, ready, failed, usingFallback, disposed }

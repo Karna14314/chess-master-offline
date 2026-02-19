@@ -22,7 +22,10 @@ class Puzzle {
       fen: json['fen'] as String,
       moves: (json['moves'] as String).split(' '),
       rating: json['rating'] as int,
-      themes: (json['themes'] as String? ?? '').split(',').where((t) => t.isNotEmpty).toList(),
+      themes: (json['themes'] as String? ?? '')
+          .split(',')
+          .where((t) => t.isNotEmpty)
+          .toList(),
       popularity: json['popularity'] as int? ?? 0,
     );
   }
@@ -162,11 +165,4 @@ enum PuzzleTheme {
 }
 
 /// Puzzle session state
-enum PuzzleState {
-  loading,
-  ready,
-  playing,
-  correct,
-  incorrect,
-  completed,
-}
+enum PuzzleState { loading, ready, playing, correct, incorrect, completed }

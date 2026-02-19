@@ -112,14 +112,16 @@ class PuzzleGameState {
       currentPuzzle: currentPuzzle ?? this.currentPuzzle,
       board: board ?? this.board,
       currentMoveIndex: currentMoveIndex ?? this.currentMoveIndex,
-      selectedSquare:
-          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
+      selectedSquare: clearSelection
+          ? null
+          : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
       showingHint: clearHint ? false : (showingHint ?? this.showingHint),
-      hintFromSquare:
-          clearHint ? null : (hintFromSquare ?? this.hintFromSquare),
+      hintFromSquare: clearHint
+          ? null
+          : (hintFromSquare ?? this.hintFromSquare),
       hintToSquare: clearHint ? null : (hintToSquare ?? this.hintToSquare),
       showingSolution: showingSolution ?? this.showingSolution,
       hintsUsed: hintsUsed ?? this.hintsUsed,
@@ -307,10 +309,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
       case PuzzleFilterMode.eloRange:
         // Filter by custom ELO range
-        candidates =
-            _allPuzzles
-                .where((p) => p.rating >= _minRating && p.rating <= _maxRating)
-                .toList();
+        candidates = _allPuzzles
+            .where((p) => p.rating >= _minRating && p.rating <= _maxRating)
+            .toList();
         break;
 
       case PuzzleFilterMode.theme:
@@ -318,15 +319,13 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         if (_themeFilter == 'all') {
           candidates = List.from(_allPuzzles);
         } else {
-          candidates =
-              _allPuzzles
-                  .where(
-                    (p) => p.themes.any(
-                      (t) =>
-                          t.toLowerCase().contains(_themeFilter.toLowerCase()),
-                    ),
-                  )
-                  .toList();
+          candidates = _allPuzzles
+              .where(
+                (p) => p.themes.any(
+                  (t) => t.toLowerCase().contains(_themeFilter.toLowerCase()),
+                ),
+              )
+              .toList();
         }
         break;
 
@@ -343,10 +342,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         // Adaptive: within ±200 of current rating
         final minRating = targetRating - 200;
         final maxRating = targetRating + 200;
-        candidates =
-            _allPuzzles
-                .where((p) => p.rating >= minRating && p.rating <= maxRating)
-                .toList();
+        candidates = _allPuzzles
+            .where((p) => p.rating >= minRating && p.rating <= maxRating)
+            .toList();
         break;
     }
 
@@ -356,8 +354,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     }
 
     // Filter out recently solved puzzles
-    final freshCandidates =
-        candidates.where((p) => !_recentlySolvedIds.contains(p.id)).toList();
+    final freshCandidates = candidates
+        .where((p) => !_recentlySolvedIds.contains(p.id))
+        .toList();
 
     // If all puzzles were recently solved, clear history and use all candidates
     if (freshCandidates.isEmpty) {
@@ -374,7 +373,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       // Validation
       final valid = chess.Chess.validate_fen(puzzle.fen);
       if (valid['valid'] != true) {
-        debugPrint('Invalid puzzle FEN: ${puzzle.fen}, Error: ${valid['error']}');
+        debugPrint(
+          'Invalid puzzle FEN: ${puzzle.fen}, Error: ${valid['error']}',
+        );
         return false;
       }
 
@@ -532,8 +533,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     }
 
     // Check for promotion
-    final expectedPromotion =
-        expectedMove.length > 4 ? expectedMove.substring(4) : null;
+    final expectedPromotion = expectedMove.length > 4
+        ? expectedMove.substring(4)
+        : null;
     final finalMove = '$from$to${expectedPromotion ?? promotion ?? ''}';
 
     // Apply the correct move
@@ -605,8 +607,8 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
           1 / (1 + pow(10, (puzzleRating - currentRating) / 400));
       ratingChange = (32 * (1 - expectedScore)).round();
       if (state.hintsUsed > 0) {
-        ratingChange =
-            (ratingChange * 0.5).round(); // Reduce gain if hints used
+        ratingChange = (ratingChange * 0.5)
+            .round(); // Reduce gain if hints used
       }
     } else {
       final expectedScore =
@@ -629,10 +631,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     final currentStats = await db.getStatistics() ?? {};
     final puzzlesAttempted =
         (currentStats['puzzles_attempted'] as int? ?? 0) + 1;
-    final puzzlesSolved =
-        solved
-            ? (currentStats['puzzles_solved'] as int? ?? 0) + 1
-            : (currentStats['puzzles_solved'] as int? ?? 0);
+    final puzzlesSolved = solved
+        ? (currentStats['puzzles_solved'] as int? ?? 0) + 1
+        : (currentStats['puzzles_solved'] as int? ?? 0);
 
     await db.updateStatistics({
       'current_puzzle_rating': newRating,
@@ -735,10 +736,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   /// Hide solution
   void hideSolution() {
     _stopSolutionPlayback();
-    state = state.copyWith(
-      showingSolution: false,
-      highlightedSquares: {},
-    );
+    state = state.copyWith(showingSolution: false, highlightedSquares: {});
   }
 
   /// Get all solution moves for current puzzle

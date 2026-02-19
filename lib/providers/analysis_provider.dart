@@ -9,9 +9,11 @@ import 'package:chess_master/core/services/basic_evaluator_service.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 
 /// Provider for analysis state
-final analysisProvider = StateNotifierProvider<AnalysisNotifier, AnalysisState>((ref) {
-  return AnalysisNotifier();
-});
+final analysisProvider = StateNotifierProvider<AnalysisNotifier, AnalysisState>(
+  (ref) {
+    return AnalysisNotifier();
+  },
+);
 
 /// Analysis state
 class AnalysisState {
@@ -51,7 +53,8 @@ class AnalysisState {
     this.errorMessage,
     this.analysisProgress = 0.0,
     this.isLiveAnalysis = false,
-    this.startingFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    this.startingFen =
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     this.gameId,
   });
 
@@ -84,7 +87,9 @@ class AnalysisState {
       fullAnalysis: fullAnalysis ?? this.fullAnalysis,
       board: board ?? this.board,
       originalMoves: originalMoves ?? this.originalMoves,
-      selectedSquare: clearSelection ? null : (selectedSquare ?? this.selectedSquare),
+      selectedSquare: clearSelection
+          ? null
+          : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
@@ -116,13 +121,15 @@ class AnalysisState {
 
   /// Current move if any
   ChessMove? get currentMove {
-    if (currentMoveIndex < 0 || currentMoveIndex >= originalMoves.length) return null;
+    if (currentMoveIndex < 0 || currentMoveIndex >= originalMoves.length)
+      return null;
     return originalMoves[currentMoveIndex];
   }
 
   /// Current move analysis if available
   MoveAnalysis? get currentMoveAnalysis {
-    if (currentMoveIndex < 0 || currentMoveIndex >= analyzedMoves.length) return null;
+    if (currentMoveIndex < 0 || currentMoveIndex >= analyzedMoves.length)
+      return null;
     return analyzedMoves[currentMoveIndex];
   }
 
@@ -131,7 +138,7 @@ class AnalysisState {
     if (board == null) return null;
     final piece = board!.get(square);
     if (piece == null) return null;
-    
+
     final colorPrefix = piece.color == chess.Color.WHITE ? 'w' : 'b';
     final pieceChar = piece.type.name.toUpperCase();
     return '$colorPrefix$pieceChar';
@@ -161,7 +168,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   /// Initialize engine for analysis
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       _stockfish ??= stockfish.StockfishService.instance;
       await _stockfish!.initialize();
@@ -176,10 +183,11 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   /// Load a game for analysis
   Future<void> loadGame({
     required List<ChessMove> moves,
-    String startingFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    String startingFen =
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
   }) async {
     final board = chess.Chess.fromFEN(startingFen);
-    
+
     state = state.copyWith(
       originalMoves: moves,
       board: board,
@@ -206,14 +214,18 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
     // Rebuild board from start
     final board = chess.Chess.fromFEN(state.startingFen);
-    
+
     String? lastFrom;
     String? lastTo;
 
     // Apply moves up to the target index
     for (int i = 0; i <= moveIndex && i < state.originalMoves.length; i++) {
       final move = state.originalMoves[i];
-      board.move({'from': move.from, 'to': move.to, 'promotion': move.promotion});
+      board.move({
+        'from': move.from,
+        'to': move.to,
+        'promotion': move.promotion,
+      });
       lastFrom = move.from;
       lastTo = move.to;
     }
@@ -276,16 +288,22 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       state = state.copyWith(
         currentEval: result.evalInPawns,
         currentEngineLines: result.lines,
-        bestMove: result.lines.isNotEmpty ? result.lines.first.moves.first : null,
+        bestMove: result.lines.isNotEmpty
+            ? result.lines.first.moves.first
+            : null,
       );
     } catch (e) {
       debugPrint('Stockfish analysis failed: $e. Using BasicEvaluator.');
       try {
-        final basicResult = await BasicEvaluatorService.instance.analyze(state.fen);
+        final basicResult = await BasicEvaluatorService.instance.analyze(
+          state.fen,
+        );
         state = state.copyWith(
           currentEval: basicResult.evalInPawns,
           currentEngineLines: basicResult.lines,
-          bestMove: basicResult.lines.isNotEmpty ? basicResult.lines.first.moves.first : null,
+          bestMove: basicResult.lines.isNotEmpty
+              ? basicResult.lines.first.moves.first
+              : null,
         );
       } catch (e2) {
         // Silently fail
@@ -298,7 +316,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     if (_stockfish == null) {
       await initialize();
     }
-    
+
     if (_stockfish == null || state.originalMoves.isEmpty) return;
 
     state = state.copyWith(
@@ -310,7 +328,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     final moves = state.originalMoves;
     final analyzedMoves = <MoveAnalysis>[];
     final board = chess.Chess.fromFEN(state.startingFen);
-    
+
     double prevEval = 0.0;
 
     // Get initial evaluation
@@ -324,7 +342,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     } catch (e) {
       // Use fallback
       try {
-        final basicResult = await BasicEvaluatorService.instance.analyze(board.fen);
+        final basicResult = await BasicEvaluatorService.instance.analyze(
+          board.fen,
+        );
         prevEval = basicResult.evalInPawns;
       } catch (e2) {
         prevEval = 0.0;
@@ -334,7 +354,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     for (int i = 0; i < moves.length; i++) {
       final move = moves[i];
       final isWhiteMove = board.turn == chess.Color.WHITE;
-      
+
       // Get best move before making the actual move
       String? bestMove;
       try {
@@ -345,32 +365,42 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         bestMove = bestMoveResult.bestMove;
       } catch (e) {
         try {
-          final basicResult = await BasicEvaluatorService.instance.analyze(board.fen);
-          bestMove = basicResult.lines.isNotEmpty ? basicResult.lines.first.moves.first : null;
+          final basicResult = await BasicEvaluatorService.instance.analyze(
+            board.fen,
+          );
+          bestMove = basicResult.lines.isNotEmpty
+              ? basicResult.lines.first.moves.first
+              : null;
         } catch (e2) {
           bestMove = null;
         }
       }
 
       // Apply the actual move
-      board.move({'from': move.from, 'to': move.to, 'promotion': move.promotion});
+      board.move({
+        'from': move.from,
+        'to': move.to,
+        'promotion': move.promotion,
+      });
 
       // Get evaluation after move
       double afterEval = 0.0;
       List<EngineLine> engineLines = [];
-      
+
       try {
         final result = await _stockfish!.analyzePosition(
           fen: board.fen,
           depth: 15,
           multiPv: 3,
         );
-        
+
         afterEval = result.evalInPawns;
         engineLines = result.lines;
       } catch (e) {
         try {
-          final basicResult = await BasicEvaluatorService.instance.analyze(board.fen);
+          final basicResult = await BasicEvaluatorService.instance.analyze(
+            board.fen,
+          );
           afterEval = basicResult.evalInPawns;
           engineLines = basicResult.lines;
         } catch (e2) {
@@ -387,17 +417,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
       );
 
-      analyzedMoves.add(MoveAnalysis(
-        moveIndex: i,
-        san: move.san,
-        fen: board.fen,
-        evalBefore: prevEval,
-        evalAfter: afterEval,
-        bestMove: bestMove,
-        classification: classification,
-        engineLines: engineLines,
-        isWhiteMove: isWhiteMove,
-      ));
+      analyzedMoves.add(
+        MoveAnalysis(
+          moveIndex: i,
+          san: move.san,
+          fen: board.fen,
+          evalBefore: prevEval,
+          evalAfter: afterEval,
+          bestMove: bestMove,
+          classification: classification,
+          engineLines: engineLines,
+          isWhiteMove: isWhiteMove,
+        ),
+      );
 
       prevEval = afterEval;
 

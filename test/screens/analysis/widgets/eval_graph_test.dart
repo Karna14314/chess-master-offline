@@ -4,16 +4,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:chess_master/screens/analysis/widgets/eval_graph.dart';
 
 void main() {
-  testWidgets('EvalGraph renders correctly with data', (WidgetTester tester) async {
+  testWidgets('EvalGraph renders correctly with data', (
+    WidgetTester tester,
+  ) async {
     final evaluations = [0.5, 12.0, -15.0, 3.0];
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: EvalGraph(
-            evaluations: evaluations,
-          ),
-        ),
+        home: Scaffold(body: EvalGraph(evaluations: evaluations)),
       ),
     );
 
@@ -39,14 +37,12 @@ void main() {
     expect(spots[3].y, 3.0);
   });
 
-  testWidgets('EvalGraph displays message when empty', (WidgetTester tester) async {
+  testWidgets('EvalGraph displays message when empty', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: EvalGraph(
-            evaluations: [],
-          ),
-        ),
+        home: Scaffold(body: EvalGraph(evaluations: [])),
       ),
     );
 

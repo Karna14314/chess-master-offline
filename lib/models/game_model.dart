@@ -100,6 +100,7 @@ class GameState {
   final String? openingName;
   final ChessMove? hint;
   final ChessMove? bestMove;
+  final int version;
 
   GameState({
     required this.id,
@@ -125,6 +126,7 @@ class GameState {
     this.openingName,
     this.hint,
     this.bestMove,
+    this.version = 0,
   }) : difficulty = difficulty ?? AppConstants.difficultyLevels[4],
        timeControl = timeControl ?? AppConstants.timeControls[0];
 
@@ -218,6 +220,7 @@ class GameState {
     String? openingName,
     ChessMove? hint,
     ChessMove? bestMove,
+    int? version,
     bool clearSelection = false,
     bool clearResult = false,
   }) {
@@ -233,8 +236,9 @@ class GameState {
       botType: botType ?? this.botType,
       allowTakeback: allowTakeback ?? this.allowTakeback,
       hintsUsed: hintsUsed ?? this.hintsUsed,
-      selectedSquare:
-          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
+      selectedSquare: clearSelection
+          ? null
+          : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
@@ -246,6 +250,7 @@ class GameState {
       openingName: openingName ?? this.openingName,
       hint: hint ?? this.hint,
       bestMove: bestMove ?? this.bestMove,
+      version: version ?? this.version,
     );
   }
 }

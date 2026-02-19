@@ -19,14 +19,16 @@ class ChessTimerWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timerState = ref.watch(timerProvider);
-    
+
     if (!timerState.hasTimer) {
       return _buildNoTimer(context);
     }
 
     final time = isWhite ? timerState.whiteTime : timerState.blackTime;
     final timeStr = TimerState.formatDuration(time);
-    final isTimedOut = isWhite ? timerState.whiteTimedOut : timerState.blackTimedOut;
+    final isTimedOut = isWhite
+        ? timerState.whiteTimedOut
+        : timerState.blackTimedOut;
     final isLowTime = isActive && time.inSeconds <= 10 && time.inSeconds > 0;
     final isCurrentTurn = timerState.isWhiteTurn == isWhite;
 
@@ -124,10 +126,7 @@ class ChessTimerWidget extends ConsumerWidget {
 class DualTimerWidget extends ConsumerWidget {
   final bool isFlipped;
 
-  const DualTimerWidget({
-    super.key,
-    this.isFlipped = false,
-  });
+  const DualTimerWidget({super.key, this.isFlipped = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -161,10 +160,7 @@ class DualTimerWidget extends ConsumerWidget {
             ),
             child: const Text(
               'VS',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             ),
           ),
           // Black timer

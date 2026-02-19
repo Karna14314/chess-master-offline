@@ -11,7 +11,8 @@ class PositionSetupScreen extends ConsumerStatefulWidget {
   const PositionSetupScreen({super.key});
 
   @override
-  ConsumerState<PositionSetupScreen> createState() => _PositionSetupScreenState();
+  ConsumerState<PositionSetupScreen> createState() =>
+      _PositionSetupScreenState();
 }
 
 class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
@@ -361,9 +362,7 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
           color: isSelected ? Colors.red : AppTheme.surfaceDark,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Center(
-          child: Icon(Icons.close, color: Colors.white),
-        ),
+        child: const Center(child: Icon(Icons.close, color: Colors.white)),
       ),
     );
   }
@@ -491,19 +490,17 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
             isDense: true,
             filled: true,
             fillColor: AppTheme.cardDark,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onSubmitted: (fen) {
             if (_loadFen(fen)) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('FEN loaded')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('FEN loaded')));
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Invalid FEN')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Invalid FEN')));
             }
           },
         ),
@@ -517,7 +514,10 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
         Expanded(
           child: OutlinedButton(
             onPressed: isValid
-                ? () => Navigator.pop(context, {'action': 'analyze', 'fen': _generateFen()})
+                ? () => Navigator.pop(context, {
+                    'action': 'analyze',
+                    'fen': _generateFen(),
+                  })
                 : null,
             child: const Text('Analyze'),
           ),
@@ -526,7 +526,10 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
         Expanded(
           child: ElevatedButton(
             onPressed: isValid
-                ? () => Navigator.pop(context, {'action': 'play', 'fen': _generateFen()})
+                ? () => Navigator.pop(context, {
+                    'action': 'play',
+                    'fen': _generateFen(),
+                  })
                 : null,
             child: const Text('Play'),
           ),
@@ -537,8 +540,18 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
 
   String _getPieceUnicode(String piece) {
     const unicodeMap = {
-      'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
-      'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟',
+      'K': '♔',
+      'Q': '♕',
+      'R': '♖',
+      'B': '♗',
+      'N': '♘',
+      'P': '♙',
+      'k': '♚',
+      'q': '♛',
+      'r': '♜',
+      'b': '♝',
+      'n': '♞',
+      'p': '♟',
     };
     return unicodeMap[piece] ?? '';
   }

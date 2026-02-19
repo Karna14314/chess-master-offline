@@ -4,7 +4,8 @@ import 'package:chess_master/core/models/chess_models.dart';
 
 /// A lightweight chess engine written in Dart
 class LightweightEngineService {
-  static final LightweightEngineService _instance = LightweightEngineService._();
+  static final LightweightEngineService _instance =
+      LightweightEngineService._();
   static LightweightEngineService get instance => _instance;
 
   LightweightEngineService._();
@@ -20,36 +21,204 @@ class LightweightEngineService {
   // PSTs (from white's perspective, a8..h1 i.e. 0..63)
   // Higher is better.
   static const List<int> pawnPst = [
-    0,  0,  0,  0,  0,  0,  0,  0,
-    50, 50, 50, 50, 50, 50, 50, 50,
-    10, 10, 20, 30, 30, 20, 10, 10,
-    5,  5, 10, 25, 25, 10,  5,  5,
-    0,  0,  0, 20, 20,  0,  0,  0,
-    5, -5,-10,  0,  0,-10, -5,  5,
-    5, 10, 10,-20,-20, 10, 10,  5,
-    0,  0,  0,  0,  0,  0,  0,  0
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    10,
+    10,
+    20,
+    30,
+    30,
+    20,
+    10,
+    10,
+    5,
+    5,
+    10,
+    25,
+    25,
+    10,
+    5,
+    5,
+    0,
+    0,
+    0,
+    20,
+    20,
+    0,
+    0,
+    0,
+    5,
+    -5,
+    -10,
+    0,
+    0,
+    -10,
+    -5,
+    5,
+    5,
+    10,
+    10,
+    -20,
+    -20,
+    10,
+    10,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
   ];
 
   static const List<int> knightPst = [
-    -50,-40,-30,-30,-30,-30,-40,-50,
-    -40,-20,  0,  0,  0,  0,-20,-40,
-    -30,  0, 10, 15, 15, 10,  0,-30,
-    -30,  5, 15, 20, 20, 15,  5,-30,
-    -30,  0, 15, 20, 20, 15,  0,-30,
-    -30,  5, 10, 15, 15, 10,  5,-30,
-    -40,-20,  0,  5,  5,  0,-20,-40,
-    -50,-40,-30,-30,-30,-30,-40,-50
+    -50,
+    -40,
+    -30,
+    -30,
+    -30,
+    -30,
+    -40,
+    -50,
+    -40,
+    -20,
+    0,
+    0,
+    0,
+    0,
+    -20,
+    -40,
+    -30,
+    0,
+    10,
+    15,
+    15,
+    10,
+    0,
+    -30,
+    -30,
+    5,
+    15,
+    20,
+    20,
+    15,
+    5,
+    -30,
+    -30,
+    0,
+    15,
+    20,
+    20,
+    15,
+    0,
+    -30,
+    -30,
+    5,
+    10,
+    15,
+    15,
+    10,
+    5,
+    -30,
+    -40,
+    -20,
+    0,
+    5,
+    5,
+    0,
+    -20,
+    -40,
+    -50,
+    -40,
+    -30,
+    -30,
+    -30,
+    -30,
+    -40,
+    -50,
   ];
 
   static const List<int> bishopPst = [
-    -20,-10,-10,-10,-10,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0,  5, 10, 10,  5,  0,-10,
-    -10,  5,  5, 10, 10,  5,  5,-10,
-    -10,  0, 10, 10, 10, 10,  0,-10,
-    -10, 10, 10, 10, 10, 10, 10,-10,
-    -10,  5,  0,  0,  0,  0,  5,-10,
-    -20,-10,-10,-10,-10,-10,-10,-20
+    -20,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -20,
+    -10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    -10,
+    0,
+    5,
+    10,
+    10,
+    5,
+    0,
+    -10,
+    -10,
+    5,
+    5,
+    10,
+    10,
+    5,
+    5,
+    -10,
+    -10,
+    0,
+    10,
+    10,
+    10,
+    10,
+    0,
+    -10,
+    -10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    -10,
+    -10,
+    5,
+    0,
+    0,
+    0,
+    0,
+    5,
+    -10,
+    -20,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -20,
   ];
 
   // Transposition Table (Simple Map)
@@ -61,9 +230,11 @@ class LightweightEngineService {
     'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1': 'e7e5',
     'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2': 'g1f3',
     'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2': 'b8c6',
-    'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3': 'f1b5', // Ruy Lopez
+    'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3':
+        'f1b5', // Ruy Lopez
     'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1': 'd7d5',
-    'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2': 'c2c4', // Queen's Gambit
+    'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2':
+        'c2c4', // Queen's Gambit
   };
 
   Future<BestMoveResult> getBestMove(String fen, int depth) async {
@@ -107,10 +278,7 @@ class LightweightEngineService {
       }
     }
 
-    return BestMoveResult(
-      bestMove: bestMove ?? '',
-      evaluation: bestValue
-    );
+    return BestMoveResult(bestMove: bestMove ?? '', evaluation: bestValue);
   }
 
   int _negaMax(chess.Chess board, int depth, int alpha, int beta) {
@@ -128,7 +296,8 @@ class LightweightEngineService {
     }
 
     final moves = board.moves({'verbose': true});
-    if (moves.isEmpty) return 0; // Should be handled by game_over but safety check
+    if (moves.isEmpty)
+      return 0; // Should be handled by game_over but safety check
 
     // Move Ordering
     moves.sort((a, b) {
@@ -159,8 +328,10 @@ class LightweightEngineService {
     int blackScore = 0;
 
     // Material and Position
-    for (int r = 0; r < 8; r++) { // 0..7 (Rank 8..1)
-      for (int c = 0; c < 8; c++) { // 0..7 (File a..h)
+    for (int r = 0; r < 8; r++) {
+      // 0..7 (Rank 8..1)
+      for (int c = 0; c < 8; c++) {
+        // 0..7 (File a..h)
         final rankIndex = 8 - r;
         final fileChar = String.fromCharCode('a'.codeUnitAt(0) + c);
         final square = '$fileChar$rankIndex';
@@ -205,11 +376,18 @@ class LightweightEngineService {
           // Index: (7-r)*8 + c
           final mirroredIdx = (7 - r) * 8 + c;
           int blackPst = 0;
-           switch (piece.type) {
-            case chess.PieceType.PAWN: blackPst = pawnPst[mirroredIdx]; break;
-            case chess.PieceType.KNIGHT: blackPst = knightPst[mirroredIdx]; break;
-            case chess.PieceType.BISHOP: blackPst = bishopPst[mirroredIdx]; break;
-            default: break;
+          switch (piece.type) {
+            case chess.PieceType.PAWN:
+              blackPst = pawnPst[mirroredIdx];
+              break;
+            case chess.PieceType.KNIGHT:
+              blackPst = knightPst[mirroredIdx];
+              break;
+            case chess.PieceType.BISHOP:
+              blackPst = bishopPst[mirroredIdx];
+              break;
+            default:
+              break;
           }
           blackScore += material + blackPst;
         }

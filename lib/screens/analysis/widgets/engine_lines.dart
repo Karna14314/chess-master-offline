@@ -7,11 +7,7 @@ class EngineLines extends StatelessWidget {
   final List<EngineLine> lines;
   final bool isLoading;
 
-  const EngineLines({
-    super.key,
-    required this.lines,
-    this.isLoading = false,
-  });
+  const EngineLines({super.key, required this.lines, this.isLoading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -30,11 +26,16 @@ class EngineLines extends StatelessWidget {
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppTheme.primaryColor,
+                ),
               ),
             ),
             SizedBox(width: 12),
-            Text('Analyzing...', style: TextStyle(color: AppTheme.textSecondary)),
+            Text(
+              'Analyzing...',
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
           ],
         ),
       );
@@ -68,7 +69,11 @@ class EngineLines extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                const Icon(Icons.analytics, size: 16, color: AppTheme.primaryColor),
+                const Icon(
+                  Icons.analytics,
+                  size: 16,
+                  color: AppTheme.primaryColor,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'Engine Analysis',
@@ -104,10 +109,10 @@ class _EngineLineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPositive = line.isMate 
-        ? (line.mateIn ?? 0) > 0 
+    final isPositive = line.isMate
+        ? (line.mateIn ?? 0) > 0
         : line.evaluation >= 0;
-    
+
     final evalColor = isPositive ? Colors.white : Colors.grey[800];
     final evalBgColor = isPositive ? AppTheme.surfaceDark : Colors.white;
     final evalTextColor = isPositive ? Colors.white : Colors.black;
@@ -127,7 +132,7 @@ class _EngineLineRow extends StatelessWidget {
             height: 20,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: line.rank == 1 
+              color: line.rank == 1
                   ? AppTheme.primaryColor.withOpacity(0.2)
                   : AppTheme.surfaceDark,
               borderRadius: BorderRadius.circular(4),
@@ -135,7 +140,9 @@ class _EngineLineRow extends StatelessWidget {
             child: Text(
               '${line.rank}',
               style: TextStyle(
-                color: line.rank == 1 ? AppTheme.primaryColor : AppTheme.textHint,
+                color: line.rank == 1
+                    ? AppTheme.primaryColor
+                    : AppTheme.textHint,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -184,11 +191,7 @@ class BestMoveIndicator extends StatelessWidget {
   final String? bestMove;
   final String? bestMoveSan;
 
-  const BestMoveIndicator({
-    super.key,
-    this.bestMove,
-    this.bestMoveSan,
-  });
+  const BestMoveIndicator({super.key, this.bestMove, this.bestMoveSan});
 
   @override
   Widget build(BuildContext context) {
@@ -214,10 +217,7 @@ class BestMoveIndicator extends StatelessWidget {
           const SizedBox(width: 8),
           const Text(
             'Best: ',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
           Text(
             bestMoveSan ?? bestMove!,

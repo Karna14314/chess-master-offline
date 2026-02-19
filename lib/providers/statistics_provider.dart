@@ -5,8 +5,8 @@ import 'package:chess_master/core/services/database_service.dart';
 /// Provider for user statistics
 final statisticsProvider =
     StateNotifierProvider<StatisticsNotifier, StatisticsModel>((ref) {
-  return StatisticsNotifier();
-});
+      return StatisticsNotifier();
+    });
 
 /// Statistics state notifier
 class StatisticsNotifier extends StateNotifier<StatisticsModel> {
@@ -59,7 +59,8 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     // Update openings played
     final newOpeningsPlayed = Map<String, int>.from(state.openingsPlayed);
     if (openingName != null && openingName.isNotEmpty) {
-      newOpeningsPlayed[openingName] = (newOpeningsPlayed[openingName] ?? 0) + 1;
+      newOpeningsPlayed[openingName] =
+          (newOpeningsPlayed[openingName] ?? 0) + 1;
     }
 
     state = state.copyWith(
