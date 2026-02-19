@@ -122,8 +122,8 @@ class StockfishService {
     _sendCommand('isready');
 
     int attempts = 0;
-    // Timeout after 2 seconds (20 * 100ms)
-    while (!_isReady && attempts < 20) {
+    // Timeout after 3 seconds (30 * 100ms)
+    while (!_isReady && attempts < 30) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
     }
@@ -162,7 +162,7 @@ class StockfishService {
     late StreamSubscription subscription;
     subscription = _outputController.stream.listen((line) {
       final trimmedLine = line.trim();
-      
+
       // Parse evaluation from info line
       if (trimmedLine.startsWith('info') && trimmedLine.contains('score')) {
         final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
@@ -214,6 +214,10 @@ class StockfishService {
       onTimeout: () {
         subscription.cancel();
         _sendCommand('stop');
+        // Reset engine state on timeout so it re-initializes next time
+        _isReady = false;
+        _stockfish?.dispose();
+        _stockfish = null;
         return BestMoveResult(bestMove: '', evaluation: 0);
       },
     );
@@ -241,7 +245,7 @@ class StockfishService {
     late StreamSubscription subscription;
     subscription = _outputController.stream.listen((line) {
       final trimmedLine = line.trim();
-      
+
       if (trimmedLine.startsWith('info') && trimmedLine.contains('pv')) {
         final pvMatch = _multiPvRegex.firstMatch(trimmedLine);
         final depthMatch = _depthRegex.firstMatch(trimmedLine);
@@ -318,6 +322,10 @@ class StockfishService {
         subscription.cancel();
         _sendCommand('stop');
         _sendCommand('setoption name MultiPV value 1');
+        // Reset engine state on timeout so it re-initializes next time
+        _isReady = false;
+        _stockfish?.dispose();
+        _stockfish = null;
         return AnalysisResult(evaluation: 0, lines: [], depth: 0);
       },
     );
