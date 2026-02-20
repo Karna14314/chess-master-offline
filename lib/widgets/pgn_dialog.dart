@@ -144,9 +144,10 @@ class _PgnImportDialogState extends State<PgnImportDialog> {
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
-                  onPressed: _parsedGame != null
-                      ? () => Navigator.pop(context, _parsedGame)
-                      : null,
+                  onPressed:
+                      _parsedGame != null
+                          ? () => Navigator.pop(context, _parsedGame)
+                          : null,
                   child: const Text('Import'),
                 ),
               ],
@@ -252,8 +253,5 @@ Future<PgnGame?> showPgnImportDialog(BuildContext context) async {
 
 /// Show PGN export dialog
 void showPgnExportDialog(BuildContext context, String pgn) {
-  showDialog(
-    context: context,
-    builder: (context) => PgnExportDialog(pgn: pgn),
-  );
+  showDialog(context: context, builder: (context) => PgnExportDialog(pgn: pgn));
 }

@@ -29,8 +29,10 @@ void main() {
               AppConstants.difficultyLevels[random.nextInt(
                 AppConstants.difficultyLevels.length,
               )];
-          final timeControl = AppConstants
-              .timeControls[random.nextInt(AppConstants.timeControls.length)];
+          final timeControl =
+              AppConstants.timeControls[random.nextInt(
+                AppConstants.timeControls.length,
+              )];
           final gameMode =
               GameMode.values[random.nextInt(GameMode.values.length)];
           final allowTakeback = random.nextBool();

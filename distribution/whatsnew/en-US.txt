@@ -1,1 +1,1 @@
-Fixed issue where the engine would freeze and not recover (Watchdog Mechanism added).
+Fixed issue where Player 2 was mislabeled as Bot in PvP mode.

@@ -101,6 +101,8 @@ class GameState {
   final ChessMove? hint;
   final ChessMove? bestMove;
   final int version;
+  final String whitePlayerName;
+  final String blackPlayerName;
 
   GameState({
     required this.id,
@@ -127,6 +129,8 @@ class GameState {
     this.hint,
     this.bestMove,
     this.version = 0,
+    this.whitePlayerName = 'White',
+    this.blackPlayerName = 'Black',
   }) : difficulty = difficulty ?? AppConstants.difficultyLevels[4],
        timeControl = timeControl ?? AppConstants.timeControls[0];
 
@@ -135,6 +139,8 @@ class GameState {
     return GameState(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       board: chess.Chess(),
+      whitePlayerName: 'White',
+      blackPlayerName: 'Black',
     );
   }
 
@@ -143,6 +149,8 @@ class GameState {
     return GameState(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       board: chess.Chess.fromFEN(fen),
+      whitePlayerName: 'White',
+      blackPlayerName: 'Black',
     );
   }
 
@@ -221,6 +229,8 @@ class GameState {
     ChessMove? hint,
     ChessMove? bestMove,
     int? version,
+    String? whitePlayerName,
+    String? blackPlayerName,
     bool clearSelection = false,
     bool clearResult = false,
   }) {
@@ -236,9 +246,8 @@ class GameState {
       botType: botType ?? this.botType,
       allowTakeback: allowTakeback ?? this.allowTakeback,
       hintsUsed: hintsUsed ?? this.hintsUsed,
-      selectedSquare: clearSelection
-          ? null
-          : (selectedSquare ?? this.selectedSquare),
+      selectedSquare:
+          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
@@ -251,6 +260,8 @@ class GameState {
       hint: hint ?? this.hint,
       bestMove: bestMove ?? this.bestMove,
       version: version ?? this.version,
+      whitePlayerName: whitePlayerName ?? this.whitePlayerName,
+      blackPlayerName: blackPlayerName ?? this.blackPlayerName,
     );
   }
 }

@@ -59,20 +59,21 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                       _FilterChip(
                         label: 'All',
                         selected: _filterGameMode == 'all',
-                        onSelected: (_) =>
-                            setSheetState(() => _filterGameMode = 'all'),
+                        onSelected:
+                            (_) => setSheetState(() => _filterGameMode = 'all'),
                       ),
                       _FilterChip(
                         label: 'Bot',
                         selected: _filterGameMode == 'bot',
-                        onSelected: (_) =>
-                            setSheetState(() => _filterGameMode = 'bot'),
+                        onSelected:
+                            (_) => setSheetState(() => _filterGameMode = 'bot'),
                       ),
                       _FilterChip(
                         label: 'Local Multiplayer',
                         selected: _filterGameMode == 'local',
-                        onSelected: (_) =>
-                            setSheetState(() => _filterGameMode = 'local'),
+                        onSelected:
+                            (_) =>
+                                setSheetState(() => _filterGameMode = 'local'),
                       ),
                     ],
                   ),
@@ -90,26 +91,26 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                       _FilterChip(
                         label: 'All',
                         selected: _filterResult == 'all',
-                        onSelected: (_) =>
-                            setSheetState(() => _filterResult = 'all'),
+                        onSelected:
+                            (_) => setSheetState(() => _filterResult = 'all'),
                       ),
                       _FilterChip(
                         label: 'Win',
                         selected: _filterResult == 'win',
-                        onSelected: (_) =>
-                            setSheetState(() => _filterResult = 'win'),
+                        onSelected:
+                            (_) => setSheetState(() => _filterResult = 'win'),
                       ),
                       _FilterChip(
                         label: 'Loss',
                         selected: _filterResult == 'loss',
-                        onSelected: (_) =>
-                            setSheetState(() => _filterResult = 'loss'),
+                        onSelected:
+                            (_) => setSheetState(() => _filterResult = 'loss'),
                       ),
                       _FilterChip(
                         label: 'Draw',
                         selected: _filterResult == 'draw',
-                        onSelected: (_) =>
-                            setSheetState(() => _filterResult = 'draw'),
+                        onSelected:
+                            (_) => setSheetState(() => _filterResult = 'draw'),
                       ),
                     ],
                   ),
@@ -158,21 +159,22 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
       ),
       body: gamesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading games: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(gameHistoryProvider),
-                child: const Text('Retry'),
+        error:
+            (error, stack) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Error loading games: $error'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => ref.refresh(gameHistoryProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
         data: (games) {
           final filteredGames = _filterGames(games);
 
@@ -337,20 +339,21 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     // Resume game
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Resume Game?'),
-        content: const Text('Do you want to continue this game?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Resume Game?'),
+            content: const Text('Do you want to continue this game?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Resume'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Resume'),
-          ),
-        ],
-      ),
     );
 
     if (confirm != true) return;
@@ -362,9 +365,8 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
 
     // Start game from saved position
     final playerColorStr = game['player_color'] as String? ?? 'white';
-    final playerColor = playerColorStr == 'white'
-        ? PlayerColor.white
-        : PlayerColor.black;
+    final playerColor =
+        playerColorStr == 'white' ? PlayerColor.white : PlayerColor.black;
 
     final botElo = game['bot_elo'] as int? ?? 1200;
     final difficultyIndex = AppConstants.difficultyLevels
@@ -404,21 +406,22 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Game?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Game?'),
+            content: const Text('This action cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirm != true) return;
@@ -486,9 +489,10 @@ class _GameCard extends StatelessWidget {
     final name = game['name'] as String?;
 
     final timestamp = game['updated_at'] as int? ?? game['created_at'] as int?;
-    final dateTime = timestamp != null
-        ? DateTime.fromMillisecondsSinceEpoch(timestamp)
-        : null;
+    final dateTime =
+        timestamp != null
+            ? DateTime.fromMillisecondsSinceEpoch(timestamp)
+            : null;
     final timeFormat = DateFormat('HH:mm');
 
     // Determine result display
@@ -617,18 +621,19 @@ class _GameCard extends StatelessWidget {
                     onDelete();
                   }
                 },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete'),
-                      ],
-                    ),
-                  ),
-                ],
+                itemBuilder:
+                    (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete'),
+                          ],
+                        ),
+                      ),
+                    ],
               ),
             ],
           ),
