@@ -278,7 +278,9 @@ class SavedGamesListScreen extends ConsumerWidget {
     final moves = _parsePgnToMoves(pgn);
     if (moves == null || moves.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to parse the game moves from PGN.')),
+        const SnackBar(
+          content: Text('Failed to parse the game moves from PGN.'),
+        ),
       );
       return;
     }
@@ -305,7 +307,8 @@ class SavedGamesListScreen extends ConsumerWidget {
         final success = replayBoard.move(san);
         if (!success) return null;
 
-        final lastVerbose = replayBoard.getHistory({'verbose': true}).last as Map;
+        final lastVerbose =
+            replayBoard.getHistory({'verbose': true}).last as Map;
         moves.add(
           ChessMove(
             from: lastVerbose['from'] as String,
@@ -338,17 +341,20 @@ class _SavedGameCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final createdAt = game['created_at'] as int?;
     final dateStr = createdAt != null
-        ? DateTime.fromMillisecondsSinceEpoch(createdAt).toString().split(' ')[0]
+        ? DateTime.fromMillisecondsSinceEpoch(
+            createdAt,
+          ).toString().split(' ')[0]
         : 'Unknown date';
 
     final result = game['result'] as String? ?? 'Ongoing';
-    
+
     // Determine opponent label based on game mode or custom name
     final customName = game['custom_name'] as String?;
     final gameMode = game['game_mode'] as String? ?? 'bot';
     final botElo = game['bot_elo'] as int? ?? 1200;
-    
-    final opponent = customName ?? (gameMode == 'local' ? 'Friend' : 'Bot ($botElo)');
+
+    final opponent =
+        customName ?? (gameMode == 'local' ? 'Friend' : 'Bot ($botElo)');
 
     return GestureDetector(
       onTap: onTap,

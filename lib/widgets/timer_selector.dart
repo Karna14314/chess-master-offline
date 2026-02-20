@@ -129,8 +129,9 @@ class _TimeControlChip extends StatelessWidget {
               Text(
                 control.displayString,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color:
-                      isSelected ? Colors.white : theme.colorScheme.onSurface,
+                  color: isSelected
+                      ? Colors.white
+                      : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -138,10 +139,9 @@ class _TimeControlChip extends StatelessWidget {
                 Text(
                   _getCategory(),
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color:
-                        isSelected
-                            ? Colors.white.withOpacity(0.8)
-                            : theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: isSelected
+                        ? Colors.white.withOpacity(0.8)
+                        : theme.colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
             ],

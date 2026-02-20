@@ -264,10 +264,9 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
         // Hint button
         Expanded(
           child: OutlinedButton.icon(
-            onPressed:
-                state.isPlayerTurn && !state.showingHint
-                    ? () => notifier.showHint()
-                    : null,
+            onPressed: state.isPlayerTurn && !state.showingHint
+                ? () => notifier.showHint()
+                : null,
             icon: const Icon(Icons.lightbulb_outline, size: 20),
             label: const Text('Hint'),
             style: OutlinedButton.styleFrom(
@@ -428,8 +427,8 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => _AutoPlaySolutionScreen(puzzle: state.currentPuzzle!),
+        builder: (context) =>
+            _AutoPlaySolutionScreen(puzzle: state.currentPuzzle!),
       ),
     );
   }
@@ -470,30 +469,28 @@ class _DailyPuzzleBoard extends StatelessWidget {
       bestMove: hintMove, // Show hint as arrow
       showHint: state.showingHint,
       hintSquare: state.hintFromSquare,
-      onSquareTap:
-          state.isPlayerTurn
-              ? (square) {
-                ref.read(puzzleProvider.notifier).selectSquare(square);
-              }
-              : null,
-      onMove:
-          state.isPlayerTurn
-              ? (from, to) async {
-                final notifier = ref.read(puzzleProvider.notifier);
+      onSquareTap: state.isPlayerTurn
+          ? (square) {
+              ref.read(puzzleProvider.notifier).selectSquare(square);
+            }
+          : null,
+      onMove: state.isPlayerTurn
+          ? (from, to) async {
+              final notifier = ref.read(puzzleProvider.notifier);
 
-                if (notifier.needsPromotion(from, to)) {
-                  final promotion = await _showPromotionDialog(
-                    context,
-                    state.isWhiteTurn,
-                  );
-                  if (promotion != null) {
-                    notifier.tryMove(from, to, promotion: promotion);
-                  }
-                } else {
-                  notifier.tryMove(from, to);
+              if (notifier.needsPromotion(from, to)) {
+                final promotion = await _showPromotionDialog(
+                  context,
+                  state.isWhiteTurn,
+                );
+                if (promotion != null) {
+                  notifier.tryMove(from, to, promotion: promotion);
                 }
+              } else {
+                notifier.tryMove(from, to);
               }
-              : null,
+            }
+          : null,
       showCoordinates: true,
     );
   }
@@ -505,26 +502,23 @@ class _DailyPuzzleBoard extends StatelessWidget {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              'Promote Pawn',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-            ),
-            content: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
-                _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
-                _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
-                _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
-              ],
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Promote Pawn',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
+            _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
+            _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
+            _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
+          ],
+        ),
+      ),
     );
   }
 }

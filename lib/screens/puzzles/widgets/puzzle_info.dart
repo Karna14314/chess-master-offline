@@ -82,26 +82,25 @@ class PuzzleInfo extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 4,
-              children:
-                  puzzle.themes.take(4).map((theme) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceDark,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _formatTheme(theme),
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+              children: puzzle.themes.take(4).map((theme) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceDark,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _formatTheme(theme),
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
         ],
       ),
@@ -219,10 +218,9 @@ class PuzzleResultDialog extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color:
-                    solved
-                        ? Colors.green.withOpacity(0.2)
-                        : Colors.red.withOpacity(0.2),
+                color: solved
+                    ? Colors.green.withOpacity(0.2)
+                    : Colors.red.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(

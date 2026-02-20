@@ -413,7 +413,9 @@ class DatabaseService {
     await db.insert('puzzle_progress', {
       'puzzle_id': puzzleId,
       'attempts': attempts,
-      'solved': solved ? 1 : (existing.isNotEmpty ? existing.first['solved'] : 0),
+      'solved': solved
+          ? 1
+          : (existing.isNotEmpty ? existing.first['solved'] : 0),
       'last_attempted': DateTime.now().millisecondsSinceEpoch,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }

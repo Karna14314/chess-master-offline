@@ -62,7 +62,9 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(home: Scaffold(body: MoveList(moves: moves))),
+        child: MaterialApp(
+          home: Scaffold(body: MoveList(moves: moves)),
+        ),
       ),
     );
 

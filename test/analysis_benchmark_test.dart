@@ -1,14 +1,26 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chess_master/providers/analysis_provider.dart';
 import 'package:chess_master/core/services/stockfish_service.dart';
 import 'package:chess_master/models/game_model.dart';
+import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess/chess.dart' as chess_lib;
 
 // Mock Service
 class MockStockfishService implements StockfishService {
   @override
   bool get isReady => true;
+
+  @override
+  bool get isUsingFallback => false;
+
+  @override
+  ValueNotifier<EngineStatus> get statusNotifier =>
+      ValueNotifier(EngineStatus.ready);
+
+  @override
+  set forceFallback(bool value) {}
 
   @override
   Stream<String> get outputStream => Stream.empty();
@@ -34,7 +46,12 @@ class MockStockfishService implements StockfishService {
     return AnalysisResult(
       evaluation: 50,
       lines: [
-        EngineLine(evaluation: 50, depth: depth, moves: ['e2e4']),
+        EngineLine(
+          rank: 1,
+          evaluation: 0.5,
+          depth: depth,
+          moves: ['e2e4'],
+        ),
       ],
       depth: depth,
     );
