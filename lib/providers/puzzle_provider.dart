@@ -408,6 +408,15 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         return false;
       }
 
+      // Determine whose turn it is from the FEN
+      // The player should be the one to move in the puzzle position
+      final isPlayerTurn = true; // Player always starts in puzzle position
+
+      debugPrint(
+        '🧩 Loaded puzzle: Turn=${board.turn == chess.Color.WHITE ? "White" : "Black"}, '
+        'First move=${puzzle.moves.isNotEmpty ? puzzle.moves.first : "none"}',
+      );
+
       state = state.copyWith(
         currentPuzzle: puzzle,
         board: board,
@@ -419,7 +428,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         showingHint: false,
         hintsUsed: 0,
         errorMessage: null,
-        isPlayerTurn: true, // Player starts immediately
+        isPlayerTurn: isPlayerTurn,
         state: PuzzleState.playing, // Ready to play
         clearSelection: true,
         clearError: true,
@@ -497,7 +506,16 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     final uciMove = '$from$to${promotion ?? ''}';
     final expectedMove = puzzle.getExpectedMove(state.currentMoveIndex);
 
-    if (expectedMove == null) return;
+    debugPrint(
+      '🧩 Player move: $uciMove, Expected: $expectedMove, MoveIndex: ${state.currentMoveIndex}',
+    );
+
+    if (expectedMove == null) {
+      debugPrint(
+        '🧩 ERROR: No expected move at index ${state.currentMoveIndex}',
+      );
+      return;
+    }
 
     final isCorrect = expectedMove.toLowerCase().startsWith(
       uciMove.toLowerCase(),
@@ -506,6 +524,8 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     if (!isCorrect) {
       // Wrong move - play error sound
       AudioService.instance.playCheck(); // Using check sound as error indicator
+
+      debugPrint('🧩 Wrong move! Expected: $expectedMove, Got: $uciMove');
 
       state = state.copyWith(
         state: PuzzleState.incorrect,
@@ -525,6 +545,8 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       });
       return;
     }
+
+    debugPrint('🧩 Correct move!');
 
     // Correct move - play move sound
     final capturedPiece = state.board!.get(to);
@@ -549,9 +571,12 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
     if (nextExpectedMove == null) {
       // Puzzle completed!
+      debugPrint('🧩 Puzzle solved! No more moves.');
       _onPuzzleCompleted(true);
       return;
     }
+
+    debugPrint('🧩 Next expected move: $nextExpectedMove');
 
     state = state.copyWith(
       currentMoveIndex: newMoveIndex,
@@ -568,18 +593,31 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
   /// Apply opponent's move in puzzle
   void _applyOpponentMove(String uciMove) {
-    if (!_applyUciMove(uciMove)) return;
+    debugPrint('🧩 Applying opponent move: $uciMove');
+
+    if (!_applyUciMove(uciMove)) {
+      debugPrint('🧩 ERROR: Failed to apply opponent move');
+      return;
+    }
 
     final newMoveIndex = state.currentMoveIndex + 1;
 
     // Check if there are more moves for player
-    if (state.currentPuzzle?.getExpectedMove(newMoveIndex) == null) {
+    final nextPlayerMove = state.currentPuzzle?.getExpectedMove(newMoveIndex);
+
+    if (nextPlayerMove == null) {
       // Puzzle completed!
+      debugPrint('🧩 Puzzle completed! No more moves.');
       _onPuzzleCompleted(true);
       return;
     }
 
-    state = state.copyWith(currentMoveIndex: newMoveIndex, isPlayerTurn: true);
+    debugPrint('🧩 Next player move expected: $nextPlayerMove');
+    state = state.copyWith(
+      currentMoveIndex: newMoveIndex,
+      isPlayerTurn: true,
+      state: PuzzleState.playing, // Back to playing state
+    );
   }
 
   /// Handle puzzle completion
