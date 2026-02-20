@@ -391,9 +391,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             : 'Friend';
     final moveCount = game['move_count'] ?? 0;
     final isCompleted = (game['is_completed'] as int?) == 1;
+    final customName = game['custom_name'] as String?;
+    final gameId = game['id'] as String;
 
     return GestureDetector(
       onTap: () => _resumeGame(context, game),
+      onLongPress: () => _showGameOptionsDialog(context, gameId, customName),
       child: Container(
         width: 280,
         padding: const EdgeInsets.all(12),
@@ -425,11 +428,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (customName != null && customName.isNotEmpty) ...[
+                    Text(
+                      customName,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     'Vs $opponent',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontSize:
+                          customName != null && customName.isNotEmpty ? 14 : 16,
+                      fontWeight:
+                          customName != null && customName.isNotEmpty
+                              ? FontWeight.normal
+                              : FontWeight.bold,
                       color: AppTheme.textPrimary,
                     ),
                     maxLines: 1,
@@ -726,6 +746,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final timeControl = AppConstants.timeControls[timeControlIndex];
       final fenCurrent = game['fen_current'] as String?;
 
+      // Read game_mode from database and convert to GameMode enum
+      final gameModeStr = game['game_mode'] as String? ?? 'bot';
+      final gameMode =
+          gameModeStr == 'local' ? GameMode.localMultiplayer : GameMode.bot;
+
       ref
           .read(gameProvider.notifier)
           .startNewGame(
@@ -733,7 +758,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             difficulty: difficulty,
             timeControl: timeControl,
             startingFen: fenCurrent,
-            gameMode: GameMode.bot,
+            gameMode: gameMode,
           );
 
       if (context.mounted) {
@@ -749,6 +774,156 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ).showSnackBar(SnackBar(content: Text('Error loading game: $e')));
       }
     }
+  }
+
+  /// Show game options dialog (rename, delete, etc.)
+  Future<void> _showGameOptionsDialog(
+    BuildContext context,
+    String gameId,
+    String? currentName,
+  ) async {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: Text(
+              'Game Options',
+              style: GoogleFonts.inter(color: AppTheme.textPrimary),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.edit, color: AppTheme.primaryColor),
+                  title: Text(
+                    'Rename Game',
+                    style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showRenameDialog(context, gameId, currentName);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: Text(
+                    'Delete Game',
+                    style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder:
+                          (context) => AlertDialog(
+                            backgroundColor: AppTheme.surfaceDark,
+                            title: Text(
+                              'Delete Game?',
+                              style: GoogleFonts.inter(
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            content: Text(
+                              'This action cannot be undone.',
+                              style: GoogleFonts.inter(
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                ),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                    );
+                    if (confirm == true && context.mounted) {
+                      await ref
+                          .read(databaseServiceProvider)
+                          .deleteGame(gameId);
+                      setState(() {}); // Refresh the list
+                    }
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  /// Show rename dialog
+  Future<void> _showRenameDialog(
+    BuildContext context,
+    String gameId,
+    String? currentName,
+  ) async {
+    final controller = TextEditingController(text: currentName ?? '');
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: Text(
+              'Rename Game',
+              style: GoogleFonts.inter(color: AppTheme.textPrimary),
+            ),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              style: GoogleFonts.inter(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Enter game name',
+                hintStyle: GoogleFonts.inter(color: AppTheme.textSecondary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppTheme.primaryColor),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final name = controller.text.trim();
+                  await ref
+                      .read(databaseServiceProvider)
+                      .updateGameName(gameId, name);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    setState(() {}); // Refresh the list
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+    );
   }
 }
 

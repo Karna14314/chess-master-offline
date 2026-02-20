@@ -235,12 +235,17 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   /// Load puzzles from assets
   Future<void> _loadPuzzles() async {
     try {
+      debugPrint('🧩 Loading puzzles from assets...');
       final String jsonString = await rootBundle.loadString(
         'assets/puzzles/puzzles.json',
       );
+      debugPrint('🧩 JSON loaded, size: ${jsonString.length} bytes');
       final List<dynamic> jsonList = json.decode(jsonString);
+      debugPrint('🧩 Parsed ${jsonList.length} puzzles from JSON');
       _allPuzzles = jsonList.map((j) => Puzzle.fromJson(j)).toList();
+      debugPrint('🧩 Successfully loaded ${_allPuzzles.length} puzzles');
     } catch (e) {
+      debugPrint('🧩 ERROR loading puzzles: $e');
       // If JSON doesn't exist, use empty list
       _allPuzzles = [];
     }
@@ -250,9 +255,15 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   Future<void> startNewPuzzle({int? targetRating}) async {
     _stopSolutionPlayback();
 
+    debugPrint(
+      '🧩 Starting new puzzle, _allPuzzles.length = ${_allPuzzles.length}',
+    );
+
     if (_allPuzzles.isEmpty) {
+      debugPrint('🧩 Puzzles empty, loading...');
       await _loadPuzzles();
       if (_allPuzzles.isEmpty) {
+        debugPrint('🧩 ERROR: No puzzles available after loading');
         state = state.copyWith(
           errorMessage: 'No puzzles available',
           state: PuzzleState.loading,
@@ -262,6 +273,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     }
 
     final rating = targetRating ?? state.currentRating;
+    debugPrint('🧩 Target rating: $rating');
 
     int attempts = 0;
     const maxAttempts = 10;
@@ -273,6 +285,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       final puzzle = _selectPuzzleByRating(rating);
 
       if (puzzle == null) {
+        debugPrint('🧩 ERROR: No suitable puzzle found');
         state = state.copyWith(
           errorMessage: 'No suitable puzzle found',
           state: PuzzleState.loading,
@@ -280,13 +293,20 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         return;
       }
 
+      debugPrint('🧩 Selected puzzle ${puzzle.id}, rating ${puzzle.rating}');
       final success = await _loadPuzzle(puzzle);
-      if (success) return;
+      if (success) {
+        debugPrint('🧩 Puzzle loaded successfully');
+        return;
+      }
 
       debugPrint('Skipping invalid puzzle: ${puzzle.id}');
       // If validation failed, try another one
     }
 
+    debugPrint(
+      '🧩 ERROR: Failed to find valid puzzle after $maxAttempts attempts',
+    );
     state = state.copyWith(
       errorMessage: 'Failed to find valid puzzle',
       state: PuzzleState.loading,
@@ -382,6 +402,12 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
       final board = chess.Chess.fromFEN(puzzle.fen);
 
+      // Additional validation: check if position is already checkmate
+      if (board.in_checkmate) {
+        debugPrint('Skipping puzzle - position is already checkmate');
+        return false;
+      }
+
       state = state.copyWith(
         currentPuzzle: puzzle,
         board: board,
@@ -393,41 +419,16 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         showingHint: false,
         hintsUsed: 0,
         errorMessage: null,
-        isPlayerTurn: false,
-        state: PuzzleState.ready,
+        isPlayerTurn: true, // Player starts immediately
+        state: PuzzleState.playing, // Ready to play
         clearSelection: true,
         clearError: true,
         highlightedSquares: {},
       );
 
-      // Apply setup move after a delay
-      await Future.delayed(const Duration(milliseconds: 500));
-      return _applySetupMove();
+      return true;
     } catch (e) {
       debugPrint('Error loading puzzle: $e');
-      return false;
-    }
-  }
-
-  /// Apply the opponent's setup move
-  bool _applySetupMove() {
-    final puzzle = state.currentPuzzle;
-    if (puzzle == null || state.board == null) return false;
-
-    final setupMove = puzzle.setupMove;
-    if (setupMove == null) {
-      // Some puzzles might start directly?
-      state = state.copyWith(state: PuzzleState.playing, isPlayerTurn: true);
-      return true;
-    }
-
-    final success = _applyUciMove(setupMove);
-
-    if (success) {
-      state = state.copyWith(state: PuzzleState.playing, isPlayerTurn: true);
-      return true;
-    } else {
-      debugPrint('Failed to apply setup move: $setupMove');
       return false;
     }
   }
@@ -696,10 +697,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     final board = chess.Chess.fromFEN(puzzle.fen);
     state = state.copyWith(board: board, currentMoveIndex: 0);
 
-    // Apply setup move first if exists
-    if (puzzle.setupMove != null) {
-      _applyUciMove(puzzle.setupMove!);
-    }
+    // DO NOT apply setup move - the FEN is already the correct starting position
 
     int moveIndex = 0;
 

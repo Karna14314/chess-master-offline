@@ -72,6 +72,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
       if (gameState.moveHistory.isEmpty) return;
 
+      // Debug logging
+      debugPrint('=== AUTO SAVE DEBUG ===');
+      debugPrint('gameState.gameMode: ${gameState.gameMode}');
+      debugPrint(
+        'gameState.isLocalMultiplayer: ${gameState.isLocalMultiplayer}',
+      );
+      debugPrint(
+        'Saving game_mode as: ${gameState.isLocalMultiplayer ? 'local' : 'bot'}',
+      );
+
       final dbService = ref.read(databaseServiceProvider);
       await dbService.saveGame({
         'id': gameState.id,
@@ -95,6 +105,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         'is_saved': 1,
         'hints_used': gameState.hintsUsed,
       });
+
+      debugPrint('Game saved successfully');
     } catch (e) {
       debugPrint('Error auto-saving game: $e');
     }
@@ -737,17 +749,21 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget _buildControlBar(BuildContext context, GameState gameState) {
     final valid = gameState.status == GameStatus.active;
     final gameNotifier = ref.read(gameProvider.notifier);
+    final isLocalMultiplayer = gameState.isLocalMultiplayer;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _ControlButton(
-            icon: Icons.lightbulb_outline,
-            label: 'Hint',
-            onPressed: (valid && gameState.isPlayerTurn) ? _requestHint : null,
-          ),
+          // Hide hint button in local multiplayer mode for fair play
+          if (!isLocalMultiplayer)
+            _ControlButton(
+              icon: Icons.lightbulb_outline,
+              label: 'Hint',
+              onPressed:
+                  (valid && gameState.isPlayerTurn) ? _requestHint : null,
+            ),
           _ControlButton(
             icon: Icons.undo,
             label: 'Undo',

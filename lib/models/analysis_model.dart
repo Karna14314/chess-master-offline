@@ -147,10 +147,15 @@ MoveClassification classifyMove({
   }
 
   // Calculate eval loss from player's perspective
+  // Evaluation is always from White's perspective (positive = White better)
+  // For White: if eval goes down, that's a loss
+  // For Black: if eval goes up, that's a loss
   double evalLoss;
   if (isWhiteMove) {
+    // White move: loss = how much eval decreased
     evalLoss = evalBefore - evalAfter;
   } else {
+    // Black move: loss = how much eval increased (bad for Black)
     evalLoss = evalAfter - evalBefore;
   }
 
@@ -165,6 +170,9 @@ MoveClassification classifyMove({
   } else if (evalLoss <= -0.3) {
     // Move was better than expected (opponent blundered or brilliant find)
     return MoveClassification.excellent;
+  } else if (evalLoss < 0.1) {
+    // Very small loss or no loss
+    return MoveClassification.good;
   } else {
     return MoveClassification.good;
   }

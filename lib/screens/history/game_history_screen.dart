@@ -382,6 +382,11 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
 
     final fenCurrent = game['fen_current'] as String?;
 
+    // Read game_mode from database and convert to GameMode enum
+    final gameModeStr = game['game_mode'] as String? ?? 'bot';
+    final gameMode =
+        gameModeStr == 'local' ? GameMode.localMultiplayer : GameMode.bot;
+
     ref
         .read(gameProvider.notifier)
         .startNewGame(
@@ -389,6 +394,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
           difficulty: difficulty,
           timeControl: timeControl,
           startingFen: fenCurrent,
+          gameMode: gameMode,
         );
 
     if (context.mounted) {
@@ -486,7 +492,8 @@ class _GameCard extends StatelessWidget {
     final moveCount = game['move_count'] as int? ?? 0;
     final isCompleted = game['is_completed'] == 1;
     final isSaved = game['is_saved'] == 1;
-    final name = game['name'] as String?;
+    final customName = game['custom_name'] as String?;
+    final gameMode = game['game_mode'] as String? ?? 'bot';
 
     final timestamp = game['updated_at'] as int? ?? game['created_at'] as int?;
     final dateTime =
@@ -494,6 +501,10 @@ class _GameCard extends StatelessWidget {
             ? DateTime.fromMillisecondsSinceEpoch(timestamp)
             : null;
     final timeFormat = DateFormat('HH:mm');
+
+    // Determine opponent display
+    final opponentText = gameMode == 'local' ? 'Friend' : 'Bot ($botElo)';
+    final displayName = customName ?? 'Game vs $opponentText';
 
     // Determine result display
     IconData resultIcon;
@@ -559,7 +570,7 @@ class _GameCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          name ?? 'Game vs Bot ($botElo)',
+                          displayName,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         if (isSaved)

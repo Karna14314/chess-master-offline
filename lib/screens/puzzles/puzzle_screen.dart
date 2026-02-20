@@ -673,10 +673,7 @@ class _AutoPlaySolutionScreenState extends State<_AutoPlaySolutionScreen> {
   void initState() {
     super.initState();
     _board = chess.Chess.fromFEN(widget.puzzle.fen);
-    // Apply setup move if exists
-    if (widget.puzzle.setupMove != null) {
-      _applyUciMove(widget.puzzle.setupMove!);
-    }
+    // DO NOT apply setup move - FEN is already the correct starting position
   }
 
   void _applyUciMove(String uci) {
@@ -714,9 +711,7 @@ class _AutoPlaySolutionScreenState extends State<_AutoPlaySolutionScreen> {
   void _reset() {
     setState(() {
       _board = chess.Chess.fromFEN(widget.puzzle.fen);
-      if (widget.puzzle.setupMove != null) {
-        _applyUciMove(widget.puzzle.setupMove!);
-      }
+      // DO NOT apply setup move
       _currentMoveIndex = 0;
       _lastMoveFrom = null;
       _lastMoveTo = null;

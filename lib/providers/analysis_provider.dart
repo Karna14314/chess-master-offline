@@ -417,6 +417,18 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
       );
 
+      // Debug logging
+      if (i < 5) {
+        // Log first 5 moves for debugging
+        debugPrint(
+          '📊 Move ${i + 1}: ${move.san} | '
+          'Before: ${prevEval.toStringAsFixed(2)} | '
+          'After: ${afterEval.toStringAsFixed(2)} | '
+          'Loss: ${isWhiteMove ? (prevEval - afterEval).toStringAsFixed(2) : (afterEval - prevEval).toStringAsFixed(2)} | '
+          'Class: ${classification.name}',
+        );
+      }
+
       analyzedMoves.add(
         MoveAnalysis(
           moveIndex: i,

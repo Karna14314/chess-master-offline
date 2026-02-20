@@ -83,7 +83,27 @@ class StockfishService {
     while (retryCount < maxRetries) {
       try {
         _stockfish?.dispose();
+        debugPrint('Stockfish instance created');
         _stockfish = Stockfish();
+
+        // Wait for the Stockfish instance to be ready before sending commands
+        // The package needs time to initialize the native binary
+        int initAttempts = 0;
+        while (initAttempts < 50) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          // Try to check if we can send commands by attempting to access stdin
+          try {
+            // If this doesn't throw, the engine is ready
+            if (_stockfish != null) {
+              break;
+            }
+          } catch (e) {
+            // Engine not ready yet
+          }
+          initAttempts++;
+        }
+
+        debugPrint('Stockfish initialization wait complete');
 
         bool uciOkReceived = false;
 
@@ -101,7 +121,11 @@ class StockfishService {
           }
         });
 
+        // Give a bit more time for the stream to be set up
+        await Future.delayed(const Duration(milliseconds: 200));
+
         // Initialize UCI mode
+        debugPrint('Sending UCI command');
         _sendCommand('uci');
 
         // Wait for uciok

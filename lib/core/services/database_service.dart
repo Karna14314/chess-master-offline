@@ -30,7 +30,7 @@ class DatabaseService {
 
       return await openDatabase(
         path,
-        version: 1,
+        version: 3,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -47,6 +47,7 @@ class DatabaseService {
       CREATE TABLE games (
         id TEXT PRIMARY KEY,
         name TEXT,
+        custom_name TEXT,
         pgn TEXT NOT NULL,
         fen_start TEXT,
         fen_current TEXT,
@@ -54,6 +55,7 @@ class DatabaseService {
         result_reason TEXT,
         player_color TEXT,
         bot_elo INTEGER,
+        game_mode TEXT,
         time_control TEXT,
         white_time_remaining INTEGER,
         black_time_remaining INTEGER,
@@ -143,10 +145,24 @@ class DatabaseService {
         // But if we're upgrading from a version without tables, create them
         await _createTablesIfNotExist(db);
         break;
-      // Add future migrations here
-      // case 2:
-      //   await db.execute('ALTER TABLE games ADD COLUMN new_column TEXT');
-      //   break;
+      case 2:
+        // Add game_mode column to games table
+        try {
+          await db.execute('ALTER TABLE games ADD COLUMN game_mode TEXT');
+          debugPrint('Added game_mode column to games table');
+        } catch (e) {
+          debugPrint('Error adding game_mode column (may already exist): $e');
+        }
+        break;
+      case 3:
+        // Add custom_name column to games table
+        try {
+          await db.execute('ALTER TABLE games ADD COLUMN custom_name TEXT');
+          debugPrint('Added custom_name column to games table');
+        } catch (e) {
+          debugPrint('Error adding custom_name column (may already exist): $e');
+        }
+        break;
     }
   }
 
@@ -258,6 +274,20 @@ class DatabaseService {
       limit: 1,
     );
     return results.isNotEmpty ? results.first : null;
+  }
+
+  /// Update game custom name
+  Future<void> updateGameName(String id, String customName) async {
+    final db = await database;
+    await db.update(
+      'games',
+      {
+        'custom_name': customName,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   /// Delete a game

@@ -43,27 +43,27 @@ class Puzzle {
   }
 
   /// Get the initial move (opponent's move that sets up the puzzle)
-  String? get setupMove => moves.isNotEmpty ? moves.first : null;
+  /// NOTE: This is for CONTEXT only - the FEN already represents the puzzle position
+  String? get contextMove => moves.isNotEmpty ? moves.first : null;
 
-  /// Get the solution moves (player's moves to solve the puzzle)
-  List<String> get solutionMoves => moves.length > 1 ? moves.sublist(1) : [];
+  /// Get the solution moves (all moves in the puzzle)
+  List<String> get solutionMoves => moves;
 
   /// Check if a move at given index is correct
   bool isCorrectMove(int moveIndex, String move) {
-    final targetIndex = moveIndex + 1; // +1 because first move is setup
-    if (targetIndex >= moves.length) return false;
-    return moves[targetIndex].toLowerCase() == move.toLowerCase();
+    if (moveIndex >= moves.length) return false;
+    return moves[moveIndex].toLowerCase() == move.toLowerCase();
   }
 
   /// Get the expected move at given index
   String? getExpectedMove(int moveIndex) {
-    final targetIndex = moveIndex + 1;
-    if (targetIndex >= moves.length) return null;
-    return moves[targetIndex];
+    if (moveIndex >= moves.length) return null;
+    return moves[moveIndex];
   }
 
   /// Total number of moves player needs to make
-  int get solutionLength => (moves.length - 1 + 1) ~/ 2; // Player moves only
+  int get solutionLength =>
+      (moves.length + 1) ~/ 2; // Player moves only (every other move)
 }
 
 /// Puzzle progress tracking
