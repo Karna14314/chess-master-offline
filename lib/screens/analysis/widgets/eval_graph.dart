@@ -199,16 +199,17 @@ class EvalGraph extends StatelessWidget {
             horizontalLines: [
               HorizontalLine(y: 0, color: Colors.grey[500]!, strokeWidth: 1),
             ],
-            verticalLines: currentMoveIndex != null
-                ? [
-                    VerticalLine(
-                      x: currentMoveIndex!.toDouble(),
-                      color: AppTheme.primaryColor,
-                      strokeWidth: 2,
-                      dashArray: [5, 3],
-                    ),
-                  ]
-                : [],
+            verticalLines:
+                currentMoveIndex != null
+                    ? [
+                      VerticalLine(
+                        x: currentMoveIndex!.toDouble(),
+                        color: AppTheme.primaryColor,
+                        strokeWidth: 2,
+                        dashArray: [5, 3],
+                      ),
+                    ]
+                    : [],
           ),
         ),
       ),

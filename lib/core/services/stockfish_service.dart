@@ -361,9 +361,8 @@ class StockfishService {
 
         if (pvMovesMatch != null) {
           final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
-          final currentDepth = depthMatch != null
-              ? int.parse(depthMatch.group(1)!)
-              : 0;
+          final currentDepth =
+              depthMatch != null ? int.parse(depthMatch.group(1)!) : 0;
           int? eval;
           int? mate;
 

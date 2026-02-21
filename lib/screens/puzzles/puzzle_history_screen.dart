@@ -30,27 +30,33 @@ class PuzzleHistoryScreen extends ConsumerWidget {
         elevation: 0,
       ),
       body: historyAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppTheme.primaryColor),
-        ),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-              const SizedBox(height: 16),
-              Text(
-                'Error loading puzzle history',
-                style: GoogleFonts.inter(color: AppTheme.textSecondary),
+        loading:
+            () => const Center(
+              child: CircularProgressIndicator(color: AppTheme.primaryColor),
+            ),
+        error:
+            (error, _) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: AppTheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading puzzle history',
+                    style: GoogleFonts.inter(color: AppTheme.textSecondary),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => ref.invalidate(puzzleHistoryProvider),
+                    child: const Text('Try Again'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(puzzleHistoryProvider),
-                child: const Text('Try Again'),
-              ),
-            ],
-          ),
-        ),
+            ),
         data: (history) {
           if (history.isEmpty) {
             return Center(

@@ -10,9 +10,7 @@ void main() {
     final evaluations = [0.5, 12.0, -15.0, 3.0];
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: EvalGraph(evaluations: evaluations)),
-      ),
+      MaterialApp(home: Scaffold(body: EvalGraph(evaluations: evaluations))),
     );
 
     // Verify chart is present
@@ -41,9 +39,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: EvalGraph(evaluations: [])),
-      ),
+      const MaterialApp(home: Scaffold(body: EvalGraph(evaluations: []))),
     );
 
     expect(find.text('No evaluation data'), findsOneWidget);

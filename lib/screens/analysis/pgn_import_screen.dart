@@ -67,9 +67,10 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                   color: AppTheme.cardDark,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: _errorMessage != null
-                        ? AppTheme.error
-                        : AppTheme.borderColor,
+                    color:
+                        _errorMessage != null
+                            ? AppTheme.error
+                            : AppTheme.borderColor,
                   ),
                 ),
                 child: TextField(

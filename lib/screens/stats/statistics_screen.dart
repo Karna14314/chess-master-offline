@@ -22,52 +22,54 @@ class StatisticsScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () =>
-                ref.read(statisticsProvider.notifier).loadStatistics(),
+            onPressed:
+                () => ref.read(statisticsProvider.notifier).loadStatistics(),
           ),
           PopupMenuButton<String>(
             onSelected: (value) async {
               if (value == 'reset') {
                 final confirm = await showDialog<bool>(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    backgroundColor: AppTheme.surfaceDark,
-                    title: const Text('Reset Statistics'),
-                    content: const Text(
-                      'Are you sure you want to reset all statistics? This cannot be undone.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text(
-                          'Reset',
-                          style: TextStyle(color: Colors.red),
+                  builder:
+                      (ctx) => AlertDialog(
+                        backgroundColor: AppTheme.surfaceDark,
+                        title: const Text('Reset Statistics'),
+                        content: const Text(
+                          'Are you sure you want to reset all statistics? This cannot be undone.',
                         ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text(
+                              'Reset',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
                 );
                 if (confirm == true) {
                   ref.read(statisticsProvider.notifier).resetStatistics();
                 }
               }
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'reset',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_forever, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Reset All Stats'),
-                  ],
-                ),
-              ),
-            ],
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(
+                    value: 'reset',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_forever, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Reset All Stats'),
+                      ],
+                    ),
+                  ),
+                ],
           ),
         ],
       ),
@@ -370,10 +372,10 @@ class StatisticsScreen extends ConsumerWidget {
                             color: Colors.green,
                             borderRadius:
                                 eloStats.losses == 0 && eloStats.draws == 0
-                                ? BorderRadius.circular(4)
-                                : const BorderRadius.horizontal(
-                                    left: Radius.circular(4),
-                                  ),
+                                    ? BorderRadius.circular(4)
+                                    : const BorderRadius.horizontal(
+                                      left: Radius.circular(4),
+                                    ),
                           ),
                         ),
                       ),
@@ -389,10 +391,10 @@ class StatisticsScreen extends ConsumerWidget {
                             color: Colors.red,
                             borderRadius:
                                 eloStats.wins == 0 && eloStats.draws == 0
-                                ? BorderRadius.circular(4)
-                                : const BorderRadius.horizontal(
-                                    right: Radius.circular(4),
-                                  ),
+                                    ? BorderRadius.circular(4)
+                                    : const BorderRadius.horizontal(
+                                      right: Radius.circular(4),
+                                    ),
                           ),
                         ),
                       ),
@@ -454,8 +456,9 @@ class StatisticsScreen extends ConsumerWidget {
   }
 
   Widget _buildTopOpenings(BuildContext context, StatisticsModel stats) {
-    final sortedOpenings = stats.openingsPlayed.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final sortedOpenings =
+        stats.openingsPlayed.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
 
     final topOpenings = sortedOpenings.take(5).toList();
 

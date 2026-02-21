@@ -111,17 +111,18 @@ class DifficultySelector extends StatelessWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: AppConstants.difficultyLevels.map((difficulty) {
-              final isSelected = difficulty.level == selectedLevel;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _DifficultyChip(
-                  difficulty: difficulty,
-                  isSelected: isSelected,
-                  onTap: () => onChanged(difficulty),
-                ),
-              );
-            }).toList(),
+            children:
+                AppConstants.difficultyLevels.map((difficulty) {
+                  final isSelected = difficulty.level == selectedLevel;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _DifficultyChip(
+                      difficulty: difficulty,
+                      isSelected: isSelected,
+                      onTap: () => onChanged(difficulty),
+                    ),
+                  );
+                }).toList(),
           ),
         ),
       ],
@@ -244,18 +245,18 @@ class _DifficultyChip extends StatelessWidget {
               Text(
                 'Lv ${difficulty.level}',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isSelected
-                      ? Colors.white
-                      : theme.colorScheme.onSurface,
+                  color:
+                      isSelected ? Colors.white : theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 '${difficulty.elo}',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: isSelected
-                      ? Colors.white.withOpacity(0.8)
-                      : theme.colorScheme.onSurface.withOpacity(0.6),
+                  color:
+                      isSelected
+                          ? Colors.white.withOpacity(0.8)
+                          : theme.colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ],

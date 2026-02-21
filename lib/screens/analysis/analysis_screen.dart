@@ -137,14 +137,15 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                     canGoNext: state.canGoNext,
                     currentMove: state.currentMoveIndex + 1,
                     totalMoves: state.totalMoves,
-                    onFirst: () =>
-                        ref.read(analysisProvider.notifier).firstMove(),
-                    onPrevious: () =>
-                        ref.read(analysisProvider.notifier).previousMove(),
-                    onNext: () =>
-                        ref.read(analysisProvider.notifier).nextMove(),
-                    onLast: () =>
-                        ref.read(analysisProvider.notifier).lastMove(),
+                    onFirst:
+                        () => ref.read(analysisProvider.notifier).firstMove(),
+                    onPrevious:
+                        () =>
+                            ref.read(analysisProvider.notifier).previousMove(),
+                    onNext:
+                        () => ref.read(analysisProvider.notifier).nextMove(),
+                    onLast:
+                        () => ref.read(analysisProvider.notifier).lastMove(),
                     onSliderChanged: (value) {
                       ref
                           .read(analysisProvider.notifier)
@@ -170,9 +171,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                           const SizedBox(height: 8),
                           EvalGraph(
                             evaluations: state.evaluations,
-                            currentMoveIndex: state.currentMoveIndex >= 0
-                                ? state.currentMoveIndex + 1
-                                : 0,
+                            currentMoveIndex:
+                                state.currentMoveIndex >= 0
+                                    ? state.currentMoveIndex + 1
+                                    : 0,
                             onMoveSelected: (index) {
                               ref
                                   .read(analysisProvider.notifier)
@@ -252,6 +254,7 @@ class _AnalysisBoard extends StatelessWidget {
       onSquareTap: null, // No interaction in analysis mode
       onMove: null,
       showCoordinates: true,
+      enableMoveAnimation: true,
     );
   }
 }
@@ -599,9 +602,8 @@ class _MoveList extends StatelessWidget {
             runSpacing: 4,
             children: List.generate(moves.length, (index) {
               final move = moves[index];
-              final analysis = index < analyzedMoves.length
-                  ? analyzedMoves[index]
-                  : null;
+              final analysis =
+                  index < analyzedMoves.length ? analyzedMoves[index] : null;
               final isSelected = index == currentIndex;
               final isWhiteMove = index % 2 == 0;
               final moveNum = (index ~/ 2) + 1;
@@ -620,25 +622,26 @@ class _MoveList extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.primaryColor.withOpacity(0.3)
-                        : classificationColor?.withOpacity(0.1),
+                    color:
+                        isSelected
+                            ? AppTheme.primaryColor.withOpacity(0.3)
+                            : classificationColor?.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
-                    border: isSelected
-                        ? Border.all(color: AppTheme.primaryColor, width: 2)
-                        : classificationColor != null
-                        ? Border.all(
-                            color: classificationColor.withOpacity(0.3),
-                          )
-                        : null,
+                    border:
+                        isSelected
+                            ? Border.all(color: AppTheme.primaryColor, width: 2)
+                            : classificationColor != null
+                            ? Border.all(
+                              color: classificationColor.withOpacity(0.3),
+                            )
+                            : null,
                   ),
                   child: Text(
                     isWhiteMove ? '$moveNum. ${move.san}' : move.san,
                     style: TextStyle(
                       color: classificationColor ?? AppTheme.textPrimary,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                       fontSize: 13,
                     ),
                   ),
