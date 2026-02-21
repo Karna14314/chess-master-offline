@@ -26,6 +26,7 @@ class ChessBoard extends ConsumerStatefulWidget {
   final void Function(String square)? onSquareTap;
   final void Function(String from, String to)? onMove;
   final bool showCoordinates;
+  final bool enableMoveAnimation;
 
   // Legacy props for internal mode
   final bool interactive;
@@ -48,6 +49,7 @@ class ChessBoard extends ConsumerStatefulWidget {
     this.onSquareTap,
     this.onMove,
     this.showCoordinates = true,
+    this.enableMoveAnimation = false,
   }) : useExternalState = true,
        interactive = true,
        flipped = false,
@@ -59,6 +61,7 @@ class ChessBoard extends ConsumerStatefulWidget {
     this.interactive = true,
     this.flipped = false,
     this.onMoveCallback,
+    this.enableMoveAnimation = false,
   }) : useExternalState = false,
        fen = null,
        isFlipped = false,
@@ -78,16 +81,41 @@ class ChessBoard extends ConsumerStatefulWidget {
   ConsumerState<ChessBoard> createState() => _ChessBoardState();
 }
 
-class _ChessBoardState extends ConsumerState<ChessBoard> {
+class _ChessBoardState extends ConsumerState<ChessBoard>
+    with SingleTickerProviderStateMixin {
   String? _draggedFrom;
   Offset? _dragPosition;
   String? _draggedPiece;
   chess.Chess? _externalBoard;
 
+  late AnimationController _moveController;
+  String? _animatingMoveFrom;
+  String? _animatingMoveTo;
+  String? _animatingPieceCode;
+
   @override
   void initState() {
     super.initState();
     _updateExternalBoard();
+    _moveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _moveController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _animatingMoveFrom = null;
+          _animatingMoveTo = null;
+          _animatingPieceCode = null;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _moveController.dispose();
+    super.dispose();
   }
 
   @override
@@ -95,6 +123,20 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
     super.didUpdateWidget(oldWidget);
     if (widget.fen != oldWidget.fen) {
       _updateExternalBoard();
+    }
+
+    if (widget.enableMoveAnimation &&
+        widget.lastMoveFrom != null &&
+        widget.lastMoveTo != null &&
+        (widget.lastMoveFrom != oldWidget.lastMoveFrom ||
+            widget.lastMoveTo != oldWidget.lastMoveTo)) {
+      final piece = _getPieceAt(widget.lastMoveTo!);
+      if (piece != null) {
+        _animatingMoveFrom = widget.lastMoveFrom;
+        _animatingMoveTo = widget.lastMoveTo;
+        _animatingPieceCode = piece;
+        _moveController.forward(from: 0.0);
+      }
     }
   }
 
@@ -126,12 +168,10 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
     if (widget.useExternalState) {
       effectiveFlipped = widget.isFlipped ^ settings.boardFlipped;
       effectiveSelectedSquare = widget.selectedSquare;
-      effectiveLegalMoves = settings.showLegalMoves
-          ? (widget.legalMoves ?? [])
-          : [];
-      effectiveLastMoveFrom = settings.showLastMove
-          ? widget.lastMoveFrom
-          : null;
+      effectiveLegalMoves =
+          settings.showLegalMoves ? (widget.legalMoves ?? []) : [];
+      effectiveLastMoveFrom =
+          settings.showLastMove ? widget.lastMoveFrom : null;
       effectiveLastMoveTo = settings.showLastMove ? widget.lastMoveTo : null;
       effectiveShowCoordinates = widget.showCoordinates;
       effectiveInCheck = _externalBoard?.in_check ?? false;
@@ -141,22 +181,21 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
       effectiveFlipped = widget.flipped ^ settings.boardFlipped;
       effectiveSelectedSquare = gameState.selectedSquare;
       effectiveLegalMoves = settings.showLegalMoves ? gameState.legalMoves : [];
-      effectiveLastMoveFrom = settings.showLastMove
-          ? gameState.lastMoveFrom
-          : null;
+      effectiveLastMoveFrom =
+          settings.showLastMove ? gameState.lastMoveFrom : null;
       effectiveLastMoveTo = settings.showLastMove ? gameState.lastMoveTo : null;
       effectiveShowCoordinates = settings.showCoordinates;
       effectiveInCheck = gameState.inCheck;
       effectiveKingSquare = _findKingSquareInternal(gameState.isWhiteTurn);
     }
 
-    final hintMove = widget.useExternalState
-        ? null
-        : ref.watch(gameProvider).hint;
+    final hintMove =
+        widget.useExternalState ? null : ref.watch(gameProvider).hint;
 
-    final isInteractive = widget.useExternalState
-        ? (widget.onSquareTap != null || widget.onMove != null)
-        : widget.interactive;
+    final isInteractive =
+        widget.useExternalState
+            ? (widget.onSquareTap != null || widget.onMove != null)
+            : widget.interactive;
 
     return AspectRatio(
       aspectRatio: 1,
@@ -166,19 +205,21 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
           final squareSize = boardSize / 8;
 
           return GestureDetector(
-            onPanStart: isInteractive
-                ? (details) =>
-                      _onDragStart(details, squareSize, effectiveFlipped)
-                : null,
-            onPanUpdate: isInteractive
-                ? (details) => _onDragUpdate(details)
-                : null,
-            onPanEnd: isInteractive
-                ? (details) => _onDragEnd(squareSize, effectiveFlipped)
-                : null,
-            onTapUp: isInteractive
-                ? (details) => _onTap(details, squareSize, effectiveFlipped)
-                : null,
+            onPanStart:
+                isInteractive
+                    ? (details) =>
+                        _onDragStart(details, squareSize, effectiveFlipped)
+                    : null,
+            onPanUpdate:
+                isInteractive ? (details) => _onDragUpdate(details) : null,
+            onPanEnd:
+                isInteractive
+                    ? (details) => _onDragEnd(squareSize, effectiveFlipped)
+                    : null,
+            onTapUp:
+                isInteractive
+                    ? (details) => _onTap(details, squareSize, effectiveFlipped)
+                    : null,
             child: Stack(
               children: [
                 // Board squares
@@ -224,6 +265,12 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
                   if (piece == null || square == _draggedFrom)
                     return const SizedBox.shrink();
 
+                  // Hide the piece at destination if it is being animated
+                  if (_moveController.isAnimating &&
+                      square == _animatingMoveTo) {
+                    return const SizedBox.shrink();
+                  }
+
                   final x = file * squareSize;
                   final y = rank * squareSize;
 
@@ -239,6 +286,43 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
                     ),
                   );
                 }),
+                // Moving piece animation
+                if (_moveController.isAnimating &&
+                    _animatingMoveFrom != null &&
+                    _animatingMoveTo != null &&
+                    _animatingPieceCode != null)
+                  AnimatedBuilder(
+                    animation: _moveController,
+                    builder: (context, child) {
+                      final start = _getSquareOffset(
+                        _animatingMoveFrom!,
+                        squareSize,
+                        effectiveFlipped,
+                      );
+                      final end = _getSquareOffset(
+                        _animatingMoveTo!,
+                        squareSize,
+                        effectiveFlipped,
+                      );
+                      // Use easeOutCubic for smoother piece movement feeling
+                      final curve = Curves.easeOutCubic.transform(
+                        _moveController.value,
+                      );
+                      final pos = Offset.lerp(start, end, curve)!;
+
+                      return Positioned(
+                        left: pos.dx,
+                        top: pos.dy,
+                        width: squareSize,
+                        height: squareSize,
+                        child: ChessPiece(
+                          piece: _animatingPieceCode!,
+                          size: squareSize,
+                          pieceSet: settings.currentPieceSet,
+                        ),
+                      );
+                    },
+                  ),
                 // Best move arrow
                 if (widget.bestMove != null && widget.bestMove!.length >= 4)
                   CustomPaint(
@@ -270,6 +354,18 @@ class _ChessBoardState extends ConsumerState<ChessBoard> {
         },
       ),
     );
+  }
+
+  Offset _getSquareOffset(String square, double squareSize, bool isFlipped) {
+    if (square.length != 2) return Offset.zero;
+    int file = square.codeUnitAt(0) - 'a'.codeUnitAt(0);
+    int rank = 8 - int.parse(square[1]);
+
+    if (isFlipped) {
+      file = 7 - file;
+      rank = 7 - rank;
+    }
+    return Offset(file * squareSize, rank * squareSize);
   }
 
   String? _getPieceAt(String square) {
@@ -477,16 +573,14 @@ class _BoardPainter extends CustomPainter {
 
         // Last move highlight
         if (square == lastMoveFrom || square == lastMoveTo) {
-          color = isLight
-              ? theme.lastMoveLightSquare
-              : theme.lastMoveDarkSquare;
+          color =
+              isLight ? theme.lastMoveLightSquare : theme.lastMoveDarkSquare;
         }
 
         // Selected square highlight
         if (square == selectedSquare) {
-          color = isLight
-              ? theme.lightSquareHighlight
-              : theme.darkSquareHighlight;
+          color =
+              isLight ? theme.lightSquareHighlight : theme.darkSquareHighlight;
         }
 
         // Hint highlight
@@ -515,10 +609,11 @@ class _BoardPainter extends CustomPainter {
 
           if (isCapture) {
             // Capture indicator - ring
-            final ringPaint = Paint()
-              ..color = theme.legalMoveCapture
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = squareSize * 0.08;
+            final ringPaint =
+                Paint()
+                  ..color = theme.legalMoveCapture
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = squareSize * 0.08;
             canvas.drawCircle(center, squareSize * 0.4, ringPaint);
           } else {
             // Move indicator - dot
@@ -560,9 +655,10 @@ class _BoardPainter extends CustomPainter {
 
     // Draw file letters on bottom row
     if ((isFlipped ? rank == 0 : rank == 7)) {
-      final fileLabel = isFlipped
-          ? String.fromCharCode('h'.codeUnitAt(0) - file)
-          : String.fromCharCode('a'.codeUnitAt(0) + file);
+      final fileLabel =
+          isFlipped
+              ? String.fromCharCode('h'.codeUnitAt(0) - file)
+              : String.fromCharCode('a'.codeUnitAt(0) + file);
       final textSpan = TextSpan(text: fileLabel, style: textStyle);
       final textPainter = TextPainter(
         text: textSpan,
@@ -580,9 +676,8 @@ class _BoardPainter extends CustomPainter {
 
     // Draw rank numbers on left column
     if (file == 0) {
-      final rankLabel = isFlipped
-          ? (rank + 1).toString()
-          : (8 - rank).toString();
+      final rankLabel =
+          isFlipped ? (rank + 1).toString() : (8 - rank).toString();
       final textSpan = TextSpan(text: rankLabel, style: textStyle);
       final textPainter = TextPainter(
         text: textSpan,
@@ -633,19 +728,21 @@ class _ArrowPainter extends CustomPainter {
 
     if (fromPos == null || toPos == null) return;
 
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = squareSize * 0.15
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = squareSize * 0.15
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
 
     // Draw line
     canvas.drawLine(fromPos, toPos, paint);
 
     // Draw arrowhead
-    final arrowPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    final arrowPaint =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
 
     final arrowSize = squareSize * 0.3;
 

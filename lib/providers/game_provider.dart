@@ -27,13 +27,13 @@ class GameNotifier extends StateNotifier<GameState> {
     String? startingFen,
   }) {
     // Handle random color selection
-    final actualColor = playerColor == PlayerColor.random
-        ? (Random().nextBool() ? PlayerColor.white : PlayerColor.black)
-        : playerColor;
+    final actualColor =
+        playerColor == PlayerColor.random
+            ? (Random().nextBool() ? PlayerColor.white : PlayerColor.black)
+            : playerColor;
 
-    final board = startingFen != null
-        ? chess.Chess.fromFEN(startingFen)
-        : chess.Chess();
+    final board =
+        startingFen != null ? chess.Chess.fromFEN(startingFen) : chess.Chess();
 
     // Determine player names based on game mode
     String whiteName = 'White';
@@ -60,13 +60,18 @@ class GameNotifier extends StateNotifier<GameState> {
       difficulty: difficulty,
       whitePlayerName: whiteName,
       blackPlayerName: blackName,
-      timeControl: useTimer
-          ? timeControl
-          : AppConstants.timeControls.firstWhere(
-              (tc) => tc.minutes == 0,
-              orElse: () =>
-                  const TimeControl(name: 'No Timer', minutes: 0, increment: 0),
-            ),
+      timeControl:
+          useTimer
+              ? timeControl
+              : AppConstants.timeControls.firstWhere(
+                (tc) => tc.minutes == 0,
+                orElse:
+                    () => const TimeControl(
+                      name: 'No Timer',
+                      minutes: 0,
+                      increment: 0,
+                    ),
+              ),
       gameMode: gameMode,
       botType: botType,
       allowTakeback: allowTakeback,
@@ -164,9 +169,8 @@ class GameNotifier extends StateNotifier<GameState> {
 
     final captured = lastMove?['captured'];
     final isCapture = captured != null;
-    final capturedPieceName = captured is chess.PieceType
-        ? captured.name
-        : null;
+    final capturedPieceName =
+        captured is chess.PieceType ? captured.name : null;
 
     final isCastle =
         lastMove?['flags']?.toString().contains('k') == true ||
@@ -192,9 +196,10 @@ class GameNotifier extends StateNotifier<GameState> {
     GameStatus status = GameStatus.active;
 
     if (board.in_checkmate) {
-      result = board.turn == chess.Color.WHITE
-          ? GameResult.blackWins
-          : GameResult.whiteWins;
+      result =
+          board.turn == chess.Color.WHITE
+              ? GameResult.blackWins
+              : GameResult.whiteWins;
       resultReason = 'Checkmate';
       status = GameStatus.finished;
     } else if (board.in_stalemate) {
@@ -261,9 +266,10 @@ class GameNotifier extends StateNotifier<GameState> {
     }
 
     // Rebuild move history
-    final newHistory = state.moveHistory.length > 1
-        ? state.moveHistory.sublist(0, state.moveHistory.length - 2)
-        : <ChessMove>[];
+    final newHistory =
+        state.moveHistory.length > 1
+            ? state.moveHistory.sublist(0, state.moveHistory.length - 2)
+            : <ChessMove>[];
 
     final lastMove = newHistory.isNotEmpty ? newHistory.last : null;
 
@@ -291,9 +297,8 @@ class GameNotifier extends StateNotifier<GameState> {
 
       // Check for capture (simple check, may miss en passant)
       final targetPiece = state.board.get(to);
-      final capturedPieceName = targetPiece != null
-          ? targetPiece.type.name
-          : null;
+      final capturedPieceName =
+          targetPiece != null ? targetPiece.type.name : null;
 
       final move = ChessMove(
         from: from,
@@ -320,9 +325,10 @@ class GameNotifier extends StateNotifier<GameState> {
   void resign() {
     if (state.status != GameStatus.active) return;
 
-    final result = state.playerColor == PlayerColor.white
-        ? GameResult.blackWins
-        : GameResult.whiteWins;
+    final result =
+        state.playerColor == PlayerColor.white
+            ? GameResult.blackWins
+            : GameResult.whiteWins;
 
     state = state.copyWith(
       status: GameStatus.finished,

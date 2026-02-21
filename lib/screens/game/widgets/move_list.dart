@@ -119,13 +119,14 @@ class MoveList extends ConsumerWidget {
               ),
               // Black's move
               Expanded(
-                child: blackMove != null
-                    ? _buildMoveButton(
-                        blackMove,
-                        blackIndex,
-                        isCurrentMove: currentMoveIndex == blackIndex,
-                      )
-                    : const SizedBox.shrink(),
+                child:
+                    blackMove != null
+                        ? _buildMoveButton(
+                          blackMove,
+                          blackIndex,
+                          isCurrentMove: currentMoveIndex == blackIndex,
+                        )
+                        : const SizedBox.shrink(),
               ),
             ],
           ),
@@ -145,9 +146,10 @@ class MoveList extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isCurrentMove
-              ? Colors.blue.withValues(alpha: 0.3)
-              : Colors.transparent,
+          color:
+              isCurrentMove
+                  ? Colors.blue.withValues(alpha: 0.3)
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -209,11 +211,12 @@ class MoveNotation extends StatelessWidget {
             text: san,
             style: TextStyle(
               fontWeight: isCheckmate ? FontWeight.bold : FontWeight.normal,
-              color: isCheckmate
-                  ? Colors.amber
-                  : isCheck
-                  ? Colors.orange
-                  : Colors.white,
+              color:
+                  isCheckmate
+                      ? Colors.amber
+                      : isCheck
+                      ? Colors.orange
+                      : Colors.white,
             ),
           ),
         ],

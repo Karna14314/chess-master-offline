@@ -92,16 +92,17 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
                 // Start button
                 FilledButton.icon(
                   onPressed: _isLoading ? null : _startGame,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.play_arrow_rounded),
+                  icon:
+                      _isLoading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Icon(Icons.play_arrow_rounded),
                   label: Text(
                     _isLoading ? 'Starting...' : 'Start Game',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -306,9 +307,10 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
       // Resolve random color
       PlayerColor actualColor = _selectedColor;
       if (_selectedColor == PlayerColor.random) {
-        actualColor = DateTime.now().millisecond % 2 == 0
-            ? PlayerColor.white
-            : PlayerColor.black;
+        actualColor =
+            DateTime.now().millisecond % 2 == 0
+                ? PlayerColor.white
+                : PlayerColor.black;
       }
 
       // Start new game

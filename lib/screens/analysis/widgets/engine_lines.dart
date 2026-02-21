@@ -110,9 +110,8 @@ class _EngineLineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPositive = line.isMate
-        ? (line.mateIn ?? 0) > 0
-        : line.evaluation >= 0;
+    final isPositive =
+        line.isMate ? (line.mateIn ?? 0) > 0 : line.evaluation >= 0;
 
     final evalColor = isPositive ? Colors.white : Colors.grey[800];
     final evalBgColor = isPositive ? AppTheme.surfaceDark : Colors.white;
@@ -133,17 +132,17 @@ class _EngineLineRow extends StatelessWidget {
             height: 20,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: line.rank == 1
-                  ? AppTheme.primaryColor.withOpacity(0.2)
-                  : AppTheme.surfaceDark,
+              color:
+                  line.rank == 1
+                      ? AppTheme.primaryColor.withOpacity(0.2)
+                      : AppTheme.surfaceDark,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               '${line.rank}',
               style: TextStyle(
-                color: line.rank == 1
-                    ? AppTheme.primaryColor
-                    : AppTheme.textHint,
+                color:
+                    line.rank == 1 ? AppTheme.primaryColor : AppTheme.textHint,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),

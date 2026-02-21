@@ -58,19 +58,20 @@ class EvalBar extends StatelessWidget {
                     child: Container(
                       color: Colors.black,
                       alignment: Alignment.center,
-                      child: animValue < 0.5
-                          ? RotatedBox(
-                              quarterTurns: 3,
-                              child: Text(
-                                evalText,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                      child:
+                          animValue < 0.5
+                              ? RotatedBox(
+                                quarterTurns: 3,
+                                child: Text(
+                                  evalText,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            )
-                          : null,
+                              )
+                              : null,
                     ),
                   ),
                   // White portion (bottom)
@@ -79,19 +80,20 @@ class EvalBar extends StatelessWidget {
                     child: Container(
                       color: Colors.white,
                       alignment: Alignment.center,
-                      child: animValue >= 0.5
-                          ? RotatedBox(
-                              quarterTurns: 3,
-                              child: Text(
-                                evalText,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
+                      child:
+                          animValue >= 0.5
+                              ? RotatedBox(
+                                quarterTurns: 3,
+                                child: Text(
+                                  evalText,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            )
-                          : null,
+                              )
+                              : null,
                     ),
                   ),
                 ],
@@ -123,16 +125,17 @@ class EvalBar extends StatelessWidget {
                     child: Container(
                       color: Colors.white,
                       alignment: Alignment.center,
-                      child: animValue >= 0.5
-                          ? Text(
-                              evalText,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
+                      child:
+                          animValue >= 0.5
+                              ? Text(
+                                evalText,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                              : null,
                     ),
                   ),
                   // Black portion (right)
@@ -141,16 +144,17 @@ class EvalBar extends StatelessWidget {
                     child: Container(
                       color: Colors.black,
                       alignment: Alignment.center,
-                      child: animValue < 0.5
-                          ? Text(
-                              evalText,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
+                      child:
+                          animValue < 0.5
+                              ? Text(
+                                evalText,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                              : null,
                     ),
                   ),
                 ],

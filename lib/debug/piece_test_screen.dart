@@ -40,27 +40,28 @@ class PieceTestScreen extends ConsumerWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: pieces.map((piece) {
-                return Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    color: Colors.white,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ChessPiece(
-                        piece: piece,
-                        size: 60,
-                        pieceSet: PieceSet.traditional,
+              children:
+                  pieces.map((piece) {
+                    return Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        color: Colors.white,
                       ),
-                      Text(piece, style: const TextStyle(fontSize: 10)),
-                    ],
-                  ),
-                );
-              }).toList(),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ChessPiece(
+                            piece: piece,
+                            size: 60,
+                            pieceSet: PieceSet.traditional,
+                          ),
+                          Text(piece, style: const TextStyle(fontSize: 10)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 32),
             const Text(
@@ -71,27 +72,28 @@ class PieceTestScreen extends ConsumerWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: pieces.map((piece) {
-                return Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    color: Colors.white,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ChessPiece(
-                        piece: piece,
-                        size: 60,
-                        pieceSet: PieceSet.modern,
+              children:
+                  pieces.map((piece) {
+                    return Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        color: Colors.white,
                       ),
-                      Text(piece, style: const TextStyle(fontSize: 10)),
-                    ],
-                  ),
-                );
-              }).toList(),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ChessPiece(
+                            piece: piece,
+                            size: 60,
+                            pieceSet: PieceSet.modern,
+                          ),
+                          Text(piece, style: const TextStyle(fontSize: 10)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 32),
             const Card(

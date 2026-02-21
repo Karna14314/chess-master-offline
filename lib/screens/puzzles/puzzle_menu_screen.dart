@@ -157,8 +157,8 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               _ThemeSelector(
                 themes: _themes,
                 selectedTheme: _selectedTheme,
-                onThemeSelected: (theme) =>
-                    setState(() => _selectedTheme = theme),
+                onThemeSelected:
+                    (theme) => setState(() => _selectedTheme = theme),
                 onStart: () => _startPuzzles(PuzzleMode.theme),
               ),
             ],
@@ -494,32 +494,34 @@ class _ThemeSelector extends StatelessWidget {
             return Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: themes.map((theme) {
-                final isSelected = theme == selectedTheme;
-                return ChoiceChip(
-                  label: Text(_formatTheme(theme)),
-                  selected: isSelected,
-                  onSelected: (_) => onThemeSelected(theme),
-                  selectedColor: AppTheme.primaryColor,
-                  backgroundColor: AppTheme.cardDark,
-                  disabledColor: AppTheme.cardDark,
-                  labelStyle: GoogleFonts.inter(
-                    color: isSelected ? Colors.white : AppTheme.textSecondary,
-                    fontSize: 12,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(
-                      color: isSelected
-                          ? Colors.transparent
-                          : AppTheme.borderColor,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                );
-              }).toList(),
+              children:
+                  themes.map((theme) {
+                    final isSelected = theme == selectedTheme;
+                    return ChoiceChip(
+                      label: Text(_formatTheme(theme)),
+                      selected: isSelected,
+                      onSelected: (_) => onThemeSelected(theme),
+                      selectedColor: AppTheme.primaryColor,
+                      backgroundColor: AppTheme.cardDark,
+                      disabledColor: AppTheme.cardDark,
+                      labelStyle: GoogleFonts.inter(
+                        color:
+                            isSelected ? Colors.white : AppTheme.textSecondary,
+                        fontSize: 12,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(
+                          color:
+                              isSelected
+                                  ? Colors.transparent
+                                  : AppTheme.borderColor,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    );
+                  }).toList(),
             );
           },
         ),

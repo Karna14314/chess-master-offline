@@ -340,11 +340,12 @@ class _SavedGameCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final createdAt = game['created_at'] as int?;
-    final dateStr = createdAt != null
-        ? DateTime.fromMillisecondsSinceEpoch(
-            createdAt,
-          ).toString().split(' ')[0]
-        : 'Unknown date';
+    final dateStr =
+        createdAt != null
+            ? DateTime.fromMillisecondsSinceEpoch(
+              createdAt,
+            ).toString().split(' ')[0]
+            : 'Unknown date';
 
     final result = game['result'] as String? ?? 'Ongoing';
 

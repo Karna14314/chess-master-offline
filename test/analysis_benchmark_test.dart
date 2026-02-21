@@ -46,12 +46,7 @@ class MockStockfishService implements StockfishService {
     return AnalysisResult(
       evaluation: 50,
       lines: [
-        EngineLine(
-          rank: 1,
-          evaluation: 0.5,
-          depth: depth,
-          moves: ['e2e4'],
-        ),
+        EngineLine(rank: 1, evaluation: 0.5, depth: depth, moves: ['e2e4']),
       ],
       depth: depth,
     );

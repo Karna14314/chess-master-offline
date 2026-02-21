@@ -246,9 +246,8 @@ class GameState {
       botType: botType ?? this.botType,
       allowTakeback: allowTakeback ?? this.allowTakeback,
       hintsUsed: hintsUsed ?? this.hintsUsed,
-      selectedSquare: clearSelection
-          ? null
-          : (selectedSquare ?? this.selectedSquare),
+      selectedSquare:
+          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
