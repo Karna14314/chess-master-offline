@@ -26,8 +26,9 @@ class ChessTimerWidget extends ConsumerWidget {
 
     final time = isWhite ? timerState.whiteTime : timerState.blackTime;
     final timeStr = TimerState.formatDuration(time);
-    final isTimedOut =
-        isWhite ? timerState.whiteTimedOut : timerState.blackTimedOut;
+    final isTimedOut = isWhite
+        ? timerState.whiteTimedOut
+        : timerState.blackTimedOut;
     final isLowTime = isActive && time.inSeconds <= 10 && time.inSeconds > 0;
     final isCurrentTurn = timerState.isWhiteTurn == isWhite;
 
@@ -40,20 +41,18 @@ class ChessTimerWidget extends ConsumerWidget {
       decoration: BoxDecoration(
         color: _getBackgroundColor(isActive, isLowTime, isTimedOut),
         borderRadius: BorderRadius.circular(8),
-        border:
-            isCurrentTurn && timerState.isRunning
-                ? Border.all(color: AppTheme.primaryLight, width: 2)
-                : null,
-        boxShadow:
-            isActive && timerState.isRunning
-                ? [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-                : null,
+        border: isCurrentTurn && timerState.isRunning
+            ? Border.all(color: AppTheme.primaryLight, width: 2)
+            : null,
+        boxShadow: isActive && timerState.isRunning
+            ? [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

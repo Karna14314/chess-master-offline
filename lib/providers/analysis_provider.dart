@@ -87,8 +87,9 @@ class AnalysisState {
       fullAnalysis: fullAnalysis ?? this.fullAnalysis,
       board: board ?? this.board,
       originalMoves: originalMoves ?? this.originalMoves,
-      selectedSquare:
-          clearSelection ? null : (selectedSquare ?? this.selectedSquare),
+      selectedSquare: clearSelection
+          ? null
+          : (selectedSquare ?? this.selectedSquare),
       legalMoves: clearSelection ? [] : (legalMoves ?? this.legalMoves),
       lastMoveFrom: lastMoveFrom ?? this.lastMoveFrom,
       lastMoveTo: lastMoveTo ?? this.lastMoveTo,
@@ -287,8 +288,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       state = state.copyWith(
         currentEval: result.evalInPawns,
         currentEngineLines: result.lines,
-        bestMove:
-            result.lines.isNotEmpty ? result.lines.first.moves.first : null,
+        bestMove: result.lines.isNotEmpty
+            ? result.lines.first.moves.first
+            : null,
       );
     } catch (e) {
       debugPrint('Stockfish analysis failed: $e. Using BasicEvaluator.');
@@ -299,10 +301,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         state = state.copyWith(
           currentEval: basicResult.evalInPawns,
           currentEngineLines: basicResult.lines,
-          bestMove:
-              basicResult.lines.isNotEmpty
-                  ? basicResult.lines.first.moves.first
-                  : null,
+          bestMove: basicResult.lines.isNotEmpty
+              ? basicResult.lines.first.moves.first
+              : null,
         );
       } catch (e2) {
         // Silently fail
@@ -367,10 +368,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           final basicResult = await BasicEvaluatorService.instance.analyze(
             board.fen,
           );
-          bestMove =
-              basicResult.lines.isNotEmpty
-                  ? basicResult.lines.first.moves.first
-                  : null;
+          bestMove = basicResult.lines.isNotEmpty
+              ? basicResult.lines.first.moves.first
+              : null;
         } catch (e2) {
           bestMove = null;
         }

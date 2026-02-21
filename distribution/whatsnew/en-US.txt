@@ -1,1 +1,1 @@
-Fixed issue where Player 2 was mislabeled as Bot in PvP mode.
+Optimized puzzle loading for smoother performance.

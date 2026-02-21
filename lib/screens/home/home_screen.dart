@@ -385,10 +385,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final fen =
         game['fen_current'] as String? ??
         'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-    final opponent =
-        game['game_mode'] == 'bot'
-            ? 'Bot (${game['bot_elo'] ?? 1200})'
-            : 'Friend';
+    final opponent = game['game_mode'] == 'bot'
+        ? 'Bot (${game['bot_elo'] ?? 1200})'
+        : 'Friend';
     final moveCount = game['move_count'] ?? 0;
     final isCompleted = (game['is_completed'] as int?) == 1;
     final customName = game['custom_name'] as String?;
@@ -444,12 +443,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Text(
                     'Vs $opponent',
                     style: GoogleFonts.inter(
-                      fontSize:
-                          customName != null && customName.isNotEmpty ? 14 : 16,
-                      fontWeight:
-                          customName != null && customName.isNotEmpty
-                              ? FontWeight.normal
-                              : FontWeight.bold,
+                      fontSize: customName != null && customName.isNotEmpty
+                          ? 14
+                          : 16,
+                      fontWeight: customName != null && customName.isNotEmpty
+                          ? FontWeight.normal
+                          : FontWeight.bold,
                       color: AppTheme.textPrimary,
                     ),
                     maxLines: 1,
@@ -470,10 +469,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color:
-                          isCompleted
-                              ? Colors.grey.withOpacity(0.2)
-                              : AppTheme.primaryColor.withOpacity(0.2),
+                      color: isCompleted
+                          ? Colors.grey.withOpacity(0.2)
+                          : AppTheme.primaryColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -481,8 +479,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color:
-                            isCompleted ? Colors.grey : AppTheme.primaryColor,
+                        color: isCompleted
+                            ? Colors.grey
+                            : AppTheme.primaryColor,
                       ),
                     ),
                   ),
@@ -532,13 +531,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder:
-          (context) => _BotTypeSelectionSheet(
-            onBotTypeSelected: (botType) {
-              Navigator.pop(context);
-              _showLevelSelection(context, botType);
-            },
-          ),
+      builder: (context) => _BotTypeSelectionSheet(
+        onBotTypeSelected: (botType) {
+          Navigator.pop(context);
+          _showLevelSelection(context, botType);
+        },
+      ),
     );
   }
 
@@ -547,14 +545,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder:
-          (context) => _LevelSelectionSheet(
-            botType: botType,
-            onLevelSelected: (level) {
-              Navigator.pop(context);
-              _showGameSetupSheet(context, level, botType);
-            },
-          ),
+      builder: (context) => _LevelSelectionSheet(
+        botType: botType,
+        onLevelSelected: (level) {
+          Navigator.pop(context);
+          _showGameSetupSheet(context, level, botType);
+        },
+      ),
     );
   }
 
@@ -563,15 +560,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder:
-          (context) => _GameSetupSheet(
-            difficultyLevel: level,
-            botType: botType,
-            onStartGame: (playerColor, timeControl) async {
-              Navigator.pop(context);
-              await _startBotGame(level, playerColor, timeControl, botType);
-            },
-          ),
+      builder: (context) => _GameSetupSheet(
+        difficultyLevel: level,
+        botType: botType,
+        onStartGame: (playerColor, timeControl) async {
+          Navigator.pop(context);
+          await _startBotGame(level, playerColor, timeControl, botType);
+        },
+      ),
     );
   }
 
@@ -580,13 +576,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder:
-          (context) => _LocalMultiplayerSheet(
-            onStartGame: (timeControl, allowTakeback, autoFlip) async {
-              Navigator.pop(context);
-              await _startLocalGame(timeControl, allowTakeback, autoFlip);
-            },
-          ),
+      builder: (context) => _LocalMultiplayerSheet(
+        onStartGame: (timeControl, allowTakeback, autoFlip) async {
+          Navigator.pop(context);
+          await _startLocalGame(timeControl, allowTakeback, autoFlip);
+        },
+      ),
     );
   }
 
@@ -637,10 +632,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Resolve random color
       PlayerColor actualColor = playerColor;
       if (playerColor == PlayerColor.random) {
-        actualColor =
-            DateTime.now().millisecond % 2 == 0
-                ? PlayerColor.white
-                : PlayerColor.black;
+        actualColor = DateTime.now().millisecond % 2 == 0
+            ? PlayerColor.white
+            : PlayerColor.black;
       }
 
       // Start game
@@ -732,8 +726,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // Load game settings
       final playerColorStr = game['player_color'] as String? ?? 'white';
-      final playerColor =
-          playerColorStr == 'white' ? PlayerColor.white : PlayerColor.black;
+      final playerColor = playerColorStr == 'white'
+          ? PlayerColor.white
+          : PlayerColor.black;
       final botElo = game['bot_elo'] as int? ?? 1200;
       final difficultyIndex = AppConstants.difficultyLevels
           .indexWhere((d) => d.elo == botElo)
@@ -748,8 +743,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // Read game_mode from database and convert to GameMode enum
       final gameModeStr = game['game_mode'] as String? ?? 'bot';
-      final gameMode =
-          gameModeStr == 'local' ? GameMode.localMultiplayer : GameMode.bot;
+      final gameMode = gameModeStr == 'local'
+          ? GameMode.localMultiplayer
+          : GameMode.bot;
 
       ref
           .read(gameProvider.notifier)
@@ -784,84 +780,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) async {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            title: Text(
-              'Game Options',
-              style: GoogleFonts.inter(color: AppTheme.textPrimary),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.edit, color: AppTheme.primaryColor),
-                  title: Text(
-                    'Rename Game',
-                    style: GoogleFonts.inter(color: AppTheme.textPrimary),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showRenameDialog(context, gameId, currentName);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
-                  title: Text(
-                    'Delete Game',
-                    style: GoogleFonts.inter(color: AppTheme.textPrimary),
-                  ),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder:
-                          (context) => AlertDialog(
-                            backgroundColor: AppTheme.surfaceDark,
-                            title: Text(
-                              'Delete Game?',
-                              style: GoogleFonts.inter(
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            content: Text(
-                              'This action cannot be undone.',
-                              style: GoogleFonts.inter(
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                ),
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                    );
-                    if (confirm == true && context.mounted) {
-                      await ref
-                          .read(databaseServiceProvider)
-                          .deleteGame(gameId);
-                      setState(() {}); // Refresh the list
-                    }
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: Text(
+          'Game Options',
+          style: GoogleFonts.inter(color: AppTheme.textPrimary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit, color: AppTheme.primaryColor),
+              title: Text(
+                'Rename Game',
+                style: GoogleFonts.inter(color: AppTheme.textPrimary),
               ),
-            ],
+              onTap: () {
+                Navigator.pop(context);
+                _showRenameDialog(context, gameId, currentName);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: Text(
+                'Delete Game',
+                style: GoogleFonts.inter(color: AppTheme.textPrimary),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: AppTheme.surfaceDark,
+                    title: Text(
+                      'Delete Game?',
+                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                    ),
+                    content: Text(
+                      'This action cannot be undone.',
+                      style: GoogleFonts.inter(color: AppTheme.textSecondary),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true && context.mounted) {
+                  await ref.read(databaseServiceProvider).deleteGame(gameId);
+                  setState(() {}); // Refresh the list
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
+        ],
+      ),
     );
   }
 
@@ -875,54 +863,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            title: Text(
-              'Rename Game',
-              style: GoogleFonts.inter(color: AppTheme.textPrimary),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: Text(
+          'Rename Game',
+          style: GoogleFonts.inter(color: AppTheme.textPrimary),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: GoogleFonts.inter(color: AppTheme.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Enter game name',
+            hintStyle: GoogleFonts.inter(color: AppTheme.textSecondary),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppTheme.borderColor),
             ),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              style: GoogleFonts.inter(color: AppTheme.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Enter game name',
-                hintStyle: GoogleFonts.inter(color: AppTheme.textSecondary),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppTheme.borderColor),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppTheme.borderColor),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppTheme.primaryColor),
-                ),
-              ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppTheme.borderColor),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final name = controller.text.trim();
-                  await ref
-                      .read(databaseServiceProvider)
-                      .updateGameName(gameId, name);
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    setState(() {}); // Refresh the list
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppTheme.primaryColor),
+            ),
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+              await ref
+                  .read(databaseServiceProvider)
+                  .updateGameName(gameId, name);
+              if (context.mounted) {
+                Navigator.pop(context);
+                setState(() {}); // Refresh the list
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -980,10 +967,9 @@ class _LevelSelectionSheet extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            botType == BotType.simple
-                                ? AppTheme.primaryColor.withOpacity(0.2)
-                                : Colors.red.withOpacity(0.2),
+                        color: botType == BotType.simple
+                            ? AppTheme.primaryColor.withOpacity(0.2)
+                            : Colors.red.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -991,10 +977,9 @@ class _LevelSelectionSheet extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color:
-                              botType == BotType.simple
-                                  ? AppTheme.primaryColor
-                                  : Colors.red,
+                          color: botType == BotType.simple
+                              ? AppTheme.primaryColor
+                              : Colors.red,
                         ),
                       ),
                     ),
@@ -1161,40 +1146,35 @@ class _GameSetupSheetState extends State<_GameSetupSheet> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children:
-                  AppConstants.timeControls.map((tc) {
-                    final isSelected = _selectedTimeControl == tc;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: ChoiceChip(
-                        label: Text(tc.name),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected)
-                            setState(() => _selectedTimeControl = tc);
-                        },
-                        backgroundColor: AppTheme.cardDark,
-                        selectedColor: AppTheme.primaryColor,
-                        labelStyle: TextStyle(
-                          color:
-                              isSelected
-                                  ? Colors.white
-                                  : AppTheme.textSecondary,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+              children: AppConstants.timeControls.map((tc) {
+                final isSelected = _selectedTimeControl == tc;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: ChoiceChip(
+                    label: Text(tc.name),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) setState(() => _selectedTimeControl = tc);
+                    },
+                    backgroundColor: AppTheme.cardDark,
+                    selectedColor: AppTheme.primaryColor,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : AppTheme.textSecondary,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed:
-                  () =>
-                      widget.onStartGame(_selectedColor, _selectedTimeControl),
+              onPressed: () =>
+                  widget.onStartGame(_selectedColor, _selectedTimeControl),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
@@ -1214,10 +1194,9 @@ class _GameSetupSheetState extends State<_GameSetupSheet> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color:
-                isSelected
-                    ? AppTheme.primaryColor.withOpacity(0.2)
-                    : AppTheme.cardDark,
+            color: isSelected
+                ? AppTheme.primaryColor.withOpacity(0.2)
+                : AppTheme.cardDark,
             border: Border.all(
               color: isSelected ? AppTheme.primaryColor : Colors.transparent,
             ),
@@ -1227,17 +1206,17 @@ class _GameSetupSheetState extends State<_GameSetupSheet> {
             children: [
               Icon(
                 icon,
-                color:
-                    isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : AppTheme.textSecondary,
               ),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
-                  color:
-                      isSelected
-                          ? AppTheme.primaryColor
-                          : AppTheme.textSecondary,
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : AppTheme.textSecondary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1311,12 +1290,11 @@ class _LocalMultiplayerSheetState extends State<_LocalMultiplayerSheet> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed:
-                  () => widget.onStartGame(
-                    _selectedTimeControl,
-                    _allowTakeback,
-                    _autoFlip,
-                  ),
+              onPressed: () => widget.onStartGame(
+                _selectedTimeControl,
+                _allowTakeback,
+                _autoFlip,
+              ),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),

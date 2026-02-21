@@ -5,10 +5,11 @@ import 'package:intl/intl.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/services/database_service.dart';
 
-final puzzleHistoryProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final db = ref.watch(databaseServiceProvider);
-  return await db.getPuzzleHistory(limit: 50);
-});
+final puzzleHistoryProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final db = ref.watch(databaseServiceProvider);
+      return await db.getPuzzleHistory(limit: 50);
+    });
 
 class PuzzleHistoryScreen extends ConsumerWidget {
   const PuzzleHistoryScreen({super.key});
@@ -46,7 +47,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
               ElevatedButton(
                 onPressed: () => ref.invalidate(puzzleHistoryProvider),
                 child: const Text('Try Again'),
-              )
+              ),
             ],
           ),
         ),
@@ -121,61 +122,61 @@ class _PuzzleHistoryCard extends StatelessWidget {
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
-         children: [
-           Container(
-             padding: const EdgeInsets.all(8),
-             decoration: BoxDecoration(
-               color: color.withOpacity(0.1),
-               shape: BoxShape.circle,
-             ),
-             child: Icon(icon, color: color, size: 24),
-           ),
-           const SizedBox(width: 16),
-           Expanded(
-             child: Column(
-               crossAxisAlignment: CrossAxisAlignment.start,
-               children: [
-                 Text(
-                   'Puzzle #$puzzleId',
-                   style: GoogleFonts.inter(
-                     fontWeight: FontWeight.bold,
-                     fontSize: 16,
-                     color: AppTheme.textPrimary,
-                   ),
-                 ),
-                 const SizedBox(height: 4),
-                 Text(
-                   dateFormat.format(lastAttempted),
-                   style: GoogleFonts.inter(
-                     fontSize: 12,
-                     color: AppTheme.textHint,
-                   ),
-                 ),
-               ],
-             ),
-           ),
-           Column(
-             crossAxisAlignment: CrossAxisAlignment.end,
-             children: [
-               Text(
-                 solved ? 'Solved' : 'Failed',
-                 style: GoogleFonts.inter(
-                   fontWeight: FontWeight.bold,
-                   fontSize: 14,
-                   color: color,
-                 ),
-               ),
-               const SizedBox(height: 2),
-               Text(
-                 '$attempts attempt${attempts == 1 ? '' : 's'}',
-                 style: GoogleFonts.inter(
-                   fontSize: 12,
-                   color: AppTheme.textHint,
-                 ),
-               )
-             ],
-           )
-         ],
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Puzzle #$puzzleId',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  dateFormat.format(lastAttempted),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.textHint,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                solved ? 'Solved' : 'Failed',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$attempts attempt${attempts == 1 ? '' : 's'}',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.textHint,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

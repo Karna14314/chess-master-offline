@@ -22,11 +22,10 @@ class Puzzle {
       fen: json['fen'] as String,
       moves: (json['moves'] as String).split(' '),
       rating: json['rating'] as int,
-      themes:
-          (json['themes'] as String? ?? '')
-              .split(',')
-              .where((t) => t.isNotEmpty)
-              .toList(),
+      themes: (json['themes'] as String? ?? '')
+          .split(',')
+          .where((t) => t.isNotEmpty)
+          .toList(),
       popularity: json['popularity'] as int? ?? 0,
     );
   }
@@ -85,12 +84,9 @@ class PuzzleProgress {
       puzzleId: json['puzzle_id'] as int,
       attempts: json['attempts'] as int? ?? 0,
       solved: (json['solved'] as int? ?? 0) == 1,
-      lastAttempted:
-          json['last_attempted'] != null
-              ? DateTime.fromMillisecondsSinceEpoch(
-                json['last_attempted'] as int,
-              )
-              : null,
+      lastAttempted: json['last_attempted'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['last_attempted'] as int)
+          : null,
     );
   }
 

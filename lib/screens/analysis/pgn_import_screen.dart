@@ -4,7 +4,9 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/chess.dart' as chess;
-import 'package:chess_master/models/game_model.dart';/// PGN import screen for analysis
+import 'package:chess_master/models/game_model.dart';
+
+/// PGN import screen for analysis
 class PgnImportScreen extends ConsumerStatefulWidget {
   const PgnImportScreen({super.key});
 
@@ -65,10 +67,9 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                   color: AppTheme.cardDark,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color:
-                        _errorMessage != null
-                            ? AppTheme.error
-                            : AppTheme.borderColor,
+                    color: _errorMessage != null
+                        ? AppTheme.error
+                        : AppTheme.borderColor,
                   ),
                 ),
                 child: TextField(
@@ -195,7 +196,8 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
         final success = replayBoard.move(san);
         if (!success) return null;
 
-        final lastVerbose = replayBoard.getHistory({'verbose': true}).last as Map;
+        final lastVerbose =
+            replayBoard.getHistory({'verbose': true}).last as Map;
         moves.add(
           ChessMove(
             from: lastVerbose['from'] as String,
