@@ -20,7 +20,12 @@ class Puzzle {
     return Puzzle(
       id: json['id'] as int,
       fen: json['fen'] as String,
-      moves: (json['moves'] as String).split(' '),
+      moves:
+          (json['moves'] as String)
+              .trim()
+              .split(RegExp(r'\s+'))
+              .where((m) => m.isNotEmpty)
+              .toList(),
       rating: json['rating'] as int,
       themes:
           (json['themes'] as String? ?? '')
