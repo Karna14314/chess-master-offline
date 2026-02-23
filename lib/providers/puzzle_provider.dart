@@ -349,12 +349,12 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         if (_themeFilter == 'all') {
           candidates = List.from(_allPuzzles);
         } else {
+          final filterLower = _themeFilter.toLowerCase();
           candidates =
               _allPuzzles
                   .where(
-                    (p) => p.themes.any(
-                      (t) =>
-                          t.toLowerCase().contains(_themeFilter.toLowerCase()),
+                    (p) => p.searchableThemes.any(
+                      (t) => t.contains(filterLower),
                     ),
                   )
                   .toList();

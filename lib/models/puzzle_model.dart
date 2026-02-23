@@ -5,6 +5,7 @@ class Puzzle {
   final List<String> moves; // Solution moves in UCI format
   final int rating;
   final List<String> themes;
+  final List<String> searchableThemes;
   final int popularity;
 
   const Puzzle({
@@ -13,10 +14,16 @@ class Puzzle {
     required this.moves,
     required this.rating,
     required this.themes,
+    required this.searchableThemes,
     this.popularity = 0,
   });
 
   factory Puzzle.fromJson(Map<String, dynamic> json) {
+    final themes = (json['themes'] as String? ?? '')
+        .split(',')
+        .where((t) => t.isNotEmpty)
+        .toList();
+
     return Puzzle(
       id: json['id'] as int,
       fen: json['fen'] as String,
@@ -27,11 +34,8 @@ class Puzzle {
               .where((m) => m.isNotEmpty)
               .toList(),
       rating: json['rating'] as int,
-      themes:
-          (json['themes'] as String? ?? '')
-              .split(',')
-              .where((t) => t.isNotEmpty)
-              .toList(),
+      themes: themes,
+      searchableThemes: themes.map((t) => t.toLowerCase()).toList(),
       popularity: json['popularity'] as int? ?? 0,
     );
   }
