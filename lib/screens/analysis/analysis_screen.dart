@@ -230,7 +230,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   Future<void> _startFullAnalysis() async {
     setState(() => _isAnalyzing = true);
     await ref.read(analysisProvider.notifier).analyzeFullGame();
-    setState(() => _isAnalyzing = false);
+    if (mounted) {
+      setState(() => _isAnalyzing = false);
+    }
   }
 }
 

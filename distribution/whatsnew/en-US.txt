@@ -1,1 +1,1 @@
-Optimized puzzle filtering performance for smoother experience.
+Added smooth animations for opponent moves in Puzzles and improved analysis stability.

@@ -353,9 +353,8 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
           candidates =
               _allPuzzles
                   .where(
-                    (p) => p.searchableThemes.any(
-                      (t) => t.contains(filterLower),
-                    ),
+                    (p) =>
+                        p.searchableThemes.any((t) => t.contains(filterLower)),
                   )
                   .toList();
         }

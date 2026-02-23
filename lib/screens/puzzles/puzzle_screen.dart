@@ -565,6 +565,7 @@ class _PuzzleBoard extends StatelessWidget {
               }
               : null,
       showCoordinates: true,
+      enableMoveAnimation: state.isPlayerTurn,
     );
   }
 
