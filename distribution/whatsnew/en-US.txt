@@ -1,2 +1,3 @@
+Fixed puzzle loading issues preventing some puzzles from starting.
 Added smooth piece animations in Analysis and Solution playback.
 Optimized puzzle loading for smoother performance.

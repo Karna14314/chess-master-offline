@@ -424,6 +424,11 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       if (puzzle.moves.isEmpty) return false;
 
       final setupMoveUci = puzzle.moves.first;
+      if (setupMoveUci.length < 4) {
+        debugPrint('Invalid setup move: $setupMoveUci');
+        return false;
+      }
+
       final from = setupMoveUci.substring(0, 2);
       final to = setupMoveUci.substring(2, 4);
       final promotion =
