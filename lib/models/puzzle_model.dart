@@ -19,10 +19,11 @@ class Puzzle {
   });
 
   factory Puzzle.fromJson(Map<String, dynamic> json) {
-    final themes = (json['themes'] as String? ?? '')
-        .split(',')
-        .where((t) => t.isNotEmpty)
-        .toList();
+    final themes =
+        (json['themes'] as String? ?? '')
+            .split(',')
+            .where((t) => t.isNotEmpty)
+            .toList();
 
     return Puzzle(
       id: json['id'] as int,
