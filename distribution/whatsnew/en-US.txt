@@ -1,1 +1,2 @@
 Added smooth animations for opponent moves in Puzzles and improved analysis stability.
+Improved chess engine performance for faster move calculation.

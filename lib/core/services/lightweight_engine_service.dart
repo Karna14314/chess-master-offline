@@ -332,11 +332,9 @@ class LightweightEngineService {
       // 0..7 (Rank 8..1)
       for (int c = 0; c < 8; c++) {
         // 0..7 (File a..h)
-        final rankIndex = 8 - r;
-        final fileChar = String.fromCharCode('a'.codeUnitAt(0) + c);
-        final square = '$fileChar$rankIndex';
-
-        final piece = board.get(square);
+        // 0x88 index calculation: r * 16 + c
+        final int index = r * 16 + c;
+        final piece = board.board[index];
         if (piece == null) continue;
 
         int material = 0;
