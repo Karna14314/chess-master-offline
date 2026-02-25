@@ -485,16 +485,17 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
         final success = replayBoard.move(san);
         if (!success) return null;
 
-        final lastVerbose =
-            replayBoard.getHistory({'verbose': true}).last as Map;
+        final state = replayBoard.history.last;
+        final move = state.move;
+
         moves.add(
           ChessMove(
-            from: lastVerbose['from'] as String,
-            to: lastVerbose['to'] as String,
+            from: _algebraic(move.from),
+            to: _algebraic(move.to),
             san: san,
-            promotion: lastVerbose['promotion']?.toString(),
-            capturedPiece: lastVerbose['captured']?.toString(),
-            isCapture: lastVerbose['captured'] != null,
+            promotion: move.promotion?.toString(),
+            capturedPiece: move.captured?.toString(),
+            isCapture: move.captured != null,
             isCheck: replayBoard.in_check,
             isCheckmate: replayBoard.in_checkmate,
             isCastle: san.contains('O-O'),
@@ -506,6 +507,12 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     } catch (e) {
       return null;
     }
+  }
+
+  String _algebraic(int i) {
+    final f = i & 15;
+    final r = i >> 4;
+    return '${String.fromCharCode(97 + f)}${8 - r}';
   }
 }
 
