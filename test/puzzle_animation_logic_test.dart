@@ -30,7 +30,8 @@ void main() {
       currentPuzzle: puzzle,
       board: board,
       currentMoveIndex: 1,
-      isPlayerTurn: true, // Player to move next (Black in real game? No, puzzle FEN is start position)
+      isPlayerTurn:
+          true, // Player to move next (Black in real game? No, puzzle FEN is start position)
       // Actually, if FEN is start position, white moves first.
       // e2e4 is White.
       // If puzzle moves are ['e2e4', 'e7e5'], first move is Opponent.

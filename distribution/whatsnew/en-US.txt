@@ -1,2 +1,1 @@
-Added smooth animations for opponent moves in Puzzles and improved analysis stability.
-Improved chess engine performance for faster move calculation.
+Fixed issue where tap-to-move would auto-promote pawns without user input in Puzzle mode.

@@ -541,8 +541,29 @@ class _PuzzleBoard extends StatelessWidget {
       highlightedSquares: state.highlightedSquares,
       onSquareTap:
           state.isPlayerTurn
-              ? (square) {
-                ref.read(puzzleProvider.notifier).selectSquare(square);
+              ? (square) async {
+                final notifier = ref.read(puzzleProvider.notifier);
+                if (state.selectedSquare != null &&
+                    state.legalMoves.contains(square)) {
+                  // Check for promotion
+                  if (notifier.needsPromotion(state.selectedSquare!, square)) {
+                    final promotion = await _showPromotionDialog(
+                      context,
+                      state.isWhiteTurn,
+                    );
+                    if (promotion != null) {
+                      notifier.tryMove(
+                        state.selectedSquare!,
+                        square,
+                        promotion: promotion,
+                      );
+                    }
+                  } else {
+                    notifier.tryMove(state.selectedSquare!, square);
+                  }
+                } else {
+                  notifier.selectSquare(square);
+                }
               }
               : null,
       onMove:
