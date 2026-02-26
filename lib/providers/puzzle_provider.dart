@@ -262,6 +262,12 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     }
   }
 
+  /// Manually load puzzles for testing
+  @visibleForTesting
+  void loadPuzzlesForTesting(List<Puzzle> puzzles) {
+    _allPuzzles = puzzles;
+  }
+
   /// Start a new puzzle session
   Future<void> startNewPuzzle({int? targetRating}) async {
     _stopSolutionPlayback();
@@ -549,9 +555,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       return;
     }
 
-    final isCorrect = expectedMove.toLowerCase().startsWith(
-      uciMove.toLowerCase(),
-    );
+    final isCorrect = expectedMove.toLowerCase() == uciMove.toLowerCase();
 
     if (!isCorrect) {
       // Wrong move - play error sound

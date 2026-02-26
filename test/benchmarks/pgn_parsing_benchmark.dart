@@ -18,8 +18,7 @@ List<Map<String, dynamic>>? parsePgnToMovesOriginal(String pgn) {
       final success = replayBoard.move(san);
       if (!success) return null;
 
-      final lastVerbose =
-          replayBoard.getHistory({'verbose': true}).last as Map;
+      final lastVerbose = replayBoard.getHistory({'verbose': true}).last as Map;
 
       // Simulating the construction of ChessMove object by using Map for now
       moves.add({
@@ -113,7 +112,7 @@ void main() {
   print('Optimized implementation: ${optimizedTime}ms');
 
   if (originalTime > 0) {
-      print('Speedup: ${(originalTime / optimizedTime).toStringAsFixed(2)}x');
+    print('Speedup: ${(originalTime / optimizedTime).toStringAsFixed(2)}x');
   }
 
   // Verify correctness
@@ -129,11 +128,13 @@ void main() {
     final m1 = movesOrig[i];
     final m2 = movesOpt![i];
 
-    if (m1['from'] != m2['from'] || m1['to'] != m2['to'] || m1['capturedPiece'] != m2['capturedPiece']) {
-       print('Mismatch at move $i:');
-       print('Original: $m1');
-       print('Optimized: $m2');
-       return;
+    if (m1['from'] != m2['from'] ||
+        m1['to'] != m2['to'] ||
+        m1['capturedPiece'] != m2['capturedPiece']) {
+      print('Mismatch at move $i:');
+      print('Original: $m1');
+      print('Optimized: $m2');
+      return;
     }
   }
   print('Verification passed!');

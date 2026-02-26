@@ -1,1 +1,2 @@
+Enforced strict promotion validation in puzzles to prevent incorrect solutions.
 Fixed issue where tap-to-move would auto-promote pawns without user input in Puzzle mode.
