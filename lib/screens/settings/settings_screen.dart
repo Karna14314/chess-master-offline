@@ -1,3 +1,4 @@
+import 'package:chess_master/screens/settings/about_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
@@ -130,6 +131,28 @@ class SettingsScreen extends ConsumerWidget {
                 _buildSectionHeader(context, 'About', Icons.info_outline),
                 const SizedBox(height: 12),
                 _buildSettingsCard(context, [
+                  ListTile(
+                    title: Text(
+                      'Open Source & Credits',
+                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                    ),
+                    leading: const Icon(
+                      Icons.info_outline,
+                      color: AppTheme.textSecondary,
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppTheme.textSecondary,
+                    ),
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AboutScreen(),
+                          ),
+                        ),
+                  ),
+                  const Divider(color: AppTheme.borderColor),
                   _InfoRow(
                     title: 'App Version',
                     value: AppConstants.appVersion,
