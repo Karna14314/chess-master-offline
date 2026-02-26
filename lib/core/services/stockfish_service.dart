@@ -333,6 +333,11 @@ class StockfishService {
       await initialize();
     }
 
+    // Ensure engine is at max strength for analysis
+    if (!_useFallback) {
+      setMaxStrength();
+    }
+
     // Fallback doesn't support full analysis yet
     // Throw error to let AnalysisProvider handle it with BasicEvaluator
     if (_useFallback) {
@@ -441,7 +446,14 @@ class StockfishService {
   /// Set the engine skill level (affects playing strength)
   void setSkillLevel(int elo) {
     if (_useFallback) return;
+    _sendCommand('setoption name UCI_LimitStrength value true');
     _sendCommand('setoption name UCI_Elo value $elo');
+  }
+
+  /// Set the engine to maximum strength
+  void setMaxStrength() {
+    if (_useFallback) return;
+    _sendCommand('setoption name UCI_LimitStrength value false');
   }
 
   /// Stop any ongoing analysis

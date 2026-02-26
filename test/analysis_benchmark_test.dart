@@ -62,6 +62,9 @@ class MockStockfishService implements StockfishService {
   void setSkillLevel(int elo) {}
 
   @override
+  void setMaxStrength() {}
+
+  @override
   void newGame() {}
 }
 
@@ -79,10 +82,8 @@ void main() {
       if (legalMoves.isEmpty) break;
 
       // Pick first move
-      // Note: game.moves() returns list of SAN strings or Move objects depending on args.
-      // default is strings.
-      // We need Move objects to create ChessMove
-      final moveObj = (game.moves({'asObjects': true})).first as chess_lib.Move;
+      final legalMovesObjs = game.moves({'asObjects': true}) as List;
+      final moveObj = legalMovesObjs.first as chess_lib.Move;
       final san = game.move_to_san(moveObj);
 
       game.move(moveObj);
@@ -92,6 +93,7 @@ void main() {
           to: moveObj.toAlgebraic,
           san: san,
           promotion: moveObj.promotion?.name,
+          capturedPiece: moveObj.captured?.name,
           isCapture: moveObj.captured != null,
           isCheck: game.in_check,
           isCheckmate: game.in_checkmate,
@@ -106,6 +108,8 @@ void main() {
 
     // 2. Setup AnalysisNotifier with MockStockfishService
     final mockService = MockStockfishService();
+    // Using a way to inject mock service if constructor allows or through overrides if Riverpod test
+    // AnalysisNotifier constructor accepts optional service: AnalysisNotifier([this._stockfish])
     final notifier = AnalysisNotifier(mockService);
 
     // 3. Load game
@@ -121,7 +125,20 @@ void main() {
 
     // 5. Verify optimized updates
     // Batch size is 5.
+    // However, the test expectation logic below depends on how many times state = ... was called.
+    // The previous code had `stateUpdateCount` exposed for testing.
+
+    // We expect ceil(moves.length / 5).
+    // Let's see if moves.length is 50. 50/5 = 10 updates.
+
+    // The test was failing compilation because setMaxStrength was missing in MockStockfishService.
+    // I added it above.
+
     final expectedUpdates = (moves.length / 5).ceil();
+    // Use a tolerance or direct check depending on exact logic
+    // The logic is: if ((i + 1) % 5 == 0 || i == moves.length - 1)
+    // So for 50 moves: 5, 10, ..., 50. Exactly 10 updates.
+
     expect(
       notifier.stateUpdateCount,
       expectedUpdates,

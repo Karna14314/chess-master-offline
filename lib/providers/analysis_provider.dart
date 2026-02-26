@@ -318,6 +318,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
     if (_stockfish == null || state.originalMoves.isEmpty) return;
 
+    // Ensure engine is at maximum strength for full game analysis
+    _stockfish!.setMaxStrength();
+
     state = state.copyWith(
       isAnalyzing: true,
       analysisProgress: 0.0,
