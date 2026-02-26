@@ -134,25 +134,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
         ),
-        Container(
-          height: 48,
-          width: 48,
-          decoration: BoxDecoration(
-            color: AppTheme.cardDark,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColor),
-          ),
-          child: IconButton(
-            icon: const Icon(
-              Icons.settings_outlined,
-              color: AppTheme.textPrimary,
-            ),
-            onPressed: () {
-              // Settings navigation handled by main tab controller
-              // Or we can push settings screen directly if not using tabs
-            },
-          ),
-        ),
       ],
     );
   }

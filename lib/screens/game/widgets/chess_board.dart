@@ -443,7 +443,87 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
     return null;
   }
 
-  void _onTap(TapUpDetails details, double squareSize, bool isFlipped) {
+  Future<String?> _showPromotionDialog(
+    BuildContext context,
+    bool isWhite,
+  ) async {
+    final settings = ref.read(settingsProvider);
+
+    return await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.surfaceDark,
+          title: const Text(
+            'Promote to',
+            style: TextStyle(color: AppTheme.textPrimary),
+          ),
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildPromotionOption(
+                context,
+                isWhite,
+                'q',
+                settings.currentPieceSet,
+              ),
+              _buildPromotionOption(
+                context,
+                isWhite,
+                'r',
+                settings.currentPieceSet,
+              ),
+              _buildPromotionOption(
+                context,
+                isWhite,
+                'b',
+                settings.currentPieceSet,
+              ),
+              _buildPromotionOption(
+                context,
+                isWhite,
+                'n',
+                settings.currentPieceSet,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPromotionOption(
+    BuildContext context,
+    bool isWhite,
+    String pieceCode,
+    PieceSet pieceSet,
+  ) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context, pieceCode),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppTheme.cardDark,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ChessPiece(
+          piece:
+              isWhite
+                  ? 'w' + pieceCode.toUpperCase()
+                  : 'b' + pieceCode.toUpperCase(),
+          size: 40,
+          pieceSet: pieceSet,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onTap(
+    TapUpDetails details,
+    double squareSize,
+    bool isFlipped,
+  ) async {
     final file = (details.localPosition.dx / squareSize).floor();
     final rank = (details.localPosition.dy / squareSize).floor();
     final square = _getSquare(file, rank, isFlipped);
@@ -451,9 +531,35 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
     if (widget.useExternalState) {
       widget.onSquareTap?.call(square);
     } else {
-      final moved = ref.read(gameProvider.notifier).selectSquare(square);
-      if (moved) {
-        widget.onMoveCallback?.call();
+      final gameNotifier = ref.read(gameProvider.notifier);
+      final gameState = ref.read(gameProvider);
+
+      // Check if this is a move attempt (target square in legal moves of selected square)
+      if (gameState.selectedSquare != null &&
+          gameState.legalMoves.contains(square)) {
+        String? promotion;
+        if (gameNotifier.needsPromotion(gameState.selectedSquare!, square)) {
+          final piece = gameNotifier.getPieceAt(gameState.selectedSquare!);
+          final isWhite = piece != null && piece.startsWith('w');
+
+          promotion = await _showPromotionDialog(context, isWhite);
+          if (promotion == null) return; // Cancelled
+        }
+
+        final success = gameNotifier.tryMove(
+          gameState.selectedSquare!,
+          square,
+          promotion: promotion,
+        );
+        if (success) {
+          widget.onMoveCallback?.call();
+        }
+      } else {
+        // Just selecting/deselecting
+        final moved = gameNotifier.selectSquare(square);
+        if (moved) {
+          widget.onMoveCallback?.call();
+        }
       }
     }
   }
@@ -491,7 +597,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
     }
   }
 
-  void _onDragEnd(double squareSize, bool isFlipped) {
+  Future<void> _onDragEnd(double squareSize, bool isFlipped) async {
     if (_draggedFrom != null && _dragPosition != null) {
       final file = (_dragPosition!.dx / squareSize).floor().clamp(0, 7);
       final rank = (_dragPosition!.dy / squareSize).floor().clamp(0, 7);
@@ -501,9 +607,29 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
         if (widget.useExternalState) {
           widget.onMove?.call(_draggedFrom!, targetSquare);
         } else {
-          final success = ref
-              .read(gameProvider.notifier)
-              .tryMove(_draggedFrom!, targetSquare);
+          final gameNotifier = ref.read(gameProvider.notifier);
+          String? promotion;
+
+          if (gameNotifier.needsPromotion(_draggedFrom!, targetSquare)) {
+            final piece = gameNotifier.getPieceAt(_draggedFrom!);
+            final isWhite = piece != null && piece.startsWith('w');
+
+            promotion = await _showPromotionDialog(context, isWhite);
+            if (promotion == null) {
+              setState(() {
+                _draggedFrom = null;
+                _dragPosition = null;
+                _draggedPiece = null;
+              });
+              return;
+            }
+          }
+
+          final success = gameNotifier.tryMove(
+            _draggedFrom!,
+            targetSquare,
+            promotion: promotion,
+          );
           if (success) {
             widget.onMoveCallback?.call();
           }
@@ -519,7 +645,6 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
   }
 }
 
-/// Custom painter for drawing the chess board
 class _BoardPainter extends CustomPainter {
   final BoardTheme theme;
   final String? selectedSquare;
