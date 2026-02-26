@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/chess.dart' as chess;
+import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/providers/game_provider.dart';
 import 'package:chess_master/providers/settings_provider.dart';
