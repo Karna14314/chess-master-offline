@@ -1,1 +1,2 @@
+Fixed potential crash when leaving Puzzle screen during loading.
 Improved analysis and hint quality by utilizing full engine strength.
