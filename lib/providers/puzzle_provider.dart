@@ -16,7 +16,7 @@ List<Puzzle> _parsePuzzles(String jsonString) {
 }
 
 /// Provider for puzzle state
-final puzzleProvider = StateNotifierProvider<PuzzleNotifier, PuzzleGameState>((
+final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleGameState>((
   ref,
 ) {
   return PuzzleNotifier(ref);
@@ -233,8 +233,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       final stats = await _ref.read(databaseServiceProvider).getStatistics();
       final rating = stats?['current_puzzle_rating'] as int? ?? 1200;
 
+      if (!mounted) return;
       state = state.copyWith(currentRating: rating, isLoading: false);
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         errorMessage: 'Failed to load puzzles: $e',
         isLoading: false,
@@ -281,6 +283,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       await _loadPuzzles();
       if (_allPuzzles.isEmpty) {
         debugPrint('🧩 ERROR: No puzzles available after loading');
+        if (!mounted) return;
         state = state.copyWith(
           errorMessage: 'No puzzles available',
           state: PuzzleState.loading,
@@ -303,6 +306,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
       if (puzzle == null) {
         debugPrint('🧩 ERROR: No suitable puzzle found');
+        if (!mounted) return;
         state = state.copyWith(
           errorMessage: 'No suitable puzzle found',
           state: PuzzleState.loading,
@@ -324,6 +328,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     debugPrint(
       '🧩 ERROR: Failed to find valid puzzle after $maxAttempts attempts',
     );
+    if (!mounted) return;
     state = state.copyWith(
       errorMessage: 'Failed to find valid puzzle',
       state: PuzzleState.loading,
@@ -454,6 +459,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       // The player should be the one to move in the puzzle position AFTER the setup move
       final isPlayerTurn = true;
 
+      if (!mounted) return false;
       state = state.copyWith(
         currentPuzzle: puzzle,
         board: board,
@@ -616,6 +622,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
     // Apply opponent's response after a delay
     Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
       _applyOpponentMove(nextExpectedMove);
     });
   }
@@ -717,6 +724,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
             ? (currentStats['puzzles_solved'] as int? ?? 0) + 1
             : (currentStats['puzzles_solved'] as int? ?? 0);
 
+    if (!mounted) return;
     await db.updateStatistics({
       'current_puzzle_rating': newRating,
       'puzzles_attempted': puzzlesAttempted,
@@ -746,7 +754,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
     // Hide hint after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
-      if (state.showingHint) {
+      if (mounted && state.showingHint) {
         state = state.copyWith(clearHint: true);
       }
     });
@@ -782,6 +790,11 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     int moveIndex = 0;
 
     _solutionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
       if (!state.showingSolution) {
         timer.cancel();
         return;
@@ -832,6 +845,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     await _onPuzzleCompleted(false);
     // Load next puzzle after a short delay
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
     await startNewPuzzle();
   }
 
@@ -841,6 +855,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     final puzzle = state.currentPuzzle;
     if (puzzle != null) {
       final success = await _loadPuzzle(puzzle);
+      if (!mounted) return;
       if (success) {
         state = state.copyWith(isRetry: true);
       }
