@@ -169,6 +169,9 @@ class MockStockfishService implements StockfishService {
   void setSkillLevel(int elo) {}
 
   @override
+  void setMaxStrength() {}
+
+  @override
   void newGame() {}
 }
 

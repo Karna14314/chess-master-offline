@@ -228,6 +228,8 @@ class EngineNotifier extends StateNotifier<EngineState> {
       if (currentSearchId != _searchId) return null;
 
       if (_service.isReady) {
+        // Ensure hint uses max strength
+        _service.setMaxStrength();
         final result = await _service.getBestMove(fen: fen, depth: depth);
 
         if (currentSearchId != _searchId) return null;
