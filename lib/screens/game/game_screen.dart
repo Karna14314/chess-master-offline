@@ -992,12 +992,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 onPressed: () {
                   Navigator.pop(context);
                   // Start new game with same settings
-                  ref
-                      .read(gameProvider.notifier)
-                      .startNewGame(
+                  ref.read(gameProvider.notifier).startNewGame(
                         playerColor: gameState.playerColor,
                         difficulty: gameState.difficulty,
                         timeControl: gameState.timeControl,
+                        gameMode: gameState.gameMode,
+                        botType: gameState.botType,
+                        allowTakeback: gameState.allowTakeback,
                       );
                 },
                 child: const Text('Rematch'),

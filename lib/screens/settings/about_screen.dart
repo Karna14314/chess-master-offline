@@ -100,9 +100,9 @@ class _AboutScreenState extends State<AboutScreen> {
             InkWell(
               onTap:
                   () =>
-                      _launchUrl('https://github.com/YOUR-USERNAME/YOUR-REPO'),
+                      _launchUrl('https://github.com/Karna14314/chess-master-offline'),
               child: Text(
-                'https://github.com/YOUR-USERNAME/YOUR-REPO',
+                'https://github.com/Karna14314/chess-master-offline',
                 style: GoogleFonts.inter(
                   color: AppTheme.primaryColor,
                   fontSize: 16,

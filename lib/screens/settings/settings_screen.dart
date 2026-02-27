@@ -7,13 +7,44 @@ import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 /// Settings screen for app customization
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String _version = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _version = packageInfo.version;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _version = 'Unknown';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final settingsNotifier = ref.read(settingsProvider.notifier);
 
@@ -155,7 +186,7 @@ class SettingsScreen extends ConsumerWidget {
                   const Divider(color: AppTheme.borderColor),
                   _InfoRow(
                     title: 'App Version',
-                    value: AppConstants.appVersion,
+                    value: _version,
                   ),
                   const Divider(color: AppTheme.borderColor),
                   _InfoRow(title: 'Engine', value: 'Stockfish 16'),
@@ -228,7 +259,7 @@ class SettingsScreen extends ConsumerWidget {
     showLicensePage(
       context: context,
       applicationName: AppConstants.appName,
-      applicationVersion: AppConstants.appVersion,
+      applicationVersion: _version,
     );
   }
 }
@@ -384,7 +415,7 @@ class _PieceSetSelector extends StatelessWidget {
                           isSelected
                               ? AppTheme.primaryColor
                               : Colors.transparent,
-                      width: 2,
+                              width: 2,
                     ),
                   ),
                   padding: const EdgeInsets.all(8),
