@@ -1,8 +1,10 @@
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/models/game_model.dart';
+import 'package:chess_master/models/game_session.dart';
+import 'package:chess_master/core/constants/app_constants.dart';
 
 class PGNHandler {
-  static GameState? parsePgn(String pgn) {
+  static GameSession? parsePgn(String pgn) {
     try {
       final game = chess.Chess();
       game.load_pgn(pgn);
@@ -29,13 +31,19 @@ class PGNHandler {
         );
       }
 
-      return GameState.fromFen(game.fen).copyWith(moveHistory: moves);
+      return GameSession.create(
+        gameMode: GameMode.localMultiplayer,
+        startingFen: game.fen,
+      ).copyWith(moveHistory: moves);
     } catch (e) {
       return null;
     }
   }
 
-  static String exportPgn(GameState gameState) {
+  static String exportPgn(dynamic gameState) {
+    if (gameState is GameSession) {
+      return gameState.pgn;
+    }
     final game = chess.Chess.fromFEN(gameState.fen);
     return game.pgn();
   }

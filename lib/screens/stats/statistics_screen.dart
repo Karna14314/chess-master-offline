@@ -5,13 +5,39 @@ import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/statistics_provider.dart';
 import 'package:chess_master/models/statistics_model.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/services.dart';
 
 /// Statistics dashboard screen
-class StatisticsScreen extends ConsumerWidget {
+class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StatisticsScreen> createState() => _StatisticsScreenState();
+}
+
+class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final stats = ref.watch(statisticsProvider);
 
     return Scaffold(

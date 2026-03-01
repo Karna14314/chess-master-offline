@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
-import 'package:chess_master/providers/game_provider.dart';
+import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 
@@ -178,20 +178,29 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
       effectiveInCheck = _externalBoard?.in_check ?? false;
       effectiveKingSquare = _findKingSquareExternal();
     } else {
-      final gameState = ref.watch(gameProvider);
+      final gameState = ref.watch(gameSessionProvider);
+      if (gameState == null) {
+        return const SizedBox();
+      }
       effectiveFlipped = widget.flipped ^ settings.boardFlipped;
       effectiveSelectedSquare = gameState.selectedSquare;
       effectiveLegalMoves = settings.showLegalMoves ? gameState.legalMoves : [];
-      effectiveLastMoveFrom =
-          settings.showLastMove ? gameState.lastMoveFrom : null;
-      effectiveLastMoveTo = settings.showLastMove ? gameState.lastMoveTo : null;
+      final lastMove =
+          gameState.moveHistory.isNotEmpty ? gameState.moveHistory.last : null;
+      effectiveLastMoveFrom = settings.showLastMove ? lastMove?.from : null;
+      effectiveLastMoveTo = settings.showLastMove ? lastMove?.to : null;
       effectiveShowCoordinates = settings.showCoordinates;
-      effectiveInCheck = gameState.inCheck;
-      effectiveKingSquare = _findKingSquareInternal(gameState.isWhiteTurn);
+      effectiveInCheck =
+          gameState.fen.contains('check') ||
+          chess.Chess.fromFEN(gameState.fen).in_check; // Basic check
+      effectiveKingSquare = _findKingSquareWithState(
+        gameState,
+        gameState.isWhiteTurn,
+      );
     }
 
     final hintMove =
-        widget.useExternalState ? null : ref.watch(gameProvider).hint;
+        widget.useExternalState ? null : ref.watch(gameSessionProvider)?.hint;
 
     final isInteractive =
         widget.useExternalState
@@ -250,7 +259,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                     painter: _ArrowPainter(
                       from: hintMove.from,
                       to: hintMove.to,
-                      color: Colors.blue.withOpacity(0.7),
+                      color: Colors.blue.withValues(alpha: 0.7),
                       squareSize: squareSize,
                       isFlipped: effectiveFlipped,
                     ),
@@ -331,7 +340,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                     painter: _ArrowPainter(
                       from: widget.bestMove!.substring(0, 2),
                       to: widget.bestMove!.substring(2, 4),
-                      color: Colors.green.withOpacity(0.7),
+                      color: Colors.green.withValues(alpha: 0.7),
                       squareSize: squareSize,
                       isFlipped: effectiveFlipped,
                     ),
@@ -379,7 +388,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
       final pieceChar = _pieceTypeToChar(piece.type);
       return '$colorPrefix$pieceChar';
     } else {
-      return ref.read(gameProvider.notifier).getPieceAt(square);
+      return ref.read(gameSessionProvider.notifier).getPieceAt(square);
     }
   }
 
@@ -412,15 +421,21 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
     return '$fileChar$rankChar';
   }
 
-  String? _findKingSquareInternal(bool isWhite) {
+  String? _findKingSquareWithState(dynamic gameState, bool isWhite) {
+    if (gameState == null) return null;
+    final colorPrefix = isWhite ? 'w' : 'b';
+    final target = '${colorPrefix}K';
+
+    // We can't easily iterate all squares efficiently without a board object
+    // but we can look for it in the FEN or use a simple loop
     for (int file = 0; file < 8; file++) {
       for (int rank = 0; rank < 8; rank++) {
         final square =
             '${String.fromCharCode('a'.codeUnitAt(0) + file)}${8 - rank}';
-        final piece = ref.read(gameProvider.notifier).getPieceAt(square);
-        if (piece == (isWhite ? 'wK' : 'bK')) {
-          return square;
-        }
+        // In internal mode, we have to use the notifier/repo to get pieces if not in gameState
+        // Ideally gameState should have the board state
+        final piece = ref.read(gameSessionProvider.notifier).getPieceAt(square);
+        if (piece == target) return square;
       }
     }
     return null;
@@ -532,8 +547,9 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
     if (widget.useExternalState) {
       widget.onSquareTap?.call(square);
     } else {
-      final gameNotifier = ref.read(gameProvider.notifier);
-      final gameState = ref.read(gameProvider);
+      final gameNotifier = ref.read(gameSessionProvider.notifier);
+      final gameState = ref.read(gameSessionProvider);
+      if (gameState == null) return;
 
       // Check if this is a move attempt (target square in legal moves of selected square)
       if (gameState.selectedSquare != null &&
@@ -547,7 +563,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
           if (promotion == null) return; // Cancelled
         }
 
-        final success = gameNotifier.tryMove(
+        final success = await gameNotifier.makeMove(
           gameState.selectedSquare!,
           square,
           promotion: promotion,
@@ -585,7 +601,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
       if (widget.useExternalState) {
         widget.onSquareTap?.call(square);
       } else {
-        ref.read(gameProvider.notifier).selectSquare(square);
+        ref.read(gameSessionProvider.notifier).selectSquare(square);
       }
     }
   }
@@ -608,7 +624,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
         if (widget.useExternalState) {
           widget.onMove?.call(_draggedFrom!, targetSquare);
         } else {
-          final gameNotifier = ref.read(gameProvider.notifier);
+          final gameNotifier = ref.read(gameSessionProvider.notifier);
           String? promotion;
 
           if (gameNotifier.needsPromotion(_draggedFrom!, targetSquare)) {
@@ -626,7 +642,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
             }
           }
 
-          final success = gameNotifier.tryMove(
+          final success = await gameNotifier.makeMove(
             _draggedFrom!,
             targetSquare,
             promotion: promotion,
@@ -711,13 +727,13 @@ class _BoardPainter extends CustomPainter {
 
         // Hint highlight
         if (showHint && square == hintSquare) {
-          color = Colors.green.withOpacity(0.5);
+          color = Colors.green.withValues(alpha: 0.5);
         }
 
         // Custom highlights (e.g. solution playback)
         if (highlightedSquares != null &&
             highlightedSquares!.contains(square)) {
-          color = Colors.blue.withOpacity(0.5);
+          color = Colors.blue.withValues(alpha: 0.5);
         }
 
         // Check highlight

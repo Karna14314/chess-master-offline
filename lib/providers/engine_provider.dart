@@ -152,6 +152,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
           .getBestMove(
             fen: fen,
             depth: difficulty.depth,
+            elo: difficulty.elo,
             thinkTimeMs: difficulty.thinkTimeMs,
           )
           .timeout(
@@ -316,6 +317,20 @@ class EngineNotifier extends StateNotifier<EngineState> {
       state = state.copyWith(isAnalyzing: false);
       debugPrint('Error analyzing position: $e');
     }
+  }
+
+  /// Analyze a full game move-by-move for accuracy calculation
+  Future<List<int?>> analyzeGame(List<String> fens, {int depth = 12}) async {
+    List<int?> evaluations = [];
+    _service.setMaxStrength();
+    
+    for (final fen in fens) {
+      if (!_service.isReady) break;
+      final result = await _service.getBestMove(fen: fen, depth: depth);
+      evaluations.add(result.evaluation);
+    }
+    
+    return evaluations;
   }
 
   /// Stop ongoing analysis

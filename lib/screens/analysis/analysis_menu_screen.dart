@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
+import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
 import 'package:chess_master/screens/analysis/pgn_import_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/models/game_model.dart';
+import 'package:chess_master/models/game_session.dart';
+import 'package:chess_master/data/repositories/game_session_repository.dart';
 
 /// Analysis menu - choose between PGN import or saved games
 class AnalysisMenuScreen extends ConsumerWidget {
@@ -209,8 +212,8 @@ class SavedGamesListScreen extends ConsumerWidget {
           style: GoogleFonts.inter(fontWeight: FontWeight.bold),
         ),
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: db.getAllGames(),
+      body: FutureBuilder<List<GameSession>>(
+        future: ref.read(gameSessionRepositoryProvider).getRealGamesHistory(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -257,11 +260,30 @@ class SavedGamesListScreen extends ConsumerWidget {
               final game = games[index];
               return _SavedGameCard(
                 game: game,
-                onTap: () => _analyzeGame(context, game),
+                onTap: () => _analyzeGameSession(context, game),
               );
             },
           );
         },
+      ),
+    );
+  }
+
+  void _analyzeGameSession(BuildContext context, GameSession session) {
+    if (session.moveHistory.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No moves available for this game.')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AnalysisScreen(
+          moves: session.moveHistory,
+          startingFen: session.startingFen,
+        ),
       ),
     );
   }
@@ -332,30 +354,16 @@ class SavedGamesListScreen extends ConsumerWidget {
 }
 
 class _SavedGameCard extends StatelessWidget {
-  final Map<String, dynamic> game;
+  final GameSession game;
   final VoidCallback onTap;
 
   const _SavedGameCard({required this.game, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final createdAt = game['created_at'] as int?;
-    final dateStr =
-        createdAt != null
-            ? DateTime.fromMillisecondsSinceEpoch(
-              createdAt,
-            ).toString().split(' ')[0]
-            : 'Unknown date';
-
-    final result = game['result'] as String? ?? 'Ongoing';
-
-    // Determine opponent label based on game mode or custom name
-    final customName = game['custom_name'] as String?;
-    final gameMode = game['game_mode'] as String? ?? 'bot';
-    final botElo = game['bot_elo'] as int? ?? 1200;
-
-    final opponent =
-        customName ?? (gameMode == 'local' ? 'Friend' : 'Bot ($botElo)');
+    final dateStr = game.startedAt.toString().split(' ')[0];
+    final result = game.result?.displayName ?? 'Ongoing';
+    final opponent = game.gameMode == GameMode.bot ? game.whitePlayerName.contains('Bot') ? game.whitePlayerName : game.blackPlayerName : 'Friend';
 
     return GestureDetector(
       onTap: onTap,

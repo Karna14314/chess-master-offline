@@ -46,7 +46,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final statsAsync = ref.watch(puzzleStatsProvider);
+    final stats = ref.watch(puzzleStatsProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
@@ -83,11 +83,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Stats card
-              statsAsync.when(
-                data: (stats) => _StatsCard(stats: stats),
-                loading: () => const _StatsCardLoading(),
-                error: (error, __) => _StatsCardError(error: error.toString()),
-              ),
+              _StatsCard(stats: stats),
               const SizedBox(height: 32),
 
               // Quick play section

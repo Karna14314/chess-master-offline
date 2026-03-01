@@ -216,6 +216,7 @@ class StockfishService {
   Future<BestMoveResult> getBestMove({
     required String fen,
     required int depth,
+    int? elo,
     int? thinkTimeMs,
   }) async {
     if (!_isReady && !_useFallback) {
@@ -225,6 +226,13 @@ class StockfishService {
     // If using fallback (SimpleBot)
     if (_useFallback) {
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
+    }
+
+    if (elo != null) {
+      _sendCommand('setoption name UCI_LimitStrength value true');
+      _sendCommand('setoption name UCI_Elo value $elo');
+    } else {
+      _sendCommand('setoption name UCI_LimitStrength value false');
     }
 
     final completer = Completer<BestMoveResult>();
@@ -328,6 +336,7 @@ class StockfishService {
     required String fen,
     int depth = AppConstants.analysisDepth,
     int multiPv = AppConstants.topEngineLinesCount,
+    void Function(AnalysisResult)? onUpdate,
   }) async {
     if (!_isReady && !_useFallback) {
       await initialize();
@@ -401,6 +410,17 @@ class StockfishService {
           } else {
             lines.add(engineLine);
           }
+          
+          if (onUpdate != null && mainEvaluation != null) {
+             onUpdate(
+               AnalysisResult(
+                 evaluation: mainEvaluation!,
+                 mateIn: mateIn,
+                 lines: List.from(lines),
+                 depth: currentDepth,
+               ),
+             );
+          }
         }
       }
 
@@ -446,8 +466,14 @@ class StockfishService {
   /// Set the engine skill level (affects playing strength)
   void setSkillLevel(int elo) {
     if (_useFallback) return;
+    
+    // Map Elo to Skill Level (0-20)
+    // 800 -> 0, 1200 -> 4, 1600 -> 8, 2000 -> 12, 2400 -> 16, 2800+ -> 20
+    int skillLevel = ((elo - 800) / 100).round().clamp(0, 20);
+    
     _sendCommand('setoption name UCI_LimitStrength value true');
     _sendCommand('setoption name UCI_Elo value $elo');
+    _sendCommand('setoption name Skill Level value $skillLevel');
   }
 
   /// Set the engine to maximum strength

@@ -4,19 +4,20 @@ import 'package:intl/intl.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:chess_master/providers/game_provider.dart';
+import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/models/game_model.dart';
+import 'package:chess_master/models/game_session.dart';
+import 'package:chess_master/data/repositories/game_session_repository.dart';
 
-/// Provider for game history
-final gameHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((
+final gameHistoryProvider = FutureProvider<List<GameSession>>((
   ref,
 ) async {
-  final dbService = ref.read(databaseServiceProvider);
-  return await dbService.getAllGames();
+  final repo = ref.read(gameSessionRepositoryProvider);
+  return await repo.getRealGamesHistory();
 });
 
 /// Game history screen showing saved games
@@ -190,34 +191,27 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     );
   }
 
-  List<Map<String, dynamic>> _filterGames(List<Map<String, dynamic>> games) {
+  List<GameSession> _filterGames(List<GameSession> games) {
     return games.where((game) {
       // Filter by mode
       if (_filterGameMode != 'all') {
-        final mode = game['game_mode'] as String?;
-        // Default to 'bot' if null (legacy data)
-        final effectiveMode = mode ?? 'bot';
+        final effectiveMode = game.gameMode == GameMode.localMultiplayer ? 'local' : 'bot';
         if (effectiveMode != _filterGameMode) return false;
       }
 
       // Filter by result
       if (_filterResult != 'all') {
-        final result = game['result'] as String?;
-        final playerColor = game['player_color'] as String? ?? 'white';
-
-        if (result == null) return false;
+        if (game.result == null) return false;
 
         if (_filterResult == 'draw') {
-          if (result != '1/2-1/2') return false;
+          if (game.result != GameResult.draw) return false;
         } else if (_filterResult == 'win') {
-          final won =
-              (playerColor == 'white' && result == '1-0') ||
-              (playerColor == 'black' && result == '0-1');
+          final won = (game.playerColor == PlayerColor.white && game.result == GameResult.whiteWins) ||
+                      (game.playerColor == PlayerColor.black && game.result == GameResult.blackWins);
           if (!won) return false;
         } else if (_filterResult == 'loss') {
-          final lost =
-              (playerColor == 'white' && result == '0-1') ||
-              (playerColor == 'black' && result == '1-0');
+          final lost = (game.playerColor == PlayerColor.white && game.result == GameResult.blackWins) ||
+                       (game.playerColor == PlayerColor.black && game.result == GameResult.whiteWins);
           if (!lost) return false;
         }
       }
@@ -257,20 +251,16 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
 
   Widget _buildGameList(
     BuildContext context,
-    List<Map<String, dynamic>> games,
+    List<GameSession> games,
   ) {
     // Group games by date
-    final groupedGames = <String, List<Map<String, dynamic>>>{};
+    final groupedGames = <String, List<GameSession>>{};
     final dateFormat = DateFormat('MMM d, yyyy');
 
     for (final game in games) {
-      final timestamp =
-          game['updated_at'] as int? ?? game['created_at'] as int?;
-      if (timestamp != null) {
-        final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-        final dateKey = dateFormat.format(date);
-        groupedGames.putIfAbsent(dateKey, () => []).add(game);
-      }
+      final date = game.lastMoveTime;
+      final dateKey = dateFormat.format(date);
+      groupedGames.putIfAbsent(dateKey, () => []).add(game);
     }
 
     return ListView.builder(
@@ -327,37 +317,49 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
   Future<void> _loadGame(
     BuildContext context,
     WidgetRef ref,
-    Map<String, dynamic> game,
+    GameSession game,
   ) async {
-    final isCompleted = game['is_completed'] == 1;
+    final isCompleted = game.isCompleted;
 
     if (isCompleted) {
-      final pgn = game['pgn'] as String?;
-      if (pgn == null || pgn.isEmpty) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No PGN data available to analyze this game.'),
-            ),
-          );
+      // Prefer using the stored move history if available
+      List<ChessMove> moves;
+      if (game.moveHistory.isNotEmpty) {
+        moves = game.moveHistory;
+      } else {
+        final pgn = game.pgn;
+        if (pgn.isEmpty) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No game data available to analyze.'),
+              ),
+            );
+          }
+          return;
         }
-        return;
-      }
 
-      final moves = _parsePgnToMoves(pgn);
-      if (moves == null || moves.isEmpty) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to parse the game moves.')),
-          );
+        final parsedMoves = _parsePgnToMoves(pgn);
+        if (parsedMoves == null || parsedMoves.isEmpty) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to parse the game moves.')),
+            );
+          }
+          return;
         }
-        return;
+        moves = parsedMoves;
       }
 
       if (context.mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => AnalysisScreen(moves: moves)),
+          MaterialPageRoute(
+            builder: (context) => AnalysisScreen(
+              moves: moves,
+              startingFen: game.startingFen,
+            ),
+          ),
         );
       }
       return;
@@ -385,44 +387,13 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
 
     if (confirm != true) return;
 
-    // Initialize engine and load game
+    // Initialize engine
     final engineNotifier = ref.read(engineProvider.notifier);
     await engineNotifier.initialize();
     engineNotifier.resetForNewGame();
 
-    // Start game from saved position
-    final playerColorStr = game['player_color'] as String? ?? 'white';
-    final playerColor =
-        playerColorStr == 'white' ? PlayerColor.white : PlayerColor.black;
-
-    final botElo = game['bot_elo'] as int? ?? 1200;
-    final difficultyIndex = AppConstants.difficultyLevels
-        .indexWhere((d) => d.elo == botElo)
-        .clamp(0, AppConstants.difficultyLevels.length - 1);
-    final difficulty = AppConstants.difficultyLevels[difficultyIndex];
-
-    final timeControlStr = game['time_control'] as String? ?? 'No Timer';
-    final timeControlIndex = AppConstants.timeControls
-        .indexWhere((tc) => tc.name == timeControlStr)
-        .clamp(0, AppConstants.timeControls.length - 1);
-    final timeControl = AppConstants.timeControls[timeControlIndex];
-
-    final fenCurrent = game['fen_current'] as String?;
-
-    // Read game_mode from database and convert to GameMode enum
-    final gameModeStr = game['game_mode'] as String? ?? 'bot';
-    final gameMode =
-        gameModeStr == 'local' ? GameMode.localMultiplayer : GameMode.bot;
-
-    ref
-        .read(gameProvider.notifier)
-        .startNewGame(
-          playerColor: playerColor,
-          difficulty: difficulty,
-          timeControl: timeControl,
-          startingFen: fenCurrent,
-          gameMode: gameMode,
-        );
+    // Load game session
+    await ref.read(gameSessionProvider.notifier).loadSession(game.id);
 
     if (context.mounted) {
       Navigator.pushReplacement(
@@ -435,7 +406,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
   Future<void> _deleteGame(
     BuildContext context,
     WidgetRef ref,
-    Map<String, dynamic> game,
+    GameSession game,
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -459,7 +430,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
 
     if (confirm != true) return;
 
-    await ref.read(databaseServiceProvider).deleteGame(game['id'] as String);
+    await ref.read(gameSessionRepositoryProvider).deleteSession(game.id);
     ref.refresh(gameHistoryProvider);
 
     if (context.mounted) {
@@ -546,7 +517,7 @@ class _FilterChip extends StatelessWidget {
 
 /// Game card widget
 class _GameCard extends StatelessWidget {
-  final Map<String, dynamic> game;
+  final GameSession game;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
@@ -558,25 +529,15 @@ class _GameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final result = game['result'] as String?;
-    final resultReason = game['result_reason'] as String?;
-    final playerColor = game['player_color'] as String? ?? 'white';
-    final botElo = game['bot_elo'] as int? ?? 0;
-    final moveCount = game['move_count'] as int? ?? 0;
-    final isCompleted = game['is_completed'] == 1;
-    final isSaved = game['is_saved'] == 1;
-    final customName = game['custom_name'] as String?;
-    final gameMode = game['game_mode'] as String? ?? 'bot';
-
-    final timestamp = game['updated_at'] as int? ?? game['created_at'] as int?;
-    final dateTime =
-        timestamp != null
-            ? DateTime.fromMillisecondsSinceEpoch(timestamp)
-            : null;
+    final isCompleted = game.isCompleted;
+    final isSaved = true; // game sessions are implicitly saved
+    final customName = null; // Removed custom name for now
+    
+    final dateTime = game.lastMoveTime;
     final timeFormat = DateFormat('HH:mm');
 
     // Determine opponent display
-    final opponentText = gameMode == 'local' ? 'Friend' : 'Bot ($botElo)';
+    final opponentText = game.gameMode == GameMode.localMultiplayer ? 'Friend' : 'Bot (${game.difficulty?.elo ?? 1200})';
     final displayName = customName ?? 'Game vs $opponentText';
 
     // Determine result display
@@ -588,8 +549,8 @@ class _GameCard extends StatelessWidget {
       resultIcon = Icons.pause_circle_outline;
       resultColor = Colors.orange;
       resultText = 'In Progress';
-    } else if (result == '1-0') {
-      if (playerColor == 'white') {
+    } else if (game.result == GameResult.whiteWins) {
+      if (game.playerColor == PlayerColor.white) {
         resultIcon = Icons.emoji_events;
         resultColor = Colors.green;
         resultText = 'Victory';
@@ -598,8 +559,8 @@ class _GameCard extends StatelessWidget {
         resultColor = Colors.red;
         resultText = 'Defeat';
       }
-    } else if (result == '0-1') {
-      if (playerColor == 'black') {
+    } else if (game.result == GameResult.blackWins) {
+      if (game.playerColor == PlayerColor.black) {
         resultIcon = Icons.emoji_events;
         resultColor = Colors.green;
         resultText = 'Victory';
@@ -678,10 +639,10 @@ class _GameCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (resultReason != null) ...[
+                        if (game.resultReason != null) ...[
                           const SizedBox(width: 8),
                           Text(
-                            resultReason,
+                            game.resultReason!,
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -689,7 +650,7 @@ class _GameCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$moveCount moves • ${playerColor == 'white' ? '♔' : '♚'} as ${playerColor.capitalize()} • ${dateTime != null ? timeFormat.format(dateTime) : ''}',
+                      '${game.moveHistory.length} moves • ${game.playerColor == PlayerColor.white ? '♔' : '♚'} as ${game.playerColor.name.capitalize()} • ${timeFormat.format(dateTime)}',
                       style: Theme.of(
                         context,
                       ).textTheme.bodySmall?.copyWith(color: AppTheme.textHint),

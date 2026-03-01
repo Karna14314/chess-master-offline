@@ -8,6 +8,7 @@ import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/models/puzzle_model.dart';
 import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/core/services/audio_service.dart';
+import 'package:chess_master/providers/statistics_provider.dart';
 
 /// Parse puzzles in a separate isolate
 List<Puzzle> _parsePuzzles(String jsonString) {
@@ -23,22 +24,12 @@ final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleG
 });
 
 /// Provider for puzzle statistics
-final puzzleStatsProvider = FutureProvider<PuzzleStats>((ref) async {
-  final db = ref.read(databaseServiceProvider);
-  final stats = await db.getStatistics();
-
-  if (stats == null) {
-    return PuzzleStats(
-      currentRating: 1200,
-      puzzlesSolved: 0,
-      puzzlesAttempted: 0,
-    );
-  }
-
+final puzzleStatsProvider = Provider<PuzzleStats>((ref) {
+  final stats = ref.watch(statisticsProvider);
   return PuzzleStats(
-    currentRating: stats['current_puzzle_rating'] as int? ?? 1200,
-    puzzlesSolved: stats['puzzles_solved'] as int? ?? 0,
-    puzzlesAttempted: stats['puzzles_attempted'] as int? ?? 0,
+    currentRating: stats.currentPuzzleRating,
+    puzzlesSolved: stats.puzzlesSolved,
+    puzzlesAttempted: stats.puzzlesAttempted,
   );
 });
 
@@ -716,20 +707,12 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     // Save to puzzle progress tracking history
     await db.savePuzzleProgress(puzzle.id, solved);
 
-    final currentStats = await db.getStatistics() ?? {};
-    final puzzlesAttempted =
-        (currentStats['puzzles_attempted'] as int? ?? 0) + 1;
-    final puzzlesSolved =
-        solved
-            ? (currentStats['puzzles_solved'] as int? ?? 0) + 1
-            : (currentStats['puzzles_solved'] as int? ?? 0);
-
     if (!mounted) return;
-    await db.updateStatistics({
-      'current_puzzle_rating': newRating,
-      'puzzles_attempted': puzzlesAttempted,
-      'puzzles_solved': puzzlesSolved,
-    });
+    final statsNotifier = _ref.read(statisticsProvider.notifier);
+    await statsNotifier.recordPuzzleAttempt(
+      solved: solved,
+      puzzleRating: puzzleRating,
+    );
   }
 
   /// Show hint for current position - shows full move with arrow
@@ -859,6 +842,22 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       if (success) {
         state = state.copyWith(isRetry: true);
       }
+    }
+  }
+
+  /// Load puzzle by ID
+  Future<void> loadPuzzleById(int id) async {
+    if (_allPuzzles.isEmpty) {
+      await _loadPuzzles();
+    }
+    
+    final puzzle = _allPuzzles.cast<Puzzle?>().firstWhere(
+      (p) => p?.id == id,
+      orElse: () => null,
+    );
+    
+    if (puzzle != null) {
+      await _loadPuzzle(puzzle);
     }
   }
 

@@ -3,13 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/services/database_service.dart';
-import 'package:chess_master/providers/game_provider.dart';
-import 'package:chess_master/providers/settings_provider.dart';
+import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
+import 'package:chess_master/screens/game_setup/new_game_setup_screen.dart';
 import 'package:chess_master/screens/history/game_history_screen.dart';
 import 'package:chess_master/core/utils/pgn_handler.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
+import 'package:chess_master/models/game_session.dart';
+import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Home screen - main dashboard for the Chess App
@@ -328,10 +330,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 16),
         SizedBox(
           height: 180,
-          child: FutureBuilder<List<Map<String, dynamic>>>(
+          child: FutureBuilder<List<GameSession>>(
             future: ref
-                .read(databaseServiceProvider)
-                .getRecentGames(limit: 5, includeCompleted: false),
+                .read(gameSessionRepositoryProvider)
+                .getUnfinishedGames(limit: 5),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -359,25 +361,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildContinueGameCard(
-    BuildContext context,
-    Map<String, dynamic> game,
-  ) {
-    final fen =
-        game['fen_current'] as String? ??
-        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  Widget _buildContinueGameCard(BuildContext context, GameSession game) {
+    final fen = game.fen;
     final opponent =
-        game['game_mode'] == 'bot'
-            ? 'Bot (${game['bot_elo'] ?? 1200})'
+        game.gameMode == GameMode.bot
+            ? game.blackPlayerName.contains('Bot')
+                ? game.blackPlayerName
+                : game.whitePlayerName
             : 'Friend';
-    final moveCount = game['move_count'] ?? 0;
-    final isCompleted = (game['is_completed'] as int?) == 1;
-    final customName = game['custom_name'] as String?;
-    final gameId = game['id'] as String;
+    final moveCount = game.moveHistory.length;
+    final isCompleted = game.isCompleted;
+    final gameId = game.id;
 
     return GestureDetector(
-      onTap: () => _resumeGame(context, game),
-      onLongPress: () => _showGameOptionsDialog(context, gameId, customName),
+      onTap: () => _resumeGameFromSession(context, game),
+      onLongPress: () => _showGameOptionsDialog(context, gameId, null),
       child: Container(
         width: 280,
         padding: const EdgeInsets.all(12),
@@ -409,28 +407,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (customName != null && customName.isNotEmpty) ...[
-                    Text(
-                      customName,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                  ],
                   Text(
                     'Vs $opponent',
                     style: GoogleFonts.inter(
-                      fontSize:
-                          customName != null && customName.isNotEmpty ? 14 : 16,
-                      fontWeight:
-                          customName != null && customName.isNotEmpty
-                              ? FontWeight.normal
-                              : FontWeight.bold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary,
                     ),
                     maxLines: 1,
@@ -508,132 +489,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ========== Actions & Logic ==========
 
   void _showBotGameSetup(BuildContext context) {
-    // First, show bot type selection
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => _BotTypeSelectionSheet(
-            onBotTypeSelected: (botType) {
-              Navigator.pop(context);
-              _showLevelSelection(context, botType);
-            },
-          ),
-    );
-  }
-
-  void _showLevelSelection(BuildContext context, BotType botType) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => _LevelSelectionSheet(
-            botType: botType,
-            onLevelSelected: (level) {
-              Navigator.pop(context);
-              _showGameSetupSheet(context, level, botType);
-            },
-          ),
-    );
-  }
-
-  void _showGameSetupSheet(BuildContext context, int level, BotType botType) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => _GameSetupSheet(
-            difficultyLevel: level,
-            botType: botType,
-            onStartGame: (playerColor, timeControl) async {
-              Navigator.pop(context);
-              await _startBotGame(level, playerColor, timeControl, botType);
-            },
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const NewGameSetupScreen(initialMode: GameMode.bot),
+      ),
     );
   }
 
   void _showLocalMultiplayerSetup(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => _LocalMultiplayerSheet(
-            onStartGame: (timeControl, allowTakeback, autoFlip) async {
-              Navigator.pop(context);
-              await _startLocalGame(timeControl, allowTakeback, autoFlip);
-            },
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => const NewGameSetupScreen(
+              initialMode: GameMode.localMultiplayer,
+            ),
+      ),
     );
   }
 
   Future<void> _startQuickGame(int level) async {
-    final difficulty = AppConstants.difficultyLevels[level - 1];
-    await _startBotGame(
-      level,
-      PlayerColor.white,
-      AppConstants.timeControls[0],
-      BotType.simple,
-    );
-  }
-
-  Future<void> _startBotGame(
-    int level,
-    PlayerColor playerColor,
-    TimeControl timeControl,
-    BotType botType,
-  ) async {
     setState(() => _isLoading = true);
 
     try {
       final difficulty = AppConstants.difficultyLevels[level - 1];
-
-      // Only initialize engine if using Stockfish
-      if (botType == BotType.stockfish) {
-        final engineNotifier = ref.read(engineProvider.notifier);
-        try {
-          await engineNotifier.initialize().timeout(const Duration(seconds: 5));
-        } catch (e) {
-          debugPrint('Engine init warning: $e');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Stockfish unavailable. Switching to Simple Bot.',
-                ),
-                backgroundColor: Colors.orange,
-              ),
-            );
-            // Fall back to Simple Bot
-            botType = BotType.simple;
-          }
-        }
-        engineNotifier.resetForNewGame();
-      }
-
-      // Resolve random color
-      PlayerColor actualColor = playerColor;
-      if (playerColor == PlayerColor.random) {
-        actualColor =
-            DateTime.now().millisecond % 2 == 0
-                ? PlayerColor.white
-                : PlayerColor.black;
-      }
-
-      // Start game
       ref
-          .read(gameProvider.notifier)
+          .read(gameSessionProvider.notifier)
           .startNewGame(
-            playerColor: actualColor,
-            difficulty: difficulty,
-            timeControl: timeControl,
             gameMode: GameMode.bot,
-            botType: botType,
-            useTimer: timeControl.hasTimer,
+            botType: BotType.simple,
+            difficulty: difficulty,
+            timeControl: AppConstants.timeControls[0], // No timer
+            playerColor: PlayerColor.white,
           );
 
       if (mounted) {
@@ -644,9 +532,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to start game: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to start quick game: $e')),
+        );
       }
     } finally {
       if (mounted) {
@@ -655,50 +543,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<void> _startLocalGame(
-    TimeControl timeControl,
-    bool allowTakeback,
-    bool autoFlip,
-  ) async {
-    final settings = ref.read(settingsProvider);
-    if (settings.autoFlipBoard != autoFlip) {
-      ref.read(settingsProvider.notifier).toggleAutoFlipBoard();
-    }
-
-    ref
-        .read(gameProvider.notifier)
-        .startNewGame(
-          playerColor: PlayerColor.white,
-          difficulty: AppConstants.difficultyLevels[4],
-          timeControl: timeControl,
-          gameMode: GameMode.localMultiplayer,
-          allowTakeback: allowTakeback,
-          useTimer: timeControl.hasTimer,
-        );
-
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const GameScreen()),
-      );
-    }
-  }
-
-  Future<void> _resumeGame(
+  Future<void> _resumeGameFromSession(
     BuildContext context,
-    Map<String, dynamic> game,
+    GameSession session,
   ) async {
     try {
-      final isCompleted = (game['is_completed'] as int?) == 1;
-
-      // If completed, maybe just navigate to review or history
-      // But for now, let's load it as a game (maybe in analysis mode?)
-      // For simplicity, we restart it or handle it as resume.
-      // If it's completed, we probably shouldn't "resume" it in gameplay sense.
-      // But let's assume the user wants to see the position.
-
-      if (isCompleted) {
-        // Navigate to history/analysis
+      if (session.isCompleted) {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const GameHistoryScreen()),
@@ -706,41 +556,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      // Initialize engine
-      final engineNotifier = ref.read(engineProvider.notifier);
-      await engineNotifier.initialize();
-      engineNotifier.resetForNewGame();
+      await ref.read(gameSessionProvider.notifier).loadSession(session.id);
 
-      // Load game settings
-      final playerColorStr = game['player_color'] as String? ?? 'white';
-      final playerColor =
-          playerColorStr == 'white' ? PlayerColor.white : PlayerColor.black;
-      final botElo = game['bot_elo'] as int? ?? 1200;
-      final difficultyIndex = AppConstants.difficultyLevels
-          .indexWhere((d) => d.elo == botElo)
-          .clamp(0, 9);
-      final difficulty = AppConstants.difficultyLevels[difficultyIndex];
-      final timeControlStr = game['time_control'] as String? ?? 'No Timer';
-      final timeControlIndex = AppConstants.timeControls
-          .indexWhere((tc) => tc.name == timeControlStr)
-          .clamp(0, AppConstants.timeControls.length - 1);
-      final timeControl = AppConstants.timeControls[timeControlIndex];
-      final fenCurrent = game['fen_current'] as String?;
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const GameScreen()),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading game: $e')));
+      }
+    }
+  }
 
-      // Read game_mode from database and convert to GameMode enum
-      final gameModeStr = game['game_mode'] as String? ?? 'bot';
-      final gameMode =
-          gameModeStr == 'local' ? GameMode.localMultiplayer : GameMode.bot;
+  Future<void> _resumeGame(
+    BuildContext context,
+    Map<String, dynamic> gameData,
+  ) async {
+    try {
+      final isCompleted =
+          (gameData['is_completed'] as int?) == 1 || gameData['result'] != null;
 
-      ref
-          .read(gameProvider.notifier)
-          .startNewGame(
-            playerColor: playerColor,
-            difficulty: difficulty,
-            timeControl: timeControl,
-            startingFen: fenCurrent,
-            gameMode: gameMode,
-          );
+      if (isCompleted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const GameHistoryScreen()),
+        );
+        return;
+      }
+
+      final gameId = gameData['id'] as String;
+      await ref.read(gameSessionProvider.notifier).loadSession(gameId);
 
       if (context.mounted) {
         Navigator.push(
@@ -904,528 +754,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ],
           ),
-    );
-  }
-}
-
-// Helpers/Bottom Sheets... (Including the existing ones like _LevelSelectionSheet, etc.)
-// Since I'm replacing the whole file, I need to include the sheet classes.
-
-class _LevelSelectionSheet extends StatelessWidget {
-  final BotType botType;
-  final Function(int level) onLevelSelected;
-
-  const _LevelSelectionSheet({
-    required this.botType,
-    required this.onLevelSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(top: 10, bottom: 20),
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[700],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Select Difficulty',
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            botType == BotType.simple
-                                ? AppTheme.primaryColor.withOpacity(0.2)
-                                : Colors.red.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        botType.displayName,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              botType == BotType.simple
-                                  ? AppTheme.primaryColor
-                                  : Colors.red,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    childAspectRatio: 0.9,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: 10,
-                  itemBuilder: (context, index) {
-                    final level = index + 1;
-                    return _LevelButton(
-                      level: level,
-                      elo: AppConstants.difficultyLevels[index].elo,
-                      onTap: () => onLevelSelected(level),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LevelButton extends StatelessWidget {
-  final int level;
-  final int elo;
-  final VoidCallback onTap;
-
-  const _LevelButton({
-    required this.level,
-    required this.elo,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // simplified color logic
-    Color color = AppTheme.primaryColor;
-    if (level > 3) color = Colors.orange;
-    if (level > 7) color = Colors.red;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.5)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '$level',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            Text(
-              '$elo',
-              style: TextStyle(fontSize: 10, color: AppTheme.textSecondary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GameSetupSheet extends StatefulWidget {
-  final int difficultyLevel;
-  final BotType botType;
-  final Function(PlayerColor, TimeControl) onStartGame;
-
-  const _GameSetupSheet({
-    required this.difficultyLevel,
-    required this.botType,
-    required this.onStartGame,
-  });
-
-  @override
-  State<_GameSetupSheet> createState() => _GameSetupSheetState();
-}
-
-class _GameSetupSheetState extends State<_GameSetupSheet> {
-  PlayerColor _selectedColor = PlayerColor.white;
-  TimeControl _selectedTimeControl = AppConstants.timeControls[0];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[700],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Text(
-            'Game Options',
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Play As',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildColorOption(
-                PlayerColor.white,
-                'White',
-                Icons.circle_outlined,
-              ),
-              const SizedBox(width: 12),
-              _buildColorOption(PlayerColor.random, 'Random', Icons.shuffle),
-              const SizedBox(width: 12),
-              _buildColorOption(PlayerColor.black, 'Black', Icons.circle),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Time Control',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children:
-                  AppConstants.timeControls.map((tc) {
-                    final isSelected = _selectedTimeControl == tc;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: ChoiceChip(
-                        label: Text(tc.name),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected)
-                            setState(() => _selectedTimeControl = tc);
-                        },
-                        backgroundColor: AppTheme.cardDark,
-                        selectedColor: AppTheme.primaryColor,
-                        labelStyle: TextStyle(
-                          color:
-                              isSelected
-                                  ? Colors.white
-                                  : AppTheme.textSecondary,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed:
-                  () =>
-                      widget.onStartGame(_selectedColor, _selectedTimeControl),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text('Start Game'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildColorOption(PlayerColor color, String label, IconData icon) {
-    final isSelected = _selectedColor == color;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedColor = color),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color:
-                isSelected
-                    ? AppTheme.primaryColor.withOpacity(0.2)
-                    : AppTheme.cardDark,
-            border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color:
-                    isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color:
-                      isSelected
-                          ? AppTheme.primaryColor
-                          : AppTheme.textSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LocalMultiplayerSheet extends StatefulWidget {
-  final Function(TimeControl, bool, bool) onStartGame;
-
-  const _LocalMultiplayerSheet({required this.onStartGame});
-
-  @override
-  State<_LocalMultiplayerSheet> createState() => _LocalMultiplayerSheetState();
-}
-
-class _LocalMultiplayerSheetState extends State<_LocalMultiplayerSheet> {
-  TimeControl _selectedTimeControl = AppConstants.timeControls[0];
-  bool _allowTakeback = false;
-  bool _autoFlip = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[700],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Text(
-            'Local Multiplayer',
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Allow Takeback'),
-            value: _allowTakeback,
-            onChanged: (val) => setState(() => _allowTakeback = val),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Auto Flip Board'),
-            value: _autoFlip,
-            onChanged: (val) => setState(() => _autoFlip = val),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed:
-                  () => widget.onStartGame(
-                    _selectedTimeControl,
-                    _allowTakeback,
-                    _autoFlip,
-                  ),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text('Start Game'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Bot Type Selection Sheet
-class _BotTypeSelectionSheet extends StatelessWidget {
-  final Function(BotType) onBotTypeSelected;
-
-  const _BotTypeSelectionSheet({required this.onBotTypeSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(top: 10, bottom: 20),
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[700],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Select Bot Type',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildBotTypeCard(
-                  context,
-                  botType: BotType.simple,
-                  icon: Icons.psychology_outlined,
-                  color: AppTheme.primaryColor,
-                  onTap: () => onBotTypeSelected(BotType.simple),
-                ),
-                const SizedBox(height: 16),
-                _buildBotTypeCard(
-                  context,
-                  botType: BotType.stockfish,
-                  icon: Icons.rocket_launch_outlined,
-                  color: Colors.red,
-                  onTap: () => onBotTypeSelected(BotType.stockfish),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBotTypeCard(
-    BuildContext context, {
-    required BotType botType,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.cardDark,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.5)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 32),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    botType.displayName,
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    botType.description,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, color: color, size: 20),
-          ],
-        ),
-      ),
     );
   }
 }

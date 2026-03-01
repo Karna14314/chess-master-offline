@@ -30,7 +30,7 @@ class DatabaseService {
 
       return await openDatabase(
         path,
-        version: 3,
+        version: 8,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -77,6 +77,52 @@ class DatabaseService {
     await db.execute('CREATE INDEX idx_games_saved ON games(is_saved)');
     await db.execute('CREATE INDEX idx_games_completed ON games(is_completed)');
 
+    // Saved games table (GameSession)
+    await db.execute('''
+      CREATE TABLE saved_games (
+        id TEXT PRIMARY KEY,
+        gameMode INTEGER,
+        botType INTEGER,
+        difficultyLevel INTEGER,
+        timeControlMinutes INTEGER,
+        timeControlIncrement INTEGER,
+        whiteTimeRemainingMs INTEGER,
+        blackTimeRemainingMs INTEGER,
+        playerColor INTEGER,
+        whitePlayerName TEXT,
+        blackPlayerName TEXT,
+        fen TEXT,
+        pgn TEXT,
+        moveHistory TEXT,
+        result TEXT,
+        resultReason TEXT,
+        startedAtMs INTEGER,
+        lastMoveTimeMs INTEGER,
+        isPuzzle INTEGER DEFAULT 0,
+        puzzleId TEXT,
+        analysisData TEXT,
+        hintsUsed INTEGER DEFAULT 0,
+        startingFen TEXT,
+        isFlipped INTEGER DEFAULT 0,
+        isRecorded INTEGER DEFAULT 0,
+        whiteAccuracy REAL,
+        blackAccuracy REAL
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_saved_games_last_move ON saved_games(lastMoveTimeMs DESC)');
+
+    // Puzzle History table
+    await db.execute('''
+      CREATE TABLE puzzle_history (
+        id TEXT PRIMARY KEY,
+        puzzle_id TEXT NOT NULL,
+        is_solved INTEGER DEFAULT 0,
+        time_spent_ms INTEGER,
+        moves_used INTEGER,
+        timestamp INTEGER
+      )
+    ''');
+
     // Statistics table (single row)
     await db.execute('''
       CREATE TABLE statistics (
@@ -90,6 +136,9 @@ class DatabaseService {
         current_puzzle_rating INTEGER DEFAULT 1200,
         games_by_elo TEXT,
         openings_played TEXT,
+        total_moves INTEGER DEFAULT 0,
+        total_game_time_seconds INTEGER DEFAULT 0,
+        hints_used INTEGER DEFAULT 0,
         last_updated INTEGER
       )
     ''');
@@ -161,6 +210,94 @@ class DatabaseService {
           debugPrint('Added custom_name column to games table');
         } catch (e) {
           debugPrint('Error adding custom_name column (may already exist): $e');
+        }
+        break;
+      case 4:
+        // Create saved_games and puzzle_history tables
+        await db.execute('''
+          CREATE TABLE saved_games (
+            id TEXT PRIMARY KEY,
+            gameMode INTEGER,
+            botType INTEGER,
+            difficultyLevel INTEGER,
+            timeControlMinutes INTEGER,
+            timeControlIncrement INTEGER,
+            whiteTimeRemainingMs INTEGER,
+            blackTimeRemainingMs INTEGER,
+            playerColor INTEGER,
+            whitePlayerName TEXT,
+            blackPlayerName TEXT,
+            fen TEXT,
+            pgn TEXT,
+            moveHistory TEXT,
+            result TEXT,
+            resultReason TEXT,
+            startedAtMs INTEGER,
+            lastMoveTimeMs INTEGER,
+            isPuzzle INTEGER DEFAULT 0,
+            puzzleId TEXT,
+            analysisData TEXT,
+            hintsUsed INTEGER DEFAULT 0,
+            startingFen TEXT,
+            isFlipped INTEGER DEFAULT 0,
+            isRecorded INTEGER DEFAULT 0,
+            whiteAccuracy REAL,
+            blackAccuracy REAL
+          )
+        ''');
+        await db.execute('CREATE INDEX idx_saved_games_last_move ON saved_games(lastMoveTimeMs DESC)');
+        
+        await db.execute('''
+          CREATE TABLE puzzle_history (
+            id TEXT PRIMARY KEY,
+            puzzle_id TEXT NOT NULL,
+            is_solved INTEGER DEFAULT 0,
+            time_spent_ms INTEGER,
+            moves_used INTEGER,
+            timestamp INTEGER
+          )
+        ''');
+        debugPrint('Added saved_games and puzzle_history tables');
+        break;
+      case 5:
+        // Add hintsUsed to saved_games
+        try {
+          await db.execute('ALTER TABLE saved_games ADD COLUMN hintsUsed INTEGER DEFAULT 0');
+          debugPrint('Added hintsUsed column to saved_games table');
+        } catch (e) {
+          debugPrint('Error adding hintsUsed column: $e');
+        }
+        break;
+      case 6:
+        // Add startingFen to saved_games
+        try {
+          await db.execute('ALTER TABLE saved_games ADD COLUMN startingFen TEXT');
+          debugPrint('Added startingFen column to saved_games table');
+        } catch (e) {
+          debugPrint('Error adding startingFen column: $e');
+        }
+        break;
+      case 7:
+        // Add missing columns to statistics table
+        try {
+          await db.execute('ALTER TABLE statistics ADD COLUMN total_moves INTEGER DEFAULT 0');
+          await db.execute('ALTER TABLE statistics ADD COLUMN total_game_time_seconds INTEGER DEFAULT 0');
+          await db.execute('ALTER TABLE statistics ADD COLUMN hints_used INTEGER DEFAULT 0');
+          debugPrint('Added missing columns to statistics table');
+        } catch (e) {
+          debugPrint('Error adding columns to statistics: $e');
+        }
+        break;
+      case 8:
+        // Add new columns to saved_games
+        try {
+          await db.execute('ALTER TABLE saved_games ADD COLUMN isFlipped INTEGER DEFAULT 0');
+          await db.execute('ALTER TABLE saved_games ADD COLUMN isRecorded INTEGER DEFAULT 0');
+          await db.execute('ALTER TABLE saved_games ADD COLUMN whiteAccuracy REAL');
+          await db.execute('ALTER TABLE saved_games ADD COLUMN blackAccuracy REAL');
+          debugPrint('Added new columns to saved_games table');
+        } catch (e) {
+          debugPrint('Error adding columns to saved_games: $e');
         }
         break;
     }
@@ -388,10 +525,21 @@ class DatabaseService {
   /// Update statistics
   Future<void> updateStatistics(Map<String, dynamic> updates) async {
     final db = await database;
-    await db.update('statistics', {
-      ...updates,
-      'last_updated': DateTime.now().millisecondsSinceEpoch,
-    }, where: 'id = 1');
+    
+    // Check if statistics row exists
+    final results = await db.query('statistics', where: 'id = 1');
+    if (results.isEmpty) {
+      await db.insert('statistics', {
+        ...updates,
+        'id': 1,
+        'last_updated': DateTime.now().millisecondsSinceEpoch,
+      });
+    } else {
+      await db.update('statistics', {
+        ...updates,
+        'last_updated': DateTime.now().millisecondsSinceEpoch,
+      }, where: 'id = 1');
+    }
   }
 
   // ==================== PUZZLE PROGRESS ====================

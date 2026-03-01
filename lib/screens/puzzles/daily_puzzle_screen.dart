@@ -5,6 +5,8 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/puzzle_model.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
+import 'package:chess_master/screens/puzzles/widgets/puzzle_board_widget.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Daily puzzle screen - special UI for daily challenge
@@ -19,9 +21,27 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
   @override
   void initState() {
     super.initState();
+    // Lock orientation to portrait
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeDailyPuzzle();
     });
+  }
+
+  @override
+  void dispose() {
+    // Reset orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
   }
 
   Future<void> _initializeDailyPuzzle() async {
@@ -117,11 +137,17 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Status messages
-        if (state.errorMessage != null) _buildErrorMessage(state.errorMessage!),
-        if (state.state == PuzzleState.correct) _buildSuccessMessage(),
-
-        const SizedBox(height: 8),
+        // Status messages taking a fixed height to prevent board shaking
+        SizedBox(
+          height: 70,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (state.errorMessage != null) _buildErrorMessage(state.errorMessage!),
+              if (state.state == PuzzleState.correct) _buildSuccessMessage(),
+            ],
+          ),
+        ),
 
         // Chess board
         Expanded(
@@ -130,7 +156,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 0),
               child: AspectRatio(
                 aspectRatio: 1.0,
-                child: _DailyPuzzleBoard(state: state, ref: ref),
+                child: PuzzleBoardWidget(state: state, ref: ref),
               ),
             ),
           ),
@@ -435,151 +461,6 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
   }
 }
 
-/// Daily puzzle board widget
-class _DailyPuzzleBoard extends StatelessWidget {
-  final PuzzleGameState state;
-  final WidgetRef ref;
-
-  const _DailyPuzzleBoard({required this.state, required this.ref});
-
-  @override
-  Widget build(BuildContext context) {
-    // Board should NOT flip - keep player's perspective consistent
-    final puzzle = state.currentPuzzle;
-    if (puzzle == null) return const SizedBox();
-
-    // Determine orientation from initial FEN
-    // If puzzle starts with black to move, flip board
-    final isFlipped = puzzle.fen.contains(' w ');
-
-    // Build hint move in UCI format for arrow display
-    String? hintMove;
-    if (state.showingHint &&
-        state.hintFromSquare != null &&
-        state.hintToSquare != null) {
-      hintMove = '${state.hintFromSquare}${state.hintToSquare}';
-    }
-
-    return ChessBoard(
-      fen: state.fen,
-      isFlipped: isFlipped,
-      selectedSquare: state.selectedSquare,
-      legalMoves: state.legalMoves,
-      lastMoveFrom: state.lastMoveFrom,
-      lastMoveTo: state.lastMoveTo,
-      bestMove: hintMove, // Show hint as arrow
-      showHint: state.showingHint,
-      hintSquare: state.hintFromSquare,
-      onSquareTap:
-          state.isPlayerTurn
-              ? (square) {
-                ref.read(puzzleProvider.notifier).selectSquare(square);
-              }
-              : null,
-      onMove:
-          state.isPlayerTurn
-              ? (from, to) async {
-                final notifier = ref.read(puzzleProvider.notifier);
-
-                if (notifier.needsPromotion(from, to)) {
-                  final promotion = await _showPromotionDialog(
-                    context,
-                    state.isWhiteTurn,
-                  );
-                  if (promotion != null) {
-                    notifier.tryMove(from, to, promotion: promotion);
-                  }
-                } else {
-                  notifier.tryMove(from, to);
-                }
-              }
-              : null,
-      showCoordinates: true,
-    );
-  }
-
-  Future<String?> _showPromotionDialog(
-    BuildContext context,
-    bool isWhite,
-  ) async {
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              'Promote Pawn',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-            ),
-            content: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
-                _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
-                _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
-                _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
-              ],
-            ),
-          ),
-    );
-  }
-}
-
-class _PromotionButton extends StatelessWidget {
-  final String piece;
-  final bool isWhite;
-  final String label;
-
-  const _PromotionButton({
-    required this.piece,
-    required this.isWhite,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => Navigator.pop(context, piece),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.cardDark,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.borderColor),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_getPieceSymbol(), style: const TextStyle(fontSize: 32)),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: AppTheme.textSecondary,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getPieceSymbol() {
-    final symbols = {
-      'q': isWhite ? '♕' : '♛',
-      'r': isWhite ? '♖' : '♜',
-      'b': isWhite ? '♗' : '♝',
-      'n': isWhite ? '♘' : '♞',
-    };
-    return symbols[piece] ?? '?';
-  }
-}
 
 /// Auto-play solution screen
 class _AutoPlaySolutionScreen extends StatefulWidget {

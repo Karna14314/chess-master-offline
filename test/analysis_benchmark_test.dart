@@ -42,6 +42,7 @@ class MockStockfishService implements StockfishService {
     required String fen,
     int depth = 15,
     int multiPv = 1,
+    void Function(AnalysisResult)? onUpdate,
   }) async {
     return AnalysisResult(
       evaluation: 50,

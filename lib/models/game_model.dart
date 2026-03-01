@@ -13,6 +13,7 @@ class ChessMove {
   final bool isCheckmate;
   final bool isCastle;
   final String fen; // Position after the move
+  final double? evaluation; // Content of evaluation (centipawns or mate)
 
   const ChessMove({
     required this.from,
@@ -25,6 +26,7 @@ class ChessMove {
     required this.isCheckmate,
     required this.isCastle,
     required this.fen,
+    this.evaluation,
   });
 
   /// Create from chess package move
@@ -42,6 +44,7 @@ class ChessMove {
           move.flags & chess.Chess.BITS_KSIDE_CASTLE != 0 ||
           move.flags & chess.Chess.BITS_QSIDE_CASTLE != 0,
       fen: game.fen,
+      evaluation: null, // To be set later by engine
     );
   }
 
@@ -56,6 +59,7 @@ class ChessMove {
     'isCheckmate': isCheckmate,
     'isCastle': isCastle,
     'fen': fen,
+    'evaluation': evaluation,
   };
 
   factory ChessMove.fromJson(Map<String, dynamic> json) => ChessMove(
@@ -69,6 +73,7 @@ class ChessMove {
     isCheckmate: json['isCheckmate'],
     isCastle: json['isCastle'],
     fen: json['fen'],
+    evaluation: json['evaluation'] != null ? (json['evaluation'] as num).toDouble() : null,
   );
 }
 

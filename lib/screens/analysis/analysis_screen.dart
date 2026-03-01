@@ -9,6 +9,7 @@ import 'package:chess_master/screens/analysis/widgets/eval_graph.dart';
 import 'package:chess_master/screens/analysis/widgets/engine_lines.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/models/analysis_model.dart';
+import 'package:flutter/services.dart';
 
 /// Post-game analysis screen
 class AnalysisScreen extends ConsumerStatefulWidget {
@@ -28,9 +29,25 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeAnalysis();
     });
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
   }
 
   Future<void> _initializeAnalysis() async {

@@ -152,6 +152,7 @@ class TimeControl {
   }
 
   Duration get initialDuration => Duration(minutes: minutes);
+  Duration get totalTime => initialDuration;
   Duration get incrementDuration => Duration(seconds: increment);
 }
 
@@ -178,6 +179,7 @@ enum GameMode {
   bot, // Play against AI
   localMultiplayer, // 2 players on same device
   analysis, // Analysis mode
+  puzzle, // Puzzle solving mode
 }
 
 /// Bot type for AI opponents
