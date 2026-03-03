@@ -559,9 +559,10 @@ class SimpleBotService {
 
     // Material and position evaluation
     for (int rank = 0; rank < 8; rank++) {
+      final baseIndex = rank * 16;
       for (int file = 0; file < 8; file++) {
-        final square = _indexToSquare(rank * 8 + file);
-        final piece = board.get(square);
+        final index = baseIndex + file;
+        final piece = board.board[index];
 
         if (piece != null) {
           final isWhite = piece.color == chess.Color.WHITE;
@@ -644,11 +645,12 @@ class SimpleBotService {
     // Find king position
     String? kingSquare;
     for (int rank = 0; rank < 8; rank++) {
+      final baseIndex = rank * 16;
       for (int file = 0; file < 8; file++) {
-        final square = _indexToSquare(rank * 8 + file);
-        final piece = board.get(square);
+        final index = baseIndex + file;
+        final piece = board.board[index];
         if (piece?.type == chess.PieceType.KING && piece?.color == color) {
-          kingSquare = square;
+          kingSquare = _indexToSquare(rank * 8 + file);
           break;
         }
       }
@@ -665,12 +667,12 @@ class SimpleBotService {
     // Check pawns in front of king
     final shieldRank = isWhite ? kingRank + 1 : kingRank - 1;
     if (shieldRank >= 1 && shieldRank <= 8) {
+      final rankIndex = 8 - shieldRank;
+      final baseIndex = rankIndex * 16;
       for (int fileOffset = -1; fileOffset <= 1; fileOffset++) {
         final checkFile = kingFile + fileOffset;
         if (checkFile >= 0 && checkFile < 8) {
-          final shieldSquare =
-              '${String.fromCharCode('a'.codeUnitAt(0) + checkFile)}$shieldRank';
-          final piece = board.get(shieldSquare);
+          final piece = board.board[baseIndex + checkFile];
           if (piece?.type == chess.PieceType.PAWN && piece?.color == color) {
             safety += 10;
           }
