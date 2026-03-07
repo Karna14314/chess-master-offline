@@ -169,7 +169,8 @@ MoveClassification classifyMove({
     return MoveClassification.inaccuracy;
   } else if (evalLoss <= -0.5) {
     // Move was better than expected (opponent blundered or brilliant find)
-    return MoveClassification.excellent; // Consider this brilliant if context allows
+    return MoveClassification
+        .excellent; // Consider this brilliant if context allows
   } else if (evalLoss < 0.05) {
     // Very small loss or no loss
     return MoveClassification.best; // Effectively best if loss is negligible

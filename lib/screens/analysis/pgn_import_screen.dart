@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
@@ -129,7 +130,7 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
 
             // Analyze button
             ElevatedButton(
-              onPressed: _analyzePgn,
+              onPressed: _isParsing ? null : _analyzePgn,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -137,14 +138,26 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Text(
-                'Analyze Game',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              child:
+                  _isParsing
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                      : Text(
+                        'Analyze Game',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
             ),
           ],
         ),
@@ -152,7 +165,9 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
     );
   }
 
-  void _analyzePgn() {
+  bool _isParsing = false;
+
+  Future<void> _analyzePgn() async {
     final pgn = _pgnController.text.trim();
 
     if (pgn.isEmpty) {
@@ -162,8 +177,20 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
       return;
     }
 
-    // Parse PGN to extract moves
-    final moves = _parsePgnToMoves(pgn);
+    setState(() {
+      _isParsing = true;
+      _errorMessage = null;
+    });
+
+    // Parse PGN to extract moves in an isolate
+    final moves = await compute(_parsePgnToMoves, pgn);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isParsing = false;
+    });
+
     if (moves == null || moves.isEmpty) {
       setState(() {
         _errorMessage = 'Invalid or empty PGN format.';
@@ -171,17 +198,13 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
       return;
     }
 
-    setState(() {
-      _errorMessage = null;
-    });
-
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => AnalysisScreen(moves: moves)),
     );
   }
 
-  List<ChessMove>? _parsePgnToMoves(String pgn) {
+  static List<ChessMove>? _parsePgnToMoves(String pgn) {
     try {
       final tempBoard = chess.Chess();
       if (!tempBoard.load_pgn(pgn)) return null;

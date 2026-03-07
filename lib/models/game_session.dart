@@ -90,7 +90,10 @@ class GameSession {
 
     PlayerColor actualColor = playerColor;
     if (actualColor == PlayerColor.random) {
-      actualColor = now.millisecondsSinceEpoch % 2 == 0 ? PlayerColor.white : PlayerColor.black;
+      actualColor =
+          now.millisecondsSinceEpoch % 2 == 0
+              ? PlayerColor.white
+              : PlayerColor.black;
     }
 
     // Determine player names based on game mode

@@ -17,11 +17,10 @@ List<Puzzle> _parsePuzzles(String jsonString) {
 }
 
 /// Provider for puzzle state
-final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleGameState>((
-  ref,
-) {
-  return PuzzleNotifier(ref);
-});
+final puzzleProvider =
+    StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleGameState>((ref) {
+      return PuzzleNotifier(ref);
+    });
 
 /// Provider for puzzle statistics
 final puzzleStatsProvider = Provider<PuzzleStats>((ref) {
@@ -850,12 +849,12 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     if (_allPuzzles.isEmpty) {
       await _loadPuzzles();
     }
-    
+
     final puzzle = _allPuzzles.cast<Puzzle?>().firstWhere(
       (p) => p?.id == id,
       orElse: () => null,
     );
-    
+
     if (puzzle != null) {
       await _loadPuzzle(puzzle);
     }

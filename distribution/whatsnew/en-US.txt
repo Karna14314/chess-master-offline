@@ -1,2 +1,3 @@
+Use background Isolate for PGN parsing to prevent UI freezing during Analysis import
 Fixed potential crash when leaving Puzzle screen during loading.
 Improved analysis and hint quality by utilizing full engine strength.Optimize evaluation loops in SimpleBotService

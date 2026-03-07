@@ -184,10 +184,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                   ),
                   const Divider(color: AppTheme.borderColor),
-                  _InfoRow(
-                    title: 'App Version',
-                    value: _version,
-                  ),
+                  _InfoRow(title: 'App Version', value: _version),
                   const Divider(color: AppTheme.borderColor),
                   _InfoRow(title: 'Engine', value: 'Stockfish 16'),
                   const Divider(color: AppTheme.borderColor),
@@ -415,7 +412,7 @@ class _PieceSetSelector extends StatelessWidget {
                           isSelected
                               ? AppTheme.primaryColor
                               : Colors.transparent,
-                              width: 2,
+                      width: 2,
                     ),
                   ),
                   padding: const EdgeInsets.all(8),

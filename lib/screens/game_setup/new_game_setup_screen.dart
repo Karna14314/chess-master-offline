@@ -9,11 +9,8 @@ import 'package:chess_master/screens/analysis/analysis_screen.dart';
 
 class NewGameSetupScreen extends ConsumerStatefulWidget {
   final GameMode initialMode;
-  
-  const NewGameSetupScreen({
-    super.key,
-    this.initialMode = GameMode.bot,
-  });
+
+  const NewGameSetupScreen({super.key, this.initialMode = GameMode.bot});
 
   @override
   ConsumerState<NewGameSetupScreen> createState() => _NewGameSetupScreenState();
@@ -54,14 +51,17 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 16.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildSectionHeader('Game Mode'),
                   const SizedBox(height: 12),
                   _buildModeSelectionGrid(),
-                  
+
                   if (_selectedMode == GameMode.bot) ...[
                     const SizedBox(height: 32),
                     _buildSectionHeader('Opponent'),
@@ -71,18 +71,19 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                     _buildDifficultySlider(),
                   ],
 
-                  if (_selectedMode == GameMode.bot || _selectedMode == GameMode.localMultiplayer) ...[
+                  if (_selectedMode == GameMode.bot ||
+                      _selectedMode == GameMode.localMultiplayer) ...[
                     const SizedBox(height: 32),
                     _buildSectionHeader('Play As'),
                     const SizedBox(height: 12),
                     _buildColorSelection(),
-                    
+
                     const SizedBox(height: 32),
                     _buildSectionHeader('Time Control'),
                     const SizedBox(height: 12),
                     _buildTimerSelection(),
                   ],
-                  
+
                   const SizedBox(height: 100), // Space for button
                 ],
               ),
@@ -163,7 +164,8 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
           title: 'Local 2P',
           icon: Icons.people_outline,
           isSelected: _selectedMode == GameMode.localMultiplayer,
-          onTap: () => setState(() => _selectedMode = GameMode.localMultiplayer),
+          onTap:
+              () => setState(() => _selectedMode = GameMode.localMultiplayer),
         ),
         _ModeCard(
           title: 'Puzzle',
@@ -206,7 +208,8 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   }
 
   Widget _buildDifficultySlider() {
-    final diffInfo = AppConstants.difficultyLevels[_difficultyLevel.toInt() - 1];
+    final diffInfo =
+        AppConstants.difficultyLevels[_difficultyLevel.toInt() - 1];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -293,7 +296,10 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryColor.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+              color:
+                  isSelected
+                      ? AppTheme.primaryColor.withOpacity(0.2)
+                      : Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected ? AppTheme.primaryColor : Colors.white12,
@@ -319,24 +325,30 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
       // Usually puzzle mode initializes via PuzzleNotifier, but we can refactor later.
       // For now, if user clicks Puzzle, maybe we route to a PuzzleScreen.
       // E.g. Navigator.push(context, MaterialPageRoute(builder: (_) => PuzzleScreen()));
-      return; 
+      return;
     }
     if (_selectedMode == GameMode.analysis) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AnalysisScreen()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AnalysisScreen()),
+      );
       return;
     }
 
-    final diffLevel = AppConstants.difficultyLevels[_difficultyLevel.toInt() - 1];
+    final diffLevel =
+        AppConstants.difficultyLevels[_difficultyLevel.toInt() - 1];
     final timerControl = AppConstants.timeControls[_selectedTimerIndex];
 
-    ref.read(gameSessionProvider.notifier).startNewGame(
-      gameMode: _selectedMode,
-      playerColor: _selectedColor,
-      botType: _selectedBotType,
-      difficulty: diffLevel,
-      timeControl: timerControl,
-    );
-    
+    ref
+        .read(gameSessionProvider.notifier)
+        .startNewGame(
+          gameMode: _selectedMode,
+          playerColor: _selectedColor,
+          botType: _selectedBotType,
+          difficulty: diffLevel,
+          timeControl: timerControl,
+        );
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const GameScreen()),
@@ -364,15 +376,24 @@ class _ModeCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor.withOpacity(0.15) : AppTheme.surfaceDark,
+          color:
+              isSelected
+                  ? AppTheme.primaryColor.withOpacity(0.15)
+                  : AppTheme.surfaceDark,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppTheme.primaryColor : Colors.white10,
             width: 2,
           ),
-          boxShadow: isSelected
-              ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.2), blurRadius: 12)]
-              : [],
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.2),
+                      blurRadius: 12,
+                    ),
+                  ]
+                  : [],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -419,7 +440,10 @@ class _EngineCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor.withOpacity(0.15) : AppTheme.surfaceDark,
+          color:
+              isSelected
+                  ? AppTheme.primaryColor.withOpacity(0.15)
+                  : AppTheme.surfaceDark,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppTheme.primaryColor : Colors.white10,
@@ -439,10 +463,7 @@ class _EngineCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               desc,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: Colors.white54,
-              ),
+              style: GoogleFonts.inter(fontSize: 11, color: Colors.white54),
               textAlign: TextAlign.center,
             ),
           ],
@@ -495,9 +516,15 @@ class _ColorCircle extends StatelessWidget {
             color: isSelected ? AppTheme.primaryColor : Colors.white12,
             width: isSelected ? 3 : 1,
           ),
-          boxShadow: isSelected
-              ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.4), blurRadius: 12)]
-              : [],
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      blurRadius: 12,
+                    ),
+                  ]
+                  : [],
         ),
         child: Center(
           child: Container(

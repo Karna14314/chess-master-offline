@@ -13,9 +13,7 @@ import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/models/game_session.dart';
 import 'package:chess_master/data/repositories/game_session_repository.dart';
 
-final gameHistoryProvider = FutureProvider<List<GameSession>>((
-  ref,
-) async {
+final gameHistoryProvider = FutureProvider<List<GameSession>>((ref) async {
   final repo = ref.read(gameSessionRepositoryProvider);
   return await repo.getRealGamesHistory();
 });
@@ -195,7 +193,8 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     return games.where((game) {
       // Filter by mode
       if (_filterGameMode != 'all') {
-        final effectiveMode = game.gameMode == GameMode.localMultiplayer ? 'local' : 'bot';
+        final effectiveMode =
+            game.gameMode == GameMode.localMultiplayer ? 'local' : 'bot';
         if (effectiveMode != _filterGameMode) return false;
       }
 
@@ -206,12 +205,18 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
         if (_filterResult == 'draw') {
           if (game.result != GameResult.draw) return false;
         } else if (_filterResult == 'win') {
-          final won = (game.playerColor == PlayerColor.white && game.result == GameResult.whiteWins) ||
-                      (game.playerColor == PlayerColor.black && game.result == GameResult.blackWins);
+          final won =
+              (game.playerColor == PlayerColor.white &&
+                  game.result == GameResult.whiteWins) ||
+              (game.playerColor == PlayerColor.black &&
+                  game.result == GameResult.blackWins);
           if (!won) return false;
         } else if (_filterResult == 'loss') {
-          final lost = (game.playerColor == PlayerColor.white && game.result == GameResult.blackWins) ||
-                       (game.playerColor == PlayerColor.black && game.result == GameResult.whiteWins);
+          final lost =
+              (game.playerColor == PlayerColor.white &&
+                  game.result == GameResult.blackWins) ||
+              (game.playerColor == PlayerColor.black &&
+                  game.result == GameResult.whiteWins);
           if (!lost) return false;
         }
       }
@@ -249,10 +254,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     );
   }
 
-  Widget _buildGameList(
-    BuildContext context,
-    List<GameSession> games,
-  ) {
+  Widget _buildGameList(BuildContext context, List<GameSession> games) {
     // Group games by date
     final groupedGames = <String, List<GameSession>>{};
     final dateFormat = DateFormat('MMM d, yyyy');
@@ -355,10 +357,9 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AnalysisScreen(
-              moves: moves,
-              startingFen: game.startingFen,
-            ),
+            builder:
+                (context) =>
+                    AnalysisScreen(moves: moves, startingFen: game.startingFen),
           ),
         );
       }
@@ -532,12 +533,15 @@ class _GameCard extends StatelessWidget {
     final isCompleted = game.isCompleted;
     final isSaved = true; // game sessions are implicitly saved
     final customName = null; // Removed custom name for now
-    
+
     final dateTime = game.lastMoveTime;
     final timeFormat = DateFormat('HH:mm');
 
     // Determine opponent display
-    final opponentText = game.gameMode == GameMode.localMultiplayer ? 'Friend' : 'Bot (${game.difficulty?.elo ?? 1200})';
+    final opponentText =
+        game.gameMode == GameMode.localMultiplayer
+            ? 'Friend'
+            : 'Bot (${game.difficulty?.elo ?? 1200})';
     final displayName = customName ?? 'Game vs $opponentText';
 
     // Determine result display

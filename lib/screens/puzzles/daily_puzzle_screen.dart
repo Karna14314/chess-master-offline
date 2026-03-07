@@ -143,7 +143,8 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (state.errorMessage != null) _buildErrorMessage(state.errorMessage!),
+              if (state.errorMessage != null)
+                _buildErrorMessage(state.errorMessage!),
               if (state.state == PuzzleState.correct) _buildSuccessMessage(),
             ],
           ),
@@ -460,7 +461,6 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
     );
   }
 }
-
 
 /// Auto-play solution screen
 class _AutoPlaySolutionScreen extends StatefulWidget {

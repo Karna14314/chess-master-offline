@@ -109,7 +109,9 @@ class DatabaseService {
         blackAccuracy REAL
       )
     ''');
-    await db.execute('CREATE INDEX idx_saved_games_last_move ON saved_games(lastMoveTimeMs DESC)');
+    await db.execute(
+      'CREATE INDEX idx_saved_games_last_move ON saved_games(lastMoveTimeMs DESC)',
+    );
 
     // Puzzle History table
     await db.execute('''
@@ -245,8 +247,10 @@ class DatabaseService {
             blackAccuracy REAL
           )
         ''');
-        await db.execute('CREATE INDEX idx_saved_games_last_move ON saved_games(lastMoveTimeMs DESC)');
-        
+        await db.execute(
+          'CREATE INDEX idx_saved_games_last_move ON saved_games(lastMoveTimeMs DESC)',
+        );
+
         await db.execute('''
           CREATE TABLE puzzle_history (
             id TEXT PRIMARY KEY,
@@ -262,7 +266,9 @@ class DatabaseService {
       case 5:
         // Add hintsUsed to saved_games
         try {
-          await db.execute('ALTER TABLE saved_games ADD COLUMN hintsUsed INTEGER DEFAULT 0');
+          await db.execute(
+            'ALTER TABLE saved_games ADD COLUMN hintsUsed INTEGER DEFAULT 0',
+          );
           debugPrint('Added hintsUsed column to saved_games table');
         } catch (e) {
           debugPrint('Error adding hintsUsed column: $e');
@@ -271,7 +277,9 @@ class DatabaseService {
       case 6:
         // Add startingFen to saved_games
         try {
-          await db.execute('ALTER TABLE saved_games ADD COLUMN startingFen TEXT');
+          await db.execute(
+            'ALTER TABLE saved_games ADD COLUMN startingFen TEXT',
+          );
           debugPrint('Added startingFen column to saved_games table');
         } catch (e) {
           debugPrint('Error adding startingFen column: $e');
@@ -280,9 +288,15 @@ class DatabaseService {
       case 7:
         // Add missing columns to statistics table
         try {
-          await db.execute('ALTER TABLE statistics ADD COLUMN total_moves INTEGER DEFAULT 0');
-          await db.execute('ALTER TABLE statistics ADD COLUMN total_game_time_seconds INTEGER DEFAULT 0');
-          await db.execute('ALTER TABLE statistics ADD COLUMN hints_used INTEGER DEFAULT 0');
+          await db.execute(
+            'ALTER TABLE statistics ADD COLUMN total_moves INTEGER DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE statistics ADD COLUMN total_game_time_seconds INTEGER DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE statistics ADD COLUMN hints_used INTEGER DEFAULT 0',
+          );
           debugPrint('Added missing columns to statistics table');
         } catch (e) {
           debugPrint('Error adding columns to statistics: $e');
@@ -291,10 +305,18 @@ class DatabaseService {
       case 8:
         // Add new columns to saved_games
         try {
-          await db.execute('ALTER TABLE saved_games ADD COLUMN isFlipped INTEGER DEFAULT 0');
-          await db.execute('ALTER TABLE saved_games ADD COLUMN isRecorded INTEGER DEFAULT 0');
-          await db.execute('ALTER TABLE saved_games ADD COLUMN whiteAccuracy REAL');
-          await db.execute('ALTER TABLE saved_games ADD COLUMN blackAccuracy REAL');
+          await db.execute(
+            'ALTER TABLE saved_games ADD COLUMN isFlipped INTEGER DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE saved_games ADD COLUMN isRecorded INTEGER DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE saved_games ADD COLUMN whiteAccuracy REAL',
+          );
+          await db.execute(
+            'ALTER TABLE saved_games ADD COLUMN blackAccuracy REAL',
+          );
           debugPrint('Added new columns to saved_games table');
         } catch (e) {
           debugPrint('Error adding columns to saved_games: $e');
@@ -525,7 +547,7 @@ class DatabaseService {
   /// Update statistics
   Future<void> updateStatistics(Map<String, dynamic> updates) async {
     final db = await database;
-    
+
     // Check if statistics row exists
     final results = await db.query('statistics', where: 'id = 1');
     if (results.isEmpty) {

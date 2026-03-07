@@ -287,7 +287,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             state = state.copyWith(
               currentEval: partialResult.evalInPawns,
               currentEngineLines: partialResult.lines,
-              bestMove: partialResult.lines.isNotEmpty ? partialResult.lines.first.moves.first : null,
+              bestMove:
+                  partialResult.lines.isNotEmpty
+                      ? partialResult.lines.first.moves.first
+                      : null,
             );
           }
         },
@@ -405,8 +408,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           depth: 15,
           multiPv: 3,
           onUpdate: (partialResult) {
-             // We can optionally update progress/live eval here too, but for full game analysis, it's better to keep it fast and not rebuild UI on every partial update.
-          }
+            // We can optionally update progress/live eval here too, but for full game analysis, it's better to keep it fast and not rebuild UI on every partial update.
+          },
         );
 
         afterEval = result.evalInPawns;

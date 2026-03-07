@@ -323,13 +323,13 @@ class EngineNotifier extends StateNotifier<EngineState> {
   Future<List<int?>> analyzeGame(List<String> fens, {int depth = 12}) async {
     List<int?> evaluations = [];
     _service.setMaxStrength();
-    
+
     for (final fen in fens) {
       if (!_service.isReady) break;
       final result = await _service.getBestMove(fen: fen, depth: depth);
       evaluations.add(result.evaluation);
     }
-    
+
     return evaluations;
   }
 
