@@ -144,21 +144,21 @@ class PuzzleHistoryScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatItem(
-                'Rating', 
-                stats.currentRating.toString(), 
-                Icons.star, 
+                'Rating',
+                stats.currentRating.toString(),
+                Icons.star,
                 Colors.amber,
               ),
               _buildStatItem(
-                'Solved', 
-                stats.puzzlesSolved.toString(), 
-                Icons.check_circle, 
+                'Solved',
+                stats.puzzlesSolved.toString(),
+                Icons.check_circle,
                 Colors.green,
               ),
               _buildStatItem(
-                'Success', 
-                '${stats.successRate.toStringAsFixed(1)}%', 
-                Icons.pie_chart, 
+                'Success',
+                '${stats.successRate.toStringAsFixed(1)}%',
+                Icons.pie_chart,
                 AppTheme.primaryColor,
               ),
             ],
@@ -168,7 +168,12 @@ class PuzzleHistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
@@ -184,10 +189,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: AppTheme.textHint,
-          ),
+          style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textHint),
         ),
       ],
     );
@@ -216,7 +218,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
       onTap: () async {
         final notifier = ref.read(puzzleProvider.notifier);
         await notifier.loadPuzzleById(puzzleId);
-        
+
         if (context.mounted) {
           Navigator.push(
             context,

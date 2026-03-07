@@ -62,7 +62,7 @@ class GameSessionRepository {
 
     return results.map((map) => GameSession.fromMap(map)).toList();
   }
-  
+
   /// Get real games history (finished and unfinished)
   Future<List<GameSession>> getRealGamesHistory({int? limit}) async {
     final db = await _db;
@@ -79,13 +79,9 @@ class GameSessionRepository {
   /// Delete a game session
   Future<void> deleteSession(String id) async {
     final db = await _db;
-    await db.delete(
-      'saved_games',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('saved_games', where: 'id = ?', whereArgs: [id]);
   }
-  
+
   /// Clear all sessions
   Future<void> clearAll() async {
     final db = await _db;

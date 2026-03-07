@@ -73,7 +73,10 @@ class ChessMove {
     isCheckmate: json['isCheckmate'],
     isCastle: json['isCastle'],
     fen: json['fen'],
-    evaluation: json['evaluation'] != null ? (json['evaluation'] as num).toDouble() : null,
+    evaluation:
+        json['evaluation'] != null
+            ? (json['evaluation'] as num).toDouble()
+            : null,
   );
 }
 

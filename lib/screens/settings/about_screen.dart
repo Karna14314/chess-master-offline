@@ -99,8 +99,9 @@ class _AboutScreenState extends State<AboutScreen> {
             const SizedBox(height: 8),
             InkWell(
               onTap:
-                  () =>
-                      _launchUrl('https://github.com/Karna14314/chess-master-offline'),
+                  () => _launchUrl(
+                    'https://github.com/Karna14314/chess-master-offline',
+                  ),
               child: Text(
                 'https://github.com/Karna14314/chess-master-offline',
                 style: GoogleFonts.inter(

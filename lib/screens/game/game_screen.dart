@@ -161,7 +161,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       context,
                       isOpponent: true,
                       name:
-                          gameState.gameMode == GameMode.bot ? "Bot (${gameState.difficulty.elo})" : "Friend",
+                          gameState.gameMode == GameMode.bot
+                              ? "Bot (${gameState.difficulty.elo})"
+                              : "Friend",
                       isActive:
                           !gameState.isPlayerTurn && !gameState.isCompleted,
                       isWhite: gameState.playerColor == PlayerColor.black,
@@ -202,9 +204,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             padding: const EdgeInsets.all(16.0),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final size = constraints.maxHeight < constraints.maxWidth
-                    ? constraints.maxHeight
-                    : constraints.maxWidth;
+                final size =
+                    constraints.maxHeight < constraints.maxWidth
+                        ? constraints.maxHeight
+                        : constraints.maxWidth;
                 return Center(child: _buildBoard(size, gameState));
               },
             ),
@@ -248,7 +251,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       const SizedBox(height: 4),
                       ChessTimerWidget(
                         isWhite: gameState.playerColor == PlayerColor.black,
-                        isActive: !gameState.isPlayerTurn && !gameState.isCompleted,
+                        isActive:
+                            !gameState.isPlayerTurn && !gameState.isCompleted,
                         compact: true,
                       ),
                     ],
@@ -259,16 +263,31 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.undo, color: Colors.white70, size: 20),
-                        onPressed: () => ref.read(gameSessionProvider.notifier).undoMove(),
+                        icon: const Icon(
+                          Icons.undo,
+                          color: Colors.white70,
+                          size: 20,
+                        ),
+                        onPressed:
+                            () =>
+                                ref
+                                    .read(gameSessionProvider.notifier)
+                                    .undoMove(),
                         tooltip: 'Undo',
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(8),
                       ),
                       const SizedBox(height: 8),
                       IconButton(
-                        icon: const Icon(Icons.lightbulb_outline, color: Colors.white70, size: 20),
-                        onPressed: () => ref.read(gameSessionProvider.notifier).useHint(ref),
+                        icon: const Icon(
+                          Icons.lightbulb_outline,
+                          color: Colors.white70,
+                          size: 20,
+                        ),
+                        onPressed:
+                            () => ref
+                                .read(gameSessionProvider.notifier)
+                                .useHint(ref),
                         tooltip: 'Hint',
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(8),
@@ -282,7 +301,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     children: [
                       ChessTimerWidget(
                         isWhite: gameState.playerColor == PlayerColor.white,
-                        isActive: gameState.isPlayerTurn && !gameState.isCompleted,
+                        isActive:
+                            gameState.isPlayerTurn && !gameState.isCompleted,
                         compact: true,
                       ),
                       const SizedBox(height: 4),
@@ -408,7 +428,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   IconButton(
                     icon: const Icon(Icons.flip, color: AppTheme.textSecondary),
                     onPressed:
-                        () => ref.read(gameSessionProvider.notifier).toggleFlip(),
+                        () =>
+                            ref.read(gameSessionProvider.notifier).toggleFlip(),
                     tooltip: 'Flip Board',
                   ),
                   IconButton(
@@ -432,7 +453,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       _isLandscapeLocked
                           ? Icons.screen_lock_landscape
                           : Icons.screen_rotation,
-                      color: _isLandscapeLocked ? AppTheme.primaryColor : AppTheme.textSecondary,
+                      color:
+                          _isLandscapeLocked
+                              ? AppTheme.primaryColor
+                              : AppTheme.textSecondary,
                     ),
                     onPressed: _toggleOrientationLock,
                     tooltip: 'Toggle Landscape Lock',

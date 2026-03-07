@@ -280,10 +280,11 @@ class SavedGamesListScreen extends ConsumerWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AnalysisScreen(
-          moves: session.moveHistory,
-          startingFen: session.startingFen,
-        ),
+        builder:
+            (context) => AnalysisScreen(
+              moves: session.moveHistory,
+              startingFen: session.startingFen,
+            ),
       ),
     );
   }
@@ -363,7 +364,12 @@ class _SavedGameCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateStr = game.startedAt.toString().split(' ')[0];
     final result = game.result?.displayName ?? 'Ongoing';
-    final opponent = game.gameMode == GameMode.bot ? game.whitePlayerName.contains('Bot') ? game.whitePlayerName : game.blackPlayerName : 'Friend';
+    final opponent =
+        game.gameMode == GameMode.bot
+            ? game.whitePlayerName.contains('Bot')
+                ? game.whitePlayerName
+                : game.blackPlayerName
+            : 'Friend';
 
     return GestureDetector(
       onTap: onTap,

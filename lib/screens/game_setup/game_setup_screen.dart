@@ -7,11 +7,8 @@ import 'dart:ui';
 
 class GameSetupScreen extends ConsumerStatefulWidget {
   final GameMode initialMode;
-  
-  const GameSetupScreen({
-    super.key, 
-    this.initialMode = GameMode.bot,
-  });
+
+  const GameSetupScreen({super.key, this.initialMode = GameMode.bot});
 
   @override
   ConsumerState<GameSetupScreen> createState() => _GameSetupScreenState();
@@ -39,15 +36,17 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
       final timeControl = AppConstants.timeControls[_selectedTimeControlIndex];
 
       bool isPuzzle = _selectedMode == GameMode.puzzle;
-      
-      await ref.read(gameSessionProvider.notifier).startNewGame(
-        gameMode: _selectedMode,
-        botType: _selectedBot,
-        difficulty: difficulty,
-        timeControl: timeControl,
-        playerColor: _selectedColor,
-        isPuzzle: isPuzzle,
-      );
+
+      await ref
+          .read(gameSessionProvider.notifier)
+          .startNewGame(
+            gameMode: _selectedMode,
+            botType: _selectedBot,
+            difficulty: difficulty,
+            timeControl: timeControl,
+            playerColor: _selectedColor,
+            isPuzzle: isPuzzle,
+          );
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -57,7 +56,10 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to start: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to start: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -68,11 +70,14 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212), // Deep charcoal
       appBar: AppBar(
-        title: const Text('New Game Setup', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'New Game Setup',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -108,63 +113,78 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
             filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
             child: Container(color: Colors.transparent),
           ),
-          
+
           SafeArea(
-            child: _isLoading 
-                ? const Center(child: CircularProgressIndicator()) 
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildSectionTitle('Choose Game Mode'),
-                        const SizedBox(height: 12),
-                        _buildModeGrid(),
-                        
-                        if (_selectedMode == GameMode.bot) ...[
-                          const SizedBox(height: 24),
-                          _buildSectionTitle('Bot Configuration'),
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildSectionTitle('Choose Game Mode'),
                           const SizedBox(height: 12),
-                          _buildGlassCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildEngineToggle(),
-                                const SizedBox(height: 16),
-                                _buildDifficultySlider(),
-                              ],
+                          _buildModeGrid(),
+
+                          if (_selectedMode == GameMode.bot) ...[
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('Bot Configuration'),
+                            const SizedBox(height: 12),
+                            _buildGlassCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildEngineToggle(),
+                                  const SizedBox(height: 16),
+                                  _buildDifficultySlider(),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildColorSelector(),
+                          ],
+
+                          if (_selectedMode == GameMode.bot ||
+                              _selectedMode == GameMode.localMultiplayer) ...[
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('Time Control'),
+                            const SizedBox(height: 12),
+                            _buildTimerChips(),
+                          ],
+
+                          const SizedBox(height: 40),
+
+                          // Start Button
+                          ElevatedButton(
+                            onPressed: _startGame,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2962FF),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 8,
+                              shadowColor: const Color(
+                                0xFF2962FF,
+                              ).withOpacity(0.5),
+                            ),
+                            child: const Text(
+                              'Start Game',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          _buildColorSelector(),
+                          const SizedBox(height: 20),
                         ],
-                        
-                        if (_selectedMode == GameMode.bot || _selectedMode == GameMode.localMultiplayer) ...[
-                          const SizedBox(height: 24),
-                          _buildSectionTitle('Time Control'),
-                          const SizedBox(height: 12),
-                          _buildTimerChips(),
-                        ],
-
-                        const SizedBox(height: 40),
-                        
-                        // Start Button
-                        ElevatedButton(
-                          onPressed: _startGame,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2962FF),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 8,
-                            shadowColor: const Color(0xFF2962FF).withOpacity(0.5),
-                          ),
-                          child: const Text('Start Game', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+                      ),
                     ),
-                  ),
           ),
         ],
       ),
@@ -174,7 +194,11 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70),
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Colors.white70,
+      ),
     );
   }
 
@@ -201,19 +225,35 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
       onTap: () => setState(() => _selectedMode = mode),
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2962FF).withOpacity(0.2) : Colors.white.withOpacity(0.05),
+          color:
+              isSelected
+                  ? const Color(0xFF2962FF).withOpacity(0.2)
+                  : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2962FF) : Colors.white.withOpacity(0.1),
+            color:
+                isSelected
+                    ? const Color(0xFF2962FF)
+                    : Colors.white.withOpacity(0.1),
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? const Color(0xFF2962FF) : Colors.white70, size: 20),
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFF2962FF) : Colors.white70,
+              size: 20,
+            ),
             const SizedBox(width: 8),
-            Text(title, style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
@@ -266,7 +306,13 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Difficulty', style: TextStyle(color: Colors.white70)),
-            Text('${difficulty.name} (${difficulty.elo})', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+            Text(
+              '${difficulty.name} (${difficulty.elo})',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -282,7 +328,8 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
             min: 1,
             max: 10,
             divisions: 9,
-            onChanged: (val) => setState(() => _selectedDifficulty = val.toInt()),
+            onChanged:
+                (val) => setState(() => _selectedDifficulty = val.toInt()),
           ),
         ),
       ],
@@ -313,13 +360,29 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isSelected ? const Color(0xFF2962FF).withOpacity(0.2) : Colors.transparent,
-              border: Border.all(color: isSelected ? const Color(0xFF2962FF) : Colors.transparent),
+              color:
+                  isSelected
+                      ? const Color(0xFF2962FF).withOpacity(0.2)
+                      : Colors.transparent,
+              border: Border.all(
+                color:
+                    isSelected ? const Color(0xFF2962FF) : Colors.transparent,
+              ),
             ),
-            child: Icon(icon, color: isSelected ? Colors.white : Colors.white54, size: 28),
+            child: Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.white54,
+              size: 28,
+            ),
           ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.white54, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.white54,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -330,27 +393,37 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
-        children: AppConstants.timeControls.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final tc = entry.value;
-          final isSelected = _selectedTimeControlIndex == idx;
-          
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(tc.displayString),
-              selected: isSelected,
-              onSelected: (val) {
-                if(val) setState(() => _selectedTimeControlIndex = idx);
-              },
-              backgroundColor: Colors.white.withOpacity(0.05),
-              selectedColor: const Color(0xFF2962FF),
-              labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.white70),
-              side: BorderSide(color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.1)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-          );
-        }).toList(),
+        children:
+            AppConstants.timeControls.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final tc = entry.value;
+              final isSelected = _selectedTimeControlIndex == idx;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(tc.displayString),
+                  selected: isSelected,
+                  onSelected: (val) {
+                    if (val) setState(() => _selectedTimeControlIndex = idx);
+                  },
+                  backgroundColor: Colors.white.withOpacity(0.05),
+                  selectedColor: const Color(0xFF2962FF),
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white70,
+                  ),
+                  side: BorderSide(
+                    color:
+                        isSelected
+                            ? Colors.transparent
+                            : Colors.white.withOpacity(0.1),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              );
+            }).toList(),
       ),
     );
   }

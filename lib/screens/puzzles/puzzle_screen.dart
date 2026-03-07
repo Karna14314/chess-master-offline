@@ -48,7 +48,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
   Future<void> _initializePuzzles() async {
     final notifier = ref.read(puzzleProvider.notifier);
     await notifier.initialize();
-    
+
     if (widget.puzzleId != null) {
       await notifier.loadPuzzleById(widget.puzzleId!);
     } else if (ref.read(puzzleProvider).currentPuzzle == null) {
@@ -203,14 +203,18 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const SizedBox(width: 8),
             Text(
               state.errorMessage ?? "Wrong Move! Try Again",
-              style: GoogleFonts.inter(color: AppTheme.error, fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(
+                color: AppTheme.error,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
       );
     }
-    
-    if (state.state == PuzzleState.correct || state.state == PuzzleState.completed) {
+
+    if (state.state == PuzzleState.correct ||
+        state.state == PuzzleState.completed) {
       return Container(
         key: const ValueKey('correct'),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -224,8 +228,13 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const Icon(Icons.check, color: Colors.green, size: 18),
             const SizedBox(width: 8),
             Text(
-              state.state == PuzzleState.completed ? "Puzzle Solved!" : "Correct!",
-              style: GoogleFonts.inter(color: Colors.green, fontWeight: FontWeight.bold),
+              state.state == PuzzleState.completed
+                  ? "Puzzle Solved!"
+                  : "Correct!",
+              style: GoogleFonts.inter(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -235,7 +244,10 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     return Text(
       state.isWhiteTurn ? "White to Move" : "Black to Move",
       key: const ValueKey('turn'),
-      style: GoogleFonts.inter(color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
+      style: GoogleFonts.inter(
+        color: AppTheme.textSecondary,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 
@@ -255,7 +267,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.textPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -269,7 +283,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -287,7 +303,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.textPrimary,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
@@ -300,7 +318,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.textPrimary,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
@@ -326,13 +346,19 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
               children: [
                 Text(
                   'Puzzle #${puzzle.id}',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   'Rating: ${puzzle.rating}',
-                  style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 12),
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -340,11 +366,29 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children: puzzle.themes.take(2).map((theme) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-              child: Text(theme, style: const TextStyle(fontSize: 10, color: AppTheme.primaryLight)),
-            )).toList(),
+            children:
+                puzzle.themes
+                    .take(2)
+                    .map(
+                      (theme) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          theme,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.primaryLight,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
           ),
         ],
       ),
@@ -354,15 +398,27 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
   void _showSolutionDialog(PuzzleGameState state) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        title: const Text('Show Solution?'),
-        content: const Text('Showing the solution will end the puzzle attempt.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () {Navigator.pop(context); ref.read(puzzleProvider.notifier).showSolution();}, child: const Text('Show')),
-        ],
-      ),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            title: const Text('Show Solution?'),
+            content: const Text(
+              'Showing the solution will end the puzzle attempt.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(puzzleProvider.notifier).showSolution();
+                },
+                child: const Text('Show'),
+              ),
+            ],
+          ),
     );
   }
 }
