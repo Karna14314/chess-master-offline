@@ -551,6 +551,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       return;
     }
 
+    // Strict validation: exactly match the uci string
     final isCorrect = expectedMove.toLowerCase() == uciMove.toLowerCase();
 
     if (!isCorrect) {
