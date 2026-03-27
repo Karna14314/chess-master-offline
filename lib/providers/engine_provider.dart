@@ -81,7 +81,6 @@ class EngineState {
 /// Notifier for engine operations
 class EngineNotifier extends StateNotifier<EngineState> {
   final StockfishService _service;
-  Timer? _thinkingTimer;
   int _searchId = 0;
 
   EngineNotifier(this._service) : super(const EngineState());
@@ -337,7 +336,6 @@ class EngineNotifier extends StateNotifier<EngineState> {
   void stopAnalysis() {
     _searchId++; // Invalidate pending searches
     _service.stopAnalysis();
-    _thinkingTimer?.cancel();
     state = state.copyWith(isAnalyzing: false, isThinking: false);
   }
 
@@ -350,7 +348,6 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
   @override
   void dispose() {
-    _thinkingTimer?.cancel();
     _searchId++;
     super.dispose();
   }

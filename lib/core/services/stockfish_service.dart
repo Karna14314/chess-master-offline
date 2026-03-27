@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:stockfish_chess_engine/stockfish_chess_engine.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
@@ -24,6 +25,9 @@ class StockfishService {
   );
 
   Completer<void>? _initCompleter;
+  Isolate? _engineIsolate;
+  SendPort? _engineCommandPort;
+  ReceivePort? _engineResponsePort;
 
   // RegExps for parsing engine output
   static final RegExp _scoreCpRegex = RegExp(r'score cp (-?\d+)');
@@ -76,71 +80,42 @@ class StockfishService {
       return;
     }
 
+    try {
+      await _startEngineIsolate();
+    } catch (e) {
+      debugPrint('Failed to start engine isolate: $e');
+      _enableFallback('Isolate start failed');
+      return;
+    }
+
     // 2. Try to init Stockfish
     int retryCount = 0;
     const maxRetries = 2;
 
     while (retryCount < maxRetries) {
       try {
-        _stockfish?.dispose();
-        debugPrint('Stockfish instance created');
-        _stockfish = Stockfish();
+        _engineCommandPort?.send({'type': 'init'});
+        _isReady = false;
 
-        // Wait for the Stockfish instance to be ready before sending commands
-        // The package needs time to initialize the native binary
-        int initAttempts = 0;
-        while (initAttempts < 50) {
-          await Future.delayed(const Duration(milliseconds: 100));
-          // Try to check if we can send commands by attempting to access stdin
-          try {
-            // If this doesn't throw, the engine is ready
-            if (_stockfish != null) {
-              break;
-            }
-          } catch (e) {
-            // Engine not ready yet
-          }
-          initAttempts++;
-        }
-
-        debugPrint('Stockfish initialization wait complete');
-
-        bool uciOkReceived = false;
-
-        // Listen to engine output
-        final sub = _stockfish!.stdout.listen((line) {
-          if (line.trim().isNotEmpty) {
-            _outputController.add(line);
-            if (line.contains('uciok')) {
-              uciOkReceived = true;
-            }
-            if (line.contains('readyok')) {
-              _isReady = true;
-              statusNotifier.value = EngineStatus.ready;
-            }
-          }
-        });
-
-        // Give a bit more time for the stream to be set up
-        await Future.delayed(const Duration(milliseconds: 200));
+        // Give a bit of time for isolate to start the engine
+        await Future.delayed(const Duration(milliseconds: 500));
 
         // Initialize UCI mode
         debugPrint('Sending UCI command');
         _sendCommand('uci');
+        _sendCommand('isready');
 
-        // Wait for uciok
+        // Wait for readiness via the stream (which is already being fed by isolate)
         int attempts = 0;
-        while (!uciOkReceived && attempts < 10) {
+        while (!_isReady && attempts < 50) {
           await Future.delayed(const Duration(milliseconds: 100));
+          if (statusNotifier.value == EngineStatus.ready) break;
           attempts++;
         }
 
-        if (!uciOkReceived) {
-          throw Exception('Stockfish failed to respond with uciok');
+        if (!_isReady) {
+          throw Exception('Stockfish failed to reach ready state (timeout)');
         }
-
-        // Wait for engine to be ready with timeout
-        await _waitForReady();
 
         // Configure engine for mobile performance
         _configureEngine();
@@ -152,11 +127,6 @@ class StockfishService {
         debugPrint(
           'Stockfish engine initialization failed (attempt $retryCount): $e',
         );
-
-        // Dispose only the engine instance, keep the controller open
-        _stockfish?.dispose();
-        _stockfish = null;
-        _isReady = false;
 
         if (retryCount >= maxRetries) {
           _enableFallback('Initialization failed after retries: $e');
@@ -204,9 +174,42 @@ class StockfishService {
 
   /// Send a command to the engine
   void _sendCommand(String command) {
-    if (_stockfish != null && !_useFallback) {
-      _stockfish?.stdin = '$command\n';
+    if (_engineCommandPort != null && !_useFallback) {
+      _engineCommandPort?.send({'type': 'stdin', 'command': '$command\n'});
     }
+  }
+
+  /// Internal FEN validation to prevent engine crashes
+  bool _isValidFen(String fen) {
+    if (fen.isEmpty) return false;
+    final parts = fen.trim().split(RegExp(r'\s+'));
+    if (parts.length < 4) return false; // At least board, color, castling, ep
+
+    // Basic regex for the board part
+    final boardPart = parts[0];
+    final rows = boardPart.split('/');
+    if (rows.length != 8) return false;
+
+    for (final row in rows) {
+      int count = 0;
+      for (int i = 0; i < row.length; i++) {
+        final char = row[i];
+        if (RegExp(r'[1-8]').hasMatch(char)) {
+          count += int.parse(char);
+        } else if (RegExp(r'[prnbqkPRNBQK]').hasMatch(char)) {
+          count += 1;
+        } else {
+          return false; // Invalid character
+        }
+      }
+      if (count != 8) return false;
+    }
+
+    // Color check
+    final color = parts[1];
+    if (color != 'w' && color != 'b') return false;
+
+    return true;
   }
 
   /// Get the best move for a given position
@@ -219,6 +222,12 @@ class StockfishService {
     int? elo,
     int? thinkTimeMs,
   }) async {
+    // Validate FEN to prevent SIGSEGV in Stockfish::Position::is_draw
+    if (!_isValidFen(fen)) {
+      debugPrint('Invalid FEN detected: $fen. Using fallback.');
+      return _getSimpleBotMove(fen, depth, thinkTimeMs);
+    }
+
     if (!_isReady && !_useFallback) {
       await initialize();
     }
@@ -299,8 +308,7 @@ class StockfishService {
 
         // Reset engine state on timeout so it re-initializes next time
         // But mark as fallback now
-        _stockfish?.dispose();
-        _stockfish = null;
+        _stopEngineIsolate();
         _enableFallback('Engine timeout');
 
         // Fallback immediate
@@ -338,6 +346,12 @@ class StockfishService {
     int multiPv = AppConstants.topEngineLinesCount,
     void Function(AnalysisResult)? onUpdate,
   }) async {
+    // Validate FEN to prevent SIGSEGV
+    if (!_isValidFen(fen)) {
+      debugPrint('Invalid FEN detected for analysis: $fen');
+      return BasicEvaluatorService.instance.analyze(fen);
+    }
+
     if (!_isReady && !_useFallback) {
       await initialize();
     }
@@ -454,8 +468,7 @@ class StockfishService {
         _sendCommand('setoption name MultiPV value 1');
 
         // Reset engine state on timeout
-        _stockfish?.dispose();
-        _stockfish = null;
+        _stopEngineIsolate();
         _enableFallback('Analysis timeout');
 
         return BasicEvaluatorService.instance.analyze(fen);
@@ -498,11 +511,91 @@ class StockfishService {
 
   /// Dispose the engine
   void dispose() {
-    _stockfish?.dispose();
-    _stockfish = null;
-    _isReady = false;
-    _useFallback = false;
+    _stopEngineIsolate();
     statusNotifier.value = EngineStatus.disposed;
     _outputController.close();
   }
+
+  Future<void> _startEngineIsolate() async {
+    if (_engineIsolate != null) return;
+
+    _engineResponsePort = ReceivePort();
+    _engineIsolate = await Isolate.spawn(
+      _stockfishIsolateEntryPoint,
+      _engineResponsePort!.sendPort,
+    );
+
+    // Listen for the command port and stdout from the isolate
+    final completer = Completer<void>();
+    _engineResponsePort!.listen((message) {
+      if (message is SendPort) {
+        _engineCommandPort = message;
+        completer.complete();
+      } else if (message is Map<String, dynamic>) {
+        final type = message['type'] as String;
+        if (type == 'stdout') {
+          final line = message['line'] as String;
+          if (line.trim().isNotEmpty) {
+            _outputController.add(line);
+            if (line.contains('readyok')) {
+              _isReady = true;
+              statusNotifier.value = EngineStatus.ready;
+            }
+          }
+        }
+      }
+    });
+
+    return completer.future;
+  }
+
+  void _stopEngineIsolate() {
+    _engineCommandPort?.send({'type': 'dispose'});
+    _engineIsolate?.kill(priority: Isolate.immediate);
+    _engineIsolate = null;
+    _engineCommandPort = null;
+    _engineResponsePort?.close();
+    _engineResponsePort = null;
+    _isReady = false;
+  }
+}
+
+/// Entry point for the Stockfish engine isolate
+void _stockfishIsolateEntryPoint(SendPort sendPort) {
+  final commandPort = ReceivePort();
+  sendPort.send(commandPort.sendPort);
+
+  Stockfish? stockfish;
+
+  commandPort.listen((message) {
+    if (message is Map<String, dynamic>) {
+      final type = message['type'] as String;
+
+      switch (type) {
+        case 'init':
+          stockfish?.dispose();
+          try {
+            stockfish = Stockfish();
+            stockfish!.stdout.listen((line) {
+              sendPort.send({'type': 'stdout', 'line': line});
+            });
+          } catch (e) {
+            // Log error or ignore
+          }
+          break;
+        case 'stdin':
+          final command = message['command'] as String;
+          try {
+            stockfish?.stdin = command;
+          } catch (e) {
+            // Log error
+          }
+          break;
+        case 'dispose':
+          stockfish?.dispose();
+          stockfish = null;
+          break;
+      }
+    }
+  });
 }

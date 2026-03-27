@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
+import 'package:chess_master/core/services/audio_service.dart';
 import 'package:chess_master/screens/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Audio Service
+  try {
+    await AudioService.instance.initialize();
+  } catch (e) {
+    debugPrint('Audio initialization failed: $e');
+  }
 
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
