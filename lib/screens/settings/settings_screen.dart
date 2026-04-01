@@ -8,6 +8,7 @@ import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Settings screen for app customization
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -164,6 +165,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _buildSettingsCard(context, [
                   ListTile(
                     title: Text(
+                      'Rate Us on Play Store',
+                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                    ),
+                    subtitle: Text(
+                      'Love the app? Leave a review!',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    leading: const Icon(
+                      Icons.star_outline,
+                      color: AppTheme.primaryColor,
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppTheme.textSecondary,
+                    ),
+                    onTap: () => _launchPlayStore(),
+                  ),
+                  const Divider(color: AppTheme.borderColor),
+                  ListTile(
+                    title: Text(
                       'Open Source & Credits',
                       style: GoogleFonts.inter(color: AppTheme.textPrimary),
                     ),
@@ -258,6 +282,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       applicationName: AppConstants.appName,
       applicationVersion: _version,
     );
+  }
+
+  void _launchPlayStore() async {
+    const appPackageName = 'com.karna.chessmaster';
+    final uri = Uri.parse(
+      'market://details?id=$appPackageName',
+    );
+    final webUri = Uri.parse(
+      'https://play.google.com/store/apps/details?id=$appPackageName',
+    );
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open Play Store'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open Play Store'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 name: chess_master
 description: ChessMaster Offline - Play chess against AI with analysis and puzzles.
 publish_to: 'none'
-version: 1.0.51+51
+version: 1.0.53+53
 
 environment:
   sdk: ^3.7.0-0
