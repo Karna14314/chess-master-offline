@@ -159,6 +159,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   stockfish.StockfishService? _stockfish;
   bool _isInitialized = false;
   bool _isAnalyzing = false; // Guard flag to prevent concurrent analysis
+  int _analysisToken = 0; // Cancellation token for analyzeFullGame
 
   @visibleForTesting
   int stateUpdateCount = 0;
@@ -211,6 +212,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   /// Navigate to a specific move index
   Future<void> goToMove(int moveIndex) async {
     if (moveIndex < -1 || moveIndex >= state.originalMoves.length) return;
+
+    // Cancel any running analysis
+    _analysisToken++;
 
     // Rebuild board from start
     final board = chess.Chess.fromFEN(state.startingFen);
@@ -337,6 +341,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     if (_stockfish == null || state.originalMoves.isEmpty) return;
 
     _isAnalyzing = true;
+    final token = ++_analysisToken; // Capture cancellation token
 
     // Ensure engine is at maximum strength for full game analysis
     _stockfish!.setMaxStrength();
@@ -375,13 +380,24 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       }
 
       for (int i = 0; i < moves.length; i++) {
+        // Check cancellation token
+        if (token != _analysisToken) return;
+
         final move = moves[i];
         final isWhiteMove = board.turn == chess.Color.WHITE;
+
+        // Yield to event loop every 5 moves to prevent ANR
+        if (i % 5 == 0 && i > 0) {
+          await Future.delayed(Duration.zero);
+        }
 
         // Add delay between consecutive engine calls to reduce GPU lock contention
         if (i > 0) {
           await Future.delayed(const Duration(milliseconds: 50));
         }
+
+        // Check cancellation token again after delays
+        if (token != _analysisToken) return;
 
         // Get best move before making the actual move
         String? bestMove;
@@ -512,6 +528,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
   /// Stop analysis
   void stopAnalysis() {
+    _analysisToken++; // Cancel any running analyzeFullGame
     _isAnalyzing = false; // Clear guard flag
     _stockfish?.stopAnalysis();
     state = state.copyWith(isAnalyzing: false);

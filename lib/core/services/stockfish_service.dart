@@ -7,12 +7,23 @@ import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/core/services/simple_bot_service.dart';
 import 'package:chess_master/core/services/basic_evaluator_service.dart';
 
+/// Queued command for serial execution
+class _QueuedCommand {
+  final String command;
+  final Completer<void>? completer;
+  
+  _QueuedCommand({required this.command, this.completer});
+}
+
 /// Service class for interacting with the Stockfish chess engine
 /// Uses UCI (Universal Chess Interface) protocol
 class StockfishService {
   static StockfishService? _instance;
   Stockfish? _stockfish;
   bool _isReady = false;
+  bool _isEngineReady = false; // Set only after "readyok" received
+  bool _isEngineBusy = false; // True when search is in progress
+  final List<_QueuedCommand> _commandQueue = [];
   bool _useFallback = false;
 
   // Flag to simulate binary check failure for testing or if on unsupported platform
@@ -143,6 +154,8 @@ class StockfishService {
     debugPrint('Switching to fallback engine: $reason');
     _useFallback = true;
     _isReady = false;
+    _isEngineReady = false; // Reset engine ready flag
+    _isEngineBusy = false; // Reset busy flag
     statusNotifier.value = EngineStatus.usingFallback;
     _initCompleter?.complete();
     _initCompleter = null;
@@ -172,11 +185,78 @@ class StockfishService {
     }
   }
 
-  /// Send a command to the engine
-  void _sendCommand(String command) {
-    if (_engineCommandPort != null && !_useFallback) {
-      _engineCommandPort?.send({'type': 'stdin', 'command': '$command\n'});
+  /// Wait for readyok response after sending position or other commands.
+  /// This ensures Stockfish has fully processed the position before we start search.
+  /// Returns true if readyok received, false on timeout.
+  Future<bool> _waitForReadyOk({Duration? timeout}) async {
+    final effectiveTimeout = timeout ?? const Duration(milliseconds: 500);
+    final stopwatch = Stopwatch()..start();
+    
+    final completer = Completer<bool>();
+    StreamSubscription? subscription;
+    
+    subscription = _outputController.stream.listen((line) {
+      if (line.contains('readyok')) {
+        subscription?.cancel();
+        if (!completer.isCompleted) {
+          completer.complete(true);
+        }
+      }
+    });
+    
+    // Send isready command
+    _sendCommand('isready');
+    
+    try {
+      // Wait for readyok or timeout
+      final result = await completer.future.timeout(
+        effectiveTimeout,
+        onTimeout: () {
+          subscription?.cancel();
+          return false;
+        },
+      );
+      
+      stopwatch.stop();
+      return result;
+    } catch (e) {
+      subscription?.cancel();
+      return false;
     }
+  }
+
+  /// Send a command to the engine (queued for serial execution)
+  void _sendCommand(String command) {
+    if (_useFallback) return;
+    
+    final completer = Completer<void>();
+    _commandQueue.add(_QueuedCommand(command: command, completer: completer));
+    _processCommandQueue();
+  }
+  
+  /// Process commands serially to prevent concurrent engine access
+  bool _isProcessingQueue = false;
+  
+  void _processCommandQueue() async {
+    if (_isProcessingQueue) return;
+    if (_engineCommandPort == null) return;
+    if (!_isEngineReady) return; // Don't send until engine is ready
+    
+    _isProcessingQueue = true;
+    
+    while (_commandQueue.isNotEmpty) {
+      final cmd = _commandQueue.removeAt(0);
+      try {
+        _engineCommandPort?.send({'type': 'stdin', 'command': '${cmd.command}\n'});
+        cmd.completer?.complete();
+        // Small delay between commands to prevent overwhelming the engine
+        await Future.delayed(const Duration(milliseconds: 10));
+      } catch (e) {
+        cmd.completer?.completeError(e);
+      }
+    }
+    
+    _isProcessingQueue = false;
   }
 
   /// Internal FEN validation to prevent engine crashes
@@ -228,6 +308,13 @@ class StockfishService {
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
+    // Guard: If engine is busy, return fallback immediately
+    if (_isEngineBusy) {
+      debugPrint('Engine is busy, using fallback for FEN: $fen');
+      return _getSimpleBotMove(fen, depth, thinkTimeMs);
+    }
+
+    // Guard: If engine not ready, try to initialize or use fallback
     if (!_isReady && !_useFallback) {
       await initialize();
     }
@@ -237,13 +324,13 @@ class StockfishService {
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
-    if (elo != null) {
-      _sendCommand('setoption name UCI_LimitStrength value true');
-      _sendCommand('setoption name UCI_Elo value $elo');
-    } else {
-      _sendCommand('setoption name UCI_LimitStrength value false');
+    // Guard: Double-check engine is ready after initialization
+    if (!_isEngineReady || !_isReady) {
+      debugPrint('Engine not ready after init, using fallback for FEN: $fen');
+      return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
+    // Setup search listener BEFORE setting position (must be ready before go)
     final completer = Completer<BestMoveResult>();
     String? bestMove;
     String? ponderMove;
@@ -289,32 +376,56 @@ class StockfishService {
       }
     });
 
-    // Set position
-    _sendCommand('position fen $fen');
-
-    // Start search
-    if (thinkTimeMs != null) {
-      _sendCommand('go depth $depth movetime $thinkTimeMs');
+    // Set position and options
+    if (elo != null) {
+      _sendCommand('setoption name UCI_LimitStrength value true');
+      _sendCommand('setoption name UCI_Elo value $elo');
     } else {
-      _sendCommand('go depth $depth');
+      _sendCommand('setoption name UCI_LimitStrength value false');
     }
 
-    // 5-second timeout for Stockfish response
-    return completer.future.timeout(
-      const Duration(seconds: 5),
-      onTimeout: () {
-        subscription.cancel();
-        _sendCommand('stop');
+    _sendCommand('position fen $fen');
+    
+    // Wait for engine to confirm position is processed before starting search
+    // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
+    final positionReady = await _waitForReadyOk(timeout: const Duration(milliseconds: 500));
+    if (!positionReady) {
+      subscription.cancel();
+      debugPrint('Position ready timeout for FEN: $fen. Using fallback.');
+      return _getSimpleBotMove(fen, depth, thinkTimeMs);
+    }
 
-        // Reset engine state on timeout so it re-initializes next time
-        // But mark as fallback now
-        _stopEngineIsolate();
-        _enableFallback('Engine timeout');
+    // Mark engine as busy ONLY after readyok confirmed
+    _isEngineBusy = true;
 
-        // Fallback immediate
-        return _getSimpleBotMove(fen, depth, thinkTimeMs);
-      },
-    );
+    try {
+      // Start search
+      if (thinkTimeMs != null) {
+        _sendCommand('go depth $depth movetime $thinkTimeMs');
+      } else {
+        _sendCommand('go depth $depth');
+      }
+
+      // 5-second timeout for Stockfish response
+      return completer.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          subscription.cancel();
+          _sendCommand('stop');
+
+          // Reset engine state on timeout so it re-initializes next time
+          // But mark as fallback now
+          _stopEngineIsolate();
+          _enableFallback('Engine timeout');
+
+          // Fallback immediate
+          return _getSimpleBotMove(fen, depth, thinkTimeMs);
+        },
+      );
+    } finally {
+      // Always mark engine as not busy when done
+      _isEngineBusy = false;
+    }
   }
 
   Future<BestMoveResult> _getSimpleBotMove(
@@ -352,22 +463,23 @@ class StockfishService {
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
+    // Guard: If engine is busy, return fallback immediately
+    if (_isEngineBusy) {
+      debugPrint('Engine is busy, using fallback for analysis FEN: $fen');
+      return BasicEvaluatorService.instance.analyze(fen);
+    }
+
     if (!_isReady && !_useFallback) {
       await initialize();
     }
 
-    // Ensure engine is at max strength for analysis
-    if (!_useFallback) {
-      setMaxStrength();
-    }
-
-    // Fallback doesn't support full analysis yet
-    // Throw error to let AnalysisProvider handle it with BasicEvaluator
-    if (_useFallback) {
-      // Use BasicEvaluatorService instead of throwing raw exception for smoother UX
+    // Guard: Check engine is ready after init
+    if (!_isEngineReady || !_isReady) {
+      debugPrint('Engine not ready for analysis, using fallback for FEN: $fen');
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
+    // Setup analysis listener BEFORE any commands
     final completer = Completer<AnalysisResult>();
     final lines = <EngineLine>[];
     int? mainEvaluation;
@@ -454,26 +566,53 @@ class StockfishService {
       }
     });
 
+    // Stop any ongoing search before setting new position (intentional replacement)
+    // This must be called BEFORE _isEngineBusy is set to true
+    _stopCurrentSearch();
+
+    // Ensure engine is at max strength for analysis (after stop, before position)
+    if (!_useFallback) {
+      setMaxStrength();
+    }
+
     // Set position and analyze
     _sendCommand('position fen $fen');
-    _sendCommand('go depth $depth');
+    
+    // Wait for engine to confirm position is processed before starting search
+    final positionReady = await _waitForReadyOk(timeout: const Duration(milliseconds: 500));
+    if (!positionReady) {
+      subscription.cancel();
+      debugPrint('Position ready timeout for analysis FEN: $fen. Using fallback.');
+      return BasicEvaluatorService.instance.analyze(fen);
+    }
 
-    return completer.future.timeout(
-      const Duration(
-        seconds: 10,
-      ), // Short timeout for analysis to switch to basic if stuck
-      onTimeout: () {
-        subscription.cancel();
-        _sendCommand('stop');
-        _sendCommand('setoption name MultiPV value 1');
+    // Mark engine as busy ONLY after readyok confirmed
+    // (re-set to true because _stopCurrentSearch() cleared it)
+    _isEngineBusy = true;
 
-        // Reset engine state on timeout
-        _stopEngineIsolate();
-        _enableFallback('Analysis timeout');
+    try {
+      _sendCommand('go depth $depth');
 
-        return BasicEvaluatorService.instance.analyze(fen);
-      },
-    );
+      return completer.future.timeout(
+        const Duration(
+          seconds: 10,
+        ), // Short timeout for analysis to switch to basic if stuck
+        onTimeout: () {
+          subscription.cancel();
+          _sendCommand('stop');
+          _sendCommand('setoption name MultiPV value 1');
+
+          // Reset engine state on timeout
+          _stopEngineIsolate();
+          _enableFallback('Analysis timeout');
+
+          return BasicEvaluatorService.instance.analyze(fen);
+        },
+      );
+    } finally {
+      // Always mark engine as not busy when done
+      _isEngineBusy = false;
+    }
   }
 
   /// Set the engine skill level (affects playing strength)
@@ -499,6 +638,14 @@ class StockfishService {
   void stopAnalysis() {
     if (!_useFallback) {
       _sendCommand('stop');
+    }
+  }
+
+  /// Stop current search and reset busy flag (for intentional search replacement)
+  void _stopCurrentSearch() {
+    if (_isEngineBusy) {
+      _sendCommand('stop');
+      _isEngineBusy = false;
     }
   }
 
@@ -539,9 +686,15 @@ class StockfishService {
             _outputController.add(line);
             if (line.contains('readyok')) {
               _isReady = true;
+              _isEngineReady = true; // Set engine ready flag
               statusNotifier.value = EngineStatus.ready;
+              // Process any queued commands now that engine is ready
+              _processCommandQueue();
             }
           }
+        } else if (type == 'engine_ready') {
+          // Engine isolate reports it's initialized and ready for commands
+          _isEngineReady = true;
         }
       }
     });
@@ -566,6 +719,8 @@ class StockfishService {
     _engineResponsePort?.close();
     _engineResponsePort = null;
     _isReady = false;
+    _isEngineReady = false; // Reset engine ready flag
+    _isEngineBusy = false; // Reset busy flag
   }
 }
 

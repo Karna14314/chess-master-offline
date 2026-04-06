@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:math';
 import 'package:chess/chess.dart' as chess;
 
@@ -440,8 +441,8 @@ class SimpleBotService {
     // Cap depth at 3 for fallback engine to ensure ANR-safe response (<5s)
     final effectiveDepth = min(depth, 3);
     
-    // Run directly (depth 3 completes in <1s, avoiding ANR)
-    return _getBestMoveSync(fen, effectiveDepth);
+    // Run compute-heavy work in separate isolate to prevent main thread blocking
+    return Isolate.run(() => _getBestMoveSync(fen, effectiveDepth));
   }
 
   /// Synchronous computation - depth capped to prevent ANR
