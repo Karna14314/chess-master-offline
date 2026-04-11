@@ -4,9 +4,9 @@ import 'package:chess_master/core/models/chess_models.dart';
 
 /// Regression tests for Stockfish crash fixes
 /// These tests verify the fixes for SIGSEGV and ANR issues
-/// 
+///
 /// NOTE: These tests run in fallback mode because the native Stockfish DLL
-/// is not available in the test environment. The tests still verify the 
+/// is not available in the test environment. The tests still verify the
 /// guard logic and error handling paths work correctly.
 void main() {
   group('StockfishService Crash Regression Tests', () {
@@ -26,7 +26,7 @@ void main() {
     // TEST 1 — Concurrent call protection (guards against SIGSEGV)
     // Crash type: SIGSEGV in Position::is_draw() from concurrent engine access
     // Fix: _isEngineBusy flag blocks concurrent calls, second call returns fallback
-    // 
+    //
     // NOTE: In fallback mode, both calls return SimpleBot results. The test verifies
     // that the service handles concurrent calls without crashing or hanging.
     test(
@@ -44,7 +44,7 @@ void main() {
         // Both should return valid results without crashing
         expect(results[0], isA<BestMoveResult>());
         expect(results[1], isA<BestMoveResult>());
-        
+
         // Both should have valid moves (SimpleBot in fallback mode)
         expect(results[0].bestMove.isNotEmpty, isTrue);
         expect(results[1].bestMove.isNotEmpty, isTrue);
@@ -58,10 +58,7 @@ void main() {
     test(
       'empty FEN returns fallback - _isValidFen guard',
       () async {
-        final result = await service.getBestMove(
-          fen: '',
-          depth: 5,
-        );
+        final result = await service.getBestMove(fen: '', depth: 5);
 
         // Should return without throwing
         expect(result, isA<BestMoveResult>());
@@ -74,10 +71,7 @@ void main() {
     test(
       'malformed FEN returns fallback - _isValidFen guard',
       () async {
-        final result = await service.getBestMove(
-          fen: 'not/a/fen',
-          depth: 5,
-        );
+        final result = await service.getBestMove(fen: 'not/a/fen', depth: 5);
 
         // Should return without throwing
         expect(result, isA<BestMoveResult>());
@@ -108,6 +102,42 @@ void main() {
         expect(result.bestMove.isNotEmpty, isTrue);
       },
       timeout: const Timeout(Duration(seconds: 2)),
+    );
+
+    test(
+      'fallback depth cap prevents ANR',
+      () async {
+        final stopwatch = Stopwatch()..start();
+        final result = await service.getBestMove(
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          depth: 15,
+        );
+        stopwatch.stop();
+
+        // In fallback mode, depth 15 without cap would cause ANR/hang and fail the test timeout.
+        // With depth capped at 4, it should complete quickly.
+        expect(stopwatch.elapsedMilliseconds, lessThan(1000));
+        expect(result, isA<BestMoveResult>());
+        expect(result.bestMove.isNotEmpty, isTrue);
+      },
+      timeout: const Timeout(Duration(seconds: 2)),
+    );
+
+    test(
+      '_stopCurrentSearchAndWait stops analysis within 2 seconds',
+      () async {
+        final stopwatch = Stopwatch()..start();
+        final result = await service.analyzePosition(
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          depth: 5,
+        );
+        stopwatch.stop();
+
+        // Should complete without timing out the test (thanks to await)
+        expect(stopwatch.elapsedMilliseconds, lessThan(2000));
+        expect(result, isA<AnalysisResult>());
+      },
+      timeout: const Timeout(Duration(seconds: 3)),
     );
 
     test(

@@ -96,6 +96,10 @@ class GameNotifier extends StateNotifier<GameState> {
 
     // If a square is already selected and this is a legal move, make the move
     if (state.selectedSquare != null && state.legalMoves.contains(square)) {
+      // If it needs promotion, we return false here to let UI handle the dialog
+      if (needsPromotion(state.selectedSquare!, square)) {
+        return false;
+      }
       _makeMove(state.selectedSquare!, square);
       return true;
     }
@@ -240,6 +244,11 @@ class GameNotifier extends StateNotifier<GameState> {
     final isLegal = moves.any((m) => (m as Map)['to'] == to);
 
     if (!isLegal) return false;
+
+    // Reject move if it needs promotion but no piece is specified
+    if (needsPromotion(from, to) && promotion == null) {
+      return false;
+    }
 
     _makeMove(from, to, promotion: promotion);
     return true;

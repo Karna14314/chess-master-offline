@@ -41,7 +41,7 @@ class DatabaseService {
   }
 
   /// Create database tables
-  Future<void> _onCreate(Database db, int version) async {
+  Future<void> _onCreate(DatabaseExecutor db, int version) async {
     // Games table
     await db.execute('''
       CREATE TABLE games (
@@ -182,14 +182,16 @@ class DatabaseService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     debugPrint('Upgrading database from version $oldVersion to $newVersion');
 
-    // Handle migrations between versions
-    for (int version = oldVersion + 1; version <= newVersion; version++) {
-      await _migrateToVersion(db, version);
-    }
+    // Handle migrations between versions using a transaction
+    await db.transaction((txn) async {
+      for (int version = oldVersion + 1; version <= newVersion; version++) {
+        await _migrateToVersion(txn, version);
+      }
+    });
   }
 
   /// Migrate database to specific version
-  Future<void> _migrateToVersion(Database db, int version) async {
+  Future<void> _migrateToVersion(DatabaseExecutor db, int version) async {
     switch (version) {
       case 1:
         // Initial version - tables should already be created by onCreate
@@ -198,21 +200,13 @@ class DatabaseService {
         break;
       case 2:
         // Add game_mode column to games table
-        try {
-          await db.execute('ALTER TABLE games ADD COLUMN game_mode TEXT');
-          debugPrint('Added game_mode column to games table');
-        } catch (e) {
-          debugPrint('Error adding game_mode column (may already exist): $e');
-        }
+        await db.execute('ALTER TABLE games ADD COLUMN game_mode TEXT');
+        debugPrint('Added game_mode column to games table');
         break;
       case 3:
         // Add custom_name column to games table
-        try {
-          await db.execute('ALTER TABLE games ADD COLUMN custom_name TEXT');
-          debugPrint('Added custom_name column to games table');
-        } catch (e) {
-          debugPrint('Error adding custom_name column (may already exist): $e');
-        }
+        await db.execute('ALTER TABLE games ADD COLUMN custom_name TEXT');
+        debugPrint('Added custom_name column to games table');
         break;
       case 4:
         // Create saved_games and puzzle_history tables
@@ -265,68 +259,50 @@ class DatabaseService {
         break;
       case 5:
         // Add hintsUsed to saved_games
-        try {
-          await db.execute(
-            'ALTER TABLE saved_games ADD COLUMN hintsUsed INTEGER DEFAULT 0',
-          );
-          debugPrint('Added hintsUsed column to saved_games table');
-        } catch (e) {
-          debugPrint('Error adding hintsUsed column: $e');
-        }
+        await db.execute(
+          'ALTER TABLE saved_games ADD COLUMN hintsUsed INTEGER DEFAULT 0',
+        );
+        debugPrint('Added hintsUsed column to saved_games table');
         break;
       case 6:
         // Add startingFen to saved_games
-        try {
-          await db.execute(
-            'ALTER TABLE saved_games ADD COLUMN startingFen TEXT',
-          );
-          debugPrint('Added startingFen column to saved_games table');
-        } catch (e) {
-          debugPrint('Error adding startingFen column: $e');
-        }
+        await db.execute('ALTER TABLE saved_games ADD COLUMN startingFen TEXT');
+        debugPrint('Added startingFen column to saved_games table');
         break;
       case 7:
         // Add missing columns to statistics table
-        try {
-          await db.execute(
-            'ALTER TABLE statistics ADD COLUMN total_moves INTEGER DEFAULT 0',
-          );
-          await db.execute(
-            'ALTER TABLE statistics ADD COLUMN total_game_time_seconds INTEGER DEFAULT 0',
-          );
-          await db.execute(
-            'ALTER TABLE statistics ADD COLUMN hints_used INTEGER DEFAULT 0',
-          );
-          debugPrint('Added missing columns to statistics table');
-        } catch (e) {
-          debugPrint('Error adding columns to statistics: $e');
-        }
+        await db.execute(
+          'ALTER TABLE statistics ADD COLUMN total_moves INTEGER DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE statistics ADD COLUMN total_game_time_seconds INTEGER DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE statistics ADD COLUMN hints_used INTEGER DEFAULT 0',
+        );
+        debugPrint('Added missing columns to statistics table');
         break;
       case 8:
         // Add new columns to saved_games
-        try {
-          await db.execute(
-            'ALTER TABLE saved_games ADD COLUMN isFlipped INTEGER DEFAULT 0',
-          );
-          await db.execute(
-            'ALTER TABLE saved_games ADD COLUMN isRecorded INTEGER DEFAULT 0',
-          );
-          await db.execute(
-            'ALTER TABLE saved_games ADD COLUMN whiteAccuracy REAL',
-          );
-          await db.execute(
-            'ALTER TABLE saved_games ADD COLUMN blackAccuracy REAL',
-          );
-          debugPrint('Added new columns to saved_games table');
-        } catch (e) {
-          debugPrint('Error adding columns to saved_games: $e');
-        }
+        await db.execute(
+          'ALTER TABLE saved_games ADD COLUMN isFlipped INTEGER DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE saved_games ADD COLUMN isRecorded INTEGER DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE saved_games ADD COLUMN whiteAccuracy REAL',
+        );
+        await db.execute(
+          'ALTER TABLE saved_games ADD COLUMN blackAccuracy REAL',
+        );
+        debugPrint('Added new columns to saved_games table');
         break;
     }
   }
 
   /// Create tables if they don't exist (for migrations from version 0)
-  Future<void> _createTablesIfNotExist(Database db) async {
+  Future<void> _createTablesIfNotExist(DatabaseExecutor db) async {
     // Check if statistics table exists
     final tables = await db.rawQuery(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='statistics'",

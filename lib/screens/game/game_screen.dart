@@ -23,8 +23,6 @@ class GameScreen extends ConsumerStatefulWidget {
 }
 
 class _GameScreenState extends ConsumerState<GameScreen> {
-  bool _dialogShown = false;
-  int _lastMoveCount = 0;
   bool _isLandscapeLocked = false;
   final ScrollController _moveListController = ScrollController();
 
@@ -91,33 +89,32 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     final timerState = ref.watch(timerProvider);
 
-    if (gameState.moveHistory.length != _lastMoveCount) {
-      _lastMoveCount = gameState.moveHistory.length;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Listen for move history changes
+    ref.listen<GameSession?>(gameSessionProvider, (previous, next) {
+      if (next == null) return;
+
+      // Handle move count change
+      if (previous != null &&
+          previous.moveHistory.length != next.moveHistory.length) {
         ref.read(timerProvider.notifier).switchTurn();
         _scrollToLastMove();
-      });
-    }
+      }
 
-    if (gameState.isCompleted && gameState.result != null && !_dialogShown) {
-      _dialogShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Handle game completion
+      if (!previous!.isCompleted && next.isCompleted && next.result != null) {
         ref.read(timerProvider.notifier).stop();
-        _showGameOverDialog(context, gameState);
-      });
-    }
+        _showGameOverDialog(context, next);
+      }
+    });
 
-    if (!gameState.isCompleted && _dialogShown) {
-      _dialogShown = false;
-    }
-
-    if (timerState.isTimedOut && !gameState.isCompleted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Listen for timer timeouts
+    ref.listen<TimerState>(timerProvider, (previous, next) {
+      if (next.isTimedOut && !gameState.isCompleted) {
         ref
             .read(gameSessionProvider.notifier)
-            .handleTimeout(timerState.whiteTimedOut);
-      });
-    }
+            .handleTimeout(next.whiteTimedOut);
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,

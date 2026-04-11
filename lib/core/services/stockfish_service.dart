@@ -11,7 +11,7 @@ import 'package:chess_master/core/services/basic_evaluator_service.dart';
 class _QueuedCommand {
   final String command;
   final Completer<void>? completer;
-  
+
   _QueuedCommand({required this.command, this.completer});
 }
 
@@ -191,10 +191,10 @@ class StockfishService {
   Future<bool> _waitForReadyOk({Duration? timeout}) async {
     final effectiveTimeout = timeout ?? const Duration(milliseconds: 500);
     final stopwatch = Stopwatch()..start();
-    
+
     final completer = Completer<bool>();
     StreamSubscription? subscription;
-    
+
     subscription = _outputController.stream.listen((line) {
       if (line.contains('readyok')) {
         subscription?.cancel();
@@ -203,10 +203,10 @@ class StockfishService {
         }
       }
     });
-    
+
     // Send isready command
     _sendCommand('isready');
-    
+
     try {
       // Wait for readyok or timeout
       final result = await completer.future.timeout(
@@ -216,7 +216,7 @@ class StockfishService {
           return false;
         },
       );
-      
+
       stopwatch.stop();
       return result;
     } catch (e) {
@@ -228,26 +228,29 @@ class StockfishService {
   /// Send a command to the engine (queued for serial execution)
   void _sendCommand(String command) {
     if (_useFallback) return;
-    
+
     final completer = Completer<void>();
     _commandQueue.add(_QueuedCommand(command: command, completer: completer));
     _processCommandQueue();
   }
-  
+
   /// Process commands serially to prevent concurrent engine access
   bool _isProcessingQueue = false;
-  
+
   void _processCommandQueue() async {
     if (_isProcessingQueue) return;
     if (_engineCommandPort == null) return;
     if (!_isEngineReady) return; // Don't send until engine is ready
-    
+
     _isProcessingQueue = true;
-    
+
     while (_commandQueue.isNotEmpty) {
       final cmd = _commandQueue.removeAt(0);
       try {
-        _engineCommandPort?.send({'type': 'stdin', 'command': '${cmd.command}\n'});
+        _engineCommandPort?.send({
+          'type': 'stdin',
+          'command': '${cmd.command}\n',
+        });
         cmd.completer?.complete();
         // Small delay between commands to prevent overwhelming the engine
         await Future.delayed(const Duration(milliseconds: 10));
@@ -255,7 +258,7 @@ class StockfishService {
         cmd.completer?.completeError(e);
       }
     }
-    
+
     _isProcessingQueue = false;
   }
 
@@ -385,10 +388,12 @@ class StockfishService {
     }
 
     _sendCommand('position fen $fen');
-    
+
     // Wait for engine to confirm position is processed before starting search
     // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
-    final positionReady = await _waitForReadyOk(timeout: const Duration(milliseconds: 500));
+    final positionReady = await _waitForReadyOk(
+      timeout: const Duration(milliseconds: 500),
+    );
     if (!positionReady) {
       subscription.cancel();
       debugPrint('Position ready timeout for FEN: $fen. Using fallback.');
@@ -406,9 +411,9 @@ class StockfishService {
         _sendCommand('go depth $depth');
       }
 
-      // 5-second timeout for Stockfish response
+      // 30-second timeout for Stockfish response (failsafe)
       return completer.future.timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 30),
         onTimeout: () {
           subscription.cancel();
           _sendCommand('stop');
@@ -439,9 +444,12 @@ class StockfishService {
       await Future.delayed(Duration(milliseconds: delay));
     }
 
+    // Cap depth to prevent ANR when fallback is used
+    final safeDepth = depth > 4 ? 4 : depth;
+
     final result = await SimpleBotService.instance.getBestMove(
       fen: fen,
-      depth: depth,
+      depth: safeDepth,
     );
     return BestMoveResult(
       bestMove: result.bestMove,
@@ -568,7 +576,7 @@ class StockfishService {
 
     // Stop any ongoing search before setting new position (intentional replacement)
     // This must be called BEFORE _isEngineBusy is set to true
-    _stopCurrentSearch();
+    await _stopCurrentSearchAndWait();
 
     // Ensure engine is at max strength for analysis (after stop, before position)
     if (!_useFallback) {
@@ -577,12 +585,16 @@ class StockfishService {
 
     // Set position and analyze
     _sendCommand('position fen $fen');
-    
+
     // Wait for engine to confirm position is processed before starting search
-    final positionReady = await _waitForReadyOk(timeout: const Duration(milliseconds: 500));
+    final positionReady = await _waitForReadyOk(
+      timeout: const Duration(milliseconds: 500),
+    );
     if (!positionReady) {
       subscription.cancel();
-      debugPrint('Position ready timeout for analysis FEN: $fen. Using fallback.');
+      debugPrint(
+        'Position ready timeout for analysis FEN: $fen. Using fallback.',
+      );
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
@@ -641,11 +653,28 @@ class StockfishService {
     }
   }
 
-  /// Stop current search and reset busy flag (for intentional search replacement)
-  void _stopCurrentSearch() {
+  /// Stop current search and wait for it to finish (for intentional search replacement)
+  Future<void> _stopCurrentSearchAndWait() async {
     if (_isEngineBusy) {
+      final completer = Completer<void>();
+      late StreamSubscription subscription;
+
+      subscription = _outputController.stream.listen((line) {
+        if (line.trim().startsWith('bestmove')) {
+          subscription.cancel();
+          if (!completer.isCompleted) completer.complete();
+        }
+      });
+
       _sendCommand('stop');
-      _isEngineBusy = false;
+
+      try {
+        await completer.future.timeout(const Duration(seconds: 2));
+      } catch (_) {
+        subscription.cancel();
+      } finally {
+        _isEngineBusy = false;
+      }
     }
   }
 

@@ -165,7 +165,7 @@ class MockStockfishService implements StockfishService {
   void stopAnalysis() {}
 
   @override
-  void dispose() {}
+  Future<void> dispose() async {}
 
   @override
   void setSkillLevel(int elo) {}
