@@ -286,9 +286,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _launchPlayStore() async {
     const appPackageName = 'com.karna.chessmaster';
-    final uri = Uri.parse(
-      'market://details?id=$appPackageName',
-    );
+    final uri = Uri.parse('market://details?id=$appPackageName');
     final webUri = Uri.parse(
       'https://play.google.com/store/apps/details?id=$appPackageName',
     );

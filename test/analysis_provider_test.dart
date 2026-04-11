@@ -6,7 +6,7 @@ import 'package:chess_master/core/services/stockfish_service.dart';
 
 /// Regression test for analyzeFullGame cancellation
 /// Guards against race conditions between goToMove() and analyzeFullGame()
-/// 
+///
 /// NOTE: These tests run in fallback mode because the native Stockfish DLL
 /// is not available in the test environment.
 void main() {
@@ -17,7 +17,7 @@ void main() {
     setUp(() {
       // Force fallback mode BEFORE creating providers to avoid loading native DLL
       StockfishService.instance.forceFallback = true;
-      
+
       container = ProviderContainer();
       notifier = container.read(analysisProvider.notifier);
     });
@@ -35,16 +35,115 @@ void main() {
       () async {
         // Create a list of valid moves (using the correct ChessMove constructor)
         final moves = [
-          const ChessMove(from: 'e2', to: 'e4', san: 'e4', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'),
-          const ChessMove(from: 'e7', to: 'e5', san: 'e5', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2'),
-          const ChessMove(from: 'g1', to: 'f3', san: 'Nf3', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2'),
-          const ChessMove(from: 'b8', to: 'c6', san: 'Nc6', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3'),
-          const ChessMove(from: 'f1', to: 'c4', san: 'Bc4', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3'),
-          const ChessMove(from: 'g8', to: 'f6', san: 'Nf6', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4'),
-          const ChessMove(from: 'd2', to: 'd3', san: 'd3', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R b KQkq - 0 4'),
-          const ChessMove(from: 'f8', to: 'c5', san: 'Bc5', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5'),
-          const ChessMove(from: 'c1', to: 'g5', san: 'Bg5', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'r1bqk2r/pppp1ppp/2n2n2/2b1p1B1/2B1P3/3P1N2/PPP2PPP/RN1QK2R b KQkq - 2 5'),
-          const ChessMove(from: 'd7', to: 'd6', san: 'd6', isCapture: false, isCheck: false, isCheckmate: false, isCastle: false, fen: 'r1bqk2r/ppp2ppp/2np1n2/2b1p1B1/2B1P3/3P1N2/PPP2PPP/RN1QK2R w KQkq - 0 6'),
+          const ChessMove(
+            from: 'e2',
+            to: 'e4',
+            san: 'e4',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
+          ),
+          const ChessMove(
+            from: 'e7',
+            to: 'e5',
+            san: 'e5',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2',
+          ),
+          const ChessMove(
+            from: 'g1',
+            to: 'f3',
+            san: 'Nf3',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2',
+          ),
+          const ChessMove(
+            from: 'b8',
+            to: 'c6',
+            san: 'Nc6',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3',
+          ),
+          const ChessMove(
+            from: 'f1',
+            to: 'c4',
+            san: 'Bc4',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3',
+          ),
+          const ChessMove(
+            from: 'g8',
+            to: 'f6',
+            san: 'Nf6',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4',
+          ),
+          const ChessMove(
+            from: 'd2',
+            to: 'd3',
+            san: 'd3',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R b KQkq - 0 4',
+          ),
+          const ChessMove(
+            from: 'f8',
+            to: 'c5',
+            san: 'Bc5',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5',
+          ),
+          const ChessMove(
+            from: 'c1',
+            to: 'g5',
+            san: 'Bg5',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'r1bqk2r/pppp1ppp/2n2n2/2b1p1B1/2B1P3/3P1N2/PPP2PPP/RN1QK2R b KQkq - 2 5',
+          ),
+          const ChessMove(
+            from: 'd7',
+            to: 'd6',
+            san: 'd6',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen:
+                'r1bqk2r/ppp2ppp/2np1n2/2b1p1B1/2B1P3/3P1N2/PPP2PPP/RN1QK2R w KQkq - 0 6',
+          ),
         ];
 
         // Load the game

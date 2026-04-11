@@ -551,6 +551,19 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       return;
     }
 
+    // Explicitly reject if move requires promotion but lacks character
+    if (promotion == null && needsPromotion(from, to)) {
+      AudioService.instance.playCheck();
+      debugPrint('🧩 Wrong move! Promotion character required.');
+      _onPuzzleCompleted(false);
+      state = state.copyWith(
+        state: PuzzleState.incorrect,
+        errorMessage: 'Not the best move. Try again!',
+        clearSelection: true,
+      );
+      return;
+    }
+
     // Strict validation: exactly match the uci string
     final isCorrect = expectedMove.toLowerCase() == uciMove.toLowerCase();
 
