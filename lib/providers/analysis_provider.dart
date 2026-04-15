@@ -215,6 +215,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
     // Cancel any running analysis
     _analysisToken++;
+    // Give the engine loop a chance to exit before starting new analysis
+    await Future.delayed(Duration.zero);
 
     // Rebuild board from start
     final board = chess.Chess.fromFEN(state.startingFen);
@@ -361,6 +363,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
       // Get initial evaluation
       try {
+        if (token != _analysisToken) return;
         final initialResult = await _stockfish!.analyzePosition(
           fen: board.fen,
           depth: 15,
@@ -404,6 +407,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         try {
           // Check guard flag before making engine call
           if (!_isAnalyzing) break;
+          if (token != _analysisToken) return;
           final bestMoveResult = await _stockfish!.getBestMove(
             fen: board.fen,
             depth: 15,
@@ -440,6 +444,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         try {
           // Check guard flag before making engine call
           if (!_isAnalyzing) break;
+          if (token != _analysisToken) return;
           final result = await _stockfish!.analyzePosition(
             fen: board.fen,
             depth: 15,
