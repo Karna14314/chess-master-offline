@@ -104,7 +104,7 @@ class PieceAssets {
     BuildContext context,
     PieceSet pieceSet,
   ) async {
-    for (final piece in allPieceCodes) {
+    await Future.wait(allPieceCodes.map((piece) async {
       try {
         final loader = SvgAssetLoader(pieceSet.getAssetPath(piece));
         await svg.cache.putIfAbsent(
@@ -114,6 +114,6 @@ class PieceAssets {
       } catch (_) {
         // Asset doesn't exist, will use fallback
       }
-    }
+    }));
   }
 }
