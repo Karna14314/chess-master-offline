@@ -4,6 +4,7 @@ import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
+import 'package:chess_master/models/game_session.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 
@@ -50,7 +51,7 @@ class ChessBoard extends ConsumerStatefulWidget {
     this.onSquareTap,
     this.onMove,
     this.showCoordinates = true,
-    this.enableMoveAnimation = false,
+    this.enableMoveAnimation = true,
   }) : useExternalState = true,
        interactive = true,
        flipped = false,
@@ -62,7 +63,7 @@ class ChessBoard extends ConsumerStatefulWidget {
     this.interactive = true,
     this.flipped = false,
     this.onMoveCallback,
-    this.enableMoveAnimation = false,
+    this.enableMoveAnimation = true,
   }) : useExternalState = false,
        fen = null,
        isFlipped = false,
@@ -153,6 +154,27 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.useExternalState && widget.enableMoveAnimation) {
+      ref.listen<GameSession?>(gameSessionProvider, (previous, next) {
+        if (next != null) {
+          final lastMove = next.moveHistory.isNotEmpty ? next.moveHistory.last : null;
+          final prevLastMove = previous?.moveHistory.isNotEmpty == true ? previous!.moveHistory.last : null;
+
+          if (lastMove != null &&
+              (lastMove.from != prevLastMove?.from || lastMove.to != prevLastMove?.to)) {
+
+             final piece = ref.read(gameSessionProvider.notifier).getPieceAt(lastMove.to);
+             if (piece != null) {
+               _animatingMoveFrom = lastMove.from;
+               _animatingMoveTo = lastMove.to;
+               _animatingPieceCode = piece;
+               _moveController.forward(from: 0.0);
+             }
+          }
+        }
+      });
+    }
+
     final settings = ref.watch(settingsProvider);
     final theme = settings.currentBoardTheme;
 
