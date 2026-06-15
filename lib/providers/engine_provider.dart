@@ -120,8 +120,8 @@ class EngineNotifier extends StateNotifier<EngineState> {
       // Check for race condition before heavy operation
       if (currentSearchId != _searchId) return null;
 
-      // If Stockfish failed to init or is not ready, use fallback
-      if (!_service.isReady) {
+      // If simple bot is requested, or Stockfish failed to init or is not ready, use fallback
+      if (botType == BotType.simple || !_service.isReady) {
         final fallbackResult = await SimpleBotService.instance.getBestMove(
           fen: fen,
           depth: difficulty.depth,

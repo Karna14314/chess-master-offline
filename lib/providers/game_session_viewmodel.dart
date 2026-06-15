@@ -54,7 +54,9 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     // If bot is White, it starts the game
     if (gameMode == GameMode.bot && session.playerColor == PlayerColor.black) {
-      _makeBotMove();
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _makeBotMove();
+      });
     }
   }
 

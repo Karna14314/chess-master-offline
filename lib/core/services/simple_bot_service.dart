@@ -438,8 +438,8 @@ class SimpleBotService {
     required String fen,
     int depth = 3,
   }) async {
-    // Cap depth at 3 for fallback engine to ensure ANR-safe response (<5s)
-    final effectiveDepth = min(depth, 3);
+    // Cap depth at 4 for fallback engine to ensure ANR-safe response (<5s)
+    final effectiveDepth = min(depth, 4);
 
     // Run compute-heavy work in separate isolate to prevent main thread blocking
     return Isolate.run(() => _getBestMoveSync(fen, effectiveDepth));
