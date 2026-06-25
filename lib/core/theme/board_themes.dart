@@ -107,7 +107,7 @@ class BoardTheme {
 }
 
 /// Piece set types
-enum PieceSetType { traditional, modern }
+enum PieceSetType { traditional, modern, classic, neo, wood, glass, alpha, merida, cburnett, minimal, fantasy }
 
 /// Configuration for a piece set
 class PieceSet {
@@ -126,16 +126,80 @@ class PieceSet {
     assetPath: 'assets/pieces/modern/',
   );
 
+  static const PieceSet classic = PieceSet(
+    name: 'Classic',
+    assetPath: 'assets/pieces/traditional/', // Use fallback until assets exist
+  );
+
+  static const PieceSet neo = PieceSet(
+    name: 'Neo',
+    assetPath: 'assets/pieces/modern/', // Use fallback
+  );
+
+  static const PieceSet wood = PieceSet(
+    name: 'Wood',
+    assetPath: 'assets/pieces/traditional/', // Use fallback
+  );
+
+  static const PieceSet glass = PieceSet(
+    name: 'Glass',
+    assetPath: 'assets/pieces/modern/', // Use fallback
+  );
+
+  static const PieceSet alpha = PieceSet(
+    name: 'Alpha',
+    assetPath: 'assets/pieces/traditional/', // Use fallback
+  );
+
+  static const PieceSet merida = PieceSet(
+    name: 'Merida',
+    assetPath: 'assets/pieces/modern/', // Use fallback
+  );
+
+  static const PieceSet cburnett = PieceSet(
+    name: 'CBurnett',
+    assetPath: 'assets/pieces/traditional/', // Use fallback
+  );
+
+  static const PieceSet minimal = PieceSet(
+    name: 'Minimal',
+    assetPath: 'assets/pieces/modern/', // Use fallback
+  );
+
+  static const PieceSet fantasy = PieceSet(
+    name: 'Fantasy',
+    assetPath: 'assets/pieces/traditional/', // Use fallback
+  );
+
   static PieceSet fromType(PieceSetType type) {
     switch (type) {
-      case PieceSetType.traditional:
-        return traditional;
-      case PieceSetType.modern:
-        return modern;
+      case PieceSetType.traditional: return traditional;
+      case PieceSetType.modern: return modern;
+      case PieceSetType.classic: return classic;
+      case PieceSetType.neo: return neo;
+      case PieceSetType.wood: return wood;
+      case PieceSetType.glass: return glass;
+      case PieceSetType.alpha: return alpha;
+      case PieceSetType.merida: return merida;
+      case PieceSetType.cburnett: return cburnett;
+      case PieceSetType.minimal: return minimal;
+      case PieceSetType.fantasy: return fantasy;
     }
   }
 
-  static List<PieceSet> get allSets => [traditional, modern];
+  static List<PieceSet> get allSets => [
+    traditional,
+    modern,
+    classic,
+    neo,
+    wood,
+    glass,
+    alpha,
+    merida,
+    cburnett,
+    minimal,
+    fantasy
+  ];
 
   /// Get the asset path for a specific piece
   /// [piece] is in format: 'wK', 'bQ', etc.

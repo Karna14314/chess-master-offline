@@ -1,3 +1,4 @@
+import 'package:vibration/vibration.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -153,6 +154,22 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         !updatedSession.isPlayerTurn &&
         !_isBotThinking) {
       _makeBotMove();
+    }
+
+    // Play haptic feedback if enabled
+    final settings = _ref.read(settingsProvider);
+    if (settings.vibrationEnabled) {
+      if (board.in_checkmate) {
+        Vibration.vibrate(pattern: [0, 100, 50, 100, 50, 200]);
+      } else if (board.in_check) {
+        Vibration.vibrate(pattern: [0, 50, 50, 50]);
+      } else if (isCapture) {
+        Vibration.vibrate(duration: 50, amplitude: 128);
+      } else if (promotion != null) {
+        Vibration.vibrate(duration: 80, amplitude: 128);
+      } else {
+        Vibration.vibrate(duration: 15, amplitude: 64);
+      }
     }
 
     return true;
@@ -352,6 +369,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
           isCastle: false,
           fen: '',
         ),
+        hintDetails: result,
         hintsUsed: currentSession.hintsUsed + 1,
       );
     }

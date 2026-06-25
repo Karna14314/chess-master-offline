@@ -338,6 +338,7 @@ class _MoveClassificationBadge extends StatelessWidget {
   IconData _getIcon(MoveClassification classification) {
     switch (classification) {
       case MoveClassification.blunder:
+      case MoveClassification.miss:
         return Icons.error;
       case MoveClassification.mistake:
         return Icons.warning;
@@ -348,10 +349,13 @@ class _MoveClassificationBadge extends StatelessWidget {
       case MoveClassification.good:
         return Icons.check;
       case MoveClassification.excellent:
+      case MoveClassification.great:
         return Icons.star;
       case MoveClassification.brilliant:
         return Icons.auto_awesome;
       case MoveClassification.best:
+      case MoveClassification.forced:
+      case MoveClassification.onlyMove:
         return Icons.verified;
     }
   }
@@ -469,68 +473,119 @@ class _AnalysisSummary extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.cardDark,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.surfaceDark, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Analysis Summary',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Accuracy
           Row(
             children: [
-              const Icon(
-                Icons.analytics,
-                color: AppTheme.primaryColor,
-                size: 20,
-              ),
+              const Icon(Icons.stars, color: Colors.amber, size: 24),
               const SizedBox(width: 8),
               const Text(
-                'Accuracy:',
-                style: TextStyle(color: AppTheme.textSecondary),
-              ),
-              const Spacer(),
-              Text(
-                '${analysis.averageAccuracy.toStringAsFixed(1)}%',
-                style: const TextStyle(
+                'Game Review',
+                style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
               ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${analysis.averageAccuracy.toStringAsFixed(1)}% Acc',
+                  style: const TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ],
           ),
-          const Divider(height: 24, color: AppTheme.surfaceDark),
-          // Move counts
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
+          const SizedBox(height: 16),
+          const Divider(color: AppTheme.surfaceDark),
+          const SizedBox(height: 16),
+
+          // Stats Grid
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 2.5,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
             children: [
+              if (analysis.brilliantMoves > 0)
+                _StatChip(
+                  label: 'Brilliant',
+                  value: analysis.brilliantMoves.toString(),
+                  color: Color(MoveClassification.brilliant.color),
+                  icon: Icons.star,
+                ),
+              if (analysis.greatMoves > 0)
+                _StatChip(
+                  label: 'Great',
+                  value: analysis.greatMoves.toString(),
+                  color: Color(MoveClassification.great.color),
+                  icon: Icons.thumb_up_alt,
+                ),
               _StatChip(
-                label: 'Blunders',
-                count: analysis.blunders,
-                color: const Color(0xFFFF0000),
-              ),
-              _StatChip(
-                label: 'Mistakes',
-                count: analysis.mistakes,
-                color: const Color(0xFFFF8C00),
-              ),
-              _StatChip(
-                label: 'Inaccuracies',
-                count: analysis.inaccuracies,
-                color: const Color(0xFFFFD700),
+                label: 'Best Move',
+                value: analysis.bestMoves.toString(),
+                color: Color(MoveClassification.best.color),
+                icon: Icons.military_tech,
               ),
               _StatChip(
                 label: 'Excellent',
-                count: analysis.excellentMoves,
-                color: const Color(0xFF00FF00),
+                value: analysis.excellentMoves.toString(),
+                color: Color(MoveClassification.excellent.color),
+                icon: Icons.thumb_up_outlined,
+              ),
+              _StatChip(
+                label: 'Good',
+                value: analysis.goodMoves.toString(),
+                color: Color(MoveClassification.good.color),
+                icon: Icons.check_circle_outline,
+              ),
+              if (analysis.bookMoves > 0)
+                _StatChip(
+                  label: 'Book',
+                  value: analysis.bookMoves.toString(),
+                  color: Color(MoveClassification.book.color),
+                  icon: Icons.menu_book,
+                ),
+              _StatChip(
+                label: 'Inaccuracy',
+                value: analysis.inaccuracies.toString(),
+                color: Color(MoveClassification.inaccuracy.color),
+                icon: Icons.help_outline,
+              ),
+              _StatChip(
+                label: 'Mistake',
+                value: analysis.mistakes.toString(),
+                color: Color(MoveClassification.mistake.color),
+                icon: Icons.error_outline,
+              ),
+              if (analysis.misses > 0)
+                _StatChip(
+                  label: 'Miss',
+                  value: analysis.misses.toString(),
+                  color: Color(MoveClassification.miss.color),
+                  icon: Icons.cancel_outlined,
+                ),
+              _StatChip(
+                label: 'Blunder',
+                value: analysis.blunders.toString(),
+                color: Color(MoveClassification.blunder.color),
+                icon: Icons.cancel,
               ),
             ],
           ),
@@ -542,39 +597,50 @@ class _AnalysisSummary extends StatelessWidget {
 
 class _StatChip extends StatelessWidget {
   final String label;
-  final int count;
+  final String value;
   final Color color;
+  final IconData icon;
 
   const _StatChip({
     required this.label,
-    required this.count,
+    required this.value,
     required this.color,
+    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
           Text(
-            '$count',
-            style: TextStyle(
-              color: color,
+            value,
+            style: const TextStyle(
+              color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(color: color.withOpacity(0.8), fontSize: 12),
           ),
         ],
       ),
@@ -582,7 +648,6 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-/// Move list with analysis classification
 class _MoveList extends StatelessWidget {
   final List<ChessMove> moves;
   final List<MoveAnalysis> analyzedMoves;

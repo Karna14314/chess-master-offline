@@ -160,7 +160,7 @@ void main() {
         // The test verifies the _isAnalyzing flag prevents concurrent calls
 
         bool firstCallStarted = false;
-        bool secondCallPrevented = false;
+
 
         // Simulate a long-running analysis
         final firstCall = Future(() async {
@@ -172,7 +172,7 @@ void main() {
         final secondCall = Future(() async {
           await Future.delayed(const Duration(milliseconds: 100));
           if (firstCallStarted) {
-            secondCallPrevented = true;
+
           }
         });
 

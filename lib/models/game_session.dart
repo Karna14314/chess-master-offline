@@ -1,3 +1,4 @@
+import 'package:chess_master/core/models/chess_models.dart';
 import 'dart:convert';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/game_model.dart';
@@ -39,6 +40,7 @@ class GameSession {
   final String? selectedSquare;
   final List<String> legalMoves;
   final ChessMove? hint;
+  final HintResult? hintDetails;
   final int hintsUsed;
 
   const GameSession({
@@ -70,6 +72,7 @@ class GameSession {
     this.selectedSquare,
     this.legalMoves = const [],
     this.hint,
+    this.hintDetails,
     this.hintsUsed = 0,
   });
 
@@ -190,6 +193,7 @@ class GameSession {
     String? selectedSquare,
     List<String>? legalMoves,
     ChessMove? hint,
+    HintResult? hintDetails,
     int? hintsUsed,
   }) {
     return GameSession(

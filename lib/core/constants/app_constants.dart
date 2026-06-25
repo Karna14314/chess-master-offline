@@ -222,13 +222,17 @@ enum GameResult {
 /// Move classification for analysis
 enum MoveClassification {
   blunder(color: 0xFFFF0000, symbol: '??', name: 'Blunder'),
+  miss(color: 0xFFFF0000, symbol: '?', name: 'Miss'),
   mistake(color: 0xFFFF8C00, symbol: '?', name: 'Mistake'),
   inaccuracy(color: 0xFFFFD700, symbol: '?!', name: 'Inaccuracy'),
   book(color: 0xFFA855F7, symbol: '', name: 'Book'),
   good(color: 0xFF90EE90, symbol: '', name: 'Good'),
+  great(color: 0xFF5CACEE, symbol: '!', name: 'Great'),
   excellent(color: 0xFF00FF00, symbol: '!', name: 'Excellent'),
   brilliant(color: 0xFF00BFFF, symbol: '!!', name: 'Brilliant'),
-  best(color: 0xFF00FF7F, symbol: '', name: 'Best');
+  best(color: 0xFF00FF7F, symbol: '', name: 'Best Move'),
+  forced(color: 0xFF808080, symbol: '', name: 'Forced'),
+  onlyMove(color: 0xFF00FF7F, symbol: '', name: 'Only Move');
 
   final int color;
   final String symbol;

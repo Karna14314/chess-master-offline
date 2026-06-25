@@ -80,7 +80,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           elevation: 2,
-          shadowColor: primaryColor.withOpacity(0.4),
+          shadowColor: primaryColor.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -194,7 +194,7 @@ class AppTheme {
         activeTrackColor: primaryColor,
         inactiveTrackColor: cardDark,
         thumbColor: primaryLight,
-        overlayColor: primaryColor.withOpacity(0.2),
+        overlayColor: primaryColor.withValues(alpha: 0.2),
         valueIndicatorColor: primaryColor,
         valueIndicatorTextStyle: GoogleFonts.inter(
           color: Colors.white,

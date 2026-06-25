@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/providers/game_provider.dart';
-import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 
 void main() {

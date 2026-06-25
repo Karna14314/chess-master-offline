@@ -321,7 +321,11 @@ class GameNotifier extends StateNotifier<GameState> {
         isCastle: false,
         fen: '',
       );
-      state = state.copyWith(hint: move, hintsUsed: state.hintsUsed + 1);
+      state = state.copyWith(
+        hint: move,
+        hintDetails: result,
+        hintsUsed: state.hintsUsed + 1,
+      );
     }
   }
 

@@ -151,9 +151,11 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
+    _moveController.duration = settings.animationSpeed.duration;
     final theme = settings.currentBoardTheme;
 
     // Determine state based on mode
