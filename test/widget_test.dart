@@ -1,3 +1,4 @@
+import "package:sqflite_common_ffi/sqflite_ffi.dart";
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -178,6 +179,8 @@ class MockStockfishService implements StockfishService {
 }
 
 void main() {
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
   testWidgets('App launches and displays bottom navigation bar', (
     WidgetTester tester,
   ) async {
