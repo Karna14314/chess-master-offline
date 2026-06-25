@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -37,12 +36,7 @@ class _AboutScreenState extends State<AboutScreen> {
     }
   }
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      debugPrint('Could not launch $url');
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -86,44 +80,23 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
             const SizedBox(height: 32),
             _buildSection(
-              title: 'Stockfish Chess Engine',
-              content:
-                  'This application uses the Stockfish chess engine (GPLv3 licensed).',
+              title: 'Engine',
+              content: 'Stockfish 16.1 - The powerful open source chess engine.\n\nStockfish is licensed under the GPLv3. The source code is available at github.com/official-stockfish/Stockfish.',
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             _buildSection(
-              title: 'Source Code',
-              content:
-                  'In compliance with the GNU General Public License v3, the full corresponding source code for this application is available at:',
+              title: 'Assets',
+              content: 'Chess Pieces: Wikimedia Commons\n(Creative Commons Attribution-Share Alike 3.0)\n\nSounds: Licensed under CC0\nApp Icon: Custom design',
             ),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap:
-                  () => _launchUrl(
-                    'https://github.com/Karna14314/chess-master-offline',
-                  ),
-              child: Text(
-                'https://github.com/Karna14314/chess-master-offline',
-                style: GoogleFonts.inter(
-                  color: AppTheme.primaryColor,
-                  fontSize: 16,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
+            const SizedBox(height: 24),
+            _buildSection(
+              title: 'Libraries',
+              content: '• chess.dart: Chess logic and move generation\n• flutter_riverpod: State management\n• sqflite: Local database\n• vibration: Haptic feedback\n• stockfish_chess_engine: FFI bindings',
             ),
-            const SizedBox(height: 16),
-            Text(
-              'You may obtain, modify, and redistribute the source code under the terms of the GPLv3 license.',
-              style: GoogleFonts.inter(
-                color: AppTheme.textSecondary,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             _buildSection(
               title: 'Puzzle Database',
-              content:
-                  'Chess puzzles in this app are sourced from the Lichess.org open database.',
+              content: 'Chess puzzles in this app are sourced from the Lichess.org open database.',
             ),
             const SizedBox(height: 16),
             Text(
@@ -142,21 +115,13 @@ class _AboutScreenState extends State<AboutScreen> {
                     context: context,
                     applicationName: 'Chess Master',
                     applicationVersion: _version,
-                    applicationLegalese: 'Copyright © 2025 Chess Master',
+                    applicationLegalese: 'Copyright © 2024\n\nStockfish Engine: GPLv3 License\nChess Pieces: CC BY-SA 3.0',
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.cardDark,
-                  foregroundColor: AppTheme.textPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppTheme.borderColor),
-                  ),
-                ),
-                child: const Text('Open Source Licenses'),
+                child: const Text('View All Licenses'),
               ),
             ),
+            const SizedBox(height: 32),
           ],
         ),
       ),

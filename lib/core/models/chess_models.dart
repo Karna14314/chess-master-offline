@@ -101,3 +101,26 @@ class AnalysisResult {
 
 /// Engine status enum
 enum EngineStatus { initializing, ready, failed, usingFallback, disposed }
+
+/// Structured hint information
+class HintResult {
+  final BestMoveResult mainResult;
+  final String? alternativeMove;
+  final String explanation;
+  final String? tacticalMotif;
+  final List<String> principalVariation;
+
+  HintResult({
+    required this.mainResult,
+    this.alternativeMove,
+    required this.explanation,
+    this.tacticalMotif,
+    this.principalVariation = const [],
+  });
+
+  String get bestMove => mainResult.bestMove;
+  int? get evaluation => mainResult.evaluation;
+  int? get mateIn => mainResult.mateIn;
+  bool get isValid => mainResult.isValid;
+  (String, String, String?) get parsedMove => mainResult.parsedMove;
+}

@@ -45,9 +45,14 @@ class GameAnalysis {
   final List<MoveAnalysis> moves;
   final double averageAccuracy;
   final int blunders;
+  final int misses;
   final int mistakes;
   final int inaccuracies;
+  final int goodMoves;
+  final int greatMoves;
   final int excellentMoves;
+  final int brilliantMoves;
+  final int bestMoves;
   final int bookMoves;
   final double finalEval;
 
@@ -55,9 +60,14 @@ class GameAnalysis {
     required this.moves,
     required this.averageAccuracy,
     this.blunders = 0,
+    this.misses = 0,
     this.mistakes = 0,
     this.inaccuracies = 0,
+    this.goodMoves = 0,
+    this.greatMoves = 0,
     this.excellentMoves = 0,
+    this.brilliantMoves = 0,
+    this.bestMoves = 0,
     this.bookMoves = 0,
     this.finalEval = 0.0,
   });
@@ -71,9 +81,14 @@ class GameAnalysis {
     if (moves.isEmpty) return GameAnalysis.empty();
 
     int blunders = 0;
+    int misses = 0;
     int mistakes = 0;
     int inaccuracies = 0;
+    int goodMoves = 0;
+    int greatMoves = 0;
     int excellentMoves = 0;
+    int brilliantMoves = 0;
+    int bestMoves = 0;
     int bookMoves = 0;
     double totalAccuracy = 0;
 
@@ -82,6 +97,10 @@ class GameAnalysis {
         case MoveClassification.blunder:
           blunders++;
           totalAccuracy += 20;
+          break;
+        case MoveClassification.miss:
+          misses++;
+          totalAccuracy += 30;
           break;
         case MoveClassification.mistake:
           mistakes++;
@@ -92,15 +111,25 @@ class GameAnalysis {
           totalAccuracy += 75;
           break;
         case MoveClassification.good:
-          totalAccuracy += 90;
+          goodMoves++;
+          totalAccuracy += 85;
+          break;
+        case MoveClassification.great:
+          greatMoves++;
+          totalAccuracy += 95;
           break;
         case MoveClassification.excellent:
-        case MoveClassification.brilliant:
           excellentMoves++;
           totalAccuracy += 100;
           break;
+        case MoveClassification.brilliant:
+          brilliantMoves++;
+          totalAccuracy += 100;
+          break;
         case MoveClassification.best:
-          excellentMoves++;
+        case MoveClassification.forced:
+        case MoveClassification.onlyMove:
+          bestMoves++;
           totalAccuracy += 100;
           break;
         case MoveClassification.book:
@@ -114,9 +143,14 @@ class GameAnalysis {
       moves: moves,
       averageAccuracy: moves.isNotEmpty ? totalAccuracy / moves.length : 0,
       blunders: blunders,
+      misses: misses,
       mistakes: mistakes,
       inaccuracies: inaccuracies,
+      goodMoves: goodMoves,
+      greatMoves: greatMoves,
       excellentMoves: excellentMoves,
+      brilliantMoves: brilliantMoves,
+      bestMoves: bestMoves,
       bookMoves: bookMoves,
       finalEval: moves.isNotEmpty ? moves.last.evalAfter : 0.0,
     );

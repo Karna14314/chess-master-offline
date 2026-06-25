@@ -1,3 +1,4 @@
+import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/constants/app_constants.dart';
 
@@ -107,6 +108,7 @@ class GameState {
   final DateTime? startedAt;
   final String? openingName;
   final ChessMove? hint;
+  final HintResult? hintDetails;
   final ChessMove? bestMove;
   final int version;
   final String whitePlayerName;
@@ -135,6 +137,7 @@ class GameState {
     this.startedAt,
     this.openingName,
     this.hint,
+    this.hintDetails,
     this.bestMove,
     this.version = 0,
     this.whitePlayerName = 'White',
@@ -235,6 +238,7 @@ class GameState {
     DateTime? startedAt,
     String? openingName,
     ChessMove? hint,
+    HintResult? hintDetails,
     ChessMove? bestMove,
     int? version,
     String? whitePlayerName,
@@ -266,6 +270,7 @@ class GameState {
       startedAt: startedAt ?? this.startedAt,
       openingName: openingName ?? this.openingName,
       hint: hint ?? this.hint,
+      hintDetails: hintDetails ?? this.hintDetails,
       bestMove: bestMove ?? this.bestMove,
       version: version ?? this.version,
       whitePlayerName: whitePlayerName ?? this.whitePlayerName,

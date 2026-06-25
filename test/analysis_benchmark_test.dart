@@ -84,8 +84,8 @@ void main() {
       if (legalMoves.isEmpty) break;
 
       // Pick first move
-      final legalMovesObjs = game.moves({'asObjects': true}) as List;
-      final moveObj = legalMovesObjs.first as chess_lib.Move;
+      final legalMovesObjs = game.moves({'asObjects': true});
+      final moveObj = legalMovesObjs.first;
       final san = game.move_to_san(moveObj);
 
       game.move(moveObj);
@@ -106,7 +106,7 @@ void main() {
       moveCount++;
     }
 
-    print('Generated ${moves.length} moves for benchmark.');
+    // print('Generated ${moves.length} moves for benchmark.');
 
     // 2. Setup AnalysisNotifier with MockStockfishService
     final mockService = MockStockfishService();
@@ -122,8 +122,8 @@ void main() {
     await notifier.analyzeFullGame();
     stopwatch.stop();
 
-    print('Analysis took ${stopwatch.elapsedMilliseconds}ms');
-    print('State updates: ${notifier.stateUpdateCount}');
+    // print('Analysis took ${stopwatch.elapsedMilliseconds}ms');
+    // print('State updates: ${notifier.stateUpdateCount}');
 
     // 5. Verify optimized updates
     // Batch size is 5.
@@ -136,7 +136,7 @@ void main() {
     // The test was failing compilation because setMaxStrength was missing in MockStockfishService.
     // I added it above.
 
-    final expectedUpdates = (moves.length / 5).ceil();
+
     // Use a tolerance or direct check depending on exact logic
     // The logic is: if ((i + 1) % 5 == 0 || i == moves.length - 1)
     // So for 50 moves: 5, 10, ..., 50. Exactly 10 updates.

@@ -266,7 +266,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         border: Border.all(color: AppTheme.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -370,7 +370,7 @@ class _BoardThemeSelector extends StatelessWidget {
                           color:
                               isSelected
                                   ? AppTheme.primaryColor
-                                  : Colors.grey.withOpacity(0.3),
+                                  : Colors.grey.withValues(alpha: 0.3),
                           width: isSelected ? 3 : 1,
                         ),
                         gradient: LinearGradient(
@@ -386,7 +386,7 @@ class _BoardThemeSelector extends StatelessWidget {
                             isSelected
                                 ? [
                                   BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(
+                                    color: AppTheme.primaryColor.withValues(alpha:
                                       0.4,
                                     ),
                                     blurRadius: 8,
@@ -462,7 +462,7 @@ class _PieceSetSelector extends StatelessWidget {
                   decoration: BoxDecoration(
                     color:
                         isSelected
-                            ? AppTheme.primaryColor.withOpacity(0.1)
+                            ? AppTheme.primaryColor.withValues(alpha: 0.1)
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -618,8 +618,8 @@ class _SwitchSetting extends StatelessWidget {
       ),
       value: value,
       onChanged: onChanged,
-      activeColor: AppTheme.primaryColor,
-      activeTrackColor: AppTheme.primaryColor.withOpacity(0.4),
+      activeTrackColor: AppTheme.primaryColor,
+      activeThumbColor: AppTheme.primaryColor,
       inactiveThumbColor: AppTheme.textHint,
       inactiveTrackColor: AppTheme.surfaceDark,
     );

@@ -708,11 +708,85 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           IconButton(
             icon: const Icon(Icons.lightbulb_outline, color: Colors.white70),
             onPressed:
-                () => ref.read(gameSessionProvider.notifier).useHint(ref),
+                () => _showHintDialog(context, ref),
           ),
         ],
       ),
     );
+  }
+
+  void _showHintDialog(BuildContext context, WidgetRef ref) async {
+    final state = ref.read(gameSessionProvider);
+    if (state == null) return;
+
+    // Check if we already have a hint
+    if (state.hintDetails == null) {
+      // Need to fetch it first
+      await ref.read(gameSessionProvider.notifier).useHint(ref);
+    }
+
+    // Read again to get updated state
+    final updatedState = ref.read(gameSessionProvider);
+    if (updatedState == null || updatedState.hintDetails == null) return;
+
+    final hint = updatedState.hintDetails!;
+
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppTheme.surfaceDark,
+          title: Row(
+            children: [
+              const Icon(Icons.lightbulb, color: Colors.amber),
+              const SizedBox(width: 8),
+              const Text('Engine Hint', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Best Move: ${hint.bestMove}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryColor),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                hint.explanation,
+                style: const TextStyle(color: Colors.white70),
+              ),
+              if (hint.tacticalMotif != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.flash_on, color: Colors.amber, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Motif: ${hint.tacticalMotif}',
+                      style: const TextStyle(color: Colors.white, fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                ),
+              ],
+              if (hint.alternativeMove != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Alternative: ${hint.alternativeMove}',
+                  style: const TextStyle(color: Colors.white54, fontSize: 13),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _showResignConfirmation(BuildContext context) {

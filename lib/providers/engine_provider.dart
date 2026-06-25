@@ -210,7 +210,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
   }
 
   /// Get a hint for the player
-  Future<BestMoveResult?> getHint({required String fen, int depth = 15}) async {
+  Future<HintResult?> getHint({required String fen, int depth = 15}) async {
     _searchId++;
     final currentSearchId = _searchId;
 
@@ -228,14 +228,56 @@ class EngineNotifier extends StateNotifier<EngineState> {
       if (currentSearchId != _searchId) return null;
 
       if (_service.isReady) {
-        // Ensure hint uses max strength
+        // We use analyzePosition to get multipv for alternative move and better info
         _service.setMaxStrength();
-        final result = await _service.getBestMove(fen: fen, depth: depth);
+        final result = await _service.analyzePosition(
+          fen: fen,
+          depth: depth,
+          multiPv: 2,
+        );
 
         if (currentSearchId != _searchId) return null;
 
-        state = state.copyWith(isThinking: false, bestMove: result.bestMove);
-        return result;
+        if (result.lines.isEmpty) return null;
+
+        final mainLine = result.lines[0];
+        final bestMove = mainLine.moves.isNotEmpty ? mainLine.moves[0] : '';
+
+        String? alternativeMove;
+        if (result.lines.length > 1 && result.lines[1].moves.isNotEmpty) {
+          alternativeMove = result.lines[1].moves[0];
+        }
+
+        final bestMoveResult = BestMoveResult(
+          bestMove: bestMove,
+          evaluation: (mainLine.evaluation * 100).round(),
+          mateIn: mainLine.mateIn,
+        );
+
+        state = state.copyWith(isThinking: false, bestMove: bestMove);
+
+        // Derive explanation
+        String explanation = "This is the strongest move in the position.";
+        String? motif;
+
+        if (mainLine.isMate) {
+          explanation = "Forces checkmate.";
+          motif = "Mating threat";
+        } else if (mainLine.evaluation > 2.0) {
+          explanation = "Capitalizes on a significant advantage.";
+        } else if (mainLine.evaluation < -2.0) {
+          explanation = "Best defensive resource in a difficult position.";
+        } else {
+          explanation = "Maintains a balanced position.";
+        }
+
+        return HintResult(
+          mainResult: bestMoveResult,
+          alternativeMove: alternativeMove,
+          explanation: explanation,
+          tacticalMotif: motif,
+          principalVariation: mainLine.moves,
+        );
       } else {
         throw Exception('Stockfish not ready');
       }
@@ -252,9 +294,13 @@ class EngineNotifier extends StateNotifier<EngineState> {
         if (currentSearchId != _searchId) return null;
 
         state = state.copyWith(isThinking: false, bestMove: result.bestMove);
-        return BestMoveResult(
-          bestMove: result.bestMove,
-          evaluation: result.evaluation,
+
+        return HintResult(
+          mainResult: BestMoveResult(
+            bestMove: result.bestMove,
+            evaluation: result.evaluation,
+          ),
+          explanation: "Fallback engine suggestion.",
         );
       } catch (fallbackError) {
         state = state.copyWith(isThinking: false);
@@ -362,7 +408,7 @@ final engineProvider = StateNotifierProvider<EngineNotifier, EngineState>((
 });
 
 /// Provider for getting a hint
-final hintProvider = FutureProvider.family<BestMoveResult?, String>((
+final hintProvider = FutureProvider.family<HintResult?, String>((
   ref,
   fen,
 ) async {
