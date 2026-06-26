@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
+import 'dart:math' as math;
+
 import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_piece.dart';
@@ -316,20 +318,22 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                         squareSize,
                         effectiveFlipped,
                       );
-                      // Use easeOutCubic for smoother piece movement feeling
-                      final curve = Curves.easeOutCubic.transform(
+                      // Use easeInOutCubic for smoother piece movement feeling
+                      final curve = Curves.easeInOutCubic.transform(
                         _moveController.value,
                       );
                       final pos = Offset.lerp(start, end, curve)!;
+                      // Add slight scale pop during movement
+                      final scale = 1.0 + (math.sin(curve * math.pi) * 0.15);
 
                       return Positioned(
-                        left: pos.dx,
-                        top: pos.dy,
-                        width: squareSize,
-                        height: squareSize,
+                        left: pos.dx + (squareSize * (1.0 - scale) / 2),
+                        top: pos.dy + (squareSize * (1.0 - scale) / 2),
+                        width: squareSize * scale,
+                        height: squareSize * scale,
                         child: ChessPiece(
                           piece: _animatingPieceCode!,
-                          size: squareSize,
+                          size: squareSize * scale,
                           pieceSet: settings.currentPieceSet,
                         ),
                       );

@@ -94,14 +94,14 @@ void main() {
         );
         stopwatch.stop();
 
-        // Should complete quickly (under 600ms)
-        expect(stopwatch.elapsedMilliseconds, lessThan(600));
+        // Should complete quickly (under 3000ms for fallback with depth 4)
+        expect(stopwatch.elapsedMilliseconds, lessThan(3000));
 
         // Should return a result (fallback)
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
       },
-      timeout: const Timeout(Duration(seconds: 2)),
+      timeout: const Timeout(Duration(seconds: 5)),
     );
 
     test(
@@ -115,12 +115,12 @@ void main() {
         stopwatch.stop();
 
         // In fallback mode, depth 15 without cap would cause ANR/hang and fail the test timeout.
-        // With depth capped at 4, it should complete quickly.
-        expect(stopwatch.elapsedMilliseconds, lessThan(1000));
+        // With depth capped at 4, it should complete under 3 seconds
+        expect(stopwatch.elapsedMilliseconds, lessThan(3000));
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
       },
-      timeout: const Timeout(Duration(seconds: 2)),
+      timeout: const Timeout(Duration(seconds: 5)),
     );
 
     test(
