@@ -386,8 +386,8 @@ class _BoardThemeSelector extends StatelessWidget {
                             isSelected
                                 ? [
                                   BoxShadow(
-                                    color: AppTheme.primaryColor.withValues(alpha:
-                                      0.4,
+                                    color: AppTheme.primaryColor.withValues(
+                                      alpha: 0.4,
                                     ),
                                     blurRadius: 8,
                                   ),
@@ -618,10 +618,16 @@ class _SwitchSetting extends StatelessWidget {
       ),
       value: value,
       onChanged: onChanged,
-      activeTrackColor: AppTheme.primaryColor,
-      activeThumbColor: AppTheme.primaryColor,
-      inactiveThumbColor: AppTheme.textHint,
-      inactiveTrackColor: AppTheme.surfaceDark,
+      thumbColor: MaterialStateProperty.resolveWith<Color?>((states) {
+        return states.contains(MaterialState.selected)
+            ? AppTheme.primaryColor
+            : AppTheme.textHint;
+      }),
+      trackColor: MaterialStateProperty.resolveWith<Color?>((states) {
+        return states.contains(MaterialState.selected)
+            ? AppTheme.primaryColor.withOpacity(0.3)
+            : AppTheme.surfaceDark;
+      }),
     );
   }
 }
