@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/chess.dart' as chess;
@@ -321,16 +323,20 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                         _moveController.value,
                       );
                       final pos = Offset.lerp(start, end, curve)!;
+                      final scale = 1.0 + math.sin(_moveController.value * math.pi) * 0.15;
 
                       return Positioned(
                         left: pos.dx,
                         top: pos.dy,
                         width: squareSize,
                         height: squareSize,
-                        child: ChessPiece(
-                          piece: _animatingPieceCode!,
-                          size: squareSize,
-                          pieceSet: settings.currentPieceSet,
+                        child: Transform.scale(
+                          scale: scale,
+                          child: ChessPiece(
+                            piece: _animatingPieceCode!,
+                            size: squareSize,
+                            pieceSet: settings.currentPieceSet,
+                          ),
                         ),
                       );
                     },
