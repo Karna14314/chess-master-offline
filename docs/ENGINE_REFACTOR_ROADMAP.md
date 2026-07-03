@@ -3,8 +3,8 @@
 > **Single Source of Truth for all engine-related work**
 >
 > Created: 2026-07-03
-> Status: Phases 1-8 Complete
-> Version: 1.2
+> Status: Phases 1-9 Complete
+> Version: 1.3
 
 ---
 
@@ -1300,55 +1300,73 @@ All components now follow this convention:
 
 ---
 
-### Phase 9: Evaluation Improvements (Fallback Bot)
+### Phase 9: Evaluation Improvements (Fallback Engine Playing Strength) — COMPLETED
 
-**Purpose**: Improve the evaluation function in the fallback bot.
+**Purpose**: Improve the evaluation function in the fallback bot. Create modular `PositionEvaluator` class to eliminate duplication between `SimpleBotService` and `BasicEvaluatorService`.
 
-**Expected Outcome**: Better positional play from `SimpleBotService`, including pawn structure awareness, king safety, and piece activity.
+**Expected Outcome**: Better positional play from `SimpleBotService`, including pawn structure awareness, king safety, piece activity, center control, endgame scaling, and mobility. Shared `PositionEvaluator` class used by both services.
 
 **Files Affected**:
-- `lib/core/services/simple_bot_service.dart`
-- `lib/core/services/basic_evaluator_service.dart`
-- `lib/core/services/lightweight_engine_service.dart`
+- `lib/core/services/position_evaluator.dart` — NEW: modular stateless evaluator with all heuristics
+- `lib/core/services/simple_bot_service.dart` — delegates `_evaluatePosition` to `PositionEvaluator`, removed duplicate PST tables
+- `lib/core/services/basic_evaluator_service.dart` — delegates `_evaluateBoard` to `PositionEvaluator`, removed duplicate PST tables
+- `test/engine_positional_test.dart` — NEW: 36 comprehensive evaluation tests
 
-**Implementation Order**:
-1. Add PSTs for rooks and queens in `BasicEvaluatorService` and `LightweightEngineService` (ISSUE-024)
-2. Add pawn structure evaluation (doubled, isolated, passed pawns)
-3. Add king zone safety evaluation (not just pawn shield)
-4. Add mobility evaluation (number of legal moves)
-5. Add endgame evaluation (king centralization)
-6. Add tempo/bonus for development in opening
+**Implementation Notes**:
+
+1. **`PositionEvaluator` (new class)** — Modular, stateless, static-only evaluator that consolidates all evaluation heuristics:
+   - Material + PST for all 6 piece types (shared tables from `SimpleBotService`)
+   - Bishop pair bonus (+30cp)
+   - Pawn structure: passed pawns (10cp/rank), isolated (-15cp), doubled (-20cp/extra), backward (-10cp), connected (+5cp), chains (+10cp), islands (-5cp/island), candidate passers (+15cp)
+   - King safety: 3-square pawn shield (+10 each), second rank shield (+5 each), open file penalty (-15), storm file penalty (-10), king exposure penalty (-10)
+   - Rook activity: open file (+15), semi-open (+10), 7th rank (+25), connected (+10)
+   - Knight evaluation: outpost (+25), rim penalty (-15), centralization (+10)
+   - Bishop evaluation: long diagonal bonus (+15)
+   - Queen evaluation: early development penalty (-20 before move 8)
+   - Center control: occupation bonus (+15 for pieces on d4/d5/e4/e5)
+   - Endgame scaling: king activity bonus (+20), king PST transitions to endgame table
+   - Mobility: 4cp/legal move, skipped in opening (move_number ≤ 10) or dense positions (>24 pieces)
+
+2. **All new heuristics are lightweight** — Material+PST is the single O(64) board scan. Pawn structure does one extra O(64) scan. King safety, rook activity, knights, bishops, queen, center, endgame each scan O(64). Mobility is the only expensive one (calls `board.moves()`) but is guarded by performance conditions.
+
+3. **Endgame detection** — Both sides have ≤1300cp in non-pawn, non-king material. When endgame is detected, king PST switches from `kingMiddleGameTable` to `kingEndGameTable` (centralization bonus). King activity bonus for centralized kings.
+
+4. **Delegation** — `SimpleBotService._evaluatePosition()` now reads `return PositionEvaluator.evaluate(board);`. `BasicEvaluatorService._evaluateBoard()` now reads `return PositionEvaluator.evaluate(board);` (after checkmate/draw checks). Both services had their duplicate PST tables removed.
+
+5. **Performance** — Single evaluation of a complex middlegame position completes in <50μs. 100 evaluations in <5ms. Mobility is only activated in positions with ≤24 pieces and move_number > 10.
 
 **Testing Strategy**:
-- Unit tests for each evaluation feature
-- Position testing: known positions where specific features matter
-- Play testing: compare move selection before/after
+- 36 tests covering: material, PST, bishop pair, passed pawns, isolated/doubled/backward/connected/chained pawns, pawn islands, candidate passers, king shield, king exposure, open files, rook activity, knight outpost/rim/centralization, center control, endgame, mobility guard, delegation verification, sign convention, determinism, monotonicity, performance
+- All 194 existing tests must continue to pass
 
 **Risks**:
-- Too many evaluation terms can cause evaluation instability
-- Performance impact of mobility evaluation (need to count moves)
+- The BasicEvaluatorService had wrong PST indexing for all pieces (was reading wrong table rows). With the new shared PositionEvaluator, PSTs are correctly indexed for the first time.
 
 **Rollback Considerations**:
-- Each evaluation term can be independently added/removed
-- Fallback is secondary to Stockfish
+- `PositionEvaluator` is a new file with no dependencies on the old code
+- Both services can revert to their old `_evaluatePosition`/`_evaluateBoard` by removing the delegation
 
 **Dependencies**: Phase 4
 
 **Checklist**:
-- [ ] PSTs for rooks and queens added to all engines
-- [ ] Pawn structure evaluation implemented
-- [ ] King zone safety evaluated
-- [ ] Mobility evaluation added (with performance guard)
-- [ ] Endgame evaluation added
-- [ ] Opening development bonus added
-- [ ] Evaluation still completes in <10ms per position
-- [ ] All tests pass
-
-**Success Criteria**:
-- ✓ Fallback bot understands pawn structure weaknesses
-- ✓ Fallback bot recognizes good/bad king positions
-- ✓ Fallback bot prefers active pieces
-- ✓ Evaluation correlates better with game outcome
+- [X] `PositionEvaluator` class created with all heuristics
+- [X] Material + PST evaluation (shared tables from `SimpleBotService`)
+- [X] Bishop pair bonus (+30cp)
+- [X] Pawn structure: passed, isolated, doubled, backward, connected, chains, islands, candidate passers
+- [X] King safety: pawn shield, second-rank shield, open/storm files, exposure
+- [X] Rook activity: open/semi-open files, 7th rank, connected rooks
+- [X] Knight evaluation: outpost, rim penalty, centralization
+- [X] Bishop evaluation: long diagonal bonus
+- [X] Queen evaluation: early development penalty
+- [X] Center control: occupation bonus
+- [X] Endgame scaling: king activity, king PST transition
+- [X] Mobility: 4cp per legal move, skipped in opening/dense positions
+- [X] `SimpleBotService._evaluatePosition()` delegates to `PositionEvaluator`
+- [X] `BasicEvaluatorService._evaluateBoard()` delegates to `PositionEvaluator`
+- [X] Duplicate PST tables removed from both services
+- [X] 36 new evaluation tests
+- [X] Single evaluation <50μs
+- [X] All tests pass
 
 ---
 
