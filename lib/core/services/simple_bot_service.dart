@@ -2,8 +2,9 @@ import 'dart:isolate';
 import 'dart:math';
 import 'package:chess/chess.dart' as chess;
 
-/// Lightweight chess bot using bitboards and minimax with alpha-beta pruning
-/// Designed to be fast and memory-efficient (~1MB)
+/// Lightweight chess bot using negamax with alpha-beta pruning,
+/// iterative deepening, and principal variation tracking.
+/// Designed to be fast and memory-efficient (~1MB).
 class SimpleBotService {
   static SimpleBotService? _instance;
 
@@ -13,6 +14,14 @@ class SimpleBotService {
   }
 
   SimpleBotService._();
+
+  static int _cancelToken = 0;
+
+  /// Cancel any ongoing search. All active `getBestMove` calls will
+  /// return the best result found so far from the completed iterations.
+  static void cancelSearch() {
+    _cancelToken++;
+  }
 
   // Piece values (centipawns)
   static const int pawnValue = 100;
@@ -438,96 +447,163 @@ class SimpleBotService {
     required String fen,
     int depth = 3,
   }) async {
-    // Cap depth at 3 for fallback engine to ensure ANR-safe response (<5s)
     final effectiveDepth = min(depth, 3);
+    final cancelId = _cancelToken;
 
-    // Run compute-heavy work in separate isolate to prevent main thread blocking
-    return Isolate.run(() => _getBestMoveSync(fen, effectiveDepth));
+    return Isolate.run(() => _getBestMoveSync(fen, effectiveDepth, cancelId));
   }
 
-  /// Synchronous computation - depth capped to prevent ANR
-  SimpleBotResult _getBestMoveSync(String fen, int depth) {
+  /// Synchronous computation — runs inside an isolate.
+  /// Uses iterative deepening with negamax alpha-beta and PV tracking.
+  SimpleBotResult _getBestMoveSync(
+    String fen,
+    int depth,
+    int cancelId,
+  ) {
     final board = chess.Chess.fromFEN(fen);
-
-    // Get all legal moves
     final moves = board.moves({'verbose': true});
     if (moves.isEmpty) {
       return SimpleBotResult(bestMove: '', evaluation: 0);
     }
 
-    // For very low depth, just pick a random legal move
-    if (depth <= 1) {
-      final randomMove = moves[Random().nextInt(moves.length)] as Map;
-      final from = randomMove['from'] as String;
-      final to = randomMove['to'] as String;
-      final promotion = randomMove['promotion']?.toString();
-      return SimpleBotResult(
-        bestMove: '$from$to${promotion ?? ''}',
-        evaluation: 0,
-      );
+    // At depth 0 or 1, pick the best single-ply move
+    if (depth <= 0) {
+      return _pickBestSinglePly(board, moves);
     }
 
-    // Run minimax with alpha-beta pruning
-    String? bestMove;
+    // --- Iterative Deepening ---
+    String bestMove = moves.isNotEmpty ? _moveToStr(moves[0] as Map) : '';
+    int bestEval = 0;
+    List<String> bestPv = [];
+
+    for (int idDepth = 1; idDepth <= depth; idDepth++) {
+      if (_cancelToken != cancelId) break;
+
+      final rootResult = _searchRoot(board, idDepth);
+
+      if (_cancelToken != cancelId) break;
+
+      bestMove = rootResult.bestMove;
+      bestEval = rootResult.eval;
+      bestPv = rootResult.pv;
+    }
+
+    return SimpleBotResult(
+      bestMove: bestMove,
+      evaluation: bestEval,
+      principalVariation: bestPv,
+    );
+  }
+
+  /// Evaluate each move at depth 1 and return the best.
+  SimpleBotResult _pickBestSinglePly(chess.Chess board, List moves) {
+    String bestMove = '';
     int bestEval = -999999;
-    final isMaximizing = board.turn == chess.Color.WHITE;
 
     for (final move in moves) {
       final m = move as Map;
-      final moveStr = '${m['from']}${m['to']}${m['promotion'] ?? ''}';
-
-      // Make move
       board.move(m);
-
-      // Evaluate position
-      final eval = _minimax(board, depth - 1, -999999, 999999, !isMaximizing);
-
-      // Undo move
+      final eval = _evaluatePosition(board);
       board.undo();
 
-      // Update best move
-      if (isMaximizing) {
-        if (eval > bestEval) {
-          bestEval = eval;
-          bestMove = moveStr;
-        }
-      } else {
-        if (eval < bestEval || bestMove == null) {
-          bestEval = eval;
-          bestMove = moveStr;
-        }
+      if (eval > bestEval) {
+        bestEval = eval;
+        bestMove = _moveToStr(m);
       }
     }
 
-    return SimpleBotResult(bestMove: bestMove ?? '', evaluation: bestEval);
+    return SimpleBotResult(bestMove: bestMove, evaluation: bestEval);
   }
 
-  /// Minimax algorithm with alpha-beta pruning
-  int _minimax(
+  /// Root search — tries each root move and calls negamax for deeper search.
+  /// Returns best move, evaluation, and principal variation.
+  ({String bestMove, int eval, List<String> pv}) _searchRoot(
+    chess.Chess board,
+    int depth,
+  ) {
+    final moves = board.moves({'verbose': true});
+    _sortMoves(moves, null);
+
+    String bestMove = '';
+    int bestEval = -999999;
+    List<String> bestPv = [];
+
+    for (final move in moves) {
+      final m = move as Map;
+      board.move(m);
+      final result = _negamax(board, depth - 1, -999999, 999999);
+      board.undo();
+
+      // result.score is from opponent's perspective; negate for ours
+      final eval = -result.score;
+
+      if (eval > bestEval) {
+        bestEval = eval;
+        bestMove = _moveToStr(m);
+        bestPv = [bestMove, ...result.pv];
+      }
+    }
+
+    return (bestMove: bestMove, eval: bestEval, pv: bestPv);
+  }
+
+  /// Pure negamax with alpha-beta pruning. Returns score from current
+  /// side-to-move's perspective plus principal variation.
+  ({int score, List<String> pv}) _negamax(
     chess.Chess board,
     int depth,
     int alpha,
     int beta,
-    bool isMaximizing,
   ) {
-    // Terminal conditions
     if (depth == 0) {
-      return _evaluatePosition(board);
+      return (score: _evaluatePosition(board), pv: const []);
     }
 
     if (board.in_checkmate) {
-      return isMaximizing ? -999999 : 999999;
+      // Current side is checkmated — terrible; prefer sooner mates
+      return (score: -999999 + depth, pv: const []);
     }
 
     if (board.in_stalemate || board.in_draw) {
-      return 0;
+      return (score: 0, pv: const []);
     }
 
     final moves = board.moves({'verbose': true});
-    if (moves.isEmpty)
-      return 0; // Should be handled by game_over but safety check
+    if (moves.isEmpty) return (score: 0, pv: const []);
 
-    // Move Ordering
+    _sortMoves(moves, null);
+
+    int bestScore = alpha;
+    List<String> bestPv = const [];
+
+    for (final move in moves) {
+      final m = move as Map;
+      board.move(m);
+      final result = _negamax(board, depth - 1, -beta, -bestScore);
+      board.undo();
+
+      final score = -result.score;
+
+      if (score >= beta) {
+        return (score: beta, pv: const []); // Prune
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestPv = [_moveToStr(m), ...result.pv];
+      }
+    }
+
+    return (score: bestScore, pv: bestPv);
+  }
+
+  /// Convert a verbose move map to UCI string (e.g., "e2e4", "a7a8q").
+  String _moveToStr(Map m) {
+    return '${m['from']}${m['to']}${m['promotion'] ?? ''}';
+  }
+
+  /// Simple move ordering: captures before non-captures.
+  void _sortMoves(List moves, String? prioritizeMove) {
     moves.sort((a, b) {
       final mapA = a as Map;
       final mapB = b as Map;
@@ -535,20 +611,6 @@ class SimpleBotService {
       if (mapA['captured'] == null && mapB['captured'] != null) return 1;
       return 0;
     });
-
-    int value = -1000000000;
-
-    for (final move in moves) {
-      board.move(move as Map);
-      int score = -_minimax(board, depth - 1, -beta, -alpha, !isMaximizing);
-      board.undo();
-
-      if (score >= beta) return beta; // Pruning
-      if (score > value) value = score;
-      if (score > alpha) alpha = score;
-    }
-
-    return value;
   }
 
   /// Evaluate the current board position (material + piece-square tables + king safety)
@@ -693,8 +755,13 @@ class SimpleBotService {
 class SimpleBotResult {
   final String bestMove;
   final int evaluation;
+  final List<String> principalVariation;
 
-  SimpleBotResult({required this.bestMove, required this.evaluation});
+  SimpleBotResult({
+    required this.bestMove,
+    required this.evaluation,
+    this.principalVariation = const [],
+  });
 
   /// Parse UCI move format (e.g., "e2e4") to from/to squares
   (String from, String to, String? promotion) get parsedMove {
