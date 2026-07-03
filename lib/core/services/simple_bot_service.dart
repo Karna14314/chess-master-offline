@@ -34,12 +34,12 @@ class SimpleBotService {
 
   /// Get best move for the current position
   /// [fen] - Position in FEN notation
-  /// [depth] - Search depth (1-4 recommended for fallback engine)
+  /// [depth] - Search depth (1-6 recommended for fallback engine)
   Future<SimpleBotResult> getBestMove({
     required String fen,
     int depth = 3,
   }) async {
-    final effectiveDepth = min(depth, 3);
+    final effectiveDepth = min(depth, 4);
     final cancelId = _cancelToken;
 
     return Isolate.run(() => _getBestMoveSync(fen, effectiveDepth, cancelId));

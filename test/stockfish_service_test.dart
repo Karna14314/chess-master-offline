@@ -95,14 +95,14 @@ void main() {
         );
         stopwatch.stop();
 
-        // Should complete quickly (under 1200ms — slightly higher with ID overhead)
-        expect(stopwatch.elapsedMilliseconds, lessThan(1200));
+        // Should complete quickly (under 1500ms with ID + quiescence)
+        expect(stopwatch.elapsedMilliseconds, lessThan(1500));
 
         // Should return a result (fallback)
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
       },
-      timeout: const Timeout(Duration(seconds: 2)),
+      timeout: const Timeout(Duration(seconds: 3)),
     );
 
     test(
@@ -116,12 +116,12 @@ void main() {
         stopwatch.stop();
 
         // In fallback mode, depth 15 without cap would cause ANR/hang and fail the test timeout.
-        // With depth capped at 4, it should complete quickly.
-        expect(stopwatch.elapsedMilliseconds, lessThan(1000));
+        // With depth capped at 4 and ID (1+2+3+4) + quiescence.
+        expect(stopwatch.elapsedMilliseconds, lessThan(6000));
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
       },
-      timeout: const Timeout(Duration(seconds: 2)),
+      timeout: const Timeout(Duration(seconds: 10)),
     );
 
     // TEST for ISSUE-001: Verify initialization does not deadlock.

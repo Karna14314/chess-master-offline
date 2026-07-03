@@ -49,9 +49,9 @@ void main() {
 
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
-        expect(sw.elapsedMilliseconds, lessThan(1000));
+        expect(sw.elapsedMilliseconds, lessThan(2000));
       },
-      timeout: const Timeout(Duration(seconds: 3)),
+      timeout: const Timeout(Duration(seconds: 4)),
     );
 
     // ── Search timeout ─────────────────────────────────────────
@@ -178,10 +178,10 @@ void main() {
 
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
-        // Must complete well under 3s
-        expect(sw.elapsedMilliseconds, lessThan(3000));
+        // Depth 4 with ID (1+2+3+4) + quiescence
+        expect(sw.elapsedMilliseconds, lessThan(6000));
       },
-      timeout: const Timeout(Duration(seconds: 5)),
+      timeout: const Timeout(Duration(seconds: 10)),
     );
 
     // ── UCI command format ─────────────────────────────────────

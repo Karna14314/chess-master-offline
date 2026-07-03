@@ -618,15 +618,18 @@ class StockfishService {
   }
 
   /// Map the requested depth to a safe fallback depth based on difficulty.
-  /// Fallback (SimpleBot) uses pure-Dart minimax — deep searches cause ANR.
+  /// Fallback (SimpleBot) uses pure-Dart negamax.
+  /// Phase 10 improvements (MVV-LVA, killers, history, quiescence) make
+  /// depth 4 feasible for strong play.
   /// Levels:
-  ///   depth 1-2   → fallback 1-2 (Beginner/Novice)
-  ///   depth 3-8   → fallback 3   (Casual/Intermediate)
-  ///   depth 10+   → fallback 4   (Club Player and above — performance ceiling)
+  ///   depth 1     → fallback 1   (Beginner)
+  ///   depth 2     → fallback 2   (Novice)
+  ///   depth 3-5   → fallback 3   (Casual, Intermediate)
+  ///   depth 6+    → fallback 4   (Club Player and above — performance ceiling)
   static int _fallbackDepth(int requestedDepth) {
     if (requestedDepth <= 1) return 1;
     if (requestedDepth <= 2) return 2;
-    if (requestedDepth <= 8) return 3;
+    if (requestedDepth <= 5) return 3;
     return 4;
   }
 

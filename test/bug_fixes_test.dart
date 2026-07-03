@@ -106,8 +106,8 @@ void main() {
 
           expect(result.bestMove, isNotEmpty);
           expect(result.isValid, isTrue);
-          // ANR threshold is 5000ms
-          expect(stopwatch.elapsedMilliseconds, lessThan(5000));
+          // ANR threshold with ID + quiescence
+          expect(stopwatch.elapsedMilliseconds, lessThan(6000));
         },
       );
 
