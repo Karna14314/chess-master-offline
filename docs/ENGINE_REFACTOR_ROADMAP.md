@@ -3,7 +3,7 @@
 > **Single Source of Truth for all engine-related work**
 >
 > Created: 2026-07-03
-> Status: Phases 1-9 Complete
+> Status: Phases 1-9 Complete. Phase 10 (Search Optimization) Complete.
 > Version: 1.3
 
 ---
@@ -1370,7 +1370,82 @@ All components now follow this convention:
 
 ---
 
-### Phase 10: Analysis Engine Improvements
+### Phase 10: Search Optimization (Quiescence Search & Move Ordering) — COMPLETED
+
+**Purpose**: Improve the fallback engine's search efficiency and tactical accuracy without changing evaluation heuristics. Implements ISSUE-013 (Move Ordering) and ISSUE-014 (Quiescence Search).
+
+**Expected Outcome**: Quiescence search resolves tactical sequences at leaf nodes. MVV-LVA, killer, and history heuristics improve alpha-beta pruning efficiency. Deterministic search with tactical stability.
+
+**Files Affected**:
+- `lib/core/services/position_evaluator.dart` — added `bool skipMobility = false` parameter to `evaluate()` (avoids redundant `board.moves()` in quiescence)
+- `lib/core/services/simple_bot_service.dart` — complete rewrite (416 lines): quiescence search, MVV-LVA ordering, killer heuristic (2 per ply), history heuristic, PV ordering
+- `test/engine_search_optimization_test.dart` — NEW file with 30 tests
+
+**Implementation Notes**:
+
+1. **Quiescence Search** (`_quiescence` method): Stand-pat evaluation side-to-move relative. Captures + promotions only (all moves when in check). Alpha-beta pruned. Delta pruning (queen value threshold) safely prunes hopeless capture sequences. Depth-bounded at 6 ply.
+
+2. **MVV-LVA Capture Ordering** (`_moveScore` method): 5 priority tiers: PV move (1M), winning captures (500K+), promotions (300K), killer moves (200K), history heuristic (100K+). Losing captures score negative.
+
+3. **Killer Heuristic**: 2 killers per ply, 32 ply max. Recorded on beta cutoffs for non-capture, non-promotion moves.
+
+4. **History Heuristic**: Map keyed by from/to squares. Stores successful move scores for quiet move ordering.
+
+5. **PV Ordering**: `pvMove` parameter threaded through `_orderMoves`. First root move in each ID iteration gets PV priority.
+
+6. **SkipMobility**: `PositionEvaluator.evaluate()` accepts `skipMobility: true` to avoid expensive `board.moves()` calls in quiescence nodes.
+
+7. **Cancel Token Bug Fix**: `_cancelToken` is a static field but isolates get fresh copies initialized to 0. Added `_cancelToken = cancelId;` at the start of `_getBestMoveSync` to sync the isolate's token with the captured value. Fixes false-positive cancellation after `cancelSearch()` is called.
+
+**Testing Strategy**:
+- Quiescence stability: hanging queen, rook, capture sequences, check evasions
+- Move ordering: deterministic, PV ordering, deeper search quality
+- Alpha-beta consistency
+- Tactical stability: promotions, scholars mate, hanging pieces
+- Performance: depth 2 < 2s, depth 3 < 5s
+- Cancellation compatibility
+- PositionEvaluator skipMobility flag
+- Full regression coverage of Phase 1-9 tests
+
+**Risks**:
+- Quiescence search adds nodes at leaf positions (controlled by depth cap)
+- Delta pruning may incorrectly prune winning captures (queen threshold is conservative)
+- Static `_cancelToken` across isolates remains a theoretical concern (mitigated by sync fix)
+
+**Rollback Considerations**:
+- Each feature (QS, MVV-LVA, killers, history) is independently revertible
+- `skipMobility` parameter is additive and backward-compatible
+- Old `SimpleBotService` can be restored from version control
+
+**Dependencies**: Phase 4 (search engine), Phase 9 (PositionEvaluator)
+
+**Checklist**:
+- [X] Quiescence search with stand-pat evaluation
+- [X] Quiescence searches captures + promotions only (all moves when in check)
+- [X] Alpha-beta pruning in quiescence
+- [X] Delta pruning (queen value threshold)
+- [X] Depth-bounded quiescence (6 ply max)
+- [X] MVV-LVA capture ordering (victim * 100 - attacker)
+- [X] Killer heuristic (2 per ply, 32 ply)
+- [X] History heuristic (from/to keyed)
+- [X] PV move priority in move ordering
+- [X] Cancel token sync fix for isolate isolation
+- [X] `skipMobility` parameter in `PositionEvaluator.evaluate()`
+- [X] 30 new search optimization tests
+- [X] All 257 tests pass
+- [X] No new flutter analyze issues
+
+**Success Criteria**:
+- ✓ Quiescence detects hanging pieces and avoids horizon effect
+- ✓ Move ordering is deterministic with PV priority
+- ✓ Search completes within time bounds (depth 2 < 2s, depth 3 < 5s)
+- ✓ Cancellation works correctly across isolate boundaries
+- ✓ All existing tests continue to pass without modification
+- ✓ No regressions in evaluation heuristics
+
+---
+
+### Phase 11: Analysis Engine Improvements
 
 **Purpose**: Fix all remaining analysis mode issues and improve the user experience.
 
@@ -1707,30 +1782,30 @@ Phase 3: Difficulty (needs P1, P2) — COMPLETED      Phase 6: Eval Correctness 
 Phase 4: Time Mgmt (needs P1) — COMPLETED            Phase 7: Analysis Optimize (needs P6) — COMPLETED
     │                                                                              │
     └──────────────────────────────────────────────┐                              ▼
-                                                    ▼              Phase 8: Accuracy (needs P7) — COMPLETED
-                                         Phase 9: Search (needs P1, prefer after P4)
+                                                     ▼              Phase 8: Accuracy (needs P7) — COMPLETED
+                                          Phase 9: Eval Imprv (needs P4) — COMPLETED
+                                                     │
+                                                     ▼
+                                          Phase 10: Search Opt (needs P4, P9) — COMPLETED
                                                     │
-                                                    ▼
-                                         Phase 10: Eval (needs P9)
-                                                   │
-                    ┌───────────────────────────────┘
-                    ▼
-           Phase 11: Analysis Engine (needs P6, P7, P8)
-                    │
-                    ▼
-           Phase 12: Error Handling (needs P2)
-                    │
-                    ▼
-           Phase 13: Cleanup (needs all above)
-                    │
-                    ▼
-           Phase 14: Performance (needs all above)
-                    │
-                    ▼
-           Phase 15: Testing (needs all above)
-                    │
-                    ▼
-           Phase 16: Validation (needs P15)
+                     ┌───────────────────────────────┘
+                     ▼
+            Phase 11: Analysis Engine (needs P6, P7, P8)
+                     │
+                     ▼
+            Phase 12: Error Handling (needs P2)
+                     │
+                     ▼
+            Phase 13: Cleanup (needs all above)
+                     │
+                     ▼
+            Phase 14: Performance (needs all above)
+                     │
+                     ▼
+            Phase 15: Testing (needs all above)
+                     │
+                     ▼
+            Phase 16: Validation (needs P15)
 ```
 
 **Critical Path**: Phase 1 → Phase 5 → Phase 6 → Phase 7 → Phase 8 → Phase 11

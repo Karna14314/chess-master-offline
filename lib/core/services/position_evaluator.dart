@@ -121,7 +121,9 @@ class PositionEvaluator {
     -50, -30, -30, -30, -30, -30, -30, -50,
   ];
   /// Main evaluation entry point. Returns white-relative centipawn score.
-  static int evaluate(chess.Chess board) {
+  /// [skipMobility] should be true when called from quiescence search to avoid
+  /// redundant move generation (mobility calls board.moves() internally).
+  static int evaluate(chess.Chess board, {bool skipMobility = false}) {
     int score = 0;
     score += _evaluateMaterial(board);
     score += _evaluateBishopPair(board);
@@ -133,7 +135,9 @@ class PositionEvaluator {
     score += _evaluateQueen(board);
     score += _evaluateCenterControl(board);
     score += _evaluateEndgame(board);
-    score += _evaluateMobility(board);
+    if (!skipMobility) {
+      score += _evaluateMobility(board);
+    }
     return score;
   }
 
