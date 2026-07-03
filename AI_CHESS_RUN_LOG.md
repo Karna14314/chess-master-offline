@@ -1,0 +1,5 @@
+- Fixed bot repetitive openings and rating mismatch
+- Ensured engine correctly evaluates difficulty using `setSkillLevel(difficulty.elo)` before moving
+- Restored difficulty state after background evaluation inside `try/finally`
+- Added opening move dictionaries according to difficulty levels
+- Randomized selection from `MultiPV` options depending on the evaluation diff threshold.

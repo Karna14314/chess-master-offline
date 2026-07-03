@@ -6,6 +6,15 @@ import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/core/services/simple_bot_service.dart';
 import 'package:chess_master/core/services/basic_evaluator_service.dart';
+import 'dart:math';
+
+class _BookMove {
+  final String move;
+  final int minLevel;
+  final int maxLevel;
+
+  const _BookMove(this.move, {required this.minLevel, required this.maxLevel});
+}
 
 /// Queued command for serial execution
 class _QueuedCommand {
@@ -41,12 +50,118 @@ class StockfishService {
   StreamSubscription<dynamic>? _engineResponseSubscription;
 
   // Initialization lifecycle
-  Completer<void>? _engineReadyCompleter; // Completed when isolate reports engine binary loaded
-  bool _isEngineBinaryReady = false; // Set by engine_ready from isolate (binary loaded, accepts commands)
+  Completer<void>?
+  _engineReadyCompleter; // Completed when isolate reports engine binary loaded
+  bool _isEngineBinaryReady =
+      false; // Set by engine_ready from isolate (binary loaded, accepts commands)
+
+  static final Random _rng = Random();
+
+  // Format: Board Turn Castling
+  static final Map<String, List<_BookMove>> _openingBook = {
+    // --- PLY 1: White's 1st Move ---
+    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq': [
+      _BookMove('e2e4', minLevel: 1, maxLevel: 10),
+      _BookMove('d2d4', minLevel: 3, maxLevel: 10),
+      _BookMove('c2c4', minLevel: 5, maxLevel: 9),
+      _BookMove('g1f3', minLevel: 5, maxLevel: 9),
+      _BookMove('b2b3', minLevel: 1, maxLevel: 4),
+      _BookMove('g2g3', minLevel: 1, maxLevel: 4),
+    ],
+
+    // --- PLY 2: Black's Responses to 1. e4 ---
+    'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq': [
+      _BookMove('e7e5', minLevel: 1, maxLevel: 10),
+      _BookMove('c7c5', minLevel: 4, maxLevel: 10),
+      _BookMove('e7e6', minLevel: 3, maxLevel: 9),
+      _BookMove('c7c6', minLevel: 4, maxLevel: 9),
+      _BookMove('d7d5', minLevel: 2, maxLevel: 6),
+      _BookMove('d7d6', minLevel: 4, maxLevel: 8),
+    ],
+
+    // --- PLY 2: Black's Responses to 1. d4 ---
+    'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq': [
+      _BookMove('d7d5', minLevel: 1, maxLevel: 10),
+      _BookMove('g8f6', minLevel: 5, maxLevel: 10),
+      _BookMove('f7f5', minLevel: 3, maxLevel: 7),
+      _BookMove('e7e6', minLevel: 2, maxLevel: 8),
+    ],
+
+    // --- PLY 3: White's Responses to 1. e4 e5 ---
+    'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq': [
+      _BookMove('g1f3', minLevel: 1, maxLevel: 10),
+      _BookMove('f1c4', minLevel: 1, maxLevel: 6),
+      _BookMove('b1c3', minLevel: 2, maxLevel: 7),
+      _BookMove('d2d4', minLevel: 2, maxLevel: 5),
+      _BookMove('f2f4', minLevel: 4, maxLevel: 8),
+    ],
+
+    // --- PLY 3: White's Responses to 1. e4 c5 (Sicilian) ---
+    'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq': [
+      _BookMove('g1f3', minLevel: 3, maxLevel: 10),
+      _BookMove('b1c3', minLevel: 3, maxLevel: 8),
+      _BookMove('c2c3', minLevel: 4, maxLevel: 9),
+      _BookMove('d2d4', minLevel: 1, maxLevel: 4),
+    ],
+
+    // --- PLY 3: White's Responses to 1. d4 d5 ---
+    'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq': [
+      _BookMove('c2c4', minLevel: 2, maxLevel: 10),
+      _BookMove('g1f3', minLevel: 1, maxLevel: 9),
+      _BookMove('c2c3', minLevel: 1, maxLevel: 6),
+      _BookMove('e2e3', minLevel: 1, maxLevel: 5),
+    ],
+
+    // --- PLY 3: White's Responses to 1. d4 g8f6 (Indian) ---
+    'rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq': [
+      _BookMove('c2c4', minLevel: 5, maxLevel: 10),
+      _BookMove('g1f3', minLevel: 4, maxLevel: 9),
+      _BookMove('c1g5', minLevel: 5, maxLevel: 8),
+    ],
+
+    // --- PLY 3: White's Responses to 1. e4 e6 (French) ---
+    'rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq': [
+      _BookMove('d2d4', minLevel: 1, maxLevel: 10),
+      _BookMove('d2d3', minLevel: 1, maxLevel: 6),
+      _BookMove('b1c3', minLevel: 3, maxLevel: 8),
+      _BookMove('g1f3', minLevel: 2, maxLevel: 5),
+    ],
+
+    // --- PLY 3: White's Responses to 1. e4 c6 (Caro-Kann) ---
+    'rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq': [
+      _BookMove('d2d4', minLevel: 2, maxLevel: 10),
+      _BookMove('b1c3', minLevel: 2, maxLevel: 8),
+      _BookMove('c2c4', minLevel: 4, maxLevel: 9),
+      _BookMove('d2d3', minLevel: 1, maxLevel: 5),
+    ],
+
+    // --- PLY 3: White's Responses to 1. e4 d5 (Scandinavian) ---
+    'rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq': [
+      _BookMove('e4d5', minLevel: 1, maxLevel: 10),
+      _BookMove('e4e5', minLevel: 1, maxLevel: 7),
+      _BookMove('b1c3', minLevel: 2, maxLevel: 6),
+    ],
+
+    // --- PLY 3: White's Responses to 1. d4 f5 (Dutch) ---
+    'rnbqkbnr/ppppp1pp/8/5p2/3P4/8/PPP1PPPP/RNBQKBNR w KQkq': [
+      _BookMove('g2g3', minLevel: 3, maxLevel: 10),
+      _BookMove('c2c4', minLevel: 3, maxLevel: 9),
+      _BookMove('e2e4', minLevel: 4, maxLevel: 8),
+      _BookMove('g1f3', minLevel: 1, maxLevel: 6),
+    ],
+
+    // --- PLY 3: White's Responses to 1. d4 e6 (Horwitz) ---
+    'rnbqkbnr/pppp1ppp/4p3/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq': [
+      _BookMove('c2c4', minLevel: 2, maxLevel: 10),
+      _BookMove('e2e4', minLevel: 2, maxLevel: 10),
+      _BookMove('g1f3', minLevel: 1, maxLevel: 7),
+    ],
+  };
 
   // Phase 2: Lifecycle management
   bool _isDisposed = false;
-  int _engineSessionId = 0; // Incremented on each _startEngineIsolate to detect stale messages
+  int _engineSessionId =
+      0; // Incremented on each _startEngineIsolate to detect stale messages
   DateTime? _lastFallbackTime;
   static const Duration _fallbackRetryCooldown = Duration(seconds: 30);
 
@@ -163,8 +278,10 @@ class StockfishService {
         debugPrint('ENGINE INIT: Sending "uci"');
         _sendCommandDirect('uci');
 
-        final uciok = await _waitForOutputPattern('uciok',
-            timeout: const Duration(seconds: 5));
+        final uciok = await _waitForOutputPattern(
+          'uciok',
+          timeout: const Duration(seconds: 5),
+        );
         if (!uciok) {
           throw Exception('UCI handshake timeout (no uciok received)');
         }
@@ -180,8 +297,10 @@ class StockfishService {
         debugPrint('ENGINE INIT: Sending "isready"');
         _sendCommandDirect('isready');
 
-        final ready = await _waitForOutputPattern('readyok',
-            timeout: const Duration(seconds: 5));
+        final ready = await _waitForOutputPattern(
+          'readyok',
+          timeout: const Duration(seconds: 5),
+        );
         if (!ready) {
           throw Exception('Engine ready timeout (no readyok received)');
         }
@@ -194,7 +313,9 @@ class StockfishService {
         retryCount++;
         debugPrint('ENGINE INIT: Attempt $retryCount failed: $e');
         if (retryCount >= maxRetries) {
-          _enableFallback('Initialization failed after $maxRetries attempts: $e');
+          _enableFallback(
+            'Initialization failed after $maxRetries attempts: $e',
+          );
           return;
         }
         await Future.delayed(const Duration(milliseconds: 500));
@@ -222,7 +343,8 @@ class StockfishService {
   /// Returns true if enough time has passed since the last fallback to attempt a retry.
   bool _shouldRetryInit() {
     if (!_useFallback || _lastFallbackTime == null) return false;
-    return DateTime.now().difference(_lastFallbackTime!) >= _fallbackRetryCooldown;
+    return DateTime.now().difference(_lastFallbackTime!) >=
+        _fallbackRetryCooldown;
   }
 
   /// Reset the fallback state and attempt re-initialization.
@@ -263,7 +385,9 @@ class StockfishService {
     if (!_useFallback) return;
     if (!_shouldRetryInit()) return;
 
-    debugPrint('ENGINE LIFECYCLE → Attempting fallback recovery (cooldown elapsed)');
+    debugPrint(
+      'ENGINE LIFECYCLE → Attempting fallback recovery (cooldown elapsed)',
+    );
     // Reset state for re-init
     _useFallback = false;
     _isReady = false;
@@ -391,16 +515,15 @@ class StockfishService {
   void _sendCommandDirect(String command) {
     if (_isDisposed || _useFallback) return;
     debugPrint('ENGINE INIT: $command');
-    _engineCommandPort?.send({
-      'type': 'stdin',
-      'command': '$command\n',
-    });
+    _engineCommandPort?.send({'type': 'stdin', 'command': '$command\n'});
   }
 
   /// Wait for a specific pattern to appear in the engine's output stream.
   /// Returns true if the pattern was found within the timeout, false otherwise.
-  Future<bool> _waitForOutputPattern(String pattern,
-      {Duration timeout = const Duration(seconds: 5)}) async {
+  Future<bool> _waitForOutputPattern(
+    String pattern, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
     final completer = Completer<bool>();
     StreamSubscription<String>? sub;
     sub = _outputController.stream.listen((line) {
@@ -410,11 +533,16 @@ class StockfishService {
       }
     });
     try {
-      return await completer.future.timeout(timeout, onTimeout: () {
-        sub?.cancel();
-        debugPrint('ENGINE INIT: Timeout waiting for "$pattern" after $timeout');
-        return false;
-      });
+      return await completer.future.timeout(
+        timeout,
+        onTimeout: () {
+          sub?.cancel();
+          debugPrint(
+            'ENGINE INIT: Timeout waiting for "$pattern" after $timeout',
+          );
+          return false;
+        },
+      );
     } catch (e) {
       sub?.cancel();
       return false;
@@ -476,7 +604,41 @@ class StockfishService {
     required int depth,
     int? elo,
     int? thinkTimeMs,
+    int multiPv = 1,
+    int evalThresholdCp = 0,
+    int difficultyLevel = 10,
   }) async {
+    // Check opening book first
+    final fenParts = fen.trim().split(RegExp(r'\s+'));
+    if (fenParts.length >= 3) {
+      final baseFen = '${fenParts[0]} ${fenParts[1]} ${fenParts[2]}';
+      if (_openingBook.containsKey(baseFen)) {
+        final availableMoves = _openingBook[baseFen]!
+            .where(
+              (m) =>
+                  difficultyLevel >= m.minLevel &&
+                  difficultyLevel <= m.maxLevel,
+            )
+            .toList();
+
+        if (availableMoves.isNotEmpty) {
+          final selectedMove =
+              availableMoves[_rng.nextInt(availableMoves.length)];
+          debugPrint(
+            'ENGINE BOOK: Found move ${selectedMove.move} for level $difficultyLevel',
+          );
+
+          if (thinkTimeMs != null) {
+            await Future.delayed(Duration(milliseconds: thinkTimeMs));
+          }
+          return BestMoveResult(
+            bestMove: selectedMove.move,
+            evaluation: 0,
+          ); // Openings eval approx 0
+        }
+      }
+    }
+
     // Validate FEN to prevent SIGSEGV in Stockfish::Position::is_draw
     if (!_isValidFen(fen)) {
       debugPrint('Invalid FEN detected: $fen. Using fallback.');
@@ -519,32 +681,60 @@ class StockfishService {
     final completer = Completer<BestMoveResult>();
     String? bestMove;
     String? ponderMove;
-    int? evaluation;
-    int? mateIn;
+    int? topEvaluation;
+    int? topMateIn;
+
+    // Store candidate lines for randomized selection
+    final candidates = <int, _CandidateMove>{};
 
     late StreamSubscription subscription;
     subscription = _outputController.stream.listen((line) {
       final trimmedLine = line.trim();
 
-      // Parse evaluation from info line.
-      // Stockfish's "score cp" is from the side-to-move's perspective.
-      // Convert to white-relative for consistent storage.
-      if (trimmedLine.startsWith('info') && trimmedLine.contains('score')) {
-        final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
-        if (scoreMatch != null) {
-          evaluation = _toWhiteRelative(
-            int.parse(scoreMatch.group(1)!),
-            fen,
-          );
-        }
+      // Parse info lines for MultiPV candidates
+      if (trimmedLine.startsWith('info') &&
+          trimmedLine.contains('score') &&
+          trimmedLine.contains('pv')) {
+        final pvMatch = _multiPvRegex.firstMatch(trimmedLine);
+        final scoreCpMatch = _scoreCpRegex.firstMatch(trimmedLine);
+        final scoreMateMatch = _scoreMateRegex.firstMatch(trimmedLine);
+        final pvMovesMatch = _pvMovesRegex.firstMatch(trimmedLine);
 
-        final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
-        if (mateMatch != null) {
-          mateIn = int.parse(mateMatch.group(1)!);
+        if (pvMovesMatch != null) {
+          final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
+          final move = pvMovesMatch.group(1)!.split(' ')[0];
+
+          int? evalRelative;
+          int? mate;
+          int scoreSign = fen.contains(' b ') ? -1 : 1;
+
+          if (scoreCpMatch != null) {
+            final cp = int.parse(scoreCpMatch.group(1)!);
+            evalRelative = cp * scoreSign;
+          }
+          if (scoreMateMatch != null) {
+            mate = int.parse(scoreMateMatch.group(1)!);
+          }
+
+          if (pvNumber == 1) {
+            topEvaluation = evalRelative;
+            topMateIn = mate;
+          }
+
+          if (evalRelative != null || mate != null) {
+            candidates[pvNumber] = _CandidateMove(
+              move: move,
+              evalRelative: evalRelative,
+              mateIn: mate,
+              rawScoreCp: scoreCpMatch != null
+                  ? int.parse(scoreCpMatch.group(1)!)
+                  : null,
+            );
+          }
         }
       }
 
-      // Parse best move
+      // Parse best move completion
       if (trimmedLine.startsWith('bestmove')) {
         final parts = trimmedLine.split(' ');
         if (parts.length >= 2) {
@@ -554,17 +744,63 @@ class StockfishService {
           ponderMove = parts[3];
         }
 
+        // --- MultiPV Randomized Selection Logic ---
+        if (candidates.isNotEmpty && multiPv > 1) {
+          final topCandidate = candidates[1];
+          if (topCandidate != null) {
+            // Only consider MultiPV if the top line doesn't have a forced mate
+            if (topCandidate.mateIn == null &&
+                topCandidate.rawScoreCp != null) {
+              final topScoreCp = topCandidate.rawScoreCp!;
+              final validCandidates = <_CandidateMove>[];
+
+              for (final candidate in candidates.values) {
+                if (candidate.mateIn == null && candidate.rawScoreCp != null) {
+                  // Check if within threshold (using engine's perspective score)
+                  final diff = (topScoreCp - candidate.rawScoreCp!).abs();
+                  if (diff <= evalThresholdCp) {
+                    validCandidates.add(candidate);
+                  }
+                }
+              }
+
+              if (validCandidates.isNotEmpty) {
+                final selected =
+                    validCandidates[_rng.nextInt(validCandidates.length)];
+                bestMove = selected.move;
+                topEvaluation = selected.evalRelative;
+                // Note: we intentionally don't change ponderMove here
+                debugPrint(
+                  'MultiPV: Selected ${bestMove} among ${validCandidates.length} options within ${evalThresholdCp}cp',
+                );
+              }
+            }
+          }
+        }
+        // ------------------------------------------
+
         subscription.cancel();
+
+        if (multiPv > 1) {
+          // Reset MultiPV to 1 for the next run just in case
+          _sendCommand('setoption name MultiPV value 1');
+        }
+
         completer.complete(
           BestMoveResult(
             bestMove: bestMove ?? '',
             ponderMove: ponderMove,
-            evaluation: evaluation,
-            mateIn: mateIn,
+            evaluation: topEvaluation,
+            mateIn: topMateIn,
           ),
         );
       }
     });
+
+    // Configure MultiPV if requested
+    if (multiPv > 1) {
+      _sendCommand('setoption name MultiPV value $multiPv');
+    }
 
     // Position must be set before search.
     // Strength options (UCI_Elo / UCI_LimitStrength) are configured via setSkillLevel()
@@ -604,7 +840,9 @@ class StockfishService {
         const Duration(seconds: 30),
         onTimeout: () {
           subscription.cancel();
-          debugPrint('ENGINE RECOVERY → Search timeout for FEN: $fen, using fallback for this move');
+          debugPrint(
+            'ENGINE RECOVERY → Search timeout for FEN: $fen, using fallback for this move',
+          );
           _sendCommand('stop');
           // Don't kill isolate or enable permanent fallback — engine may recover
           _isEngineBusy = false;
@@ -713,16 +951,14 @@ class StockfishService {
 
         if (pvMovesMatch != null) {
           final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
-          final currentDepth =
-              depthMatch != null ? int.parse(depthMatch.group(1)!) : 0;
+          final currentDepth = depthMatch != null
+              ? int.parse(depthMatch.group(1)!)
+              : 0;
           int? eval;
           int? mate;
 
           if (scoreMatch != null) {
-            eval = _toWhiteRelative(
-              int.parse(scoreMatch.group(1)!),
-              fen,
-            );
+            eval = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
           }
           if (mateMatch != null) {
             mate = int.parse(mateMatch.group(1)!);
@@ -818,7 +1054,9 @@ class StockfishService {
         ), // Short timeout for analysis to switch to basic if stuck
         onTimeout: () {
           subscription.cancel();
-          debugPrint('ENGINE RECOVERY → Analysis timeout for FEN: $fen, using fallback');
+          debugPrint(
+            'ENGINE RECOVERY → Analysis timeout for FEN: $fen, using fallback',
+          );
           _sendCommand('stop');
           _sendCommand('setoption name MultiPV value 1');
           // Don't kill isolate or enable permanent fallback — engine may recover
@@ -1053,5 +1291,19 @@ void _stockfishIsolateEntryPoint(SendPort sendPort) {
           break;
       }
     }
+  });
+}
+
+class _CandidateMove {
+  final String move;
+  final int? evalRelative;
+  final int? rawScoreCp;
+  final int? mateIn;
+
+  _CandidateMove({
+    required this.move,
+    required this.evalRelative,
+    required this.rawScoreCp,
+    this.mateIn,
   });
 }

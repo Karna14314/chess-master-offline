@@ -147,6 +147,9 @@ class MockStockfishService implements StockfishService {
     required String fen,
     required int depth,
     int? thinkTimeMs,
+    int multiPv = 1,
+    int evalThresholdCp = 0,
+    int difficultyLevel = 10,
   }) async {
     return BestMoveResult(bestMove: 'e2e4');
   }

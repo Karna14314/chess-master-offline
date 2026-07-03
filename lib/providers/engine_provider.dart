@@ -141,6 +141,10 @@ class EngineNotifier extends StateNotifier<EngineState> {
         );
       }
 
+      // Ensure the engine is using the correct skill level for this specific move.
+      // This protects against the strength being left at max by a prior analysis run.
+      _service.setSkillLevel(difficulty.elo);
+
       // Minimum think time: a fixed floor (not additive) to prevent
       // instant replies that feel robotic. If the engine finishes faster
       // than this threshold, we wait the remaining time. If it finishes
@@ -152,6 +156,9 @@ class EngineNotifier extends StateNotifier<EngineState> {
           .getBestMove(
             fen: fen,
             depth: difficulty.depth,
+            multiPv: difficulty.multiPv,
+            evalThresholdCp: difficulty.evalThresholdCp,
+            difficultyLevel: difficulty.level,
             thinkTimeMs: difficulty.thinkTimeMs,
           )
           .timeout(
@@ -366,6 +373,12 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
       state = state.copyWith(isAnalyzing: false);
       debugPrint('Error analyzing position: $e');
+    } finally {
+      // Always restore the engine to the current difficulty's skill level
+      // so we don't accidentally leave it at max strength for the next bot move.
+      if (_currentDifficulty != null) {
+        _service.setSkillLevel(_currentDifficulty!.elo);
+      }
     }
   }
 

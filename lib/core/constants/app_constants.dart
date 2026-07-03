@@ -151,6 +151,29 @@ class DifficultyLevel {
     if (depth <= 8) return 3;
     return 4;
   }
+
+  /// Number of top candidate moves to consider (MultiPV) for variety.
+  int get multiPv {
+    if (level <= 2) return 4; // Beginner/Novice
+    if (level <= 5) return 3; // Casual to Club Player
+    if (level <= 8) return 2; // Advanced to Master
+    return 1; // Grandmaster/Maximum (Deterministic out of book)
+  }
+
+  /// Evaluation threshold in centipawns (100 = 1 pawn).
+  /// The bot can pick any candidate move whose evaluation is within this threshold of the absolute best move.
+  int get evalThresholdCp {
+    if (level == 1) return 250; // 2.5 pawns
+    if (level == 2) return 150; // 1.5 pawns
+    if (level == 3) return 100; // 1.0 pawn
+    if (level == 4) return 80;
+    if (level == 5) return 50; // 0.5 pawns
+    if (level == 6) return 40;
+    if (level == 7) return 30;
+    if (level == 8) return 20; // 0.2 pawns
+    if (level == 9) return 10;
+    return 0; // Level 10
+  }
 }
 
 /// Represents a time control setting
@@ -294,8 +317,10 @@ class EvalConstants {
   /// CPL < 0 (improvement): 100
   static double accuracyFromCpl(double cpl) {
     if (cpl <= 0) return maxAccuracy;
-    return (maxAccuracy * exp(-accuracyAttenuationFactor * cpl))
-        .clamp(minAccuracy, maxAccuracy);
+    return (maxAccuracy * exp(-accuracyAttenuationFactor * cpl)).clamp(
+      minAccuracy,
+      maxAccuracy,
+    );
   }
 
   /// Compute centipawn loss from evalBefore and evalAfter for a given side.
