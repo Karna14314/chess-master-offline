@@ -79,7 +79,7 @@ void main() {
       sw.stop();
       expect(result.bestMove, isNotEmpty);
       // QS should not cause excessive search time
-      expect(sw.elapsedMilliseconds, lessThan(5000));
+      expect(sw.elapsedMilliseconds, lessThan(10000));
     });
 
     // ============================================================

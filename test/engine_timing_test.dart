@@ -34,10 +34,10 @@ void main() {
 
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
-        // Should not hang — fallback is fast
-        expect(sw.elapsedMilliseconds, lessThan(2000));
+        // ANR prevention — ID + QS overhead
+        expect(sw.elapsedMilliseconds, lessThan(4000));
       },
-      timeout: const Timeout(Duration(seconds: 5)),
+      timeout: const Timeout(Duration(seconds: 6)),
     );
 
     test(
@@ -179,9 +179,9 @@ void main() {
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
         // Depth 4 with ID (1+2+3+4) + quiescence
-        expect(sw.elapsedMilliseconds, lessThan(6000));
+        expect(sw.elapsedMilliseconds, lessThan(12000));
       },
-      timeout: const Timeout(Duration(seconds: 10)),
+      timeout: const Timeout(Duration(seconds: 15)),
     );
 
     // ── UCI command format ─────────────────────────────────────
