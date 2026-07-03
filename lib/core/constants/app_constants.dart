@@ -1,5 +1,7 @@
 // App-wide constants for ChessMaster Offline
 
+import 'dart:math';
+
 class AppConstants {
   AppConstants._();
 
@@ -237,6 +239,87 @@ enum GameResult {
   final String displayName;
 
   const GameResult(this.pgn, this.displayName);
+}
+
+// ──────────────────────────────────────────────
+// Evaluation & Accuracy Constants (Phase 8)
+// ──────────────────────────────────────────────
+
+/// Centipawn loss thresholds for move classification.
+/// All values are in centipawns (100 cp = 1 pawn).
+/// These follow standard chess platform conventions.
+class EvalConstants {
+  EvalConstants._();
+
+  /// Blunder threshold: ≥200cp (2.0 pawns) — losing a full piece or more.
+  static const double thresholdBlunderCp = 200;
+
+  /// Mistake threshold: ≥100cp (1.0 pawn) — losing a pawn or clear positional advantage.
+  static const double thresholdMistakeCp = 100;
+
+  /// Inaccuracy threshold: ≥50cp (0.5 pawns) — suboptimal but not critical.
+  static const double thresholdInaccuracyCp = 50;
+
+  /// Good threshold: ≥20cp — slightly suboptimal.
+  static const double thresholdGoodCp = 20;
+
+  /// Excellent threshold: ≥5cp — very small loss, nearly best.
+  static const double thresholdExcellentCp = 5;
+
+  /// Positive improvement threshold: ≤ -50cp means the move improved the position
+  /// significantly (opponent blundered or brilliant find).
+  static const double thresholdBrilliantCp = -50;
+
+  /// Mate score absolute minimum: scores above this are forced mate values.
+  static const double mateThreshold = 1000;
+
+  /// Accuracy formula: 100 × exp(-0.003 × CPL).
+  /// Attenuation factor controls how quickly accuracy drops with CPL.
+  static const double accuracyAttenuationFactor = 0.003;
+
+  /// Maximum possible accuracy.
+  static const double maxAccuracy = 100.0;
+
+  /// Minimum possible accuracy.
+  static const double minAccuracy = 0.0;
+
+  /// Default accuracy when no evaluation data is available.
+  static const double defaultAccuracy = 85.0;
+
+  /// Convert pawns to centipawns.
+  static double toCentipawns(double evalPawns) => evalPawns * 100;
+
+  /// Compute accuracy from centipawn loss.
+  /// CPL ≥ 0: 100 × exp(-0.003 × CPL)
+  /// CPL < 0 (improvement): 100
+  static double accuracyFromCpl(double cpl) {
+    if (cpl <= 0) return maxAccuracy;
+    return (maxAccuracy * exp(-accuracyAttenuationFactor * cpl))
+        .clamp(minAccuracy, maxAccuracy);
+  }
+
+  /// Compute centipawn loss from evalBefore and evalAfter for a given side.
+  /// Returns positive value = bad for the side.
+  static double computeCpl({
+    required double evalBefore,
+    required double evalAfter,
+    required bool isWhiteMove,
+  }) {
+    final lossPawns = isWhiteMove
+        ? evalBefore - evalAfter
+        : evalAfter - evalBefore;
+    return toCentipawns(lossPawns);
+  }
+
+  /// Classify a centipawn loss value into a MoveClassification.
+  static MoveClassification classifyCpl(double cpl) {
+    if (cpl <= thresholdExcellentCp) return MoveClassification.best;
+    if (cpl <= thresholdGoodCp) return MoveClassification.excellent;
+    if (cpl <= thresholdInaccuracyCp) return MoveClassification.good;
+    if (cpl <= thresholdMistakeCp) return MoveClassification.inaccuracy;
+    if (cpl <= thresholdBlunderCp) return MoveClassification.mistake;
+    return MoveClassification.blunder;
+  }
 }
 
 /// Move classification for analysis

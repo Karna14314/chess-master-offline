@@ -141,9 +141,12 @@ class EngineNotifier extends StateNotifier<EngineState> {
         );
       }
 
-      // Add artificial delay for more human-like feel
-      final minDelay = Duration(milliseconds: difficulty.thinkTimeMs ~/ 2);
-      final startTime = DateTime.now();
+      // Minimum think time: a fixed floor (not additive) to prevent
+      // instant replies that feel robotic. If the engine finishes faster
+      // than this threshold, we wait the remaining time. If it finishes
+      // later, we move immediately — no additional delay is added.
+      const minThinkTime = Duration(milliseconds: 300);
+      final searchStartTime = DateTime.now();
 
       final result = await _service
           .getBestMove(
@@ -152,7 +155,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
             thinkTimeMs: difficulty.thinkTimeMs,
           )
           .timeout(
-            Duration(milliseconds: difficulty.thinkTimeMs + 2000),
+            Duration(milliseconds: difficulty.thinkTimeMs * 2 + 2000),
             onTimeout: () {
               throw TimeoutException('Engine timed out');
             },
@@ -160,10 +163,11 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
       if (currentSearchId != _searchId) return null;
 
-      // Ensure minimum thinking time for realism
-      final elapsed = DateTime.now().difference(startTime);
-      if (elapsed < minDelay) {
-        await Future.delayed(minDelay - elapsed);
+      // Apply minimum think time floor (not additive — only waits if
+      // the search completed faster than the minimum threshold).
+      final elapsed = DateTime.now().difference(searchStartTime);
+      if (elapsed < minThinkTime) {
+        await Future.delayed(minThinkTime - elapsed);
       }
 
       if (currentSearchId != _searchId) return null;

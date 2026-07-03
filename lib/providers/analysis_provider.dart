@@ -285,23 +285,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     if (_stockfish == null || !_isInitialized) return;
     if (_isAnalyzing) return; // Prevent concurrent analysis calls
 
-    _isAnalyzing = true;
     try {
+      _isAnalyzing = true;
       final result = await _stockfish!.analyzePosition(
         fen: state.fen,
         depth: AppConstants.analysisDepth,
         multiPv: AppConstants.topEngineLinesCount,
         onUpdate: (partialResult) {
-          if (mounted) {
-            state = state.copyWith(
-              currentEval: partialResult.evalInPawns,
-              currentEngineLines: partialResult.lines,
-              bestMove:
-                  partialResult.lines.isNotEmpty
-                      ? partialResult.lines.first.moves.first
-                      : null,
-            );
-          }
+          state = state.copyWith(
+            currentEval: partialResult.evalInPawns,
+            currentEngineLines: partialResult.lines,
+            bestMove:
+                partialResult.lines.isNotEmpty
+                    ? partialResult.lines.first.moves.first
+                    : null,
+          );
         },
       );
 
@@ -342,7 +340,6 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
     if (_stockfish == null || state.originalMoves.isEmpty) return;
 
-    _isAnalyzing = true;
     final token = ++_analysisToken; // Capture cancellation token
 
     // Ensure engine is at maximum strength for full game analysis
@@ -355,6 +352,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     );
 
     try {
+      _isAnalyzing = true;
       final moves = state.originalMoves;
       final analyzedMoves = <MoveAnalysis>[];
       final board = chess.Chess.fromFEN(state.startingFen);
@@ -394,39 +392,6 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           await Future.delayed(Duration.zero);
         }
 
-        // Add delay between consecutive engine calls to reduce GPU lock contention
-        if (i > 0) {
-          await Future.delayed(const Duration(milliseconds: 50));
-        }
-
-        // Check cancellation token again after delays
-        if (token != _analysisToken) return;
-
-        // Get best move before making the actual move
-        String? bestMove;
-        try {
-          // Check guard flag before making engine call
-          if (!_isAnalyzing) break;
-          if (token != _analysisToken) return;
-          final bestMoveResult = await _stockfish!.getBestMove(
-            fen: board.fen,
-            depth: 15,
-          );
-          bestMove = bestMoveResult.bestMove;
-        } catch (e) {
-          try {
-            final basicResult = await BasicEvaluatorService.instance.analyze(
-              board.fen,
-            );
-            bestMove =
-                basicResult.lines.isNotEmpty
-                    ? basicResult.lines.first.moves.first
-                    : null;
-          } catch (e2) {
-            bestMove = null;
-          }
-        }
-
         // Apply the actual move
         board.move({
           'from': move.from,
@@ -434,12 +399,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           'promotion': move.promotion,
         });
 
-        // Add delay before analysis to reduce GPU lock contention
-        await Future.delayed(const Duration(milliseconds: 50));
-
-        // Get evaluation after move
+        // Get evaluation after move and best move from PV
         double afterEval = 0.0;
         List<EngineLine> engineLines = [];
+        String? bestMove;
 
         try {
           // Check guard flag before making engine call
@@ -449,13 +412,14 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             fen: board.fen,
             depth: 15,
             multiPv: 3,
-            onUpdate: (partialResult) {
-              // We can optionally update progress/live eval here too, but for full game analysis, it's better to keep it fast and not rebuild UI on every partial update.
-            },
           );
 
           afterEval = result.evalInPawns;
           engineLines = result.lines;
+          // Derive best move from PV output (first line)
+          if (result.lines.isNotEmpty && result.lines.first.moves.isNotEmpty) {
+            bestMove = result.lines.first.moves.first;
+          }
         } catch (e) {
           try {
             final basicResult = await BasicEvaluatorService.instance.analyze(
@@ -463,6 +427,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             );
             afterEval = basicResult.evalInPawns;
             engineLines = basicResult.lines;
+            if (basicResult.lines.isNotEmpty && basicResult.lines.first.moves.isNotEmpty) {
+              bestMove = basicResult.lines.first.moves.first;
+            }
           } catch (e2) {
             afterEval = prevEval; // Assume no change if failed
           }
@@ -489,6 +456,16 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           );
         }
 
+        final cpl = computeCentipawnLoss(
+          evalBefore: prevEval,
+          evalAfter: afterEval,
+          isWhiteMove: isWhiteMove,
+        );
+        final moveAccuracy = computeAccuracy(
+          evalBefore: prevEval,
+          evalAfter: afterEval,
+          isWhiteMove: isWhiteMove,
+        );
         analyzedMoves.add(
           MoveAnalysis(
             moveIndex: i,
@@ -500,6 +477,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             classification: classification,
             engineLines: engineLines,
             isWhiteMove: isWhiteMove,
+            centipawnLoss: cpl,
+            accuracy: moveAccuracy,
           ),
         );
 

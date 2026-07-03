@@ -421,6 +421,19 @@ class StockfishService {
     }
   }
 
+  /// Convert a Stockfish side-to-move score to white-relative.
+  /// Stockfish's "score cp" is from the side-to-move's perspective.
+  /// Our convention stores all evaluations as white-relative
+  /// (positive = good for white, negative = good for black).
+  /// See: docs/ENGINE_REFACTOR_ROADMAP.md § Phase 6
+  int _toWhiteRelative(int scoreCp, String fen) {
+    final turn = fen.trim().split(RegExp(r'\s+'));
+    if (turn.length >= 2 && turn[1] == 'b') {
+      return -scoreCp;
+    }
+    return scoreCp;
+  }
+
   /// Internal FEN validation to prevent engine crashes
   bool _isValidFen(String fen) {
     if (fen.isEmpty) return false;
@@ -513,11 +526,16 @@ class StockfishService {
     subscription = _outputController.stream.listen((line) {
       final trimmedLine = line.trim();
 
-      // Parse evaluation from info line
+      // Parse evaluation from info line.
+      // Stockfish's "score cp" is from the side-to-move's perspective.
+      // Convert to white-relative for consistent storage.
       if (trimmedLine.startsWith('info') && trimmedLine.contains('score')) {
         final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
         if (scoreMatch != null) {
-          evaluation = int.parse(scoreMatch.group(1)!);
+          evaluation = _toWhiteRelative(
+            int.parse(scoreMatch.group(1)!),
+            fen,
+          );
         }
 
         final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
@@ -568,9 +586,15 @@ class StockfishService {
     _isEngineBusy = true;
 
     try {
-      // Start search
+      // UCI search command strategy:
+      //   Bot play  → "go movetime <ms>" — time-bounded search (no depth limit)
+      //   Analysis  → "go depth <depth>" — depth-bounded search (no time limit)
+      //
+      // Never combine depth and movetime in one "go" command (ISSUE-006).
+      // Stockfish's internal time management works best when given a single
+      // constraint. Combining them is redundant and can cause confusing behavior.
       if (thinkTimeMs != null) {
-        _sendCommand('go depth $depth movetime $thinkTimeMs');
+        _sendCommand('go movetime $thinkTimeMs');
       } else {
         _sendCommand('go depth $depth');
       }
@@ -611,12 +635,6 @@ class StockfishService {
     int depth,
     int? thinkTimeMs,
   ) async {
-    // Scale think time proportionally to the requested difficulty
-    if (thinkTimeMs != null && thinkTimeMs > 500) {
-      final delay = thinkTimeMs ~/ 2;
-      await Future.delayed(Duration(milliseconds: delay));
-    }
-
     final safeDepth = _fallbackDepth(depth);
     debugPrint(
       'FALLBACK: depth=$depth → safeDepth=$safeDepth, thinkTimeMs=$thinkTimeMs',
@@ -700,7 +718,10 @@ class StockfishService {
           int? mate;
 
           if (scoreMatch != null) {
-            eval = int.parse(scoreMatch.group(1)!);
+            eval = _toWhiteRelative(
+              int.parse(scoreMatch.group(1)!),
+              fen,
+            );
           }
           if (mateMatch != null) {
             mate = int.parse(mateMatch.group(1)!);

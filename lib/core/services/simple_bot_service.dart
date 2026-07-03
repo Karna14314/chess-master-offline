@@ -461,6 +461,24 @@ class SimpleBotService {
     int cancelId,
   ) {
     final board = chess.Chess.fromFEN(fen);
+
+    // Terminal condition checks BEFORE move generation for empty results.
+    if (board.in_checkmate) {
+      // The side to move is checkmated. In pure negamax, the checkmated
+      // side gets a very negative score: -(999999 - depth) = -999999 + depth.
+      // Convert to white-relative for the public API:
+      //   Black checkmated → +999999 - depth (very positive for white)
+      //   White checkmated → -999999 + depth (very negative for white)
+      final sideToMoveScore = -999999 + depth;
+      final adjustedEval = board.turn == chess.Color.BLACK
+          ? -sideToMoveScore
+          : sideToMoveScore;
+      return SimpleBotResult(bestMove: '', evaluation: adjustedEval);
+    }
+    if (board.in_stalemate || board.in_draw) {
+      return SimpleBotResult(bestMove: '', evaluation: 0);
+    }
+
     final moves = board.moves({'verbose': true});
     if (moves.isEmpty) {
       return SimpleBotResult(bestMove: '', evaluation: 0);
@@ -468,13 +486,23 @@ class SimpleBotService {
 
     // At depth 0 or 1, pick the best single-ply move
     if (depth <= 0) {
-      return _pickBestSinglePly(board, moves);
+      final singlePlyResult = _pickBestSinglePly(board, moves);
+      // Convert to white-relative
+      final adjustedEval = board.turn == chess.Color.WHITE
+          ? singlePlyResult.evaluation
+          : -singlePlyResult.evaluation;
+      return SimpleBotResult(
+        bestMove: singlePlyResult.bestMove,
+        evaluation: adjustedEval,
+        principalVariation: singlePlyResult.principalVariation,
+      );
     }
 
     // --- Iterative Deepening ---
     String bestMove = moves.isNotEmpty ? _moveToStr(moves[0] as Map) : '';
     int bestEval = 0;
     List<String> bestPv = [];
+    final isWhiteToMove = board.turn == chess.Color.WHITE;
 
     for (int idDepth = 1; idDepth <= depth; idDepth++) {
       if (_cancelToken != cancelId) break;
@@ -488,6 +516,11 @@ class SimpleBotService {
       bestPv = rootResult.pv;
     }
 
+    // _searchRoot and _pickBestSinglePly return scores from the
+    // current side-to-move's perspective. SimpleBotResult.evaluation
+    // must be white-relative (positive = good for white).
+    if (!isWhiteToMove && depth > 0) bestEval = -bestEval;
+
     return SimpleBotResult(
       bestMove: bestMove,
       evaluation: bestEval,
@@ -496,15 +529,24 @@ class SimpleBotService {
   }
 
   /// Evaluate each move at depth 1 and return the best.
+  /// Evaluation is returned from the current side-to-move's perspective.
   SimpleBotResult _pickBestSinglePly(chess.Chess board, List moves) {
     String bestMove = '';
+    final isWhiteToMove = board.turn == chess.Color.WHITE;
     int bestEval = -999999;
 
     for (final move in moves) {
       final m = move as Map;
       board.move(m);
-      final eval = _evaluatePosition(board);
+      // After the move, it's the opponent's turn. _evaluatePosition returns
+      // white-relative scores. Convert to the ORIGINAL side's perspective.
+      final rawEval = _evaluatePosition(board);
       board.undo();
+
+      // Convert to the perspective of the player who made the move:
+      //   White moving  → wants high white-relative score
+      //   Black moving  → wants low white-relative score  (= negated)
+      final eval = isWhiteToMove ? rawEval : -rawEval;
 
       if (eval > bestEval) {
         bestEval = eval;
@@ -556,7 +598,11 @@ class SimpleBotService {
     int beta,
   ) {
     if (depth == 0) {
-      return (score: _evaluatePosition(board), pv: const []);
+      // _evaluatePosition returns white-relative scores. Pure negamax requires
+      // scores from the side-to-move's perspective, so we flip for black.
+      int eval = _evaluatePosition(board);
+      if (board.turn == chess.Color.BLACK) eval = -eval;
+      return (score: eval, pv: const []);
     }
 
     if (board.in_checkmate) {
@@ -613,7 +659,9 @@ class SimpleBotService {
     });
   }
 
-  /// Evaluate the current board position (material + piece-square tables + king safety)
+  /// Static evaluation of the board position.
+  /// Returns white-relative centipawn score (positive = good for white).
+  /// Callers in negamax must convert to side-to-move relative when needed.
   int _evaluatePosition(chess.Chess board) {
     int score = 0;
 

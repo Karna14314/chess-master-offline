@@ -12,6 +12,7 @@ import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/timer_provider.dart';
 import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
+import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess/chess.dart' as chess;
 
 /// Provider for the active game session
@@ -181,6 +182,12 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     if (_isBotThinking) return;
 
     _isBotThinking = true;
+
+    // ISSUE-015: Pause the player's chess clock while the engine thinks.
+    // Resume after the bot's move is applied and the turn switches back.
+    final timerNotifier = _ref.read(timerProvider.notifier);
+    timerNotifier.pause();
+
     try {
       final engineNotifier = _ref.read(engineProvider.notifier);
       final result = await engineNotifier.getBotMove(
@@ -197,6 +204,11 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       }
     } finally {
       _isBotThinking = false;
+      // Resume the timer for the human player's turn (switchTurn was
+      // already called by the moveHistory listener in game_screen.dart).
+      if (state != null && !state!.isCompleted) {
+        timerNotifier.start();
+      }
     }
   }
 
@@ -432,42 +444,42 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
   }
 
   double _calculateAccuracy(GameSession session) {
-    if (session.moveHistory.isEmpty) return 0.0;
+    if (session.moveHistory.isEmpty) return EvalConstants.defaultAccuracy;
 
-    // Calculate Average Centipawn Loss (ACL)
-    // For a simple real-time approximation, we use the move evaluations we have
-    int totalLoss = 0;
+    final playerIsWhite = session.playerColor == PlayerColor.white;
+    double totalAccuracy = 0;
     int movesCount = 0;
 
-    // We only evaluate player's moves
-    final playerIsWhite = session.playerColor == PlayerColor.white;
-
+    // Derive evalBefore from the preceding move's eval (or 0.0 for the first move).
+    // move.evaluation stores the white-relative eval AFTER the move (in pawns).
     for (int i = 0; i < session.moveHistory.length; i++) {
-      final move = session.moveHistory[i];
       final isPlayerMove =
           (playerIsWhite && i % 2 == 0) || (!playerIsWhite && i % 2 != 0);
+      if (!isPlayerMove) continue;
 
-      if (isPlayerMove && move.evaluation != null) {
-        // Very simplified: assume best was 0.0 and player move is relative to it
-        // Real ACL requires knowing the best move eval at that moment
-        // For now, we use a mapping based on the stored evaluation
-        double absEval = move.evaluation!.abs();
-        if (absEval > 3.0)
-          totalLoss += 100; // Blunder-ish
-        else if (absEval > 1.5)
-          totalLoss += 50; // Inaccuracy
-        else if (absEval > 0.5)
-          totalLoss += 20;
-        movesCount++;
-      }
+      final move = session.moveHistory[i];
+      if (move.evaluation == null) continue;
+
+      // evalBefore = eval after the preceding move (opponent's move),
+      // or 0.0 for the very first move of the game.
+      final double? prevEval =
+          i > 0 ? session.moveHistory[i - 1].evaluation : null;
+      final double evalBefore = prevEval ?? 0.0;
+      final double evalAfter = move.evaluation!;
+
+      // Compute accuracy from CPL using the standard formula.
+      final accuracy = computeAccuracy(
+        evalBefore: evalBefore,
+        evalAfter: evalAfter,
+        isWhiteMove: playerIsWhite,
+      );
+      totalAccuracy += accuracy;
+      movesCount++;
     }
 
-    if (movesCount == 0) return 85.0; // Default sensible value
+    if (movesCount == 0) return EvalConstants.defaultAccuracy;
 
-    double acl = totalLoss / movesCount;
-    // Formula: 100 * exp(-0.003 * ACL)
-    double accuracy = 100 * (1.0 - (acl / 100.0)).clamp(0.0, 1.0);
-    return (accuracy * 10).round() / 10.0;
+    return (totalAccuracy / movesCount * 10).round() / 10.0;
   }
 
   void setSession(GameSession session) {
