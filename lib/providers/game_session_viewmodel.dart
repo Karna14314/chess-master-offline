@@ -39,7 +39,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
   }) async {
     // Reset engine first to ensure clean state for new game
     final engineNotifier = _ref.read(engineProvider.notifier);
-    engineNotifier.resetForNewGame();
+    engineNotifier.resetForNewGame(difficulty: difficulty);
     await Future.delayed(const Duration(milliseconds: 300));
 
     final session = GameSession.create(

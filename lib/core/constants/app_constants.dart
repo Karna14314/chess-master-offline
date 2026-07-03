@@ -7,46 +7,56 @@ class AppConstants {
   static const String appName = 'ChessMaster Offline';
   static const String appVersion = '1.0.0';
 
-  // Difficulty Levels (ELO and Engine Depth)
+  // Difficulty Levels
+  //
+  // UCI_Elo values map to Stockfish's UCI_LimitStrength range (1320–3190).
+  // Each level is at least 80 ELO apart so Stockfish plays distinctly differently.
+  //
+  // Stockfish UCI_Elo key facts:
+  //   - Minimum: 1320 (plays weakly, blunders frequently)
+  //   - Maximum: 3190 (full strength within limits)
+  //   - Values below 1320 are treated as 1320 (no differentiation at very low end)
+  //
+  // Depth controls "go depth N". Think time controls minimum search time.
   static const List<DifficultyLevel> difficultyLevels = [
     DifficultyLevel(
       level: 1,
-      elo: 800,
+      elo: 1320,
       depth: 1,
-      thinkTimeMs: 500,
+      thinkTimeMs: 300,
       name: 'Beginner',
     ),
     DifficultyLevel(
       level: 2,
-      elo: 1000,
+      elo: 1400,
       depth: 3,
-      thinkTimeMs: 800,
+      thinkTimeMs: 500,
       name: 'Novice',
     ),
     DifficultyLevel(
       level: 3,
-      elo: 1200,
+      elo: 1500,
       depth: 5,
-      thinkTimeMs: 1000,
+      thinkTimeMs: 700,
       name: 'Casual',
     ),
     DifficultyLevel(
       level: 4,
-      elo: 1400,
+      elo: 1600,
       depth: 8,
-      thinkTimeMs: 1200,
+      thinkTimeMs: 1000,
       name: 'Intermediate',
     ),
     DifficultyLevel(
       level: 5,
-      elo: 1600,
+      elo: 1700,
       depth: 10,
-      thinkTimeMs: 1500,
+      thinkTimeMs: 1200,
       name: 'Club Player',
     ),
     DifficultyLevel(
       level: 6,
-      elo: 1800,
+      elo: 1850,
       depth: 12,
       thinkTimeMs: 1500,
       name: 'Advanced',
@@ -54,7 +64,7 @@ class AppConstants {
     DifficultyLevel(
       level: 7,
       elo: 2000,
-      depth: 15,
+      depth: 14,
       thinkTimeMs: 1800,
       name: 'Expert',
     ),
@@ -67,9 +77,9 @@ class AppConstants {
     ),
     DifficultyLevel(
       level: 9,
-      elo: 2400,
+      elo: 2500,
       depth: 20,
-      thinkTimeMs: 2000,
+      thinkTimeMs: 2200,
       name: 'Grandmaster',
     ),
     DifficultyLevel(
@@ -129,6 +139,16 @@ class DifficultyLevel {
     required this.thinkTimeMs,
     required this.name,
   });
+
+  /// Safe search depth for the fallback (SimpleBot) engine.
+  /// The fallback uses pure-Dart minimax and cannot search deep without ANR.
+  /// Scales with difficulty while staying within performance limits.
+  int get fallbackDepth {
+    if (depth <= 1) return 1;
+    if (depth <= 2) return 2;
+    if (depth <= 8) return 3;
+    return 4;
+  }
 }
 
 /// Represents a time control setting

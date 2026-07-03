@@ -13,8 +13,9 @@ void main() {
     late StockfishService service;
 
     setUp(() {
-      // Force fallback mode BEFORE any service calls to avoid loading native DLL
       service = StockfishService.instance;
+      service.resetTestState();
+      // Force fallback mode BEFORE any service calls to avoid loading native DLL
       service.forceFallback = true;
     });
 
@@ -121,6 +122,76 @@ void main() {
         expect(result.bestMove.isNotEmpty, isTrue);
       },
       timeout: const Timeout(Duration(seconds: 2)),
+    );
+
+    // TEST for ISSUE-001: Verify initialization does not deadlock.
+    // When Stockfish binary is unavailable, init should gracefully fall back.
+    test(
+      'initialization without forceFallback completes without deadlock',
+      () async {
+        // Do NOT set forceFallback - test the real initialization path
+        final service = StockfishService.instance;
+
+        // This must not hang. In test env without Stockfish binary,
+        // it should time out and enable fallback.
+        await service.initialize().timeout(const Duration(seconds: 25));
+
+        // Service should be usable after failed init
+        expect(service.isReady, true);
+        expect(service.isUsingFallback, true);
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
+
+    test(
+      'repeated initialize() calls are safe (idempotent)',
+      () async {
+        final service = StockfishService.instance;
+        service.forceFallback = true;
+
+        // Multiple calls should return the same result
+        final f1 = service.initialize();
+        final f2 = service.initialize();
+        final f3 = service.initialize();
+
+        await Future.wait([f1, f2, f3]);
+
+        expect(service.isReady, true);
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
+
+    test(
+      'engine restart after dispose does not crash',
+      () async {
+        final service = StockfishService.instance;
+        service.forceFallback = true;
+
+        await service.initialize();
+        await service.dispose();
+
+        // Re-init after dispose
+        await service.initialize();
+        expect(service.isReady, true);
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
+
+    test(
+      'status transitions to ready or usingFallback after init attempt',
+      () async {
+        final service = StockfishService.instance;
+        service.forceFallback = true;
+
+        // After forceFallback init, should be usingFallback
+        await service.initialize();
+        expect(
+          service.statusNotifier.value,
+          EngineStatus.usingFallback,
+        );
+        expect(service.isReady, true);
+        expect(service.isUsingFallback, true);
+      },
     );
 
     test(

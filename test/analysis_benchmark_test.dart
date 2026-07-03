@@ -68,6 +68,12 @@ class MockStockfishService implements StockfishService {
 
   @override
   void newGame() {}
+
+  @override
+  Future<bool> resetFallback() async => true;
+
+  @override
+  void resetTestState() {}
 }
 
 void main() {

@@ -21,7 +21,6 @@ class StockfishService {
   static StockfishService? _instance;
   Stockfish? _stockfish;
   bool _isReady = false;
-  bool _isEngineReady = false; // Set only after "readyok" received
   bool _isEngineBusy = false; // True when search is in progress
   final List<_QueuedCommand> _commandQueue = [];
   bool _useFallback = false;
@@ -39,6 +38,17 @@ class StockfishService {
   Isolate? _engineIsolate;
   SendPort? _engineCommandPort;
   ReceivePort? _engineResponsePort;
+  StreamSubscription<dynamic>? _engineResponseSubscription;
+
+  // Initialization lifecycle
+  Completer<void>? _engineReadyCompleter; // Completed when isolate reports engine binary loaded
+  bool _isEngineBinaryReady = false; // Set by engine_ready from isolate (binary loaded, accepts commands)
+
+  // Phase 2: Lifecycle management
+  bool _isDisposed = false;
+  int _engineSessionId = 0; // Incremented on each _startEngineIsolate to detect stale messages
+  DateTime? _lastFallbackTime;
+  static const Duration _fallbackRetryCooldown = Duration(seconds: 30);
 
   // RegExps for parsing engine output
   static final RegExp _scoreCpRegex = RegExp(r'score cp (-?\d+)');
@@ -58,7 +68,7 @@ class StockfishService {
   /// Stream of engine output
   Stream<String> get outputStream => _outputController.stream;
 
-  /// Whether the engine is initialized and ready
+  /// Whether the engine is initialized and ready (or in fallback mode)
   bool get isReady => _isReady || _useFallback;
 
   /// Whether using fallback engine
@@ -68,97 +78,210 @@ class StockfishService {
   @visibleForTesting
   set forceFallback(bool value) => _forceFallback = value;
 
-  /// Initialize the Stockfish engine
+  /// Reset the singleton's test state so the next test starts fresh.
+  /// Call this in setUp() after any test that used dispose().
+  @visibleForTesting
+  void resetTestState() {
+    _isDisposed = false;
+    _useFallback = false;
+    _isReady = false;
+    _isEngineBinaryReady = false;
+    _isEngineBusy = false;
+    _forceFallback = false;
+    _lastFallbackTime = null;
+    _engineSessionId = 0;
+    _engineIsolate = null;
+    _engineCommandPort = null;
+    _engineResponsePort = null;
+    _engineResponseSubscription = null;
+    _commandQueue.clear();
+    _initCompleter?.complete();
+    _initCompleter = null;
+    _engineReadyCompleter?.complete();
+    _engineReadyCompleter = null;
+    statusNotifier.value = EngineStatus.initializing;
+  }
+
+  /// Initialize the Stockfish engine via proper UCI protocol handshake.
+  ///
+  /// Handshake sequence:
+  ///   1. Start engine isolate, wait for engine binary to load
+  ///   2. Send "uci", wait for "uciok"
+  ///   3. Apply engine options (Threads, Hash, UCI_LimitStrength)
+  ///   4. Send "isready", wait for "readyok"
+  ///   5. Mark engine as fully initialized
+  ///
+  /// Initialization commands bypass the normal command queue to avoid circular
+  /// dependency: the queue requires _isReady which is not set until step 5.
   Future<void> initialize() async {
+    if (_isDisposed) return;
     if (_isReady || _useFallback) return;
     if (_initCompleter != null) return _initCompleter!.future;
 
     _initCompleter = Completer<void>();
     statusNotifier.value = EngineStatus.initializing;
+    debugPrint('ENGINE LIFECYCLE → Starting Stockfish initialization');
 
-    // 1. Verify binary exists (Mock check as plugin handles it)
-    bool binaryExists = true;
-    try {
-      // In a real scenario, we might check file existence if we bundled it manually.
-      // Since we use a plugin, we assume it exists unless init fails.
-      if (_forceFallback) binaryExists = false;
-    } catch (e) {
-      binaryExists = false;
-    }
-
-    if (!binaryExists) {
-      _enableFallback('Binary verification failed');
+    // --- Step 0: Verify binary is not force-disabled ---
+    if (_forceFallback) {
+      _enableFallback('Binary verification failed (forceFallback)');
       return;
     }
 
+    // --- Step 1: Start the engine isolate ---
     try {
       await _startEngineIsolate();
     } catch (e) {
-      debugPrint('Failed to start engine isolate: $e');
-      _enableFallback('Isolate start failed');
+      debugPrint('ENGINE INIT: Isolate start failed: $e');
+      _enableFallback('Isolate start failed: $e');
       return;
     }
 
-    // 2. Try to init Stockfish
+    // Retry loop for the UCI handshake (isolate is alive after step 1)
     int retryCount = 0;
     const maxRetries = 2;
 
     while (retryCount < maxRetries) {
       try {
+        // --- Step 2: Send "init" to the isolate, wait for engine binary to load ---
+        _engineReadyCompleter = Completer<void>();
         _engineCommandPort?.send({'type': 'init'});
-        _isReady = false;
+        debugPrint(
+          'ENGINE INIT: Sent init, waiting for engine binary (attempt ${retryCount + 1})',
+        );
 
-        // Give a bit of time for isolate to start the engine
-        await Future.delayed(const Duration(milliseconds: 500));
+        await _engineReadyCompleter!.future.timeout(
+          const Duration(seconds: 8),
+          onTimeout: () {
+            _engineReadyCompleter = null;
+            throw Exception('Engine binary load timeout');
+          },
+        );
+        debugPrint('ENGINE INIT: Engine binary loaded');
 
-        // Initialize UCI mode
-        debugPrint('Sending UCI command');
-        _sendCommand('uci');
-        _sendCommand('isready');
+        // --- Step 3: Send "uci", wait for "uciok" ---
+        debugPrint('ENGINE INIT: Sending "uci"');
+        _sendCommandDirect('uci');
 
-        // Wait for readiness via the stream (which is already being fed by isolate)
-        int attempts = 0;
-        while (!_isReady && attempts < 50) {
-          await Future.delayed(const Duration(milliseconds: 100));
-          if (statusNotifier.value == EngineStatus.ready) break;
-          attempts++;
+        final uciok = await _waitForOutputPattern('uciok',
+            timeout: const Duration(seconds: 5));
+        if (!uciok) {
+          throw Exception('UCI handshake timeout (no uciok received)');
         }
+        debugPrint('ENGINE INIT: Received uciok');
 
-        if (!_isReady) {
-          throw Exception('Stockfish failed to reach ready state (timeout)');
+        // --- Step 4: Send engine options ---
+        debugPrint('ENGINE INIT: Applying engine options');
+        _sendCommandDirect('setoption name Threads value 2');
+        _sendCommandDirect('setoption name Hash value 64');
+        _sendCommandDirect('setoption name UCI_LimitStrength value true');
+
+        // --- Step 5: Send "isready", wait for "readyok" ---
+        debugPrint('ENGINE INIT: Sending "isready"');
+        _sendCommandDirect('isready');
+
+        final ready = await _waitForOutputPattern('readyok',
+            timeout: const Duration(seconds: 5));
+        if (!ready) {
+          throw Exception('Engine ready timeout (no readyok received)');
         }
+        // _isReady is also set by the permanent stdout listener in _startEngineIsolate
 
-        // Configure engine for mobile performance
-        _configureEngine();
-
+        debugPrint('ENGINE INIT: Engine fully initialized');
         _initCompleter?.complete();
         return;
       } catch (e) {
         retryCount++;
-        debugPrint(
-          'Stockfish engine initialization failed (attempt $retryCount): $e',
-        );
-
+        debugPrint('ENGINE INIT: Attempt $retryCount failed: $e');
         if (retryCount >= maxRetries) {
-          _enableFallback('Initialization failed after retries: $e');
+          _enableFallback('Initialization failed after $maxRetries attempts: $e');
           return;
         }
-
-        // Small delay before retry
-        await Future.delayed(const Duration(milliseconds: 200));
+        await Future.delayed(const Duration(milliseconds: 500));
+        // Reset engine state for retry while keeping the isolate alive
+        _isReady = false;
+        _isEngineBinaryReady = false;
       }
     }
   }
 
   void _enableFallback(String reason) {
-    debugPrint('Switching to fallback engine: $reason');
+    _lastFallbackTime = DateTime.now();
     _useFallback = true;
     _isReady = false;
-    _isEngineReady = false; // Reset engine ready flag
-    _isEngineBusy = false; // Reset busy flag
+    _isEngineBinaryReady = false;
+    _isEngineBusy = false;
+    _engineReadyCompleter?.complete();
+    _engineReadyCompleter = null;
     statusNotifier.value = EngineStatus.usingFallback;
     _initCompleter?.complete();
     _initCompleter = null;
+    debugPrint('ENGINE LIFECYCLE → Fallback enabled: $reason');
+  }
+
+  /// Returns true if enough time has passed since the last fallback to attempt a retry.
+  bool _shouldRetryInit() {
+    if (!_useFallback || _lastFallbackTime == null) return false;
+    return DateTime.now().difference(_lastFallbackTime!) >= _fallbackRetryCooldown;
+  }
+
+  /// Reset the fallback state and attempt re-initialization.
+  /// Call this to recover from transient engine failures.
+  Future<bool> resetFallback() async {
+    if (!_useFallback) return true;
+    if (_isDisposed) return false;
+
+    _useFallback = false;
+    _lastFallbackTime = null;
+    _isEngineBusy = false;
+    _isReady = false;
+    _isEngineBinaryReady = false;
+    _initCompleter = null;
+
+    try {
+      await _killEngineIfRunning();
+      await initialize();
+      if (_isReady && !_useFallback) {
+        debugPrint('ENGINE LIFECYCLE → Fallback recovery successful');
+        return true;
+      }
+    } catch (e) {
+      debugPrint('ENGINE LIFECYCLE → Fallback recovery failed: $e');
+    }
+
+    // Recovery failed — remain in fallback
+    if (!_useFallback) {
+      _enableFallback('resetFallback recovery failed');
+    }
+    return false;
+  }
+
+  /// Attempt periodic retry from fallback state.
+  /// Call this before getBestMove/analyzePosition when useFallback is true.
+  Future<void> _tryFallbackRecovery() async {
+    if (_isDisposed) return;
+    if (!_useFallback) return;
+    if (!_shouldRetryInit()) return;
+
+    debugPrint('ENGINE LIFECYCLE → Attempting fallback recovery (cooldown elapsed)');
+    // Reset state for re-init
+    _useFallback = false;
+    _isReady = false;
+    _isEngineBinaryReady = false;
+    _lastFallbackTime = null;
+    _initCompleter = null;
+
+    try {
+      await initialize();
+      if (_isReady && !_useFallback) {
+        debugPrint('ENGINE LIFECYCLE → Fallback recovery successful');
+      }
+    } catch (e) {
+      debugPrint('ENGINE LIFECYCLE → Fallback recovery failed: $e');
+      if (!_useFallback) {
+        _enableFallback('Retry recovery failed: $e');
+      }
+    }
   }
 
   /// Configure engine options for optimal mobile performance
@@ -227,7 +350,7 @@ class StockfishService {
 
   /// Send a command to the engine (queued for serial execution)
   void _sendCommand(String command) {
-    if (_useFallback) return;
+    if (_isDisposed || _useFallback) return;
 
     final completer = Completer<void>();
     _commandQueue.add(_QueuedCommand(command: command, completer: completer));
@@ -238,9 +361,9 @@ class StockfishService {
   bool _isProcessingQueue = false;
 
   void _processCommandQueue() async {
-    if (_isProcessingQueue) return;
+    if (_isProcessingQueue || _isDisposed) return;
     if (_engineCommandPort == null) return;
-    if (!_isEngineReady) return; // Don't send until engine is ready
+    if (!_isReady) return; // Don't send until engine is fully initialized
 
     _isProcessingQueue = true;
 
@@ -260,6 +383,42 @@ class StockfishService {
     }
 
     _isProcessingQueue = false;
+  }
+
+  /// Send a command directly to the engine isolate, bypassing the command queue.
+  /// Used ONLY during initialization to avoid the queue deadlock (the queue
+  /// requires _isReady which is not set until after UCI handshake completes).
+  void _sendCommandDirect(String command) {
+    if (_isDisposed || _useFallback) return;
+    debugPrint('ENGINE INIT: $command');
+    _engineCommandPort?.send({
+      'type': 'stdin',
+      'command': '$command\n',
+    });
+  }
+
+  /// Wait for a specific pattern to appear in the engine's output stream.
+  /// Returns true if the pattern was found within the timeout, false otherwise.
+  Future<bool> _waitForOutputPattern(String pattern,
+      {Duration timeout = const Duration(seconds: 5)}) async {
+    final completer = Completer<bool>();
+    StreamSubscription<String>? sub;
+    sub = _outputController.stream.listen((line) {
+      if (line.contains(pattern)) {
+        sub?.cancel();
+        if (!completer.isCompleted) completer.complete(true);
+      }
+    });
+    try {
+      return await completer.future.timeout(timeout, onTimeout: () {
+        sub?.cancel();
+        debugPrint('ENGINE INIT: Timeout waiting for "$pattern" after $timeout');
+        return false;
+      });
+    } catch (e) {
+      sub?.cancel();
+      return false;
+    }
   }
 
   /// Internal FEN validation to prevent engine crashes
@@ -311,13 +470,23 @@ class StockfishService {
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
+    // Guard: If disposed, return fallback
+    if (_isDisposed) {
+      return _getSimpleBotMove(fen, depth, thinkTimeMs);
+    }
+
     // Guard: If engine is busy, return fallback immediately
     if (_isEngineBusy) {
       debugPrint('Engine is busy, using fallback for FEN: $fen');
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
-    // Guard: If engine not ready, try to initialize or use fallback
+    // Attempt fallback recovery if cooldown has elapsed
+    if (_useFallback && _shouldRetryInit()) {
+      await _tryFallbackRecovery();
+    }
+
+    // Guard: If engine not ready, try to initialize
     if (!_isReady && !_useFallback) {
       await initialize();
     }
@@ -328,7 +497,7 @@ class StockfishService {
     }
 
     // Guard: Double-check engine is ready after initialization
-    if (!_isEngineReady || !_isReady) {
+    if (!_isReady) {
       debugPrint('Engine not ready after init, using fallback for FEN: $fen');
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
@@ -379,14 +548,9 @@ class StockfishService {
       }
     });
 
-    // Set position and options
-    if (elo != null) {
-      _sendCommand('setoption name UCI_LimitStrength value true');
-      _sendCommand('setoption name UCI_Elo value $elo');
-    } else {
-      _sendCommand('setoption name UCI_LimitStrength value false');
-    }
-
+    // Position must be set before search.
+    // Strength options (UCI_Elo / UCI_LimitStrength) are configured via setSkillLevel()
+    // before calling getBestMove() and should NOT be set here on every move.
     _sendCommand('position fen $fen');
 
     // Wait for engine to confirm position is processed before starting search
@@ -416,14 +580,10 @@ class StockfishService {
         const Duration(seconds: 30),
         onTimeout: () {
           subscription.cancel();
+          debugPrint('ENGINE RECOVERY → Search timeout for FEN: $fen, using fallback for this move');
           _sendCommand('stop');
-
-          // Reset engine state on timeout so it re-initializes next time
-          // But mark as fallback now
-          _stopEngineIsolate();
-          _enableFallback('Engine timeout');
-
-          // Fallback immediate
+          // Don't kill isolate or enable permanent fallback — engine may recover
+          _isEngineBusy = false;
           return _getSimpleBotMove(fen, depth, thinkTimeMs);
         },
       );
@@ -433,19 +593,34 @@ class StockfishService {
     }
   }
 
+  /// Map the requested depth to a safe fallback depth based on difficulty.
+  /// Fallback (SimpleBot) uses pure-Dart minimax — deep searches cause ANR.
+  /// Levels:
+  ///   depth 1-2   → fallback 1-2 (Beginner/Novice)
+  ///   depth 3-8   → fallback 3   (Casual/Intermediate)
+  ///   depth 10+   → fallback 4   (Club Player and above — performance ceiling)
+  static int _fallbackDepth(int requestedDepth) {
+    if (requestedDepth <= 1) return 1;
+    if (requestedDepth <= 2) return 2;
+    if (requestedDepth <= 8) return 3;
+    return 4;
+  }
+
   Future<BestMoveResult> _getSimpleBotMove(
     String fen,
     int depth,
     int? thinkTimeMs,
   ) async {
-    // Small artificial delay to simulate thinking if needed
+    // Scale think time proportionally to the requested difficulty
     if (thinkTimeMs != null && thinkTimeMs > 500) {
       final delay = thinkTimeMs ~/ 2;
       await Future.delayed(Duration(milliseconds: delay));
     }
 
-    // Cap depth to prevent ANR when fallback is used
-    final safeDepth = depth > 4 ? 4 : depth;
+    final safeDepth = _fallbackDepth(depth);
+    debugPrint(
+      'FALLBACK: depth=$depth → safeDepth=$safeDepth, thinkTimeMs=$thinkTimeMs',
+    );
 
     final result = await SimpleBotService.instance.getBestMove(
       fen: fen,
@@ -471,18 +646,28 @@ class StockfishService {
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
+    // Guard: If disposed, return fallback
+    if (_isDisposed) {
+      return BasicEvaluatorService.instance.analyze(fen);
+    }
+
     // Guard: If engine is busy, return fallback immediately
     if (_isEngineBusy) {
       debugPrint('Engine is busy, using fallback for analysis FEN: $fen');
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
+    // Attempt fallback recovery if cooldown has elapsed
+    if (_useFallback && _shouldRetryInit()) {
+      await _tryFallbackRecovery();
+    }
+
     if (!_isReady && !_useFallback) {
       await initialize();
     }
 
-    // Guard: Check engine is ready after init
-    if (!_isEngineReady || !_isReady) {
+    // If using fallback, use basic evaluator
+    if (_useFallback) {
       debugPrint('Engine not ready for analysis, using fallback for FEN: $fen');
       return BasicEvaluatorService.instance.analyze(fen);
     }
@@ -611,13 +796,11 @@ class StockfishService {
         ), // Short timeout for analysis to switch to basic if stuck
         onTimeout: () {
           subscription.cancel();
+          debugPrint('ENGINE RECOVERY → Analysis timeout for FEN: $fen, using fallback');
           _sendCommand('stop');
           _sendCommand('setoption name MultiPV value 1');
-
-          // Reset engine state on timeout
-          _stopEngineIsolate();
-          _enableFallback('Analysis timeout');
-
+          // Don't kill isolate or enable permanent fallback — engine may recover
+          _isEngineBusy = false;
           return BasicEvaluatorService.instance.analyze(fen);
         },
       );
@@ -627,30 +810,28 @@ class StockfishService {
     }
   }
 
-  /// Set the engine skill level (affects playing strength)
+  /// Set the engine skill level (affects playing strength).
+  /// Uses Stockfish's UCI_Elo with UCI_LimitStrength=true for strength control.
+  /// Do NOT set Skill Level simultaneously — Stockfish ignores it when UCI_LimitStrength is active.
   void setSkillLevel(int elo) {
-    if (_useFallback) return;
+    if (_isDisposed || _useFallback) return;
 
-    // Map Elo to Skill Level (0-20)
-    // Formula: (Elo - 300) / 145 -> clamps to 0-20
-    int skillLevel = ((elo - 300) / 145).round().clamp(0, 20);
-
+    final clampedElo = elo.clamp(1320, 3190);
     _sendCommand('setoption name UCI_LimitStrength value true');
-    _sendCommand('setoption name UCI_Elo value $elo');
-    _sendCommand('setoption name Skill Level value $skillLevel');
+    _sendCommand('setoption name UCI_Elo value $clampedElo');
+    debugPrint('ENGINE CONFIG: UCI_Elo=$clampedElo (requested=$elo)');
   }
 
   /// Set the engine to maximum strength
   void setMaxStrength() {
-    if (_useFallback) return;
+    if (_isDisposed || _useFallback) return;
     _sendCommand('setoption name UCI_LimitStrength value false');
   }
 
   /// Stop any ongoing analysis
   void stopAnalysis() {
-    if (!_useFallback) {
-      _sendCommand('stop');
-    }
+    if (_isDisposed || _useFallback) return;
+    _sendCommand('stop');
   }
 
   /// Stop current search and wait for it to finish (for intentional search replacement)
@@ -680,20 +861,37 @@ class StockfishService {
 
   /// Start a new game
   void newGame() {
-    if (!_useFallback) {
-      _sendCommand('ucinewgame');
-    }
+    if (_isDisposed || _useFallback) return;
+    _sendCommand('ucinewgame');
   }
 
-  /// Dispose the engine
+  /// Dispose the engine, killing the isolate and freeing resources.
+  /// The service can be re-initialized later via initialize().
   Future<void> dispose() async {
-    await _killEngineGracefully();
+    if (_isDisposed) return;
+    _isDisposed = true;
+    debugPrint('ENGINE LIFECYCLE → Disposing engine');
+
+    await _killEngineIfRunning();
+    _commandQueue.clear();
+
+    // Cancel any pending completers to unblock waiters
+    _initCompleter?.complete();
+    _initCompleter = null;
+    _engineReadyCompleter?.complete();
+    _engineReadyCompleter = null;
+
     statusNotifier.value = EngineStatus.disposed;
-    _outputController.close();
+    // Do NOT close _outputController — it's a singleton stream that lives
+    // for the app lifetime. Closing it would permanently break the service.
   }
 
   Future<void> _startEngineIsolate() async {
+    if (_isDisposed) throw Exception('Cannot start engine after dispose');
     if (_engineIsolate != null) return;
+
+    _engineSessionId++;
+    final sessionId = _engineSessionId;
 
     _engineResponsePort = ReceivePort();
     _engineIsolate = await Isolate.spawn(
@@ -703,7 +901,10 @@ class StockfishService {
 
     // Listen for the command port and stdout from the isolate
     final completer = Completer<void>();
-    _engineResponsePort!.listen((message) {
+    _engineResponseSubscription = _engineResponsePort!.listen((message) {
+      // Ignore stale messages from previous sessions
+      if (_engineSessionId != sessionId) return;
+
       if (message is SendPort) {
         _engineCommandPort = message;
         completer.complete();
@@ -715,41 +916,72 @@ class StockfishService {
             _outputController.add(line);
             if (line.contains('readyok')) {
               _isReady = true;
-              _isEngineReady = true; // Set engine ready flag
               statusNotifier.value = EngineStatus.ready;
-              // Process any queued commands now that engine is ready
+              // Process any queued commands now that engine is fully initialized
               _processCommandQueue();
             }
           }
         } else if (type == 'engine_ready') {
-          // Engine isolate reports it's initialized and ready for commands
-          _isEngineReady = true;
+          // Engine isolate reports the binary loaded and is accepting commands
+          _isEngineBinaryReady = true;
+          _engineReadyCompleter?.complete();
+          _engineReadyCompleter = null;
+        } else if (type == 'error') {
+          // Error reported from the engine isolate
+          final msg = message['message'] as String? ?? 'Unknown error';
+          debugPrint('ENGINE INIT: Isolate error: $msg');
         }
       }
     });
 
-    return completer.future;
+    // Timeout for isolate spawn (SendPort must arrive within 10 seconds)
+    try {
+      return await completer.future.timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      throw Exception('Isolate spawn timeout (SendPort not received)');
+    }
   }
 
   void _stopEngineIsolate() {
     _killEngineGracefully();
   }
 
-  Future<void> _killEngineGracefully() async {
+  /// Kill the engine isolate if it exists. Does NOT enable fallback or dispose.
+  /// Safe to call multiple times. Idempotent.
+  Future<void> _killEngineIfRunning() async {
+    if (_engineIsolate == null && _engineCommandPort == null) return;
+    debugPrint('ENGINE LIFECYCLE → Killing engine isolate');
+
+    // Cancel response port subscription first
+    await _engineResponseSubscription?.cancel();
+    _engineResponseSubscription = null;
+
     try {
       _engineCommandPort?.send({'type': 'stdin', 'command': 'stop\n'});
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 200));
     } catch (_) {}
     try {
       _engineIsolate?.kill(priority: Isolate.beforeNextEvent);
-      _engineIsolate = null;
     } catch (_) {}
+    _engineIsolate = null;
     _engineCommandPort = null;
     _engineResponsePort?.close();
     _engineResponsePort = null;
     _isReady = false;
-    _isEngineReady = false; // Reset engine ready flag
-    _isEngineBusy = false; // Reset busy flag
+    _isEngineBinaryReady = false;
+    _isEngineBusy = false;
+
+    // Cancel any pending init
+    _engineReadyCompleter?.complete();
+    _engineReadyCompleter = null;
+  }
+
+  /// Gracefully kill the engine and enable fallback.
+  /// Use this when the engine has encountered a terminal error.
+  Future<void> _killEngineGracefully() async {
+    await _killEngineIfRunning();
+    _commandQueue.clear();
+    _isDisposed = false; // Don't set disposed — allow re-init
   }
 }
 
@@ -772,8 +1004,14 @@ void _stockfishIsolateEntryPoint(SendPort sendPort) {
             stockfish!.stdout.listen((line) {
               sendPort.send({'type': 'stdout', 'line': line});
             });
+            // Signal to the main thread that the engine binary loaded successfully.
+            // The main thread awaits this before starting the UCI handshake.
+            sendPort.send({'type': 'engine_ready'});
           } catch (e) {
-            // Log error or ignore
+            sendPort.send({
+              'type': 'error',
+              'message': 'Stockfish() constructor failed: $e',
+            });
           }
           break;
         case 'stdin':
@@ -781,7 +1019,10 @@ void _stockfishIsolateEntryPoint(SendPort sendPort) {
           try {
             stockfish?.stdin = command;
           } catch (e) {
-            // Log error
+            sendPort.send({
+              'type': 'error',
+              'message': 'stdin command failed: $e (command: $command)',
+            });
           }
           break;
         case 'dispose':

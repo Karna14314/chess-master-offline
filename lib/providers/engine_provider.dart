@@ -82,6 +82,7 @@ class EngineState {
 class EngineNotifier extends StateNotifier<EngineState> {
   final StockfishService _service;
   int _searchId = 0;
+  DifficultyLevel? _currentDifficulty;
 
   EngineNotifier(this._service) : super(const EngineState());
 
@@ -124,7 +125,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
       if (!_service.isReady) {
         final fallbackResult = await SimpleBotService.instance.getBestMove(
           fen: fen,
-          depth: difficulty.depth,
+          depth: difficulty.fallbackDepth,
         );
 
         if (currentSearchId != _searchId) return null;
@@ -140,9 +141,6 @@ class EngineNotifier extends StateNotifier<EngineState> {
         );
       }
 
-      // Set engine strength
-      _service.setSkillLevel(difficulty.elo);
-
       // Add artificial delay for more human-like feel
       final minDelay = Duration(milliseconds: difficulty.thinkTimeMs ~/ 2);
       final startTime = DateTime.now();
@@ -151,7 +149,6 @@ class EngineNotifier extends StateNotifier<EngineState> {
           .getBestMove(
             fen: fen,
             depth: difficulty.depth,
-            elo: difficulty.elo,
             thinkTimeMs: difficulty.thinkTimeMs,
           )
           .timeout(
@@ -187,7 +184,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
       try {
         final fallbackResult = await SimpleBotService.instance.getBestMove(
           fen: fen,
-          depth: difficulty.depth,
+          depth: difficulty.fallbackDepth,
         );
 
         if (currentSearchId != _searchId) return null;
@@ -228,56 +225,60 @@ class EngineNotifier extends StateNotifier<EngineState> {
       if (currentSearchId != _searchId) return null;
 
       if (_service.isReady) {
-        // We use analyzePosition to get multipv for alternative move and better info
         _service.setMaxStrength();
-        final result = await _service.analyzePosition(
-          fen: fen,
-          depth: depth,
-          multiPv: 2,
-        );
+        try {
+          final result = await _service.analyzePosition(
+            fen: fen,
+            depth: depth,
+            multiPv: 2,
+          );
 
-        if (currentSearchId != _searchId) return null;
+          if (currentSearchId != _searchId) return null;
 
-        if (result.lines.isEmpty) return null;
+          if (result.lines.isEmpty) return null;
 
-        final mainLine = result.lines[0];
-        final bestMove = mainLine.moves.isNotEmpty ? mainLine.moves[0] : '';
+          final mainLine = result.lines[0];
+          final bestMove = mainLine.moves.isNotEmpty ? mainLine.moves[0] : '';
 
-        String? alternativeMove;
-        if (result.lines.length > 1 && result.lines[1].moves.isNotEmpty) {
-          alternativeMove = result.lines[1].moves[0];
+          String? alternativeMove;
+          if (result.lines.length > 1 && result.lines[1].moves.isNotEmpty) {
+            alternativeMove = result.lines[1].moves[0];
+          }
+
+          final bestMoveResult = BestMoveResult(
+            bestMove: bestMove,
+            evaluation: (mainLine.evaluation * 100).round(),
+            mateIn: mainLine.mateIn,
+          );
+
+          state = state.copyWith(isThinking: false, bestMove: bestMove);
+
+          String explanation = "This is the strongest move in the position.";
+          String? motif;
+
+          if (mainLine.isMate) {
+            explanation = "Forces checkmate.";
+            motif = "Mating threat";
+          } else if (mainLine.evaluation > 2.0) {
+            explanation = "Capitalizes on a significant advantage.";
+          } else if (mainLine.evaluation < -2.0) {
+            explanation = "Best defensive resource in a difficult position.";
+          } else {
+            explanation = "Maintains a balanced position.";
+          }
+
+          return HintResult(
+            mainResult: bestMoveResult,
+            alternativeMove: alternativeMove,
+            explanation: explanation,
+            tacticalMotif: motif,
+            principalVariation: mainLine.moves,
+          );
+        } finally {
+          if (_currentDifficulty != null) {
+            _service.setSkillLevel(_currentDifficulty!.elo);
+          }
         }
-
-        final bestMoveResult = BestMoveResult(
-          bestMove: bestMove,
-          evaluation: (mainLine.evaluation * 100).round(),
-          mateIn: mainLine.mateIn,
-        );
-
-        state = state.copyWith(isThinking: false, bestMove: bestMove);
-
-        // Derive explanation
-        String explanation = "This is the strongest move in the position.";
-        String? motif;
-
-        if (mainLine.isMate) {
-          explanation = "Forces checkmate.";
-          motif = "Mating threat";
-        } else if (mainLine.evaluation > 2.0) {
-          explanation = "Capitalizes on a significant advantage.";
-        } else if (mainLine.evaluation < -2.0) {
-          explanation = "Best defensive resource in a difficult position.";
-        } else {
-          explanation = "Maintains a balanced position.";
-        }
-
-        return HintResult(
-          mainResult: bestMoveResult,
-          alternativeMove: alternativeMove,
-          explanation: explanation,
-          tacticalMotif: motif,
-          principalVariation: mainLine.moves,
-        );
       } else {
         throw Exception('Stockfish not ready');
       }
@@ -385,9 +386,14 @@ class EngineNotifier extends StateNotifier<EngineState> {
     state = state.copyWith(isAnalyzing: false, isThinking: false);
   }
 
-  /// Reset for new game
-  void resetForNewGame() {
+  /// Reset for new game. If [difficulty] is provided, configure the engine's
+  /// strength for that difficulty level once (not on every move).
+  void resetForNewGame({DifficultyLevel? difficulty}) {
     stopAnalysis();
+    _currentDifficulty = difficulty;
+    if (difficulty != null) {
+      _service.setSkillLevel(difficulty.elo);
+    }
     _service.newGame();
     state = const EngineState();
   }
