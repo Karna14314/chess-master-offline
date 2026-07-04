@@ -36,8 +36,6 @@ class _AboutScreenState extends State<AboutScreen> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,22 +79,26 @@ class _AboutScreenState extends State<AboutScreen> {
             const SizedBox(height: 32),
             _buildSection(
               title: 'Engine',
-              content: 'Stockfish 16.1 - The powerful open source chess engine.\n\nStockfish is licensed under the GPLv3. The source code is available at github.com/official-stockfish/Stockfish.',
+              content:
+                  'Stockfish 16.1 - The powerful open source chess engine.\n\nStockfish is licensed under the GPLv3. The source code is available at github.com/official-stockfish/Stockfish.',
             ),
             const SizedBox(height: 24),
             _buildSection(
               title: 'Assets',
-              content: 'Chess Pieces: Wikimedia Commons\n(Creative Commons Attribution-Share Alike 3.0)\n\nSounds: Licensed under CC0\nApp Icon: Custom design',
+              content:
+                  'Chess Pieces: Wikimedia Commons\n(Creative Commons Attribution-Share Alike 3.0)\n\nSounds: Licensed under CC0\nApp Icon: Custom design',
             ),
             const SizedBox(height: 24),
             _buildSection(
               title: 'Libraries',
-              content: '• chess.dart: Chess logic and move generation\n• flutter_riverpod: State management\n• sqflite: Local database\n• vibration: Haptic feedback\n• stockfish_chess_engine: FFI bindings',
+              content:
+                  '• chess.dart: Chess logic and move generation\n• flutter_riverpod: State management\n• sqflite: Local database\n• vibration: Haptic feedback\n• stockfish_chess_engine: FFI bindings',
             ),
             const SizedBox(height: 24),
             _buildSection(
               title: 'Puzzle Database',
-              content: 'Chess puzzles in this app are sourced from the Lichess.org open database.',
+              content:
+                  'Chess puzzles in this app are sourced from the Lichess.org open database.',
             ),
             const SizedBox(height: 16),
             Text(
@@ -115,7 +117,8 @@ class _AboutScreenState extends State<AboutScreen> {
                     context: context,
                     applicationName: 'Chess Master',
                     applicationVersion: _version,
-                    applicationLegalese: 'Copyright © 2024\n\nStockfish Engine: GPLv3 License\nChess Pieces: CC BY-SA 3.0',
+                    applicationLegalese:
+                        'Copyright © 2024\n\nStockfish Engine: GPLv3 License\nChess Pieces: CC BY-SA 3.0',
                   );
                 },
                 child: const Text('View All Licenses'),

@@ -104,16 +104,18 @@ class PieceAssets {
     BuildContext context,
     PieceSet pieceSet,
   ) async {
-    await Future.wait(allPieceCodes.map((piece) async {
-      try {
-        final loader = SvgAssetLoader(pieceSet.getAssetPath(piece));
-        await svg.cache.putIfAbsent(
-          loader.cacheKey(null),
-          () => loader.loadBytes(null),
-        );
-      } catch (_) {
-        // Asset doesn't exist, will use fallback
-      }
-    }));
+    await Future.wait(
+      allPieceCodes.map((piece) async {
+        try {
+          final loader = SvgAssetLoader(pieceSet.getAssetPath(piece));
+          await svg.cache.putIfAbsent(
+            loader.cacheKey(null),
+            () => loader.loadBytes(null),
+          );
+        } catch (_) {
+          // Asset doesn't exist, will use fallback
+        }
+      }),
+    );
   }
 }

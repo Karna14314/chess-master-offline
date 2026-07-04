@@ -14,7 +14,9 @@ void main() {
     // All test FENs include both kings to satisfy chess library validation.
 
     test('starting position evaluates near zero', () {
-      final e = evalFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+      final e = evalFen(
+        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+      );
       expect(e.abs(), lessThan(200));
     });
 
@@ -85,7 +87,9 @@ void main() {
     });
 
     test('center occupation bonus', () {
-      final e = evalFen('rnbqkbnr/pppppppp/8/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 1');
+      final e = evalFen(
+        'rnbqkbnr/pppppppp/8/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 1',
+      );
       expect(e, greaterThan(-100));
     });
 
@@ -115,7 +119,8 @@ void main() {
     });
 
     test('deterministic evaluation', () {
-      const fen = 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1';
+      const fen =
+          'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1';
       expect(evalFen(fen), equals(evalFen(fen)));
     });
 
@@ -159,13 +164,17 @@ void main() {
     });
 
     test('passed pawn bonus near promotion', () {
-      expect(evalFen('k7/8/2P5/8/8/8/8/7K w - - 0 1'),
-          greaterThanOrEqualTo(evalFen('k7/8/8/8/8/2P5/8/7K w - - 0 1')));
+      expect(
+        evalFen('k7/8/2P5/8/8/8/8/7K w - - 0 1'),
+        greaterThanOrEqualTo(evalFen('k7/8/8/8/8/2P5/8/7K w - - 0 1')),
+      );
     });
 
     test('single evaluation fast', () {
       final sw = Stopwatch()..start();
-      evalFen('r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1');
+      evalFen(
+        'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1',
+      );
       sw.stop();
       expect(sw.elapsedMicroseconds, lessThan(50000));
     });
@@ -176,7 +185,9 @@ void main() {
     });
 
     test('scholars mate white winning', () {
-      final e = evalFen('r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1');
+      final e = evalFen(
+        'r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1',
+      );
       expect(e, greaterThan(0));
     });
 
@@ -188,7 +199,10 @@ void main() {
     test('both services give consistent result for simple position', () async {
       const fen = '4k3/8/8/8/8/8/8/4K3 w - - 0 1';
       final basicEval = BasicEvaluatorService.instance.evaluate(fen);
-      final result = await SimpleBotService.instance.getBestMove(fen: fen, depth: 1);
+      final result = await SimpleBotService.instance.getBestMove(
+        fen: fen,
+        depth: 1,
+      );
       expect(basicEval.abs(), lessThan(100));
       expect(result.evaluation.abs(), lessThan(100));
     });
@@ -196,13 +210,16 @@ void main() {
     test('bishop pair gives bonus over single bishop opponent', () {
       // White has 2 bishops, black has 1 bishop + 1 knight (equal material ~320 vs 330)
       // FEN: replace black f8 bishop with knight
-      final e = evalFen('rnbqkn1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+      final e = evalFen(
+        'rnbqkn1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+      );
       // White should be slightly better due to bishop pair
       expect(e, greaterThan(0));
     });
 
     test('100 evaluations in under 1 second', () {
-      const fen = 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1';
+      const fen =
+          'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1';
       final sw = Stopwatch()..start();
       for (int i = 0; i < 100; i++) {
         evalFen(fen);

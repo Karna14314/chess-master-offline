@@ -45,81 +45,474 @@ class PositionEvaluator {
   static const int mobilityMaxPieces = 24;
   // -- PST tables (a1=0, h1=7, a2=8, ..., h8=63) ---
   static const List<int> pawnTable = [
-    0, 0, 0, 0, 0, 0, 0, 0,
-    50, 50, 50, 50, 50, 50, 50, 50,
-    10, 10, 20, 30, 30, 20, 10, 10,
-    5, 5, 10, 25, 25, 10, 5, 5,
-    0, 0, 0, 20, 20, 0, 0, 0,
-    5, -5, -10, 0, 0, -10, -5, 5,
-    5, 10, 10, -20, -20, 10, 10, 5,
-    0, 0, 0, 0, 0, 0, 0, 0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    10,
+    10,
+    20,
+    30,
+    30,
+    20,
+    10,
+    10,
+    5,
+    5,
+    10,
+    25,
+    25,
+    10,
+    5,
+    5,
+    0,
+    0,
+    0,
+    20,
+    20,
+    0,
+    0,
+    0,
+    5,
+    -5,
+    -10,
+    0,
+    0,
+    -10,
+    -5,
+    5,
+    5,
+    10,
+    10,
+    -20,
+    -20,
+    10,
+    10,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
   ];
 
   static const List<int> knightTable = [
-    -50, -40, -30, -30, -30, -30, -40, -50,
-    -40, -20, 0, 0, 0, 0, -20, -40,
-    -30, 0, 10, 15, 15, 10, 0, -30,
-    -30, 5, 15, 20, 20, 15, 5, -30,
-    -30, 0, 15, 20, 20, 15, 0, -30,
-    -30, 5, 10, 15, 15, 10, 5, -30,
-    -40, -20, 0, 5, 5, 0, -20, -40,
-    -50, -40, -30, -30, -30, -30, -40, -50,
+    -50,
+    -40,
+    -30,
+    -30,
+    -30,
+    -30,
+    -40,
+    -50,
+    -40,
+    -20,
+    0,
+    0,
+    0,
+    0,
+    -20,
+    -40,
+    -30,
+    0,
+    10,
+    15,
+    15,
+    10,
+    0,
+    -30,
+    -30,
+    5,
+    15,
+    20,
+    20,
+    15,
+    5,
+    -30,
+    -30,
+    0,
+    15,
+    20,
+    20,
+    15,
+    0,
+    -30,
+    -30,
+    5,
+    10,
+    15,
+    15,
+    10,
+    5,
+    -30,
+    -40,
+    -20,
+    0,
+    5,
+    5,
+    0,
+    -20,
+    -40,
+    -50,
+    -40,
+    -30,
+    -30,
+    -30,
+    -30,
+    -40,
+    -50,
   ];
 
   static const List<int> bishopTable = [
-    -20, -10, -10, -10, -10, -10, -10, -20,
-    -10, 0, 0, 0, 0, 0, 0, -10,
-    -10, 0, 5, 10, 10, 5, 0, -10,
-    -10, 5, 5, 10, 10, 5, 5, -10,
-    -10, 0, 10, 10, 10, 10, 0, -10,
-    -10, 10, 10, 10, 10, 10, 10, -10,
-    -10, 5, 0, 0, 0, 0, 5, -10,
-    -20, -10, -10, -10, -10, -10, -10, -20,
+    -20,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -20,
+    -10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    -10,
+    0,
+    5,
+    10,
+    10,
+    5,
+    0,
+    -10,
+    -10,
+    5,
+    5,
+    10,
+    10,
+    5,
+    5,
+    -10,
+    -10,
+    0,
+    10,
+    10,
+    10,
+    10,
+    0,
+    -10,
+    -10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    -10,
+    -10,
+    5,
+    0,
+    0,
+    0,
+    0,
+    5,
+    -10,
+    -20,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -20,
   ];
 
   static const List<int> rookTable = [
-    0, 0, 0, 0, 0, 0, 0, 0,
-    5, 10, 10, 10, 10, 10, 10, 5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    -5, 0, 0, 0, 0, 0, 0, -5,
-    0, 0, 0, 5, 5, 0, 0, 0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    5,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    0,
+    0,
+    0,
+    5,
+    5,
+    0,
+    0,
+    0,
   ];
 
   static const List<int> queenTable = [
-    -20, -10, -10, -5, -5, -10, -10, -20,
-    -10, 0, 0, 0, 0, 0, 0, -10,
-    -10, 0, 5, 5, 5, 5, 0, -10,
-    -5, 0, 5, 5, 5, 5, 0, -5,
-    0, 0, 5, 5, 5, 5, 0, -5,
-    -10, 5, 5, 5, 5, 5, 0, -10,
-    -10, 0, 5, 0, 0, 0, 0, -10,
-    -20, -10, -10, -5, -5, -10, -10, -20,
+    -20,
+    -10,
+    -10,
+    -5,
+    -5,
+    -10,
+    -10,
+    -20,
+    -10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    -10,
+    0,
+    5,
+    5,
+    5,
+    5,
+    0,
+    -10,
+    -5,
+    0,
+    5,
+    5,
+    5,
+    5,
+    0,
+    -5,
+    0,
+    0,
+    5,
+    5,
+    5,
+    5,
+    0,
+    -5,
+    -10,
+    5,
+    5,
+    5,
+    5,
+    5,
+    0,
+    -10,
+    -10,
+    0,
+    5,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    -20,
+    -10,
+    -10,
+    -5,
+    -5,
+    -10,
+    -10,
+    -20,
   ];
 
   static const List<int> kingMiddleGameTable = [
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -20, -30, -30, -40, -40, -30, -30, -20,
-    -10, -20, -20, -20, -20, -20, -20, -10,
-    20, 20, 0, 0, 0, 0, 20, 20,
-    20, 30, 10, 0, 0, 10, 30, 20,
+    -30,
+    -40,
+    -40,
+    -50,
+    -50,
+    -40,
+    -40,
+    -30,
+    -30,
+    -40,
+    -40,
+    -50,
+    -50,
+    -40,
+    -40,
+    -30,
+    -30,
+    -40,
+    -40,
+    -50,
+    -50,
+    -40,
+    -40,
+    -30,
+    -30,
+    -40,
+    -40,
+    -50,
+    -50,
+    -40,
+    -40,
+    -30,
+    -20,
+    -30,
+    -30,
+    -40,
+    -40,
+    -30,
+    -30,
+    -20,
+    -10,
+    -20,
+    -20,
+    -20,
+    -20,
+    -20,
+    -20,
+    -10,
+    20,
+    20,
+    0,
+    0,
+    0,
+    0,
+    20,
+    20,
+    20,
+    30,
+    10,
+    0,
+    0,
+    10,
+    30,
+    20,
   ];
 
   static const List<int> kingEndGameTable = [
-    -50, -40, -30, -20, -20, -30, -40, -50,
-    -30, -20, -10, 0, 0, -10, -20, -30,
-    -30, -10, 20, 30, 30, 20, -10, -30,
-    -30, -10, 30, 40, 40, 30, -10, -30,
-    -30, -10, 30, 40, 40, 30, -10, -30,
-    -30, -10, 20, 30, 30, 20, -10, -30,
-    -30, -30, 0, 0, 0, 0, -30, -30,
-    -50, -30, -30, -30, -30, -30, -30, -50,
+    -50,
+    -40,
+    -30,
+    -20,
+    -20,
+    -30,
+    -40,
+    -50,
+    -30,
+    -20,
+    -10,
+    0,
+    0,
+    -10,
+    -20,
+    -30,
+    -30,
+    -10,
+    20,
+    30,
+    30,
+    20,
+    -10,
+    -30,
+    -30,
+    -10,
+    30,
+    40,
+    40,
+    30,
+    -10,
+    -30,
+    -30,
+    -10,
+    30,
+    40,
+    40,
+    30,
+    -10,
+    -30,
+    -30,
+    -10,
+    20,
+    30,
+    30,
+    20,
+    -10,
+    -30,
+    -30,
+    -30,
+    0,
+    0,
+    0,
+    0,
+    -30,
+    -30,
+    -50,
+    -30,
+    -30,
+    -30,
+    -30,
+    -30,
+    -30,
+    -50,
   ];
+
   /// Main evaluation entry point. Returns white-relative centipawn score.
   /// [skipMobility] should be true when called from quiescence search to avoid
   /// redundant move generation (mobility calls board.moves() internally).
@@ -190,7 +583,11 @@ class PositionEvaluator {
       for (int f = 0; f < 8; f++) {
         final p = board.board[base + f];
         if (p?.type == chess.PieceType.BISHOP) {
-          if (p!.color == chess.Color.WHITE) { wb++; } else { bb++; }
+          if (p!.color == chess.Color.WHITE) {
+            wb++;
+          } else {
+            bb++;
+          }
         }
       }
     }
@@ -199,6 +596,7 @@ class PositionEvaluator {
     if (bb >= 2) s -= bishopPairBonus;
     return s;
   }
+
   // -- Pawn structure ---
   static int _evaluatePawnStructure(chess.Chess board) {
     int score = 0;
@@ -212,9 +610,11 @@ class PositionEvaluator {
         final p = board.board[base + f];
         if (p?.type == chess.PieceType.PAWN) {
           if (p!.color == chess.Color.WHITE) {
-            wFiles.add(f); wRanks[f].add(r);
+            wFiles.add(f);
+            wRanks[f].add(r);
           } else {
-            bFiles.add(f); bRanks[f].add(r);
+            bFiles.add(f);
+            bRanks[f].add(r);
           }
         }
       }
@@ -237,33 +637,43 @@ class PositionEvaluator {
     }
 
     // Isolated pawns
-    for (final f in wFiles) { if (!_hasNeighbor(f, wFiles)) score -= isolatedPawnPenalty; }
-    for (final f in bFiles) { if (!_hasNeighbor(f, bFiles)) score += isolatedPawnPenalty; }
+    for (final f in wFiles) {
+      if (!_hasNeighbor(f, wFiles)) score -= isolatedPawnPenalty;
+    }
+    for (final f in bFiles) {
+      if (!_hasNeighbor(f, bFiles)) score += isolatedPawnPenalty;
+    }
 
     // Doubled pawns
     for (int f = 0; f < 8; f++) {
-      if (wRanks[f].length > 1) score -= doubledPawnPenalty * (wRanks[f].length - 1);
-      if (bRanks[f].length > 1) score += doubledPawnPenalty * (bRanks[f].length - 1);
+      if (wRanks[f].length > 1)
+        score -= doubledPawnPenalty * (wRanks[f].length - 1);
+      if (bRanks[f].length > 1)
+        score += doubledPawnPenalty * (bRanks[f].length - 1);
     }
 
     // Backward pawns
     for (int f = 0; f < 8; f++) {
       for (final r in wRanks[f]) {
-        if (_isBackward(f, r, true, wFiles, wRanks, bRanks)) score -= backwardPawnPenalty;
+        if (_isBackward(f, r, true, wFiles, wRanks, bRanks))
+          score -= backwardPawnPenalty;
       }
     }
     for (int f = 0; f < 8; f++) {
       for (final r in bRanks[f]) {
-        if (_isBackward(f, r, false, bFiles, bRanks, wRanks)) score += backwardPawnPenalty;
+        if (_isBackward(f, r, false, bFiles, bRanks, wRanks))
+          score += backwardPawnPenalty;
       }
     }
 
     // Connected pawns
     for (final f in wFiles) {
-      if (wRanks[f].isNotEmpty && _hasNeighbor(f, wFiles)) score += connectedPawnBonus;
+      if (wRanks[f].isNotEmpty && _hasNeighbor(f, wFiles))
+        score += connectedPawnBonus;
     }
     for (final f in bFiles) {
-      if (bRanks[f].isNotEmpty && _hasNeighbor(f, bFiles)) score -= connectedPawnBonus;
+      if (bRanks[f].isNotEmpty && _hasNeighbor(f, bFiles))
+        score -= connectedPawnBonus;
     }
 
     // Pawn chains
@@ -285,12 +695,14 @@ class PositionEvaluator {
     // Candidate passers
     for (int f = 0; f < 8; f++) {
       for (final r in wRanks[f]) {
-        if (_isCandidate(f, r, true, wRanks, bRanks)) score += candidatePasserBonus;
+        if (_isCandidate(f, r, true, wRanks, bRanks))
+          score += candidatePasserBonus;
       }
     }
     for (int f = 0; f < 8; f++) {
       for (final r in bRanks[f]) {
-        if (_isCandidate(f, r, false, bRanks, wRanks)) score -= candidatePasserBonus;
+        if (_isCandidate(f, r, false, bRanks, wRanks))
+          score -= candidatePasserBonus;
       }
     }
     return score;
@@ -312,15 +724,27 @@ class PositionEvaluator {
     return false;
   }
 
-  static bool _isBackward(int f, int r, bool w, List<int> files,
-      List<List<int>> own, List<List<int>> op) {
+  static bool _isBackward(
+    int f,
+    int r,
+    bool w,
+    List<int> files,
+    List<List<int>> own,
+    List<List<int>> op,
+  ) {
     if (_hasNeighbor(f, files)) return false;
     bool blocked = false;
     for (int x = (f - 1).clamp(0, 7); x <= (f + 1).clamp(0, 7); x++) {
       if (x == f) continue;
       for (final pr in op[x]) {
-        if (w && pr > r) { blocked = true; break; }
-        if (!w && pr < r) { blocked = true; break; }
+        if (w && pr > r) {
+          blocked = true;
+          break;
+        }
+        if (!w && pr < r) {
+          blocked = true;
+          break;
+        }
       }
       if (blocked) break;
     }
@@ -350,8 +774,13 @@ class PositionEvaluator {
     return n;
   }
 
-  static bool _isCandidate(int f, int r, bool w,
-      List<List<int>> own, List<List<int>> op) {
+  static bool _isCandidate(
+    int f,
+    int r,
+    bool w,
+    List<List<int>> own,
+    List<List<int>> op,
+  ) {
     if (_isPassed(f, r, w, op)) return false;
     int oc = 0, mc = 0;
     for (int x = (f - 1).clamp(0, 7); x <= (f + 1).clamp(0, 7); x++) {
@@ -363,10 +792,11 @@ class PositionEvaluator {
     }
     return oc <= mc;
   }
+
   // -- King safety ---
   static int _evaluateKingSafety(chess.Chess board) {
-    return _kingSafety(board, chess.Color.WHITE)
-         - _kingSafety(board, chess.Color.BLACK);
+    return _kingSafety(board, chess.Color.WHITE) -
+        _kingSafety(board, chess.Color.BLACK);
   }
 
   static int _kingSafety(chess.Chess board, chess.Color color) {
@@ -384,7 +814,8 @@ class PositionEvaluator {
         final cf = kf + o;
         if (cf < 0 || cf > 7) continue;
         final p = board.board[base + cf];
-        if (p?.type == chess.PieceType.PAWN && p?.color == color) s += kingPawnShieldBonus;
+        if (p?.type == chess.PieceType.PAWN && p?.color == color)
+          s += kingPawnShieldBonus;
       }
     }
 
@@ -397,7 +828,8 @@ class PositionEvaluator {
           final cf = kf + o;
           if (cf < 0 || cf > 7) continue;
           final p = board.board[base + cf];
-          if (p?.type == chess.PieceType.PAWN && p?.color == color) s += kingPawnShieldBonus ~/ 2;
+          if (p?.type == chess.PieceType.PAWN && p?.color == color)
+            s += kingPawnShieldBonus ~/ 2;
         }
       }
     }
@@ -410,11 +842,16 @@ class PositionEvaluator {
       for (int r2 = 0; r2 < 8; r2++) {
         final p = board.board[r2 * 16 + cf];
         if (p?.type == chess.PieceType.PAWN) {
-          if (p!.color == color) own = true; else enemy = true;
+          if (p!.color == color)
+            own = true;
+          else
+            enemy = true;
         }
       }
-      if (!own && !enemy) s -= kingOpenFilePenalty;
-      else if (!own && enemy) s -= kingStormFilePenalty;
+      if (!own && !enemy)
+        s -= kingOpenFilePenalty;
+      else if (!own && enemy)
+        s -= kingStormFilePenalty;
     }
 
     // King exposure (moved from starting area)
@@ -434,19 +871,25 @@ class PositionEvaluator {
         final p = board.board[base + f];
         if (p == null) continue;
         if (p.type == chess.PieceType.ROOK) {
-          if (p.color == chess.Color.WHITE) wR.add(r * 8 + f);
-          else bR.add(r * 8 + f);
+          if (p.color == chess.Color.WHITE)
+            wR.add(r * 8 + f);
+          else
+            bR.add(r * 8 + f);
         } else if (p.type == chess.PieceType.PAWN) {
-          if (p.color == chess.Color.WHITE) wP[f] = true;
-          else bP[f] = true;
+          if (p.color == chess.Color.WHITE)
+            wP[f] = true;
+          else
+            bP[f] = true;
         }
       }
     }
 
     for (final sq in wR) {
       final f = sq % 8, r_ = sq ~/ 8;
-      if (!wP[f] && !bP[f]) score += rookOpenFileBonus;
-      else if (!wP[f] && bP[f]) score += rookSemiOpenFileBonus;
+      if (!wP[f] && !bP[f])
+        score += rookOpenFileBonus;
+      else if (!wP[f] && bP[f])
+        score += rookSemiOpenFileBonus;
       if (r_ == 6) score += rookSeventhRankBonus;
       if (wR.length >= 2) {
         final o = wR.firstWhere((s) => s != sq, orElse: () => -1);
@@ -455,8 +898,10 @@ class PositionEvaluator {
     }
     for (final sq in bR) {
       final f = sq % 8, r_ = sq ~/ 8;
-      if (!bP[f] && !wP[f]) score -= rookOpenFileBonus;
-      else if (!bP[f] && wP[f]) score -= rookSemiOpenFileBonus;
+      if (!bP[f] && !wP[f])
+        score -= rookOpenFileBonus;
+      else if (!bP[f] && wP[f])
+        score -= rookSemiOpenFileBonus;
       if (r_ == 1) score -= rookSeventhRankBonus;
       if (bR.length >= 2) {
         final o = bR.firstWhere((s) => s != sq, orElse: () => -1);
@@ -480,7 +925,8 @@ class PositionEvaluator {
           if (_isOutpost(f, r, w, board)) bonus += knightOutpostBonus;
         }
         if (f == 0 || f == 7) bonus -= knightRimPenalty;
-        if ((f == 3 || f == 4) && (r == 3 || r == 4)) bonus += knightCentralBonus;
+        if ((f == 3 || f == 4) && (r == 3 || r == 4))
+          bonus += knightCentralBonus;
         score += w ? bonus : -bonus;
       }
     }
@@ -491,7 +937,8 @@ class PositionEvaluator {
     for (int x = (f - 1).clamp(0, 7); x <= (f + 1).clamp(0, 7); x++) {
       for (int r2 = 0; r2 < 8; r2++) {
         final p = board.board[r2 * 16 + x];
-        if (p?.type == chess.PieceType.PAWN && p?.color != (w ? chess.Color.WHITE : chess.Color.BLACK)) {
+        if (p?.type == chess.PieceType.PAWN &&
+            p?.color != (w ? chess.Color.WHITE : chess.Color.BLACK)) {
           if (w && r2 > r) return false;
           if (!w && r2 < r) return false;
         }
@@ -556,6 +1003,7 @@ class PositionEvaluator {
     }
     return score;
   }
+
   // -- Endgame ---
   static int _evaluateEndgame(chess.Chess board) {
     int wMat = 0, bMat = 0;
@@ -563,7 +1011,10 @@ class PositionEvaluator {
       final base = r * 16;
       for (int f = 0; f < 8; f++) {
         final p = board.board[base + f];
-        if (p == null || p.type == chess.PieceType.PAWN || p.type == chess.PieceType.KING) continue;
+        if (p == null ||
+            p.type == chess.PieceType.PAWN ||
+            p.type == chess.PieceType.KING)
+          continue;
         if (p.color == chess.Color.WHITE) {
           wMat += _pieceValue(p.type);
         } else {
@@ -600,7 +1051,10 @@ class PositionEvaluator {
         final p = board.board[base + f];
         if (p?.type == chess.PieceType.KING) {
           final w = p!.color == chess.Color.WHITE;
-          score += (_pst(kingEndGameTable, r, f, w) - _pst(kingMiddleGameTable, r, f, w)) * (w ? 1 : -1);
+          score +=
+              (_pst(kingEndGameTable, r, f, w) -
+                  _pst(kingMiddleGameTable, r, f, w)) *
+              (w ? 1 : -1);
         }
       }
     }

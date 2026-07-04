@@ -21,8 +21,7 @@ void main() {
     // Mate scores: -999999 + depth (checkmated, depth-preferring)
     // Draw scores: 0
 
-    const startPos =
-        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const startPos = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     const blackStartPos =
         'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1';
 
@@ -70,7 +69,8 @@ void main() {
     test('SimpleBot: white-to-move position returns consistent sign', () async {
       // White is significantly ahead (queen for pawn + extra)
       final result = await SimpleBotService.instance.getBestMove(
-        fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 0 1',
+        fen:
+            'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 0 1',
         depth: 1,
       );
       // White should be better, so evaluation should be positive
@@ -117,7 +117,8 @@ void main() {
       // Scholar's mate position — black is checkmated
       // Black to move, black is in checkmate
       final result = await SimpleBotService.instance.getBestMove(
-        fen: 'r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1',
+        fen:
+            'r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1',
         depth: 3,
       );
       // Black has 0 legal moves (checkmated). _negamax detects this via
@@ -131,7 +132,8 @@ void main() {
     test('SimpleBot: checkmate in 1 detected with correct score', () async {
       // White can deliver mate in 1 with Qxf7#
       final result = await SimpleBotService.instance.getBestMove(
-        fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1',
+        fen:
+            'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1',
         depth: 3,
       );
       // White has winning position — evaluation should be positive
@@ -140,17 +142,20 @@ void main() {
 
     // ── Draw score convention ─────────────────────────────────
 
-    test('SimpleBot: draw by insufficient material returns near zero', () async {
-      // Only kings remain — insufficient material
-      // With depth >= 2, negamax detects in_draw and returns 0.
-      // At depth 1, _pickBestSinglePly uses raw evaluation which may
-      // have small PST-based offsets (< 100 cp).
-      final result = await SimpleBotService.instance.getBestMove(
-        fen: '8/8/8/3k4/8/8/8/3K4 w - - 0 1',
-        depth: 2,
-      );
-      expect(result.evaluation.abs(), lessThan(50));
-    });
+    test(
+      'SimpleBot: draw by insufficient material returns near zero',
+      () async {
+        // Only kings remain — insufficient material
+        // With depth >= 2, negamax detects in_draw and returns 0.
+        // At depth 1, _pickBestSinglePly uses raw evaluation which may
+        // have small PST-based offsets (< 100 cp).
+        final result = await SimpleBotService.instance.getBestMove(
+          fen: '8/8/8/3k4/8/8/8/3K4 w - - 0 1',
+          depth: 2,
+        );
+        expect(result.evaluation.abs(), lessThan(50));
+      },
+    );
 
     test('SimpleBot: draw by stalemate returns zero', () async {
       // White to move, stalemate (no legal moves, not in check).
@@ -199,12 +204,21 @@ void main() {
       );
 
       // All should be positive (white is ahead)
-      expect(resultDepth1.evaluation, greaterThan(0),
-          reason: 'Depth 1 should be positive');
-      expect(resultDepth2.evaluation, greaterThan(0),
-          reason: 'Depth 2 should be positive');
-      expect(resultDepth3.evaluation, greaterThan(0),
-          reason: 'Depth 3 should be positive');
+      expect(
+        resultDepth1.evaluation,
+        greaterThan(0),
+        reason: 'Depth 1 should be positive',
+      );
+      expect(
+        resultDepth2.evaluation,
+        greaterThan(0),
+        reason: 'Depth 2 should be positive',
+      );
+      expect(
+        resultDepth3.evaluation,
+        greaterThan(0),
+        reason: 'Depth 3 should be positive',
+      );
     });
 
     // ── Stockfish evaluation conversion ───────────────────────
@@ -225,27 +239,31 @@ void main() {
       expect(result, isA<BestMoveResult>());
     });
 
-    test('Stockfish: fallback evaluation is white-relative for black to move',
-        () async {
-      final service = StockfishService.instance;
-      service.resetTestState();
-      service.forceFallback = true;
-      final result = await service.getBestMove(
-        fen: blackStartPos,
-        depth: 1,
-        thinkTimeMs: 100,
-      );
-      expect(result, isA<BestMoveResult>());
-    });
+    test(
+      'Stockfish: fallback evaluation is white-relative for black to move',
+      () async {
+        final service = StockfishService.instance;
+        service.resetTestState();
+        service.forceFallback = true;
+        final result = await service.getBestMove(
+          fen: blackStartPos,
+          depth: 1,
+          thinkTimeMs: 100,
+        );
+        expect(result, isA<BestMoveResult>());
+      },
+    );
 
     // ── Mate scoring edge cases ───────────────────────────────
 
-    test('SimpleBot: depth-1 mate score is distinct from depth-3 mate score',
-        () async {
-      // The convention is -999999 + depth, so deeper mates (larger depth)
-      // should be LESS negative (preferring sooner mates).
-      // We verify by checking checkmated positions at different search depths.
-    });
+    test(
+      'SimpleBot: depth-1 mate score is distinct from depth-3 mate score',
+      () async {
+        // The convention is -999999 + depth, so deeper mates (larger depth)
+        // should be LESS negative (preferring sooner mates).
+        // We verify by checking checkmated positions at different search depths.
+      },
+    );
 
     test('SimpleBot: evaluation never exceeds mate threshold', () async {
       // Material score (queen = 900) + positional bonuses should never
@@ -261,10 +279,16 @@ void main() {
           depth: 2,
         );
         final absEval = result.evaluation.abs();
-        expect(absEval, lessThan(999000),
-            reason: 'Material eval $absEval should not reach mate threshold');
-        expect(absEval, lessThan(100000),
-            reason: 'Material eval $absEval should be under 100000');
+        expect(
+          absEval,
+          lessThan(999000),
+          reason: 'Material eval $absEval should not reach mate threshold',
+        );
+        expect(
+          absEval,
+          lessThan(100000),
+          reason: 'Material eval $absEval should be under 100000',
+        );
       }
     });
 
@@ -280,8 +304,10 @@ void main() {
 
     test('BasicEvaluator: opposite evaluations for mirrored positions', () {
       // Evaluate same position from white's turn vs black's perspective
-      const fenWhiteTurn = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-      const fenBlackTurn = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1';
+      const fenWhiteTurn =
+          'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+      const fenBlackTurn =
+          'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1';
 
       final evalWhite = BasicEvaluatorService.instance.evaluate(fenWhiteTurn);
       final evalBlack = BasicEvaluatorService.instance.evaluate(fenBlackTurn);

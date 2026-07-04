@@ -18,6 +18,9 @@ class _QueuedCommand {
 /// Service class for interacting with the Stockfish chess engine
 /// Uses UCI (Universal Chess Interface) protocol
 class StockfishService {
+  static final _fenSpaceRegex = RegExp(r'\s+');
+  static final _fenDigitRegex = RegExp(r'[1-8]');
+  static final _fenPieceRegex = RegExp(r'[prnbqkPRNBQK]');
   static StockfishService? _instance;
   Stockfish? _stockfish;
   bool _isReady = false;
@@ -456,7 +459,7 @@ class StockfishService {
   /// (positive = good for white, negative = good for black).
   /// See: docs/ENGINE_REFACTOR_ROADMAP.md § Phase 6
   int _toWhiteRelative(int scoreCp, String fen) {
-    final turn = fen.trim().split(RegExp(r'\s+'));
+    final turn = fen.trim().split(_fenSpaceRegex);
     if (turn.length >= 2 && turn[1] == 'b') {
       return -scoreCp;
     }
@@ -466,7 +469,7 @@ class StockfishService {
   /// Internal FEN validation to prevent engine crashes
   bool _isValidFen(String fen) {
     if (fen.isEmpty) return false;
-    final parts = fen.trim().split(RegExp(r'\s+'));
+    final parts = fen.trim().split(_fenSpaceRegex);
     if (parts.length < 4) return false; // At least board, color, castling, ep
 
     // Basic regex for the board part
@@ -478,9 +481,9 @@ class StockfishService {
       int count = 0;
       for (int i = 0; i < row.length; i++) {
         final char = row[i];
-        if (RegExp(r'[1-8]').hasMatch(char)) {
+        if (_fenDigitRegex.hasMatch(char)) {
           count += int.parse(char);
-        } else if (RegExp(r'[prnbqkPRNBQK]').hasMatch(char)) {
+        } else if (_fenPieceRegex.hasMatch(char)) {
           count += 1;
         } else {
           return false; // Invalid character
