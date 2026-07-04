@@ -40,13 +40,16 @@ class SimpleBotService {
   Future<SimpleBotResult> getBestMove({
     required String fen,
     int depth = 3,
+    int timeLimitMs = 900,
   }) async {
     final effectiveDepth = min(depth, 4);
     final cancelId = _cancelToken;
     final bookResult = _tryOpeningBook(fen);
     if (bookResult != null) return bookResult;
 
-    return Isolate.run(() => _getBestMoveSync(fen, effectiveDepth, cancelId));
+    return Isolate.run(
+      () => _getBestMoveSync(fen, effectiveDepth, cancelId, timeLimitMs),
+    );
   }
 
   /// Small deterministic opening book for the fallback engine.
@@ -108,9 +111,15 @@ class SimpleBotService {
 
   /// Synchronous computation — runs inside an isolate.
   /// Uses iterative deepening with negamax alpha-beta and PV tracking.
-  SimpleBotResult _getBestMoveSync(String fen, int depth, int cancelId) {
+  SimpleBotResult _getBestMoveSync(
+    String fen,
+    int depth,
+    int cancelId,
+    int timeLimitMs,
+  ) {
     // Sync cancel token — isolates have their own static copy starting at 0
     _cancelToken = cancelId;
+    final searchTimer = Stopwatch()..start();
     final board = chess.Chess.fromFEN(fen);
 
     if (board.in_checkmate) {
@@ -149,10 +158,12 @@ class SimpleBotService {
 
     for (int idDepth = 1; idDepth <= depth; idDepth++) {
       if (_cancelToken != cancelId) break;
+      if (_isTimedOut(searchTimer, timeLimitMs)) break;
 
-      final rootResult = _searchRoot(board, idDepth);
+      final rootResult = _searchRoot(board, idDepth, searchTimer, timeLimitMs);
 
       if (_cancelToken != cancelId) break;
+      if (_isTimedOut(searchTimer, timeLimitMs) && bestMove.isNotEmpty) break;
 
       bestMove = rootResult.bestMove;
       bestEval = rootResult.eval;
@@ -195,6 +206,8 @@ class SimpleBotService {
   ({String bestMove, int eval, List<String> pv}) _searchRoot(
     chess.Chess board,
     int depth,
+    Stopwatch searchTimer,
+    int timeLimitMs,
   ) {
     final moves = board.moves({'verbose': true});
     // Clear killer/history tables for new search
@@ -207,10 +220,21 @@ class SimpleBotService {
     int bestEval = -999999;
     List<String> bestPv = [];
 
+    _orderMoves(moves, null, 0, board);
+
     for (final move in moves) {
+      if (_isTimedOut(searchTimer, timeLimitMs)) break;
       final m = move as Map;
       board.move(m);
-      final result = _negamax(board, depth - 1, -999999, 999999, 1);
+      final result = _negamax(
+        board,
+        depth - 1,
+        -999999,
+        999999,
+        1,
+        searchTimer,
+        timeLimitMs,
+      );
       board.undo();
 
       final eval = -result.score;
@@ -233,9 +257,15 @@ class SimpleBotService {
     int alpha,
     int beta,
     int ply,
+    Stopwatch searchTimer,
+    int timeLimitMs,
   ) {
+    if (_isTimedOut(searchTimer, timeLimitMs)) {
+      return (score: _sideToMoveEval(board), pv: const []);
+    }
+
     if (depth == 0) {
-      return _quiescence(board, alpha, beta, 0);
+      return _quiescence(board, alpha, beta, 0, searchTimer, timeLimitMs);
     }
 
     if (board.in_checkmate) {
@@ -257,7 +287,15 @@ class SimpleBotService {
     for (final move in moves) {
       final m = move as Map;
       board.move(m);
-      final result = _negamax(board, depth - 1, -beta, -bestScore, ply + 1);
+      final result = _negamax(
+        board,
+        depth - 1,
+        -beta,
+        -bestScore,
+        ply + 1,
+        searchTimer,
+        timeLimitMs,
+      );
       board.undo();
 
       final score = -result.score;
@@ -291,7 +329,13 @@ class SimpleBotService {
     int alpha,
     int beta,
     int qDepth,
+    Stopwatch searchTimer,
+    int timeLimitMs,
   ) {
+    if (_isTimedOut(searchTimer, timeLimitMs)) {
+      return (score: _sideToMoveEval(board), pv: const []);
+    }
+
     // Stand-pat evaluation (side-to-move relative)
     int standPat = _evaluatePositionFast(board);
     if (board.turn == chess.Color.BLACK) standPat = -standPat;
@@ -309,7 +353,7 @@ class SimpleBotService {
     // Delta pruning: if stand-pat + queen value can't reach alpha, stop
     if (standPat + 900 < alpha) return (score: alpha, pv: const []);
 
-    if (qDepth >= 6) return (score: standPat, pv: const []);
+    if (qDepth >= 4) return (score: standPat, pv: const []);
 
     final allMoves = board.moves({'verbose': true});
     if (allMoves.isEmpty) return (score: standPat, pv: const []);
@@ -334,7 +378,14 @@ class SimpleBotService {
     for (final move in moves) {
       final m = move as Map;
       board.move(m);
-      final result = _quiescence(board, -beta, -bestScore, qDepth + 1);
+      final result = _quiescence(
+        board,
+        -beta,
+        -bestScore,
+        qDepth + 1,
+        searchTimer,
+        timeLimitMs,
+      );
       board.undo();
 
       final score = -result.score;
@@ -442,7 +493,22 @@ class SimpleBotService {
           return 0;
       }
     }
+    final pieceText = piece.toString().toLowerCase();
+    if (pieceText.endsWith('pawn') || pieceText == 'p') return 100;
+    if (pieceText.endsWith('knight') || pieceText == 'n') return 320;
+    if (pieceText.endsWith('bishop') || pieceText == 'b') return 330;
+    if (pieceText.endsWith('rook') || pieceText == 'r') return 500;
+    if (pieceText.endsWith('queen') || pieceText == 'q') return 900;
     return 0;
+  }
+
+  bool _isTimedOut(Stopwatch stopwatch, int timeLimitMs) {
+    return stopwatch.elapsedMilliseconds >= timeLimitMs;
+  }
+
+  int _sideToMoveEval(chess.Chess board) {
+    final eval = _evaluatePositionFast(board);
+    return board.turn == chess.Color.WHITE ? eval : -eval;
   }
 
   /// Static evaluation of the board position (full evaluation with mobility).

@@ -116,7 +116,7 @@ void main() {
         stopwatch.stop();
 
         // In fallback mode, depth 15 without cap would cause ANR/hang and fail the test timeout.
-        // With depth capped at 4 and ID (1+2+3+4) + quiescence.
+        // Fallback is capped and time-bounded to stay responsive.
         expect(stopwatch.elapsedMilliseconds, lessThan(6000));
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
@@ -185,10 +185,7 @@ void main() {
 
         // After forceFallback init, should be usingFallback
         await service.initialize();
-        expect(
-          service.statusNotifier.value,
-          EngineStatus.usingFallback,
-        );
+        expect(service.statusNotifier.value, EngineStatus.usingFallback);
         expect(service.isReady, true);
         expect(service.isUsingFallback, true);
       },

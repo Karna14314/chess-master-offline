@@ -35,6 +35,16 @@ void main() {
       expect(result.bestMove, equals('e7e5'));
     });
 
+    test('captures a hanging queen when available', () async {
+      const fen = '4k3/8/8/3q4/4P3/8/8/4K3 w - - 0 1';
+      final result = await SimpleBotService.instance.getBestMove(
+        fen: fen,
+        depth: 3,
+      );
+
+      expect(result.bestMove, equals('e4d5'));
+    });
+
     test('deeper search returns non-empty PV', () async {
       final result = await SimpleBotService.instance.getBestMove(
         fen: startPos,

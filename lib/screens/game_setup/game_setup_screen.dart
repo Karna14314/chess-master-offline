@@ -35,9 +35,7 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
       final difficulty = AppConstants.difficultyLevels[_selectedDifficulty - 1];
       final timeControl = AppConstants.timeControls[_selectedTimeControlIndex];
 
-      bool isPuzzle = _selectedMode == GameMode.puzzle;
-
-      await ref
+      ref
           .read(gameSessionProvider.notifier)
           .startNewGame(
             gameMode: _selectedMode,
@@ -45,7 +43,6 @@ class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
             difficulty: difficulty,
             timeControl: timeControl,
             playerColor: _selectedColor,
-            isPuzzle: isPuzzle,
           );
 
       if (mounted) {

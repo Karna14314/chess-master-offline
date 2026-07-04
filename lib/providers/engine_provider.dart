@@ -160,6 +160,8 @@ class EngineNotifier extends StateNotifier<EngineState> {
         );
       }
 
+      _service.setSkillLevel(difficulty.elo);
+
       // Minimum think time: a fixed floor (not additive) to prevent
       // instant replies that feel robotic. If the engine finishes faster
       // than this threshold, we wait the remaining time. If it finishes
@@ -171,6 +173,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
           .getBestMove(
             fen: fen,
             depth: difficulty.depth,
+            elo: difficulty.elo,
             thinkTimeMs: difficulty.thinkTimeMs,
           )
           .timeout(

@@ -148,8 +148,7 @@ class DifficultyLevel {
   int get fallbackDepth {
     if (depth <= 1) return 1;
     if (depth <= 2) return 2;
-    if (depth <= 8) return 3;
-    return 4;
+    return 3;
   }
 }
 
@@ -294,8 +293,10 @@ class EvalConstants {
   /// CPL < 0 (improvement): 100
   static double accuracyFromCpl(double cpl) {
     if (cpl <= 0) return maxAccuracy;
-    return (maxAccuracy * exp(-accuracyAttenuationFactor * cpl))
-        .clamp(minAccuracy, maxAccuracy);
+    return (maxAccuracy * exp(-accuracyAttenuationFactor * cpl)).clamp(
+      minAccuracy,
+      maxAccuracy,
+    );
   }
 
   /// Compute centipawn loss from evalBefore and evalAfter for a given side.
@@ -305,9 +306,8 @@ class EvalConstants {
     required double evalAfter,
     required bool isWhiteMove,
   }) {
-    final lossPawns = isWhiteMove
-        ? evalBefore - evalAfter
-        : evalAfter - evalBefore;
+    final lossPawns =
+        isWhiteMove ? evalBefore - evalAfter : evalAfter - evalBefore;
     return toCentipawns(lossPawns);
   }
 

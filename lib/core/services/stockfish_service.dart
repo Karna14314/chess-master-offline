@@ -544,6 +544,11 @@ class StockfishService {
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
+    if (elo != null) {
+      setSkillLevel(elo);
+      await _waitForReadyOk(timeout: const Duration(milliseconds: 1500));
+    }
+
     // Setup search listener BEFORE setting position (must be ready before go)
     final completer = Completer<BestMoveResult>();
     String? bestMove;
@@ -600,7 +605,7 @@ class StockfishService {
     // Wait for engine to confirm position is processed before starting search
     // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
     final positionReady = await _waitForReadyOk(
-      timeout: const Duration(milliseconds: 500),
+      timeout: const Duration(milliseconds: 1500),
     );
     if (!positionReady) {
       subscription.cancel();
@@ -655,8 +660,7 @@ class StockfishService {
   static int _fallbackDepth(int requestedDepth) {
     if (requestedDepth <= 1) return 1;
     if (requestedDepth <= 3) return 2;
-    if (requestedDepth <= 8) return 3;
-    return 4;
+    return 3;
   }
 
   Future<BestMoveResult> _getSimpleBotMove(
@@ -672,11 +676,17 @@ class StockfishService {
     final result = await SimpleBotService.instance.getBestMove(
       fen: fen,
       depth: safeDepth,
+      timeLimitMs: _fallbackTimeLimit(thinkTimeMs),
     );
     return BestMoveResult(
       bestMove: result.bestMove,
       evaluation: result.evaluation,
     );
+  }
+
+  int _fallbackTimeLimit(int? thinkTimeMs) {
+    if (thinkTimeMs == null) return 900;
+    return thinkTimeMs.clamp(500, 1200);
   }
 
   /// Analyze a position and get multiple lines

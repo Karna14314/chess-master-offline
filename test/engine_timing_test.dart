@@ -6,8 +6,7 @@ import 'package:chess_master/core/constants/app_constants.dart';
 void main() {
   group('Phase 5 — Timing & Responsiveness Tests', () {
     late StockfishService service;
-    const startFen =
-        'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
     setUp(() {
       service = StockfishService.instance;
@@ -60,13 +59,13 @@ void main() {
       'consecutive rapid searches do not degrade or crash',
       () async {
         for (int i = 0; i < 5; i++) {
-          final result = await service.getBestMove(
-            fen: startFen,
-            depth: 3,
-          );
+          final result = await service.getBestMove(fen: startFen, depth: 3);
           expect(result, isA<BestMoveResult>());
-          expect(result.bestMove.isNotEmpty, isTrue,
-              reason: 'Iteration $i should return a valid move');
+          expect(
+            result.bestMove.isNotEmpty,
+            isTrue,
+            reason: 'Iteration $i should return a valid move',
+          );
         }
       },
       timeout: const Timeout(Duration(seconds: 10)),
@@ -102,12 +101,16 @@ void main() {
     test('all difficulty levels have sensible think times', () {
       for (final level in AppConstants.difficultyLevels) {
         // thinkTimeMs should be reasonable: at least 200ms, at most 5s
-        expect(level.thinkTimeMs, greaterThanOrEqualTo(200),
-            reason:
-                '${level.name} think time ${level.thinkTimeMs}ms is too fast');
-        expect(level.thinkTimeMs, lessThanOrEqualTo(5000),
-            reason:
-                '${level.name} think time ${level.thinkTimeMs}ms is too long');
+        expect(
+          level.thinkTimeMs,
+          greaterThanOrEqualTo(200),
+          reason: '${level.name} think time ${level.thinkTimeMs}ms is too fast',
+        );
+        expect(
+          level.thinkTimeMs,
+          lessThanOrEqualTo(5000),
+          reason: '${level.name} think time ${level.thinkTimeMs}ms is too long',
+        );
       }
     });
 
@@ -169,16 +172,16 @@ void main() {
     // ── Fallback timing ────────────────────────────────────────
 
     test(
-      'fallback depth cap at 4 prevents ANR for deep requests',
+      'fallback depth cap at 3 prevents ANR for deep requests',
       () async {
-        // Request depth 22 (Maximum) — fallback should cap at 4
+        // Request depth 22 (Maximum) — fallback should cap at 3
         final sw = Stopwatch()..start();
         final result = await service.getBestMove(fen: startFen, depth: 22);
         sw.stop();
 
         expect(result, isA<BestMoveResult>());
         expect(result.bestMove.isNotEmpty, isTrue);
-        // Depth 4 with ID (1+2+3+4) + quiescence
+        // Bounded fallback search should stay comfortably under ANR limits.
         expect(sw.elapsedMilliseconds, lessThan(12000));
       },
       timeout: const Timeout(Duration(seconds: 15)),
@@ -190,10 +193,7 @@ void main() {
       'analyzePosition uses depth-only command (no movetime)',
       () async {
         final sw = Stopwatch()..start();
-        final result = await service.analyzePosition(
-          fen: startFen,
-          depth: 5,
-        );
+        final result = await service.analyzePosition(fen: startFen, depth: 5);
         sw.stop();
 
         expect(result, isA<AnalysisResult>());

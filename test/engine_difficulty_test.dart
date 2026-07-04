@@ -70,21 +70,21 @@ void main() {
       }
     });
 
-    test('fallback depths are distinct for lower levels, capped at 4', () {
+    test('fallback depths are distinct for lower levels, capped at 3', () {
       final fallbackDepths =
           AppConstants.difficultyLevels.map((d) => d.fallbackDepth).toList();
 
-      // No fallback depth should exceed 4 (ANR prevention)
+      // No fallback depth should exceed 3 (ANR prevention)
       for (int i = 0; i < fallbackDepths.length; i++) {
         expect(
           fallbackDepths[i],
-          lessThanOrEqualTo(4),
+          lessThanOrEqualTo(3),
           reason: 'Level ${i + 1} fallback depth exceeds performance limit',
         );
       }
 
       // At least some levels should have different fallback depths
-      // (Beginner=1, Novice=2, higher=3 or 4)
+      // (Beginner=1, higher=3)
       expect(
         fallbackDepths[0],
         equals(1),
@@ -97,8 +97,8 @@ void main() {
       );
       expect(
         fallbackDepths[9],
-        equals(4),
-        reason: 'Maximum fallback depth should be 4',
+        equals(3),
+        reason: 'Maximum fallback depth should be 3',
       );
     });
 
@@ -185,9 +185,9 @@ void main() {
         2: 2, // depth 2 → fallback 2 (Novice)
         5: 3, // depth 5 → fallback 3 (Casual)
         8: 3, // depth 8 → fallback 3 (Intermediate)
-        10: 4, // depth 10 → fallback 4 (Club Player)
-        15: 4, // depth 15 → fallback 4 (Expert)
-        22: 4, // depth 22 → fallback 4 (Maximum)
+        10: 3, // depth 10 → fallback 3 (Club Player)
+        15: 3, // depth 15 → fallback 3 (Expert)
+        22: 3, // depth 22 → fallback 3 (Maximum)
       };
 
       for (final entry in testCases.entries) {

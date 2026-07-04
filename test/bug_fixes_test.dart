@@ -64,7 +64,7 @@ void main() {
       });
     });
 
-    // TEST C — Fallback engine depth cap (no isolate — depth 4 cap prevents ANR)
+    // TEST C — Fallback engine depth cap (no isolate — bounded search prevents ANR)
     group('Fallback Engine Depth Cap (TEST C)', () {
       test(
         'SimpleBotService depth is capped at 3, completes under ANR threshold',
@@ -83,7 +83,7 @@ void main() {
           expect(result.bestMove, isNotEmpty);
           expect(result.isValid, isTrue);
 
-          // ANR threshold — depth capped at 4 with ID + QS
+          // ANR threshold — fallback search is depth-capped and time-bounded.
           expect(stopwatch.elapsedMilliseconds, lessThan(10000));
         },
       );
@@ -161,7 +161,6 @@ void main() {
 
         bool firstCallStarted = false;
 
-
         // Simulate a long-running analysis
         final firstCall = Future(() async {
           firstCallStarted = true;
@@ -171,9 +170,7 @@ void main() {
         // Immediately try second call
         final secondCall = Future(() async {
           await Future.delayed(const Duration(milliseconds: 100));
-          if (firstCallStarted) {
-
-          }
+          if (firstCallStarted) {}
         });
 
         await Future.wait([firstCall, secondCall]);
