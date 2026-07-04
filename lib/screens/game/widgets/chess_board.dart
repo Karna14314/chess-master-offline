@@ -151,7 +151,6 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);

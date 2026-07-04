@@ -224,14 +224,8 @@ void main() {
       });
 
       test('classifyCpl: CPL 21-50 → Good', () {
-        expect(
-          EvalConstants.classifyCpl(21),
-          equals(MoveClassification.good),
-        );
-        expect(
-          EvalConstants.classifyCpl(50),
-          equals(MoveClassification.good),
-        );
+        expect(EvalConstants.classifyCpl(21), equals(MoveClassification.good));
+        expect(EvalConstants.classifyCpl(50), equals(MoveClassification.good));
       });
 
       test('classifyCpl: CPL 51-100 → Inaccuracy', () {
@@ -427,16 +421,19 @@ void main() {
         expect(result, equals(MoveClassification.best));
       });
 
-      test('mate score: blunder from non-mate to mate for player → Blunder', () {
-        final result = classifyMove(
-          evalBefore: 0.0, // Equal position
-          evalAfter: 1500, // White now has forced mate — bad for black
-          isWhiteMove: false,
-          bestMove: null,
-          actualMove: 'f7f6',
-        );
-        expect(result, equals(MoveClassification.blunder));
-      });
+      test(
+        'mate score: blunder from non-mate to mate for player → Blunder',
+        () {
+          final result = classifyMove(
+            evalBefore: 0.0, // Equal position
+            evalAfter: 1500, // White now has forced mate — bad for black
+            isWhiteMove: false,
+            bestMove: null,
+            actualMove: 'f7f6',
+          );
+          expect(result, equals(MoveClassification.blunder));
+        },
+      );
     });
 
     // ── MoveAnalysis ─────────────────────────────────────────────
@@ -597,7 +594,7 @@ void main() {
         expect(ga.excellentMoves, equals(1));
         expect(ga.inaccuracies, equals(1));
         expect(ga.blunders, equals(1));
-        expect(ga.averageCpl, closeTo(( -20 + 30 + 300) / 3, 0.01));
+        expect(ga.averageCpl, closeTo((-20 + 30 + 300) / 3, 0.01));
         expect(ga.averageAccuracy, closeTo((100 + 91.39 + 40.66) / 3, 0.1));
       });
 
@@ -616,21 +613,22 @@ void main() {
           MoveClassification.onlyMove,
           MoveClassification.book,
         ];
-        final moves = classificationTypes.asMap().entries.map((e) {
-          return MoveAnalysis(
-            moveIndex: e.key,
-            san: 'm${e.key}',
-            fen: '...',
-            evalBefore: 0.0,
-            evalAfter: 0.0,
-            bestMove: null,
-            classification: e.value,
-            engineLines: const [],
-            isWhiteMove: true,
-            centipawnLoss: 0,
-            accuracy: 100.0,
-          );
-        }).toList();
+        final moves =
+            classificationTypes.asMap().entries.map((e) {
+              return MoveAnalysis(
+                moveIndex: e.key,
+                san: 'm${e.key}',
+                fen: '...',
+                evalBefore: 0.0,
+                evalAfter: 0.0,
+                bestMove: null,
+                classification: e.value,
+                engineLines: const [],
+                isWhiteMove: true,
+                centipawnLoss: 0,
+                accuracy: 100.0,
+              );
+            }).toList();
 
         final ga = GameAnalysis.fromMoves(moves);
         expect(ga.blunders, equals(1));

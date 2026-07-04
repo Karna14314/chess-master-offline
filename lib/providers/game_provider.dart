@@ -413,11 +413,9 @@ class GameNotifier extends StateNotifier<GameState> {
     int pieceCount = 0;
 
     // Check all squares for pieces
-    for (int rank = 1; rank <= 8; rank++) {
-      for (String file in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
-        final square = '$file$rank';
-        final piece = state.board.get(square);
-        if (piece != null) {
+    for (int i = 0; i < 128; i++) {
+      if ((i & 0x88) == 0) {
+        if (state.board.board[i] != null) {
           pieceCount++;
         }
       }
@@ -432,11 +430,9 @@ class GameNotifier extends StateNotifier<GameState> {
     if (state.moveHistory.isNotEmpty) return false;
 
     int pieceCount = 0;
-    for (int rank = 1; rank <= 8; rank++) {
-      for (String file in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
-        final square = '$file$rank';
-        final piece = state.board.get(square);
-        if (piece != null) {
+    for (int i = 0; i < 128; i++) {
+      if ((i & 0x88) == 0) {
+        if (state.board.board[i] != null) {
           pieceCount++;
         }
       }
