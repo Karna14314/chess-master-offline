@@ -20,7 +20,7 @@ class GameNotifier extends StateNotifier<GameState> {
     required DifficultyLevel difficulty,
     required TimeControl timeControl,
     GameMode gameMode = GameMode.bot,
-    BotType botType = BotType.simple,
+    BotType botType = BotType.stockfish,
     bool allowTakeback = true,
     bool showHints = true,
     bool useTimer = true,

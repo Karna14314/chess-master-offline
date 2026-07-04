@@ -26,8 +26,10 @@ class SimpleBotService {
   }
 
   // Killer move table: 2 killers per ply, up to 32 ply
-  static final List<List<String?>> _killers =
-      List.generate(32, (_) => [null, null]);
+  static final List<List<String?>> _killers = List.generate(
+    32,
+    (_) => [null, null],
+  );
 
   // History heuristic: Map<from*64 + to, score>
   static final Map<int, int> _history = {};
@@ -41,26 +43,80 @@ class SimpleBotService {
   }) async {
     final effectiveDepth = min(depth, 4);
     final cancelId = _cancelToken;
+    final bookResult = _tryOpeningBook(fen);
+    if (bookResult != null) return bookResult;
 
     return Isolate.run(() => _getBestMoveSync(fen, effectiveDepth, cancelId));
   }
 
+  /// Small deterministic opening book for the fallback engine.
+  ///
+  /// This keeps SimpleBot from spending expensive search time in the first
+  /// few plies and avoids unnatural repeated knight-only openings when
+  /// Stockfish is unavailable.
+  SimpleBotResult? _tryOpeningBook(String fen) {
+    final key = _fenBookKey(fen);
+    final bookMove = _openingBook[key];
+    if (bookMove == null) return null;
+
+    try {
+      final board = chess.Chess.fromFEN(fen);
+      final legalMoves = board.moves({'verbose': true});
+      Map? selectedMove;
+      for (final move in legalMoves) {
+        final moveMap = move as Map;
+        if (_moveToStr(moveMap) == bookMove) {
+          selectedMove = moveMap;
+          break;
+        }
+      }
+      if (selectedMove == null) return null;
+
+      board.move(selectedMove);
+      final evaluation = _evaluatePosition(board);
+      return SimpleBotResult(
+        bestMove: bookMove,
+        evaluation: evaluation,
+        principalVariation: [bookMove],
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _fenBookKey(String fen) {
+    final parts = fen.trim().split(RegExp(r'\s+'));
+    if (parts.length < 4) return fen.trim();
+    return parts.take(4).join(' ');
+  }
+
+  static const Map<String, String> _openingBook = {
+    // Initial position: claim the center.
+    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -': 'e2e4',
+
+    // Common first moves by White.
+    'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -': 'e7e5',
+    'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -': 'd7d5',
+    'rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq -': 'e7e5',
+    'rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -': 'd7d5',
+
+    // Simple second moves: develop naturally after central replies.
+    'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -': 'g1f3',
+    'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -': 'c2c4',
+    'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -': 'g1f3',
+  };
+
   /// Synchronous computation — runs inside an isolate.
   /// Uses iterative deepening with negamax alpha-beta and PV tracking.
-  SimpleBotResult _getBestMoveSync(
-    String fen,
-    int depth,
-    int cancelId,
-  ) {
+  SimpleBotResult _getBestMoveSync(String fen, int depth, int cancelId) {
     // Sync cancel token — isolates have their own static copy starting at 0
     _cancelToken = cancelId;
     final board = chess.Chess.fromFEN(fen);
 
     if (board.in_checkmate) {
       final sideToMoveScore = -999999 + depth;
-      final adjustedEval = board.turn == chess.Color.BLACK
-          ? -sideToMoveScore
-          : sideToMoveScore;
+      final adjustedEval =
+          board.turn == chess.Color.BLACK ? -sideToMoveScore : sideToMoveScore;
       return SimpleBotResult(bestMove: '', evaluation: adjustedEval);
     }
     if (board.in_stalemate || board.in_draw) {
@@ -74,9 +130,10 @@ class SimpleBotService {
 
     if (depth <= 0) {
       final singlePlyResult = _pickBestSinglePly(board, moves);
-      final adjustedEval = board.turn == chess.Color.WHITE
-          ? singlePlyResult.evaluation
-          : -singlePlyResult.evaluation;
+      final adjustedEval =
+          board.turn == chess.Color.WHITE
+              ? singlePlyResult.evaluation
+              : -singlePlyResult.evaluation;
       return SimpleBotResult(
         bestMove: singlePlyResult.bestMove,
         evaluation: adjustedEval,
@@ -259,12 +316,13 @@ class SimpleBotService {
 
     // In check: search ALL moves to resolve the check
     // Otherwise: search only captures and promotions
-    final moves = board.in_check
-        ? allMoves
-        : allMoves.where((m) {
-            final map = m as Map;
-            return map['captured'] != null || map['promotion'] != null;
-          }).toList();
+    final moves =
+        board.in_check
+            ? allMoves
+            : allMoves.where((m) {
+              final map = m as Map;
+              return map['captured'] != null || map['promotion'] != null;
+            }).toList();
 
     if (moves.isEmpty) return (score: standPat, pv: const []);
 
@@ -360,7 +418,8 @@ class SimpleBotService {
   int _historyKey(Map m) {
     final from = m['from'] as String;
     final to = m['to'] as String;
-    return (from.codeUnitAt(0) - 97) + (from.codeUnitAt(1) - 49) * 8 +
+    return (from.codeUnitAt(0) - 97) +
+        (from.codeUnitAt(1) - 49) * 8 +
         ((to.codeUnitAt(0) - 97) + (to.codeUnitAt(1) - 49) * 8) * 64;
   }
 
@@ -369,12 +428,18 @@ class SimpleBotService {
     if (piece == null) return 0;
     if (piece is chess.PieceType) {
       switch (piece) {
-        case chess.PieceType.PAWN: return 100;
-        case chess.PieceType.KNIGHT: return 320;
-        case chess.PieceType.BISHOP: return 330;
-        case chess.PieceType.ROOK: return 500;
-        case chess.PieceType.QUEEN: return 900;
-        default: return 0;
+        case chess.PieceType.PAWN:
+          return 100;
+        case chess.PieceType.KNIGHT:
+          return 320;
+        case chess.PieceType.BISHOP:
+          return 330;
+        case chess.PieceType.ROOK:
+          return 500;
+        case chess.PieceType.QUEEN:
+          return 900;
+        default:
+          return 0;
       }
     }
     return 0;

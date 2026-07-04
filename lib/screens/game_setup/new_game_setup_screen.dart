@@ -18,7 +18,7 @@ class NewGameSetupScreen extends ConsumerStatefulWidget {
 
 class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   late GameMode _selectedMode;
-  BotType _selectedBotType = BotType.simple;
+  BotType _selectedBotType = BotType.stockfish;
   double _difficultyLevel = 3.0;
   PlayerColor _selectedColor = PlayerColor.random;
   int _selectedTimerIndex = 0; // Default to 'No Timer'

@@ -109,6 +109,25 @@ class EngineNotifier extends StateNotifier<EngineState> {
     state = state.copyWith(isThinking: true, currentFen: fen);
 
     try {
+      if (botType == BotType.simple) {
+        final fallbackResult = await SimpleBotService.instance.getBestMove(
+          fen: fen,
+          depth: difficulty.fallbackDepth,
+        );
+
+        if (currentSearchId != _searchId) return null;
+
+        state = state.copyWith(
+          isThinking: false,
+          bestMove: fallbackResult.bestMove,
+          evaluation: fallbackResult.evaluation,
+        );
+        return BestMoveResult(
+          bestMove: fallbackResult.bestMove,
+          evaluation: fallbackResult.evaluation,
+        );
+      }
+
       // Initialize if not ready
       if (!_service.isReady) {
         try {

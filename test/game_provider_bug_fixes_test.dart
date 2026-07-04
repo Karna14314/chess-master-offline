@@ -55,5 +55,18 @@ void main() {
       // This should succeed
       expect(successWithPromotion, isTrue);
     });
+
+    test('new bot games default to Stockfish engine', () {
+      final notifier = container.read(gameProvider.notifier);
+
+      notifier.startNewGame(
+        playerColor: PlayerColor.white,
+        difficulty: AppConstants.difficultyLevels.first,
+        timeControl: AppConstants.timeControls.first,
+        gameMode: GameMode.bot,
+      );
+
+      expect(container.read(gameProvider).botType, BotType.stockfish);
+    });
   });
 }

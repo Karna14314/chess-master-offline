@@ -16,7 +16,7 @@ class GameSetupScreen extends ConsumerStatefulWidget {
 
 class _GameSetupScreenState extends ConsumerState<GameSetupScreen> {
   late GameMode _selectedMode;
-  BotType _selectedBot = BotType.simple;
+  BotType _selectedBot = BotType.stockfish;
   int _selectedDifficulty = 4; // 1 to 10
   int _selectedTimeControlIndex = 0; // No Timer usually
   PlayerColor _selectedColor = PlayerColor.white;

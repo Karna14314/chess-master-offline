@@ -41,12 +41,15 @@ class StockfishService {
   StreamSubscription<dynamic>? _engineResponseSubscription;
 
   // Initialization lifecycle
-  Completer<void>? _engineReadyCompleter; // Completed when isolate reports engine binary loaded
-  bool _isEngineBinaryReady = false; // Set by engine_ready from isolate (binary loaded, accepts commands)
+  Completer<void>?
+  _engineReadyCompleter; // Completed when isolate reports engine binary loaded
+  bool _isEngineBinaryReady =
+      false; // Set by engine_ready from isolate (binary loaded, accepts commands)
 
   // Phase 2: Lifecycle management
   bool _isDisposed = false;
-  int _engineSessionId = 0; // Incremented on each _startEngineIsolate to detect stale messages
+  int _engineSessionId =
+      0; // Incremented on each _startEngineIsolate to detect stale messages
   DateTime? _lastFallbackTime;
   static const Duration _fallbackRetryCooldown = Duration(seconds: 30);
 
@@ -114,7 +117,10 @@ class StockfishService {
   /// Initialization commands bypass the normal command queue to avoid circular
   /// dependency: the queue requires _isReady which is not set until step 5.
   Future<void> initialize() async {
-    if (_isDisposed) return;
+    if (_isDisposed) {
+      _isDisposed = false;
+      statusNotifier.value = EngineStatus.initializing;
+    }
     if (_isReady || _useFallback) return;
     if (_initCompleter != null) return _initCompleter!.future;
 
@@ -161,10 +167,11 @@ class StockfishService {
 
         // --- Step 3: Send "uci", wait for "uciok" ---
         debugPrint('ENGINE INIT: Sending "uci"');
-        _sendCommandDirect('uci');
-
-        final uciok = await _waitForOutputPattern('uciok',
-            timeout: const Duration(seconds: 5));
+        final uciok = await _sendDirectAndWait(
+          command: 'uci',
+          pattern: 'uciok',
+          timeout: const Duration(seconds: 5),
+        );
         if (!uciok) {
           throw Exception('UCI handshake timeout (no uciok received)');
         }
@@ -178,10 +185,11 @@ class StockfishService {
 
         // --- Step 5: Send "isready", wait for "readyok" ---
         debugPrint('ENGINE INIT: Sending "isready"');
-        _sendCommandDirect('isready');
-
-        final ready = await _waitForOutputPattern('readyok',
-            timeout: const Duration(seconds: 5));
+        final ready = await _sendDirectAndWait(
+          command: 'isready',
+          pattern: 'readyok',
+          timeout: const Duration(seconds: 5),
+        );
         if (!ready) {
           throw Exception('Engine ready timeout (no readyok received)');
         }
@@ -194,7 +202,9 @@ class StockfishService {
         retryCount++;
         debugPrint('ENGINE INIT: Attempt $retryCount failed: $e');
         if (retryCount >= maxRetries) {
-          _enableFallback('Initialization failed after $maxRetries attempts: $e');
+          _enableFallback(
+            'Initialization failed after $maxRetries attempts: $e',
+          );
           return;
         }
         await Future.delayed(const Duration(milliseconds: 500));
@@ -222,7 +232,8 @@ class StockfishService {
   /// Returns true if enough time has passed since the last fallback to attempt a retry.
   bool _shouldRetryInit() {
     if (!_useFallback || _lastFallbackTime == null) return false;
-    return DateTime.now().difference(_lastFallbackTime!) >= _fallbackRetryCooldown;
+    return DateTime.now().difference(_lastFallbackTime!) >=
+        _fallbackRetryCooldown;
   }
 
   /// Reset the fallback state and attempt re-initialization.
@@ -263,7 +274,9 @@ class StockfishService {
     if (!_useFallback) return;
     if (!_shouldRetryInit()) return;
 
-    debugPrint('ENGINE LIFECYCLE → Attempting fallback recovery (cooldown elapsed)');
+    debugPrint(
+      'ENGINE LIFECYCLE → Attempting fallback recovery (cooldown elapsed)',
+    );
     // Reset state for re-init
     _useFallback = false;
     _isReady = false;
@@ -391,16 +404,15 @@ class StockfishService {
   void _sendCommandDirect(String command) {
     if (_isDisposed || _useFallback) return;
     debugPrint('ENGINE INIT: $command');
-    _engineCommandPort?.send({
-      'type': 'stdin',
-      'command': '$command\n',
-    });
+    _engineCommandPort?.send({'type': 'stdin', 'command': '$command\n'});
   }
 
   /// Wait for a specific pattern to appear in the engine's output stream.
   /// Returns true if the pattern was found within the timeout, false otherwise.
-  Future<bool> _waitForOutputPattern(String pattern,
-      {Duration timeout = const Duration(seconds: 5)}) async {
+  Future<bool> _waitForOutputPattern(
+    String pattern, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
     final completer = Completer<bool>();
     StreamSubscription<String>? sub;
     sub = _outputController.stream.listen((line) {
@@ -410,15 +422,32 @@ class StockfishService {
       }
     });
     try {
-      return await completer.future.timeout(timeout, onTimeout: () {
-        sub?.cancel();
-        debugPrint('ENGINE INIT: Timeout waiting for "$pattern" after $timeout');
-        return false;
-      });
+      return await completer.future.timeout(
+        timeout,
+        onTimeout: () {
+          sub?.cancel();
+          debugPrint(
+            'ENGINE INIT: Timeout waiting for "$pattern" after $timeout',
+          );
+          return false;
+        },
+      );
     } catch (e) {
       sub?.cancel();
       return false;
     }
+  }
+
+  /// Attach the output listener before sending the command so very fast UCI
+  /// responses cannot be missed during initialization.
+  Future<bool> _sendDirectAndWait({
+    required String command,
+    required String pattern,
+    Duration timeout = const Duration(seconds: 5),
+  }) {
+    final waitFuture = _waitForOutputPattern(pattern, timeout: timeout);
+    _sendCommandDirect(command);
+    return waitFuture;
   }
 
   /// Convert a Stockfish side-to-move score to white-relative.
@@ -532,10 +561,7 @@ class StockfishService {
       if (trimmedLine.startsWith('info') && trimmedLine.contains('score')) {
         final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
         if (scoreMatch != null) {
-          evaluation = _toWhiteRelative(
-            int.parse(scoreMatch.group(1)!),
-            fen,
-          );
+          evaluation = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
         }
 
         final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
@@ -604,7 +630,9 @@ class StockfishService {
         const Duration(seconds: 30),
         onTimeout: () {
           subscription.cancel();
-          debugPrint('ENGINE RECOVERY → Search timeout for FEN: $fen, using fallback for this move');
+          debugPrint(
+            'ENGINE RECOVERY → Search timeout for FEN: $fen, using fallback for this move',
+          );
           _sendCommand('stop');
           // Don't kill isolate or enable permanent fallback — engine may recover
           _isEngineBusy = false;
@@ -719,10 +747,7 @@ class StockfishService {
           int? mate;
 
           if (scoreMatch != null) {
-            eval = _toWhiteRelative(
-              int.parse(scoreMatch.group(1)!),
-              fen,
-            );
+            eval = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
           }
           if (mateMatch != null) {
             mate = int.parse(mateMatch.group(1)!);
@@ -818,7 +843,9 @@ class StockfishService {
         ), // Short timeout for analysis to switch to basic if stuck
         onTimeout: () {
           subscription.cancel();
-          debugPrint('ENGINE RECOVERY → Analysis timeout for FEN: $fen, using fallback');
+          debugPrint(
+            'ENGINE RECOVERY → Analysis timeout for FEN: $fen, using fallback',
+          );
           _sendCommand('stop');
           _sendCommand('setoption name MultiPV value 1');
           // Don't kill isolate or enable permanent fallback — engine may recover

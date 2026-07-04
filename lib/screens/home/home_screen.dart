@@ -518,7 +518,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .read(gameSessionProvider.notifier)
           .startNewGame(
             gameMode: GameMode.bot,
-            botType: BotType.simple,
+            botType: BotType.stockfish,
             difficulty: difficulty,
             timeControl: AppConstants.timeControls[0], // No timer
             playerColor: PlayerColor.white,

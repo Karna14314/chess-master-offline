@@ -14,6 +14,27 @@ void main() {
       expect(result.isValid, isTrue);
     });
 
+    test('opening book starts with a central pawn move', () async {
+      final result = await SimpleBotService.instance.getBestMove(
+        fen: startPos,
+        depth: 3,
+      );
+
+      expect(result.bestMove, equals('e2e4'));
+      expect(result.principalVariation.first, equals('e2e4'));
+    });
+
+    test('opening book answers e4 with e5', () async {
+      const afterE4 =
+          'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+      final result = await SimpleBotService.instance.getBestMove(
+        fen: afterE4,
+        depth: 3,
+      );
+
+      expect(result.bestMove, equals('e7e5'));
+    });
+
     test('deeper search returns non-empty PV', () async {
       final result = await SimpleBotService.instance.getBestMove(
         fen: startPos,
@@ -78,7 +99,8 @@ void main() {
     });
 
     test('midgame position returns reasonable move', () async {
-      const midgame = 'r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3';
+      const midgame =
+          'r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3';
       final result = await SimpleBotService.instance.getBestMove(
         fen: midgame,
         depth: 3,
