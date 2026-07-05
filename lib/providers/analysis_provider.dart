@@ -427,7 +427,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             );
             afterEval = basicResult.evalInPawns;
             engineLines = basicResult.lines;
-            if (basicResult.lines.isNotEmpty && basicResult.lines.first.moves.isNotEmpty) {
+            if (basicResult.lines.isNotEmpty &&
+                basicResult.lines.first.moves.isNotEmpty) {
               bestMove = basicResult.lines.first.moves.first;
             }
           } catch (e2) {

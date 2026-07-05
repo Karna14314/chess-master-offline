@@ -39,8 +39,11 @@ void main() {
         service.forceFallback = true;
 
         await service.initialize();
-        expect(service.isReady, true,
-            reason: 'Cycle $i: service should be ready after init');
+        expect(
+          service.isReady,
+          true,
+          reason: 'Cycle $i: service should be ready after init',
+        );
 
         await service.dispose();
       }
@@ -54,8 +57,10 @@ void main() {
       final disposeFuture = service.dispose();
 
       // Both should complete without throwing
-      await Future.wait([initFuture, disposeFuture])
-          .timeout(const Duration(seconds: 10));
+      await Future.wait([
+        initFuture,
+        disposeFuture,
+      ]).timeout(const Duration(seconds: 10));
     });
 
     test('getBestMove after dispose returns fallback without crashing', () async {
@@ -98,8 +103,9 @@ void main() {
         futures.add(service.getBestMove(fen: testFen, depth: 3));
       }
 
-      final results = await Future.wait(futures)
-          .timeout(const Duration(seconds: 15));
+      final results = await Future.wait(
+        futures,
+      ).timeout(const Duration(seconds: 15));
 
       for (final result in results) {
         expect(result, isA<BestMoveResult>());
@@ -152,12 +158,15 @@ void main() {
       // Should not throw
     });
 
-    test('stopAnalysis does not throw when called without initialization', () async {
-      service.stopAnalysis();
+    test(
+      'stopAnalysis does not throw when called without initialization',
+      () async {
+        service.stopAnalysis();
 
-      await service.initialize();
-      service.stopAnalysis();
-    });
+        await service.initialize();
+        service.stopAnalysis();
+      },
+    );
 
     test('setSkillLevel does not throw', () async {
       service.forceFallback = true;
@@ -199,8 +208,11 @@ void main() {
         expect(service.isReady, true, reason: 'Cycle $i: ready after init');
 
         await service.dispose();
-        expect(service.isReady, true,
-            reason: 'Cycle $i: ready after dispose (falls back)');
+        expect(
+          service.isReady,
+          true,
+          reason: 'Cycle $i: ready after dispose (falls back)',
+        );
       }
     });
 

@@ -225,11 +225,13 @@ MoveClassification classifyMove({
   required String actualMove,
 }) {
   // ── Mate handling ──
-  final isMateScore = evalBefore.abs() > EvalConstants.mateThreshold ||
+  final isMateScore =
+      evalBefore.abs() > EvalConstants.mateThreshold ||
       evalAfter.abs() > EvalConstants.mateThreshold;
 
   if (isMateScore) {
-    if (bestMove != null && actualMove.toLowerCase() == bestMove.toLowerCase()) {
+    if (bestMove != null &&
+        actualMove.toLowerCase() == bestMove.toLowerCase()) {
       return MoveClassification.best;
     }
     // If eval goes from non-mate to mate for the player's side, it's a blunder.

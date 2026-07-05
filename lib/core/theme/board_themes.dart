@@ -107,7 +107,19 @@ class BoardTheme {
 }
 
 /// Piece set types
-enum PieceSetType { traditional, modern, classic, neo, wood, glass, alpha, merida, cburnett, minimal, fantasy }
+enum PieceSetType {
+  traditional,
+  modern,
+  classic,
+  neo,
+  wood,
+  glass,
+  alpha,
+  merida,
+  cburnett,
+  minimal,
+  fantasy,
+}
 
 /// Configuration for a piece set
 class PieceSet {
@@ -173,17 +185,28 @@ class PieceSet {
 
   static PieceSet fromType(PieceSetType type) {
     switch (type) {
-      case PieceSetType.traditional: return traditional;
-      case PieceSetType.modern: return modern;
-      case PieceSetType.classic: return classic;
-      case PieceSetType.neo: return neo;
-      case PieceSetType.wood: return wood;
-      case PieceSetType.glass: return glass;
-      case PieceSetType.alpha: return alpha;
-      case PieceSetType.merida: return merida;
-      case PieceSetType.cburnett: return cburnett;
-      case PieceSetType.minimal: return minimal;
-      case PieceSetType.fantasy: return fantasy;
+      case PieceSetType.traditional:
+        return traditional;
+      case PieceSetType.modern:
+        return modern;
+      case PieceSetType.classic:
+        return classic;
+      case PieceSetType.neo:
+        return neo;
+      case PieceSetType.wood:
+        return wood;
+      case PieceSetType.glass:
+        return glass;
+      case PieceSetType.alpha:
+        return alpha;
+      case PieceSetType.merida:
+        return merida;
+      case PieceSetType.cburnett:
+        return cburnett;
+      case PieceSetType.minimal:
+        return minimal;
+      case PieceSetType.fantasy:
+        return fantasy;
     }
   }
 
@@ -198,7 +221,7 @@ class PieceSet {
     merida,
     cburnett,
     minimal,
-    fantasy
+    fantasy,
   ];
 
   /// Get the asset path for a specific piece

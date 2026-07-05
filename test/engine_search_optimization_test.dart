@@ -14,7 +14,8 @@ void main() {
     test('quiescence detects hanging queen capture', () async {
       // Black has a hanging queen on a5 — white can capture it with a pawn
       // White: pawn on b4 attacks a5; black queen on a5 is undefended
-      final fen = 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1';
+      final fen =
+          'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1';
       final result = await SimpleBotService.instance.getBestMove(
         fen: fen,
         depth: 2,
@@ -38,7 +39,8 @@ void main() {
 
     test('quiescence handles check evasions', () async {
       // Black gives check; white must evade
-      const fen = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1';
+      const fen =
+          'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1';
       final result = await SimpleBotService.instance.getBestMove(
         fen: fen,
         depth: 2,
@@ -49,7 +51,8 @@ void main() {
 
     test('quiescence detects hanging rook', () async {
       // Black has a hanging rook on a7 (undefended), white can capture
-      const fen = 'r1bqkbnr/pppppppp/2n5/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq - 0 1';
+      const fen =
+          'r1bqkbnr/pppppppp/2n5/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq - 0 1';
       final result = await SimpleBotService.instance.getBestMove(
         fen: fen,
         depth: 2,
@@ -70,7 +73,8 @@ void main() {
 
     test('quiescence does not explode on complex positions', () async {
       // Midgame position with many captures available
-      const fen = 'r2qk2r/ppp2ppp/2n5/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
+      const fen =
+          'r2qk2r/ppp2ppp/2n5/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
       final sw = Stopwatch()..start();
       final result = await SimpleBotService.instance.getBestMove(
         fen: fen,
@@ -127,18 +131,23 @@ void main() {
         '4k3/8/8/8/8/8/4P3/4K3 w - - 0 1',
       ];
       for (final fen in positions) {
-        final r1 = await SimpleBotService.instance.getBestMove(fen: fen, depth: 2);
-        final r2 = await SimpleBotService.instance.getBestMove(fen: fen, depth: 2);
-        expect(r1.bestMove, equals(r2.bestMove),
-            reason: 'FEN: $fen');
-        expect(r1.evaluation, equals(r2.evaluation),
-            reason: 'FEN: $fen');
+        final r1 = await SimpleBotService.instance.getBestMove(
+          fen: fen,
+          depth: 2,
+        );
+        final r2 = await SimpleBotService.instance.getBestMove(
+          fen: fen,
+          depth: 2,
+        );
+        expect(r1.bestMove, equals(r2.bestMove), reason: 'FEN: $fen');
+        expect(r1.evaluation, equals(r2.evaluation), reason: 'FEN: $fen');
       }
     });
 
     test('alpha-beta pruning returns consistent bounds', () async {
       // Tactical position — Italian Game, black to find best response
-      const fen = 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 1';
+      const fen =
+          'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 1';
       final result = await SimpleBotService.instance.getBestMove(
         fen: fen,
         depth: 3,
@@ -162,8 +171,11 @@ void main() {
       // White up a pawn = positive, Black up a pawn = negative (white-relative)
       // When we flip: black pawn should give negative evaluation
       // The stockfish convention for FENs with white to move makes this comparison valid
-      expect(whiteAhead.evaluation, greaterThan(0),
-          reason: 'White ahead should be positive');
+      expect(
+        whiteAhead.evaluation,
+        greaterThan(0),
+        reason: 'White ahead should be positive',
+      );
       // Black ahead means white is behind
       // Check if the evaluator correctly sees black has more material
       final blackEval = whiteAhead.evaluation + blackAhead.evaluation;
@@ -177,7 +189,8 @@ void main() {
 
     test('evaluates hanging piece in one move', () async {
       // Black's knight on f6 is undefended; white's pawn on e5 can capture
-      const fen = 'r1bqkb1r/pppp1ppp/2n2n2/4P3/2B5/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1';
+      const fen =
+          'r1bqkb1r/pppp1ppp/2n2n2/4P3/2B5/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1';
       final result = await SimpleBotService.instance.getBestMove(
         fen: fen,
         depth: 3,
@@ -196,7 +209,8 @@ void main() {
     });
 
     test('scholars mate attack is found quickly', () async {
-      const fen = 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1';
+      const fen =
+          'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1';
       final result = await SimpleBotService.instance.getBestMove(
         fen: fen,
         depth: 2,
@@ -246,21 +260,31 @@ void main() {
     // PositionEvaluator skipMobility Flag Tests
     // ============================================================
 
-    test('PositionEvaluator skipMobility returns different result for early game', () {
-      // In early game (move_number <= 10), mobility is already skipped
-      // So both should be identical
-      final board = chess.Chess.fromFEN(startPos);
-      final withMobility = PositionEvaluator.evaluate(board);
-      final withoutMobility = PositionEvaluator.evaluate(board, skipMobility: true);
-      expect(withMobility, equals(withoutMobility));
-    });
+    test(
+      'PositionEvaluator skipMobility returns different result for early game',
+      () {
+        // In early game (move_number <= 10), mobility is already skipped
+        // So both should be identical
+        final board = chess.Chess.fromFEN(startPos);
+        final withMobility = PositionEvaluator.evaluate(board);
+        final withoutMobility = PositionEvaluator.evaluate(
+          board,
+          skipMobility: true,
+        );
+        expect(withMobility, equals(withoutMobility));
+      },
+    );
 
     test('PositionEvaluator skipMobility works in midgame', () {
-      const fen = 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 4 5';
+      const fen =
+          'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 4 5';
       final board = chess.Chess.fromFEN(fen);
       // Both should return valid ints
       final withMobility = PositionEvaluator.evaluate(board);
-      final withoutMobility = PositionEvaluator.evaluate(board, skipMobility: true);
+      final withoutMobility = PositionEvaluator.evaluate(
+        board,
+        skipMobility: true,
+      );
       expect(withMobility, isA<int>());
       expect(withoutMobility, isA<int>());
     });
@@ -305,7 +329,8 @@ void main() {
     });
 
     test('midgame position returns reasonable move', () async {
-      const midgame = 'r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3';
+      const midgame =
+          'r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3';
       final result = await SimpleBotService.instance.getBestMove(
         fen: midgame,
         depth: 3,

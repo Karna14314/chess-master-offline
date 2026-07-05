@@ -142,7 +142,6 @@ void main() {
     // The test was failing compilation because setMaxStrength was missing in MockStockfishService.
     // I added it above.
 
-
     // Use a tolerance or direct check depending on exact logic
     // The logic is: if ((i + 1) % 5 == 0 || i == moves.length - 1)
     // So for 50 moves: 5, 10, ..., 50. Exactly 10 updates.

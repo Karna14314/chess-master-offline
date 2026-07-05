@@ -47,8 +47,11 @@ void main() {
       final future3 = service.initialize();
 
       // All should complete without error
-      await Future.wait([future1, future2, future3])
-          .timeout(const Duration(seconds: 25));
+      await Future.wait([
+        future1,
+        future2,
+        future3,
+      ]).timeout(const Duration(seconds: 25));
 
       expect(service.isReady, true);
     });
@@ -62,36 +65,44 @@ void main() {
       // After dispose, _outputController is closed — service is no longer usable
     });
 
-    test('getBestMove initializes engine if not ready', () async {
-      final service = StockfishService.instance;
+    test(
+      'getBestMove initializes engine if not ready',
+      () async {
+        final service = StockfishService.instance;
 
-      // This should trigger initialize() internally, then fallback
-      final result = await service.getBestMove(
-        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        depth: 3,
-      );
+        // This should trigger initialize() internally, then fallback
+        final result = await service.getBestMove(
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          depth: 3,
+        );
 
-      // Should return a valid fallback result without crashing
-      expect(result, isA<BestMoveResult>());
-      expect(result.bestMove.isNotEmpty, isTrue);
-    }, timeout: const Timeout(Duration(seconds: 30)));
+        // Should return a valid fallback result without crashing
+        expect(result, isA<BestMoveResult>());
+        expect(result.bestMove.isNotEmpty, isTrue);
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
 
-    test('getBestMove returns valid move for both colors', () async {
-      final service = StockfishService.instance;
+    test(
+      'getBestMove returns valid move for both colors',
+      () async {
+        final service = StockfishService.instance;
 
-      // White to move
-      final whiteResult = await service.getBestMove(
-        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        depth: 3,
-      );
-      expect(whiteResult.bestMove.length >= 4, isTrue);
+        // White to move
+        final whiteResult = await service.getBestMove(
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          depth: 3,
+        );
+        expect(whiteResult.bestMove.length >= 4, isTrue);
 
-      // Black to move
-      final blackResult = await service.getBestMove(
-        fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
-        depth: 3,
-      );
-      expect(blackResult.bestMove.length >= 4, isTrue);
-    }, timeout: const Timeout(Duration(seconds: 30)));
+        // Black to move
+        final blackResult = await service.getBestMove(
+          fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+          depth: 3,
+        );
+        expect(blackResult.bestMove.length >= 4, isTrue);
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
   });
 }
