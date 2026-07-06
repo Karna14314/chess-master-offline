@@ -1,5 +1,12 @@
-⚡ performance improvement: Optimize FEN parsing regex in StockfishService
+Refactor UI and navigation for production readiness
 
-💡 What: Moved regex instantiations (RegExp) to static final variables in StockfishService.
-🎯 Why: To avoid recompiling these regular expressions on every invocation of FEN validation, improving execution speed.
-📊 Measured Improvement: Re-compiling regular expressions locally caused the validation function to run significantly slower. Through benchmark testing, parsing improved significantly: Old parse ~268 ms, New parse ~202 ms (~24% performance improvement).
+This commit simplifies the navigation and game setup flow while preserving all existing functionality, in alignment with production readiness goals.
+
+Key changes:
+- Simplified Home Screen: removed duplicate navigation, keeping only Play vs Computer, Local 2P, and Continue Game.
+- Cleaned up Game Setup: Removed dead code and unused modes (Puzzle, Analysis) from the setup screen since they are already available in bottom navigation.
+- Removed AI Selection: Users no longer select the bot type. Internally, Stockfish is always used, providing a simpler and more robust experience.
+- Faster Startup: Pre-initialize Stockfish engine on the Home screen to reduce the startup delay when entering a game.
+- Full Theme Support: Both board themes and piece themes are now fully propagated and work seamlessly across Game, Puzzle, and Analysis boards. Piece caching avoids flickering.
+- Code Cleanup: Removed unused models, dialogs, widgets, and routes.
+- UI Polish: Improved layout spacing, consistent theming, and clear navigation paths.

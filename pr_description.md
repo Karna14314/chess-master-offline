@@ -1,11 +1,12 @@
-💡 **What:**
-Replaced nested string interpolation loops (`'$file$rank'`) with a direct 0x88 index loop (`for (int i = 0; i < 128; i++) { if ((i & 0x88) == 0) ... }`) iterating over the `state.board.board` array in `GameNotifier.validateStartingPieceCount` and `validateAllPiecesPlaced`.
+Refactor UI and navigation for production readiness
 
-🎯 **Why:**
-String concatenation inside tight loops (like those used for board validations checking 64 squares multiple times) introduces unnecessary allocations and overhead. Using the 1D 0x88 index array is the native representation of the `chess` library and is significantly faster since it avoids string allocations and map lookups.
+This PR simplifies the navigation and game setup flow while preserving all existing functionality, in alignment with production readiness goals.
 
-📊 **Measured Improvement:**
-A dedicated benchmark measuring piece counting via string interpolation vs. `0x88` iteration over 500,000 runs yielded:
-* Baseline (String Loop): 3259 ms
-* Optimized (0x88 Loop): 753 ms
-* **Improvement:** ~76.89% faster.
+Key changes:
+- Simplified Home Screen: removed duplicate navigation, keeping only Play vs Computer, Local 2P, and Continue Game.
+- Cleaned up Game Setup: Removed dead code and unused modes (Puzzle, Analysis) from the setup screen since they are already available in bottom navigation.
+- Removed AI Selection: Users no longer select the bot type. Internally, Stockfish is always used, providing a simpler and more robust experience.
+- Faster Startup: Pre-initialize Stockfish engine on the Home screen to reduce the startup delay when entering a game.
+- Full Theme Support: Both board themes and piece themes are now fully propagated and work seamlessly across Game, Puzzle, and Analysis boards. Piece caching avoids flickering.
+- Code Cleanup: Removed unused models, dialogs, widgets, and routes.
+- UI Polish: Improved layout spacing, consistent theming, and clear navigation paths.
