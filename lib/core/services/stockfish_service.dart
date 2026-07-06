@@ -634,7 +634,7 @@ class StockfishService {
       }
 
       // 30-second timeout for Stockfish response (failsafe)
-      return completer.future.timeout(
+      return await completer.future.timeout(
         const Duration(seconds: 30),
         onTimeout: () {
           subscription.cancel();
@@ -850,7 +850,7 @@ class StockfishService {
     try {
       _sendCommand('go depth $depth');
 
-      return completer.future.timeout(
+      return await completer.future.timeout(
         const Duration(
           seconds: 10,
         ), // Short timeout for analysis to switch to basic if stuck
