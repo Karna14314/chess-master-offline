@@ -5,7 +5,6 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
-import 'package:chess_master/screens/analysis/analysis_screen.dart';
 
 class NewGameSetupScreen extends ConsumerStatefulWidget {
   final GameMode initialMode;
@@ -18,7 +17,6 @@ class NewGameSetupScreen extends ConsumerStatefulWidget {
 
 class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   late GameMode _selectedMode;
-  BotType _selectedBotType = BotType.stockfish;
   double _difficultyLevel = 3.0;
   PlayerColor _selectedColor = PlayerColor.random;
   int _selectedTimerIndex = 0; // Default to 'No Timer'
@@ -58,31 +56,21 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader('Game Mode'),
-                  const SizedBox(height: 12),
-                  _buildModeSelectionGrid(),
-
                   if (_selectedMode == GameMode.bot) ...[
-                    const SizedBox(height: 32),
-                    _buildSectionHeader('Opponent'),
+                    _buildSectionHeader('Opponent Difficulty'),
                     const SizedBox(height: 12),
-                    _buildBotSelection(),
-                    const SizedBox(height: 24),
                     _buildDifficultySlider(),
                   ],
 
-                  if (_selectedMode == GameMode.bot ||
-                      _selectedMode == GameMode.localMultiplayer) ...[
-                    const SizedBox(height: 32),
-                    _buildSectionHeader('Play As'),
-                    const SizedBox(height: 12),
-                    _buildColorSelection(),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader('Play As'),
+                  const SizedBox(height: 12),
+                  _buildColorSelection(),
 
-                    const SizedBox(height: 32),
-                    _buildSectionHeader('Time Control'),
-                    const SizedBox(height: 12),
-                    _buildTimerSelection(),
-                  ],
+                  const SizedBox(height: 32),
+                  _buildSectionHeader('Time Control'),
+                  const SizedBox(height: 12),
+                  _buildTimerSelection(),
 
                   const SizedBox(height: 100), // Space for button
                 ],
@@ -142,68 +130,6 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
         color: Colors.white70,
         letterSpacing: 0.5,
       ),
-    );
-  }
-
-  Widget _buildModeSelectionGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.3,
-      children: [
-        _ModeCard(
-          title: 'vs Bot',
-          icon: Icons.smart_toy_outlined,
-          isSelected: _selectedMode == GameMode.bot,
-          onTap: () => setState(() => _selectedMode = GameMode.bot),
-        ),
-        _ModeCard(
-          title: 'Local 2P',
-          icon: Icons.people_outline,
-          isSelected: _selectedMode == GameMode.localMultiplayer,
-          onTap:
-              () => setState(() => _selectedMode = GameMode.localMultiplayer),
-        ),
-        _ModeCard(
-          title: 'Puzzle',
-          icon: Icons.extension_outlined,
-          isSelected: _selectedMode == GameMode.puzzle,
-          onTap: () => setState(() => _selectedMode = GameMode.puzzle),
-        ),
-        _ModeCard(
-          title: 'Analysis',
-          icon: Icons.analytics_outlined,
-          isSelected: _selectedMode == GameMode.analysis,
-          onTap: () => setState(() => _selectedMode = GameMode.analysis),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBotSelection() {
-    return Row(
-      children: [
-        Expanded(
-          child: _EngineCard(
-            title: 'Simple AI',
-            desc: 'Fast & Lightweight',
-            isSelected: _selectedBotType == BotType.simple,
-            onTap: () => setState(() => _selectedBotType = BotType.simple),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _EngineCard(
-            title: 'Stockfish',
-            desc: 'Maximum Strength',
-            isSelected: _selectedBotType == BotType.stockfish,
-            onTap: () => setState(() => _selectedBotType = BotType.stockfish),
-          ),
-        ),
-      ],
     );
   }
 
@@ -320,21 +246,6 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   }
 
   void _startGame() {
-    if (_selectedMode == GameMode.puzzle) {
-      // Navigate to puzzle screen (assuming we have one or use GameScreen)
-      // Usually puzzle mode initializes via PuzzleNotifier, but we can refactor later.
-      // For now, if user clicks Puzzle, maybe we route to a PuzzleScreen.
-      // E.g. Navigator.push(context, MaterialPageRoute(builder: (_) => PuzzleScreen()));
-      return;
-    }
-    if (_selectedMode == GameMode.analysis) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AnalysisScreen()),
-      );
-      return;
-    }
-
     final diffLevel =
         AppConstants.difficultyLevels[_difficultyLevel.toInt() - 1];
     final timerControl = AppConstants.timeControls[_selectedTimerIndex];
@@ -344,7 +255,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
         .startNewGame(
           gameMode: _selectedMode,
           playerColor: _selectedColor,
-          botType: _selectedBotType,
+          botType: BotType.stockfish,
           difficulty: diffLevel,
           timeControl: timerControl,
         );
@@ -352,123 +263,6 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const GameScreen()),
-    );
-  }
-}
-
-class _ModeCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ModeCard({
-    required this.title,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? AppTheme.primaryColor.withOpacity(0.15)
-                  : AppTheme.surfaceDark,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.white10,
-            width: 2,
-          ),
-          boxShadow:
-              isSelected
-                  ? [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.2),
-                      blurRadius: 12,
-                    ),
-                  ]
-                  : [],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 32,
-              color: isSelected ? AppTheme.primaryColor : Colors.white54,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.white70,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EngineCard extends StatelessWidget {
-  final String title;
-  final String desc;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _EngineCard({
-    required this.title,
-    required this.desc,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? AppTheme.primaryColor.withOpacity(0.15)
-                  : AppTheme.surfaceDark,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.white10,
-            width: 1.5,
-          ),
-        ),
-        child: Column(
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : Colors.white70,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              desc,
-              style: GoogleFonts.inter(fontSize: 11, color: Colors.white54),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
