@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
-import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/game_model.dart';
-import 'package:chess_master/providers/analysis_provider.dart';
-import 'package:chess_master/screens/analysis/widgets/eval_bar.dart';
-import 'package:chess_master/screens/analysis/widgets/eval_graph.dart';
-import 'package:chess_master/screens/analysis/widgets/engine_lines.dart';
-import 'package:chess_master/screens/game/widgets/chess_board.dart';
-import 'package:chess_master/models/analysis_model.dart';
-import 'package:flutter/services.dart';
 
-/// Post-game analysis screen
+import 'package:chess_master/core/constants/app_constants.dart';
+import 'package:chess_master/providers/analysis_provider.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+// Import our newly created reusable widgets
+import 'package:chess_master/screens/game/widgets/chess_board.dart';
+import 'package:chess_master/screens/analysis/widgets/unified_eval_bar.dart';
+import 'package:chess_master/screens/analysis/widgets/move_navigation_bar.dart';
+import 'package:chess_master/screens/analysis/widgets/current_move_details.dart';
+import 'package:chess_master/screens/analysis/widgets/engine_recommendations.dart';
+import 'package:chess_master/screens/analysis/widgets/move_explanation.dart';
+import 'package:chess_master/screens/analysis/widgets/interactive_eval_graph.dart';
+import 'package:chess_master/screens/analysis/widgets/game_accuracy_summary.dart';
+import 'package:chess_master/screens/analysis/widgets/move_history_list.dart';
+import 'package:chess_master/screens/analysis/widgets/export_share_buttons.dart';
+
 class AnalysisScreen extends ConsumerStatefulWidget {
   final List<ChessMove>? moves;
   final String? startingFen;
@@ -23,7 +31,6 @@ class AnalysisScreen extends ConsumerStatefulWidget {
 }
 
 class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
-  bool _isAnalyzing = false;
   bool _isFlipped = false;
 
   @override
@@ -64,18 +71,28 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     }
   }
 
+  Future<void> _startFullAnalysis() async {
+    await ref.read(analysisProvider.notifier).analyzeFullGame();
+    if (mounted) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(analysisProvider);
+    final notifier = ref.read(analysisProvider.notifier);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         backgroundColor: AppTheme.surfaceDark,
-        title: const Text('Game Analysis'),
+        elevation: 0,
+        title: Text(
+          'Game Analysis',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.flip_camera_android),
+            icon: const Icon(Icons.flip_camera_android_rounded),
             onPressed: () {
               setState(() {
                 _isFlipped = !_isFlipped;
@@ -85,24 +102,26 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           ),
           if (state.originalMoves.isNotEmpty && !state.isAnalyzing)
             IconButton(
-              icon: const Icon(Icons.analytics_outlined),
+              icon: const Icon(Icons.analytics_rounded),
               onPressed: _startFullAnalysis,
               tooltip: 'Analyze full game',
             ),
           IconButton(
             icon: Icon(
-              state.isLiveAnalysis ? Icons.visibility : Icons.visibility_off,
+              state.isLiveAnalysis
+                  ? Icons.visibility_rounded
+                  : Icons.visibility_off_rounded,
             ),
             onPressed: () {
-              ref.read(analysisProvider.notifier).toggleLiveAnalysis();
+              notifier.toggleLiveAnalysis();
             },
-            tooltip: 'Live analysis',
+            tooltip: 'Live engine evaluation',
           ),
         ],
       ),
       body: Column(
         children: [
-          // Analysis progress
+          // Global Loading Indicator for full game analysis
           if (state.isAnalyzing)
             LinearProgressIndicator(
               value: state.analysisProgress,
@@ -112,130 +131,163 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               ),
             ),
 
+          // Unified Scrollable View
           Expanded(
             child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Board with eval bar
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Eval bar
-                        SizedBox(
-                          height: MediaQuery.of(context).size.width - 48,
-                          child: EvalBar(evaluation: state.currentEval),
-                        ),
-                        const SizedBox(width: 8),
-                        // Chess board
-                        Expanded(
-                          child: AspectRatio(
-                            aspectRatio: 1.0,
-                            child: _AnalysisBoard(
-                              state: state,
-                              isFlipped: _isFlipped,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Move classification badge
-                  if (state.currentMoveAnalysis != null)
-                    _MoveClassificationBadge(
-                      analysis: state.currentMoveAnalysis!,
-                    ),
-
-                  // Navigation controls
-                  _NavigationControls(
-                    canGoPrevious: state.canGoPrevious,
-                    canGoNext: state.canGoNext,
-                    currentMove: state.currentMoveIndex + 1,
-                    totalMoves: state.totalMoves,
-                    onFirst:
-                        () => ref.read(analysisProvider.notifier).firstMove(),
-                    onPrevious:
-                        () =>
-                            ref.read(analysisProvider.notifier).previousMove(),
-                    onNext:
-                        () => ref.read(analysisProvider.notifier).nextMove(),
-                    onLast:
-                        () => ref.read(analysisProvider.notifier).lastMove(),
-                    onSliderChanged: (value) {
-                      ref
-                          .read(analysisProvider.notifier)
-                          .goToMove(value.toInt() - 1);
-                    },
-                  ),
-
-                  // Evaluation graph (only show if we have analysis data)
-                  if (state.analyzedMoves.isNotEmpty)
+              physics: const ClampingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 32.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // --- 1. Board & Evaluation Bar Layout ---
                     Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Evaluation',
-                            style: TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                          // Left side: Eval Bar
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.width -
+                                  64, // Matches board size
+                              child: UnifiedEvalBar(
+                                evaluation: state.currentEval,
+                                isFlipped: _isFlipped,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          EvalGraph(
-                            evaluations: state.evaluations,
-                            currentMoveIndex:
-                                state.currentMoveIndex >= 0
-                                    ? state.currentMoveIndex + 1
-                                    : 0,
-                            onMoveSelected: (index) {
-                              ref
-                                  .read(analysisProvider.notifier)
-                                  .goToMove(index - 1);
-                            },
+                          // Right side: Chess Board
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1.0,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: ChessBoard(
+                                  fen: state.fen,
+                                  isFlipped: _isFlipped,
+                                  selectedSquare: state.selectedSquare,
+                                  legalMoves: state.legalMoves,
+                                  lastMoveFrom: state.lastMoveFrom,
+                                  lastMoveTo: state.lastMoveTo,
+                                  bestMove: state.bestMove,
+                                  onSquareTap: null, // read-only
+                                  onMove: null, // read-only
+                                  showCoordinates: true,
+                                  enableMoveAnimation: true,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
 
-                  // Engine lines
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: EngineLines(
+                    // --- 2. Move Navigation ---
+                    MoveNavigationBar(
+                      canGoPrevious: state.canGoPrevious,
+                      canGoNext: state.canGoNext,
+                      currentMove: state.currentMoveIndex + 1,
+                      totalMoves: state.totalMoves,
+                      onFirst: notifier.firstMove,
+                      onPrevious: notifier.previousMove,
+                      onNext: notifier.nextMove,
+                      onLast: notifier.lastMove,
+                      // Jump logic (Find previous/next move index with blunder/mistake classification)
+                      onJumpToPreviousMistake:
+                          state.analyzedMoves.isNotEmpty
+                              ? () {
+                                for (
+                                  int i = state.currentMoveIndex - 1;
+                                  i >= 0;
+                                  i--
+                                ) {
+                                  if (i < state.analyzedMoves.length) {
+                                    final c =
+                                        state.analyzedMoves[i].classification;
+                                    if (c == MoveClassification.blunder ||
+                                        c == MoveClassification.mistake) {
+                                      notifier.goToMove(i);
+                                      return;
+                                    }
+                                  }
+                                }
+                              }
+                              : null,
+                      onJumpToNextMistake:
+                          state.analyzedMoves.isNotEmpty
+                              ? () {
+                                for (
+                                  int i = state.currentMoveIndex + 1;
+                                  i < state.analyzedMoves.length;
+                                  i++
+                                ) {
+                                  final c =
+                                      state.analyzedMoves[i].classification;
+                                  if (c == MoveClassification.blunder ||
+                                      c == MoveClassification.mistake) {
+                                    notifier.goToMove(i);
+                                    return;
+                                  }
+                                }
+                              }
+                              : null,
+                    ),
+
+                    // --- 3. Current Move Details ---
+                    if (state.currentMoveAnalysis != null)
+                      CurrentMoveDetails(analysis: state.currentMoveAnalysis!),
+
+                    // --- 4. Move Explanation ---
+                    if (state.currentMoveAnalysis != null)
+                      MoveExplanation(analysis: state.currentMoveAnalysis!),
+
+                    // --- 5. Engine Recommendations ---
+                    EngineRecommendations(
                       lines: state.currentEngineLines,
                       isLoading:
                           state.isLiveAnalysis &&
                           state.currentEngineLines.isEmpty,
                     ),
-                  ),
 
-                  // Analysis summary (if full analysis done)
-                  if (state.fullAnalysis != null)
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: _AnalysisSummary(analysis: state.fullAnalysis!),
-                    ),
+                    // --- 6. Evaluation Graph ---
+                    if (state.evaluations.isNotEmpty)
+                      InteractiveEvalGraph(
+                        evaluations: state.evaluations,
+                        currentMoveIndex:
+                            state.currentMoveIndex >= 0
+                                ? state.currentMoveIndex + 1
+                                : 0,
+                        onMoveSelected: (index) {
+                          notifier.goToMove(index - 1);
+                        },
+                      ),
 
-                  // Move list
-                  if (state.originalMoves.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: _MoveList(
+                    // --- 7. Game Summary ---
+                    if (state.fullAnalysis != null)
+                      GameAccuracySummary(
+                        analysis: state.fullAnalysis!,
+                        openingName:
+                            state.fullAnalysis!.moves.length > 5
+                                ? "Custom Opening"
+                                : null, // Mocked for now, can be extracted later
+                      ),
+
+                    // --- 8. Move List History ---
+                    if (state.originalMoves.isNotEmpty)
+                      MoveHistoryList(
                         moves: state.originalMoves,
                         analyzedMoves: state.analyzedMoves,
                         currentIndex: state.currentMoveIndex,
-                        onMoveSelected: (index) {
-                          ref.read(analysisProvider.notifier).goToMove(index);
-                        },
+                        onMoveSelected: notifier.goToMove,
                       ),
-                    ),
 
-                  const SizedBox(height: 24),
-                ],
+                    // --- 9. Export and Share ---
+                    ExportShareButtons(pgn: _buildPgn(state), fen: state.fen),
+                  ],
+                ),
               ),
             ),
           ),
@@ -244,497 +296,18 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     );
   }
 
-  Future<void> _startFullAnalysis() async {
-    setState(() => _isAnalyzing = true);
-    await ref.read(analysisProvider.notifier).analyzeFullGame();
-    if (mounted) {
-      setState(() => _isAnalyzing = false);
+  String _buildPgn(AnalysisState state) {
+    if (state.originalMoves.isEmpty) return "";
+    StringBuffer sb = StringBuffer();
+    sb.writeln('[Event "Analysis"]');
+    sb.writeln('[Date "${DateTime.now().toIso8601String().split('T')[0]}"]');
+    sb.writeln();
+    for (int i = 0; i < state.originalMoves.length; i++) {
+      if (i % 2 == 0) {
+        sb.write('${(i ~/ 2) + 1}. ');
+      }
+      sb.write('${state.originalMoves[i].san} ');
     }
-  }
-}
-
-/// Chess board for analysis mode
-class _AnalysisBoard extends StatelessWidget {
-  final AnalysisState state;
-  final bool isFlipped;
-
-  const _AnalysisBoard({required this.state, this.isFlipped = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return ChessBoard(
-      fen: state.fen,
-      isFlipped: isFlipped,
-      selectedSquare: state.selectedSquare,
-      legalMoves: state.legalMoves,
-      lastMoveFrom: state.lastMoveFrom,
-      lastMoveTo: state.lastMoveTo,
-      bestMove: state.bestMove,
-      onSquareTap: null, // No interaction in analysis mode
-      onMove: null,
-      showCoordinates: true,
-      enableMoveAnimation: true,
-    );
-  }
-}
-
-/// Move classification badge showing blunder/mistake/excellent etc.
-class _MoveClassificationBadge extends StatelessWidget {
-  final MoveAnalysis analysis;
-
-  const _MoveClassificationBadge({required this.analysis});
-
-  @override
-  Widget build(BuildContext context) {
-    final classification = analysis.classification;
-    final color = Color(classification.color);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_getIcon(classification), color: color, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            '${analysis.san} - ${classification.name}',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          if (classification.symbol.isNotEmpty) ...[
-            const SizedBox(width: 4),
-            Text(
-              classification.symbol,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          ],
-          if (analysis.evalLoss.abs() > 0.1) ...[
-            const SizedBox(width: 12),
-            Text(
-              analysis.evalLoss > 0
-                  ? '-${analysis.evalLoss.toStringAsFixed(1)}'
-                  : '+${analysis.evalLoss.abs().toStringAsFixed(1)}',
-              style: TextStyle(color: color.withOpacity(0.8), fontSize: 12),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  IconData _getIcon(MoveClassification classification) {
-    switch (classification) {
-      case MoveClassification.blunder:
-      case MoveClassification.miss:
-        return Icons.error;
-      case MoveClassification.mistake:
-        return Icons.warning;
-      case MoveClassification.inaccuracy:
-        return Icons.info;
-      case MoveClassification.book:
-        return Icons.book;
-      case MoveClassification.good:
-        return Icons.check;
-      case MoveClassification.excellent:
-      case MoveClassification.great:
-        return Icons.star;
-      case MoveClassification.brilliant:
-        return Icons.auto_awesome;
-      case MoveClassification.best:
-      case MoveClassification.forced:
-      case MoveClassification.onlyMove:
-        return Icons.verified;
-    }
-  }
-}
-
-/// Navigation controls for move navigation
-class _NavigationControls extends StatelessWidget {
-  final bool canGoPrevious;
-  final bool canGoNext;
-  final int currentMove;
-  final int totalMoves;
-  final VoidCallback onFirst;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onLast;
-  final ValueChanged<double> onSliderChanged;
-
-  const _NavigationControls({
-    required this.canGoPrevious,
-    required this.canGoNext,
-    required this.currentMove,
-    required this.totalMoves,
-    required this.onFirst,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onLast,
-    required this.onSliderChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        children: [
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppTheme.primaryColor,
-              inactiveTrackColor: AppTheme.cardDark,
-              thumbColor: AppTheme.primaryColor,
-              overlayColor: AppTheme.primaryColor.withOpacity(0.2),
-              trackHeight: 4.0,
-            ),
-            child: Slider(
-              value: currentMove.toDouble(),
-              min: 0,
-              max: totalMoves.toDouble(),
-              divisions: totalMoves > 0 ? totalMoves : 1,
-              label: '$currentMove',
-              onChanged: totalMoves > 0 ? onSliderChanged : null,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.first_page),
-                onPressed: canGoPrevious ? onFirst : null,
-                color: AppTheme.textPrimary,
-                disabledColor: AppTheme.textHint,
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: canGoPrevious ? onPrevious : null,
-                color: AppTheme.textPrimary,
-                disabledColor: AppTheme.textHint,
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardDark,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$currentMove / $totalMoves',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: canGoNext ? onNext : null,
-                color: AppTheme.textPrimary,
-                disabledColor: AppTheme.textHint,
-              ),
-              IconButton(
-                icon: const Icon(Icons.last_page),
-                onPressed: canGoNext ? onLast : null,
-                color: AppTheme.textPrimary,
-                disabledColor: AppTheme.textHint,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Analysis summary showing game statistics
-class _AnalysisSummary extends StatelessWidget {
-  final GameAnalysis analysis;
-
-  const _AnalysisSummary({required this.analysis});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardDark,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.surfaceDark, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.stars, color: Colors.amber, size: 24),
-              const SizedBox(width: 8),
-              const Text(
-                'Game Review',
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  '${analysis.averageAccuracy.toStringAsFixed(1)}% Acc',
-                  style: const TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: AppTheme.surfaceDark),
-          const SizedBox(height: 16),
-
-          // Stats Grid
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 2.5,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            children: [
-              if (analysis.brilliantMoves > 0)
-                _StatChip(
-                  label: 'Brilliant',
-                  value: analysis.brilliantMoves.toString(),
-                  color: Color(MoveClassification.brilliant.color),
-                  icon: Icons.star,
-                ),
-              if (analysis.greatMoves > 0)
-                _StatChip(
-                  label: 'Great',
-                  value: analysis.greatMoves.toString(),
-                  color: Color(MoveClassification.great.color),
-                  icon: Icons.thumb_up_alt,
-                ),
-              _StatChip(
-                label: 'Best Move',
-                value: analysis.bestMoves.toString(),
-                color: Color(MoveClassification.best.color),
-                icon: Icons.military_tech,
-              ),
-              _StatChip(
-                label: 'Excellent',
-                value: analysis.excellentMoves.toString(),
-                color: Color(MoveClassification.excellent.color),
-                icon: Icons.thumb_up_outlined,
-              ),
-              _StatChip(
-                label: 'Good',
-                value: analysis.goodMoves.toString(),
-                color: Color(MoveClassification.good.color),
-                icon: Icons.check_circle_outline,
-              ),
-              if (analysis.bookMoves > 0)
-                _StatChip(
-                  label: 'Book',
-                  value: analysis.bookMoves.toString(),
-                  color: Color(MoveClassification.book.color),
-                  icon: Icons.menu_book,
-                ),
-              _StatChip(
-                label: 'Inaccuracy',
-                value: analysis.inaccuracies.toString(),
-                color: Color(MoveClassification.inaccuracy.color),
-                icon: Icons.help_outline,
-              ),
-              _StatChip(
-                label: 'Mistake',
-                value: analysis.mistakes.toString(),
-                color: Color(MoveClassification.mistake.color),
-                icon: Icons.error_outline,
-              ),
-              if (analysis.misses > 0)
-                _StatChip(
-                  label: 'Miss',
-                  value: analysis.misses.toString(),
-                  color: Color(MoveClassification.miss.color),
-                  icon: Icons.cancel_outlined,
-                ),
-              _StatChip(
-                label: 'Blunder',
-                value: analysis.blunders.toString(),
-                color: Color(MoveClassification.blunder.color),
-                icon: Icons.cancel,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final IconData icon;
-
-  const _StatChip({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MoveList extends StatelessWidget {
-  final List<ChessMove> moves;
-  final List<MoveAnalysis> analyzedMoves;
-  final int currentIndex;
-  final ValueChanged<int> onMoveSelected;
-
-  const _MoveList({
-    required this.moves,
-    required this.analyzedMoves,
-    required this.currentIndex,
-    required this.onMoveSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.cardDark,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Moves',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 4,
-            runSpacing: 4,
-            children: List.generate(moves.length, (index) {
-              final move = moves[index];
-              final analysis =
-                  index < analyzedMoves.length ? analyzedMoves[index] : null;
-              final isSelected = index == currentIndex;
-              final isWhiteMove = index % 2 == 0;
-              final moveNum = (index ~/ 2) + 1;
-
-              // Get classification color
-              Color? classificationColor;
-              if (analysis != null) {
-                classificationColor = Color(analysis.classification.color);
-              }
-
-              return GestureDetector(
-                onTap: () => onMoveSelected(index),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected
-                            ? AppTheme.primaryColor.withOpacity(0.3)
-                            : classificationColor?.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                    border:
-                        isSelected
-                            ? Border.all(color: AppTheme.primaryColor, width: 2)
-                            : classificationColor != null
-                            ? Border.all(
-                              color: classificationColor.withOpacity(0.3),
-                            )
-                            : null,
-                  ),
-                  child: Text(
-                    isWhiteMove ? '$moveNum. ${move.san}' : move.san,
-                    style: TextStyle(
-                      color: classificationColor ?? AppTheme.textPrimary,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
+    return sb.toString().trim();
   }
 }

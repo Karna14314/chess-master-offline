@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/models/game_model.dart';
 
-/// PGN import screen for analysis
+/// PGN import screen updated for Material 3 and better UX
 class PgnImportScreen extends ConsumerStatefulWidget {
   const PgnImportScreen({super.key});
 
@@ -18,6 +18,7 @@ class PgnImportScreen extends ConsumerStatefulWidget {
 class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
   final TextEditingController _pgnController = TextEditingController();
   String? _errorMessage;
+  bool _isParsing = false;
 
   @override
   void dispose() {
@@ -37,135 +38,139 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
           style: GoogleFonts.inter(fontWeight: FontWeight.bold),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Paste PGN',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Paste your game in PGN format below',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // PGN input
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardDark,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color:
-                        _errorMessage != null
-                            ? AppTheme.error
-                            : AppTheme.borderColor,
-                  ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Paste your PGN',
+                style: GoogleFonts.inter(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
                 ),
-                child: TextField(
-                  controller: _pgnController,
-                  maxLines: null,
-                  expands: true,
-                  style: GoogleFonts.spaceMono(
-                    fontSize: 13,
-                    color: AppTheme.textPrimary,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Analyze games from any chess platform. Paste the PGN string below.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // PGN input
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardDark,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color:
+                          _errorMessage != null
+                              ? AppTheme.error
+                              : AppTheme.borderColor,
+                    ),
                   ),
-                  decoration: InputDecoration(
-                    hintText:
-                        '[Event "Casual Game"]\n[Site "?"]\n[Date "2024.01.01"]\n...\n\n1. e4 e5 2. Nf3 Nc6 ...',
-                    hintStyle: GoogleFonts.spaceMono(
+                  child: TextField(
+                    controller: _pgnController,
+                    maxLines: null,
+                    expands: true,
+                    style: GoogleFonts.spaceMono(
                       fontSize: 13,
-                      color: AppTheme.textHint,
+                      color: AppTheme.textPrimary,
                     ),
-                    border: InputBorder.none,
+                    decoration: InputDecoration(
+                      hintText:
+                          '[Event "Casual Game"]\n[Site "?"]\n[Date "2024.01.01"]\n...\n\n1. e4 e5 2. Nf3 Nc6 ...',
+                      hintStyle: GoogleFonts.spaceMono(
+                        fontSize: 13,
+                        color: AppTheme.textHint,
+                      ),
+                      border: InputBorder.none,
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.error.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.error.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: AppTheme.error,
-                      size: 20,
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.error.withValues(alpha: 0.3),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: AppTheme.error,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppTheme.error,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppTheme.error,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              // Analyze button
+              FilledButton.icon(
+                onPressed: _isParsing ? null : _analyzePgn,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon:
+                    _isParsing
+                        ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                        : const Icon(Icons.analytics),
+                label: Text(
+                  _isParsing ? 'Parsing...' : 'Analyze Game',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
-
-            const SizedBox(height: 16),
-
-            // Analyze button
-            ElevatedButton(
-              onPressed: _isParsing ? null : _analyzePgn,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child:
-                  _isParsing
-                      ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                      : Text(
-                        'Analyze Game',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
-
-  bool _isParsing = false;
 
   Future<void> _analyzePgn() async {
     final pgn = _pgnController.text.trim();

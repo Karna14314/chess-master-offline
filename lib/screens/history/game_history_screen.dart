@@ -233,7 +233,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
           Icon(
             Icons.history,
             size: 64,
-            color: AppTheme.textSecondary.withOpacity(0.5),
+            color: AppTheme.textSecondary.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -507,7 +507,7 @@ class _FilterChip extends StatelessWidget {
       selected: selected,
       onSelected: onSelected,
       backgroundColor: AppTheme.cardDark,
-      selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+      selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
       checkmarkColor: AppTheme.primaryColor,
       labelStyle: TextStyle(
         color: selected ? AppTheme.primaryColor : AppTheme.textPrimary,
@@ -594,7 +594,7 @@ class _GameCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: resultColor.withOpacity(0.2),
+                  color: resultColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(resultIcon, color: resultColor),
@@ -631,7 +631,7 @@ class _GameCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: resultColor.withOpacity(0.2),
+                            color: resultColor.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(

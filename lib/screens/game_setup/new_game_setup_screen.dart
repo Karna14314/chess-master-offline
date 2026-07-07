@@ -90,7 +90,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.4),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.4),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -165,7 +165,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
             activeTrackColor: AppTheme.primaryColor,
             inactiveTrackColor: Colors.white12,
             thumbColor: Colors.white,
-            overlayColor: AppTheme.primaryColor.withOpacity(0.2),
+            overlayColor: AppTheme.primaryColor.withValues(alpha: 0.2),
             valueIndicatorColor: AppTheme.primaryColor,
             trackHeight: 6,
           ),
@@ -224,8 +224,8 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
             decoration: BoxDecoration(
               color:
                   isSelected
-                      ? AppTheme.primaryColor.withOpacity(0.2)
-                      : Colors.white.withOpacity(0.05),
+                      ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                      : Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected ? AppTheme.primaryColor : Colors.white12,
@@ -314,7 +314,7 @@ class _ColorCircle extends StatelessWidget {
               isSelected
                   ? [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
                       blurRadius: 12,
                     ),
                   ]
@@ -327,7 +327,10 @@ class _ColorCircle extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: centerColor,
-              border: Border.all(color: ringColor.withOpacity(0.5), width: 1),
+              border: Border.all(
+                color: ringColor.withValues(alpha: 0.5),
+                width: 1,
+              ),
             ),
             child: icon != null ? Icon(icon, color: iconColor) : null,
           ),

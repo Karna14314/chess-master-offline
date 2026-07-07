@@ -158,12 +158,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
           ],
-          border: Border.all(color: AppTheme.borderColor.withOpacity(0.5)),
+          border: Border.all(
+            color: AppTheme.borderColor.withValues(alpha: 0.5),
+          ),
         ),
         child: Stack(
           children: [
@@ -191,7 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -218,7 +220,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     'Jump into a match instantly',
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -264,7 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           border: Border.all(color: AppTheme.borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -276,7 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 32),
@@ -434,8 +436,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     decoration: BoxDecoration(
                       color:
                           isCompleted
-                              ? Colors.grey.withOpacity(0.2)
-                              : AppTheme.primaryColor.withOpacity(0.2),
+                              ? Colors.grey.withValues(alpha: 0.2)
+                              : AppTheme.primaryColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

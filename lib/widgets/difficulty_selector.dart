@@ -36,7 +36,9 @@ class DifficultySelector extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: _getDifficultyColor(selectedLevel).withOpacity(0.2),
+                color: _getDifficultyColor(
+                  selectedLevel,
+                ).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: _getDifficultyColor(selectedLevel),
@@ -61,7 +63,7 @@ class DifficultySelector extends StatelessWidget {
             Text(
               '1',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             Expanded(
@@ -72,7 +74,7 @@ class DifficultySelector extends StatelessWidget {
                   thumbColor: _getDifficultyColor(selectedLevel),
                   overlayColor: _getDifficultyColor(
                     selectedLevel,
-                  ).withOpacity(0.2),
+                  ).withValues(alpha: 0.2),
                   trackHeight: 8,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 12,
@@ -93,7 +95,7 @@ class DifficultySelector extends StatelessWidget {
             Text(
               '10',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -138,7 +140,7 @@ class DifficultySelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -153,7 +155,7 @@ class DifficultySelector extends StatelessWidget {
           Container(
             width: 1,
             height: 40,
-            color: theme.colorScheme.onSurface.withOpacity(0.1),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           _buildStatItem(
             context,
@@ -164,7 +166,7 @@ class DifficultySelector extends StatelessWidget {
           Container(
             width: 1,
             height: 40,
-            color: theme.colorScheme.onSurface.withOpacity(0.1),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           _buildStatItem(
             context,
@@ -199,7 +201,7 @@ class DifficultySelector extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -255,8 +257,8 @@ class _DifficultyChip extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(
                   color:
                       isSelected
-                          ? Colors.white.withOpacity(0.8)
-                          : theme.colorScheme.onSurface.withOpacity(0.6),
+                          ? Colors.white.withValues(alpha: 0.8)
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -296,7 +298,7 @@ class DifficultyBadge extends StatelessWidget {
         vertical: compact ? 4 : 6,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(compact ? 12 : 16),
         border: Border.all(color: color, width: 1),
       ),

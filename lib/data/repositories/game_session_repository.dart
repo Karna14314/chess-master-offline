@@ -55,7 +55,7 @@ class GameSessionRepository {
     final db = await _db;
     final results = await db.query(
       'saved_games',
-      where: 'result IS NULL AND isPuzzle = 0',
+      where: 'result IS NULL AND isPuzzle = 0 AND gameMode NOT IN (2, 3)',
       orderBy: 'lastMoveTimeMs DESC',
       limit: limit,
     );
@@ -66,9 +66,11 @@ class GameSessionRepository {
   /// Get real games history (finished and unfinished)
   Future<List<GameSession>> getRealGamesHistory({int? limit}) async {
     final db = await _db;
+    // Exclude puzzles (isPuzzle = 1) and game modes 2 (analysis) and 3 (puzzle)
+    // GameMode enum: 0=bot, 1=localMultiplayer, 2=analysis, 3=puzzle
     final results = await db.query(
       'saved_games',
-      where: 'isPuzzle = 0',
+      where: 'isPuzzle = 0 AND gameMode NOT IN (2, 3)',
       orderBy: 'lastMoveTimeMs DESC',
       limit: limit,
     );

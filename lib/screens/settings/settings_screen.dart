@@ -625,7 +625,7 @@ class _SwitchSetting extends StatelessWidget {
       }),
       trackColor: MaterialStateProperty.resolveWith<Color?>((states) {
         return states.contains(MaterialState.selected)
-            ? AppTheme.primaryColor.withOpacity(0.3)
+            ? AppTheme.primaryColor.withValues(alpha: 0.3)
             : AppTheme.surfaceDark;
       }),
     );
