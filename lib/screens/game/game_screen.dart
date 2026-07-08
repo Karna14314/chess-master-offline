@@ -87,8 +87,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final timerState = ref.watch(timerProvider);
-
     // Listen for move history changes
     ref.listen<GameSession?>(gameSessionProvider, (previous, next) {
       if (next == null) return;

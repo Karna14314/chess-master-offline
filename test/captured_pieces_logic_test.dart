@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chess_master/models/game_model.dart';
-import 'package:chess/chess.dart' as chess;
 
 void main() {
   test('Captured pieces logic', () {

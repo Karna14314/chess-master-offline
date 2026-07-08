@@ -91,31 +91,41 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           style: GoogleFonts.inter(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.flip_camera_android_rounded),
-            onPressed: () {
-              setState(() {
-                _isFlipped = !_isFlipped;
-              });
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) {
+              if (value == 'flip') {
+                setState(() {
+                  _isFlipped = !_isFlipped;
+                });
+              } else if (value == 'analyze') {
+                _startFullAnalysis();
+              }
             },
-            tooltip: 'Flip board',
-          ),
-          if (state.originalMoves.isNotEmpty && !state.isAnalyzing)
-            IconButton(
-              icon: const Icon(Icons.analytics_rounded),
-              onPressed: _startFullAnalysis,
-              tooltip: 'Analyze full game',
-            ),
-          IconButton(
-            icon: Icon(
-              state.isLiveAnalysis
-                  ? Icons.visibility_rounded
-                  : Icons.visibility_off_rounded,
-            ),
-            onPressed: () {
-              notifier.toggleLiveAnalysis();
-            },
-            tooltip: 'Live engine evaluation',
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(
+                    value: 'flip',
+                    child: Row(
+                      children: [
+                        Icon(Icons.flip_camera_android_rounded),
+                        SizedBox(width: 8),
+                        Text('Flip Board'),
+                      ],
+                    ),
+                  ),
+                  if (state.originalMoves.isNotEmpty && !state.isAnalyzing)
+                    const PopupMenuItem(
+                      value: 'analyze',
+                      child: Row(
+                        children: [
+                          Icon(Icons.analytics_rounded),
+                          SizedBox(width: 8),
+                          Text('Analyze Full Game'),
+                        ],
+                      ),
+                    ),
+                ],
           ),
         ],
       ),

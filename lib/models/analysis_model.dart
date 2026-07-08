@@ -234,13 +234,22 @@ MoveClassification classifyMove({
         actualMove.toLowerCase() == bestMove.toLowerCase()) {
       return MoveClassification.best;
     }
-    // If eval goes from non-mate to mate for the player's side, it's a blunder.
-    // If eval goes from mate to non-mate, it's excellent (escaped mate).
     final loss = computeCentipawnLoss(
       evalBefore: evalBefore,
       evalAfter: evalAfter,
       isWhiteMove: isWhiteMove,
     );
+
+    // Check for missed mate
+    bool hadMate =
+        (isWhiteMove ? evalBefore : -evalBefore) > EvalConstants.mateThreshold;
+    bool lostMate =
+        (isWhiteMove ? evalAfter : -evalAfter) < EvalConstants.mateThreshold;
+
+    if (hadMate && lostMate) {
+      return MoveClassification.miss;
+    }
+
     if (loss >= EvalConstants.thresholdBlunderCp) {
       return MoveClassification.blunder;
     }
@@ -262,9 +271,24 @@ MoveClassification classifyMove({
     isWhiteMove: isWhiteMove,
   );
 
+  // Missed Win / Miss
+  // If we had a significant advantage (>3 pawns) and lost a lot of it (loss > 200cp)
+  // but it's not a blunder because we might still be equal or winning, it's a "Miss".
+  // Actually, standard miss is losing an advantage > 3.0 down to < 1.0 or similar.
+  // We approximate: if we were winning (eval > 3 pawns) and CPL > 200.
+  double playerEvalBefore = isWhiteMove ? evalBefore : -evalBefore;
+  if (playerEvalBefore >= 3.0 && cpl >= 200) {
+    return MoveClassification.miss;
+  }
+
   // Significant improvement (opponent blundered or brilliant find)
+  // We can classify it as brilliant if it involved a sacrifice, but without a full engine
+  // tree we just use CPL < -50 as a placeholder for Great/Brilliant
+  if (cpl <= -100) {
+    return MoveClassification.brilliant; // Large improvement
+  }
   if (cpl <= EvalConstants.thresholdBrilliantCp) {
-    return MoveClassification.excellent;
+    return MoveClassification.great;
   }
 
   return EvalConstants.classifyCpl(cpl);

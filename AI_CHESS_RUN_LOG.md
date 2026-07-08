@@ -15,3 +15,11 @@ I have completed the task to refactor the UI and navigation for production readi
 * Created modular widgets (`UnifiedEvalBar`, `MoveNavigationBar`, `CurrentMoveDetails`, `EngineRecommendations`, `MoveExplanation`, `InteractiveEvalGraph`, `GameAccuracySummary`, `MoveHistoryList`, `ExportShareButtons`) mapping to standard chess apps (e.g. Chess.com/Lichess).
 * Ensured Material 3 themes are fully respected, updating widget padding, shapes, spacing, and null safety.
 * Passed all lint rules and unit tests successfully.
+
+- Redesign Game Analysis module
+  - Removed "Eye" toggle to enforce automatic live analysis mode.
+  - Simplified AppBar by moving secondary actions ("Flip Board" and "Analyze Full Game") to a PopupMenuButton.
+  - Rewrote Move Classification Logic to properly account for missed opportunities ("Miss") and ensure correct CPL bounds for brilliant, great, excellent, etc.
+  - Enhanced UI components (UnifiedEvalBar and MoveNavigationBar) for a premium, Material 3 aesthetic.
+  - Resolved unused variables and lints.
+  - Tests verify that move classification logic correctly identifies misses and properly grades moves.

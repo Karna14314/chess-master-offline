@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
-import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/engine_provider.dart';

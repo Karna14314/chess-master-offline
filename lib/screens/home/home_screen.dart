@@ -8,7 +8,6 @@ import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
 import 'package:chess_master/screens/game_setup/new_game_setup_screen.dart';
 import 'package:chess_master/screens/history/game_history_screen.dart';
-import 'package:chess_master/core/utils/pgn_handler.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/models/game_session.dart';
 import 'package:chess_master/data/repositories/game_session_repository.dart';

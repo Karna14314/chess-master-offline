@@ -43,9 +43,9 @@ class UnifiedEvalBar extends StatelessWidget {
         isFlipped ? (whitePercentage > 0.5) : (whitePercentage < 0.5);
 
     return Container(
-      width: 24, // Wider than original for better readability
+      width: 28, // Wider than original for better readability
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(8),
         color: bottomColor,
         border: Border.all(color: AppTheme.borderColor, width: 1),
       ),
