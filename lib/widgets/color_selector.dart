@@ -115,7 +115,7 @@ class _ColorOptionCard extends StatelessWidget {
             border: Border.all(color: Colors.grey.shade400, width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -138,7 +138,7 @@ class _ColorOptionCard extends StatelessWidget {
             border: Border.all(color: Colors.grey.shade600, width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -165,7 +165,7 @@ class _ColorOptionCard extends StatelessWidget {
             border: Border.all(color: Colors.grey.shade400, width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -196,7 +196,7 @@ class ColorBadge extends StatelessWidget {
         vertical: compact ? 4 : 6,
       ),
       decoration: BoxDecoration(
-        color: _getBackgroundColor().withOpacity(0.2),
+        color: _getBackgroundColor().withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(compact ? 12 : 16),
         border: Border.all(color: _getBorderColor(), width: 1),
       ),
