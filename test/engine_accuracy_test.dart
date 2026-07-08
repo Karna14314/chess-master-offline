@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:chess_master/core/models/chess_models.dart';
 
 void main() {
   group('Phase 8 — Accuracy & Move Quality Tests', () {
@@ -371,7 +370,7 @@ void main() {
         expect(result, equals(MoveClassification.blunder));
       });
 
-      test('improvement (< -50cp) → Excellent', () {
+      test('improvement (< -50cp) → Brilliant', () {
         final result = classifyMove(
           evalBefore: 0.0,
           evalAfter: 1.0,
@@ -379,7 +378,7 @@ void main() {
           bestMove: null,
           actualMove: 'e2e4',
         );
-        expect(result, equals(MoveClassification.excellent));
+        expect(result, equals(MoveClassification.brilliant));
       });
 
       test('black move CPL = 300cp → Blunder', () {
@@ -394,7 +393,7 @@ void main() {
         expect(result, equals(MoveClassification.blunder));
       });
 
-      test('black move improvement → Excellent', () {
+      test('black move improvement → Brilliant', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: -1.0,
@@ -402,8 +401,7 @@ void main() {
           bestMove: null,
           actualMove: 'e7e5',
         );
-        // Loss: -1.0 - 1.0 = -2.0 pawns = -200cp (improvement)
-        expect(result, equals(MoveClassification.excellent));
+        expect(result, equals(MoveClassification.brilliant));
       });
     });
 

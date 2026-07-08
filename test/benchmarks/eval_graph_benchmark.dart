@@ -49,15 +49,13 @@ void runBaseline(List<double> evaluations) {
   }
 
   // Find min/max for gradient
-  final minEval = clampedEvals.reduce((a, b) => a < b ? a : b);
-  final maxEval = clampedEvals.reduce((a, b) => a > b ? a : b);
 
   // Prevent dead code elimination (though not strictly needed in Dart VM usually for side-effect free code unless advanced AOT)
   // But strictly speaking reduce returns a value, spots is created.
 }
 
 void runOptimized(List<double> evaluations) {
-  final spots = List.generate(
+  List.generate(
     evaluations.length,
     (i) => FlSpot(i.toDouble(), evaluations[i].clamp(-10.0, 10.0)),
   );

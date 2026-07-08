@@ -1,12 +1,9 @@
 import 'package:vibration/vibration.dart';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/models/game_session.dart';
-import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/providers/engine_provider.dart';
-import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/providers/statistics_provider.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/timer_provider.dart';

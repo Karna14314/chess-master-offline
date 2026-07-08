@@ -90,10 +90,7 @@ void main() {
     });
 
     test('depth 2 search extends PV from depth 1', () async {
-      final depth1 = await SimpleBotService.instance.getBestMove(
-        fen: startPos,
-        depth: 1,
-      );
+      await SimpleBotService.instance.getBestMove(fen: startPos, depth: 1);
       final depth2 = await SimpleBotService.instance.getBestMove(
         fen: startPos,
         depth: 2,

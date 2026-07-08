@@ -52,7 +52,7 @@ class AnalysisState {
     this.bestMove,
     this.errorMessage,
     this.analysisProgress = 0.0,
-    this.isLiveAnalysis = false,
+    this.isLiveAnalysis = true,
     this.startingFen =
         'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     this.gameId,
@@ -273,12 +273,6 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   }
 
   /// Toggle live analysis
-  void toggleLiveAnalysis() {
-    state = state.copyWith(isLiveAnalysis: !state.isLiveAnalysis);
-    if (state.isLiveAnalysis) {
-      _analyzeCurrentPosition();
-    }
-  }
 
   /// Analyze current position
   Future<void> _analyzeCurrentPosition() async {

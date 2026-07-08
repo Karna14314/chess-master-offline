@@ -4,7 +4,6 @@ import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/puzzle_model.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
-import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/screens/puzzles/widgets/puzzle_board_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
