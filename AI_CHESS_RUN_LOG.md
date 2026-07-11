@@ -23,3 +23,18 @@ I have completed the task to refactor the UI and navigation for production readi
   - Enhanced UI components (UnifiedEvalBar and MoveNavigationBar) for a premium, Material 3 aesthetic.
   - Resolved unused variables and lints.
   - Tests verify that move classification logic correctly identifies misses and properly grades moves.
+
+## 2026-07-11
+**Status:** SUCCESS ✅
+**Category:** C — UI Enhancement
+**Task:** Enabled smooth piece movement animations by default in ChessBoard.
+**Files Changed:**
+- lib/screens/game/widgets/chess_board.dart: Changed `enableMoveAnimation` default value to `true`.
+**Verification:**
+- Build: PASS
+- Tests: PASS
+- Emulator: SKIPPED
+**User-Visible Impact:** Piece movement now has smooth animations instead of instant jumps, significantly improving the app's premium feel.
+**Commit:** (see below)
+**Branch:** auto/chess-20260711-enable-animations
+**Notes:** N/A
