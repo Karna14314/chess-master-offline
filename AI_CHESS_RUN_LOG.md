@@ -38,3 +38,20 @@ I have completed the task to refactor the UI and navigation for production readi
 **Commit:** (see below)
 **Branch:** auto/chess-20260711-enable-animations
 **Notes:** N/A
+## 2026-07-11
+**Status:** SUCCESS ✅
+**Category:** C — UI Enhancement
+**Task:** Removed hardcoded colors and adopted AppTheme across game screens and widgets.
+**Files Changed:**
+- lib/screens/game/widgets/move_list.dart: Replaced hardcoded Colors.grey, Colors.blue, etc. with AppTheme colors.
+- lib/screens/game/widgets/timer_widget.dart: Replaced hardcoded Colors.red/orange/white with AppTheme constants.
+- lib/screens/game/widgets/chess_board.dart: Replaced Colors.blue and Colors.green with AppTheme semantic colors.
+- lib/screens/game/game_screen.dart: Migrated inline color definitions (Colors.white, etc.) to AppTheme.
+**Verification:**
+- Build: PASS
+- Tests: PASS
+- Emulator: SKIPPED
+**User-Visible Impact:** UI elements now properly respect the global Material 3 app theme (AppTheme), providing a more cohesive, polished, and maintainable design system across different screens.
+**Commit:** (see below)
+**Branch:** auto/chess-20260711-theme-migration
+**Notes:** N/A

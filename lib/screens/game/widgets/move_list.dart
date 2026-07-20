@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/models/game_model.dart';
 
@@ -25,7 +26,7 @@ class MoveList extends ConsumerWidget {
         child: Text(
           'No moves yet',
           style: TextStyle(
-            color: Colors.grey[600],
+            color: AppTheme.textSecondary,
             fontStyle: FontStyle.italic,
           ),
         ),
@@ -46,7 +47,7 @@ class MoveList extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black26,
+        color: AppTheme.surfaceDark,
         borderRadius: BorderRadius.circular(8),
       ),
       child: SingleChildScrollView(
@@ -57,7 +58,7 @@ class MoveList extends ConsumerWidget {
           style: const TextStyle(
             fontFamily: 'monospace',
             fontSize: 14,
-            color: Colors.white,
+            color: AppTheme.textPrimary,
           ),
         ),
       ),
@@ -93,7 +94,7 @@ class MoveList extends ConsumerWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: index.isEven ? Colors.transparent : Colors.black12,
+            color: index.isEven ? Colors.transparent : AppTheme.surfaceDark,
             borderRadius: BorderRadius.circular(4),
           ),
           child: Row(
@@ -105,7 +106,7 @@ class MoveList extends ConsumerWidget {
                   '$moveNumber.',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[400],
+                    color: AppTheme.textSecondary,
                   ),
                 ),
               ),
@@ -148,7 +149,7 @@ class MoveList extends ConsumerWidget {
         decoration: BoxDecoration(
           color:
               isCurrentMove
-                  ? Colors.blue.withValues(alpha: 0.3)
+                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
@@ -161,17 +162,17 @@ class MoveList extends ConsumerWidget {
                 fontFamily: 'monospace',
                 fontSize: 14,
                 fontWeight: isCurrentMove ? FontWeight.bold : FontWeight.normal,
-                color: Colors.white,
+                color: AppTheme.textPrimary,
               ),
             ),
             if (move.isCheck && !move.isCheckmate)
               const Icon(
                 Icons.warning_amber_rounded,
                 size: 14,
-                color: Colors.orange,
+                color: AppTheme.warning,
               ),
             if (move.isCheckmate)
-              const Icon(Icons.stars, size: 14, color: Colors.amber),
+              const Icon(Icons.stars, size: 14, color: AppTheme.accentColor),
           ],
         ),
       ),
@@ -203,7 +204,7 @@ class MoveNotation extends StatelessWidget {
         style: const TextStyle(
           fontFamily: 'monospace',
           fontSize: 14,
-          color: Colors.white,
+          color: AppTheme.textPrimary,
         ),
         children: [
           if (isWhite) TextSpan(text: '$moveNumber. '),
@@ -213,10 +214,10 @@ class MoveNotation extends StatelessWidget {
               fontWeight: isCheckmate ? FontWeight.bold : FontWeight.normal,
               color:
                   isCheckmate
-                      ? Colors.amber
+                      ? AppTheme.accentColor
                       : isCheck
-                      ? Colors.orange
-                      : Colors.white,
+                      ? AppTheme.warning
+                      : AppTheme.textPrimary,
             ),
           ),
         ],

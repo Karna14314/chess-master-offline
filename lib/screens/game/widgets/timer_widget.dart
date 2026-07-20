@@ -64,7 +64,7 @@ class ChessTimerWidget extends ConsumerWidget {
               child: Icon(
                 Icons.warning_amber_rounded,
                 size: compact ? 14 : 16,
-                color: Colors.white,
+                color: AppTheme.textPrimary,
               ),
             ),
           Text(
@@ -96,7 +96,7 @@ class ChessTimerWidget extends ConsumerWidget {
         style: TextStyle(
           fontFamily: 'monospace',
           fontSize: compact ? 14 : 18,
-          color: isActive ? Colors.white : AppTheme.textSecondary,
+          color: isActive ? AppTheme.textPrimary : AppTheme.textSecondary,
         ),
       ),
     );
@@ -104,10 +104,10 @@ class ChessTimerWidget extends ConsumerWidget {
 
   Color _getBackgroundColor(bool isActive, bool isLowTime, bool isTimedOut) {
     if (isTimedOut) {
-      return Colors.red.shade900;
+      return AppTheme.error.withValues(alpha: 0.8);
     }
     if (isLowTime) {
-      return Colors.orange.shade800;
+      return AppTheme.warning.withValues(alpha: 0.8);
     }
     if (isActive) {
       return AppTheme.primaryColor;
@@ -117,7 +117,7 @@ class ChessTimerWidget extends ConsumerWidget {
 
   Color _getTextColor(bool isActive, bool isLowTime, bool isTimedOut) {
     if (isTimedOut || isLowTime || isActive) {
-      return Colors.white;
+      return AppTheme.textPrimary;
     }
     return AppTheme.textSecondary;
   }

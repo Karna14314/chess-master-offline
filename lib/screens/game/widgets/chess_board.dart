@@ -260,7 +260,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                     painter: _ArrowPainter(
                       from: hintMove.from,
                       to: hintMove.to,
-                      color: Colors.blue.withValues(alpha: 0.7),
+                      color: AppTheme.info.withValues(alpha: 0.7),
                       squareSize: squareSize,
                       isFlipped: effectiveFlipped,
                     ),
@@ -341,7 +341,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                     painter: _ArrowPainter(
                       from: widget.bestMove!.substring(0, 2),
                       to: widget.bestMove!.substring(2, 4),
-                      color: Colors.green.withValues(alpha: 0.7),
+                      color: AppTheme.success.withValues(alpha: 0.7),
                       squareSize: squareSize,
                       isFlipped: effectiveFlipped,
                     ),
@@ -728,13 +728,13 @@ class _BoardPainter extends CustomPainter {
 
         // Hint highlight
         if (showHint && square == hintSquare) {
-          color = Colors.green.withValues(alpha: 0.5);
+          color = AppTheme.success.withValues(alpha: 0.5);
         }
 
         // Custom highlights (e.g. solution playback)
         if (highlightedSquares != null &&
             highlightedSquares!.contains(square)) {
-          color = Colors.blue.withValues(alpha: 0.5);
+          color = AppTheme.info.withValues(alpha: 0.5);
         }
 
         // Check highlight

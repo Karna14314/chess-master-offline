@@ -216,7 +216,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             decoration: BoxDecoration(
               color: AppTheme.surfaceDark.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: AppTheme.borderColor),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -235,7 +235,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                               : "Friend",
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppTheme.textPrimary,
                             fontSize: 11,
                           ),
                           textAlign: TextAlign.center,
@@ -260,7 +260,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       IconButton(
                         icon: const Icon(
                           Icons.undo,
-                          color: Colors.white70,
+                          color: AppTheme.textSecondary,
                           size: 20,
                         ),
                         onPressed:
@@ -276,7 +276,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       IconButton(
                         icon: const Icon(
                           Icons.lightbulb_outline,
-                          color: Colors.white70,
+                          color: AppTheme.textSecondary,
                           size: 20,
                         ),
                         onPressed:
@@ -307,7 +307,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           "You",
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppTheme.textPrimary,
                             fontSize: 11,
                           ),
                           textAlign: TextAlign.center,
@@ -362,7 +362,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           topLeft: Radius.circular(32),
           topRight: Radius.circular(32),
         ),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: AppTheme.borderColor),
       ),
       child: SafeArea(
         top: false,
@@ -562,7 +562,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 isActive ? AppTheme.primaryColor : AppTheme.cardDark,
             child: Icon(
               isOpponent ? Icons.smart_toy : Icons.person,
-              color: Colors.white,
+              color: AppTheme.textPrimary,
               size: 20,
             ),
           ),
@@ -576,7 +576,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   name,
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppTheme.textPrimary,
                     fontSize: 13,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -673,11 +673,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         final content = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$moveNum. ', style: const TextStyle(color: Colors.white38)),
-            Text(whiteMove.san, style: const TextStyle(color: Colors.white)),
+            Text('$moveNum. ', style: const TextStyle(color: AppTheme.textHint)),
+            Text(whiteMove.san, style: const TextStyle(color: AppTheme.textPrimary)),
             if (blackMove != null) ...[
               const SizedBox(width: 8),
-              Text(blackMove.san, style: const TextStyle(color: Colors.white)),
+              Text(blackMove.san, style: const TextStyle(color: AppTheme.textPrimary)),
             ],
             if (horizontal) const SizedBox(width: 16),
           ],
@@ -700,11 +700,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           IconButton(
-            icon: const Icon(Icons.undo, color: Colors.white70),
+            icon: const Icon(Icons.undo, color: AppTheme.textSecondary),
             onPressed: () => ref.read(gameSessionProvider.notifier).undoMove(),
           ),
           IconButton(
-            icon: const Icon(Icons.lightbulb_outline, color: Colors.white70),
+            icon: const Icon(Icons.lightbulb_outline, color: AppTheme.textSecondary),
             onPressed: () => _showHintDialog(context, ref),
           ),
         ],
@@ -736,11 +736,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               backgroundColor: AppTheme.surfaceDark,
               title: Row(
                 children: [
-                  const Icon(Icons.lightbulb, color: Colors.amber),
+                  const Icon(Icons.lightbulb, color: AppTheme.accentColor),
                   const SizedBox(width: 8),
                   const Text(
                     'Engine Hint',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppTheme.textPrimary),
                   ),
                 ],
               ),
@@ -759,7 +759,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   const SizedBox(height: 8),
                   Text(
                     hint.explanation,
-                    style: const TextStyle(color: Colors.white70),
+                    style: const TextStyle(color: AppTheme.textSecondary),
                   ),
                   if (hint.tacticalMotif != null) ...[
                     const SizedBox(height: 8),
@@ -767,14 +767,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       children: [
                         const Icon(
                           Icons.flash_on,
-                          color: Colors.amber,
+                          color: AppTheme.accentColor,
                           size: 16,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Motif: ${hint.tacticalMotif}',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.textPrimary,
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -786,7 +786,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     Text(
                       'Alternative: ${hint.alternativeMove}',
                       style: const TextStyle(
-                        color: Colors.white54,
+                        color: AppTheme.textSecondary,
                         fontSize: 13,
                       ),
                     ),
