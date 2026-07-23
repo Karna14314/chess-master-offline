@@ -30,11 +30,10 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            backgroundColor: AppTheme.backgroundDark,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
             pinned: true,
             title: Text(

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/stats/statistics_screen.dart';
 import 'package:chess_master/screens/settings/settings_screen.dart';
+import 'package:chess_master/core/services/diagnostics_service.dart';
 
-/// More screen - contains settings, stats, and additional options
+/// More screen - contains settings, stats, cross-promotion, and additional options
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
@@ -15,7 +17,6 @@ class MoreScreen extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -24,7 +25,7 @@ class MoreScreen extends ConsumerWidget {
             children: [
               // Header
               _buildHeader(context),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               // Quick Stats Card
               _buildQuickStatsCard(context, ref),
@@ -32,6 +33,10 @@ class MoreScreen extends ConsumerWidget {
 
               // Menu Options
               _buildMenuSection(context, ref),
+              const SizedBox(height: 24),
+
+              // Our Other Games (Karna Digital Cross-Promotion)
+              _buildOurGamesSection(context),
               const SizedBox(height: 24),
 
               // Settings Section
@@ -48,17 +53,23 @@ class MoreScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+    final iconColor = Theme.of(context).colorScheme.onSurface;
+
     return Row(
       children: [
         Container(
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: AppTheme.cardDark,
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Theme.of(context).dividerTheme.color ?? AppTheme.borderColor,
+            ),
           ),
-          child: const Center(
-            child: Icon(Icons.settings, size: 28, color: AppTheme.textPrimary),
+          child: Center(
+            child: Icon(Icons.tune_outlined, size: 28, color: iconColor),
           ),
         ),
         const SizedBox(width: 16),
@@ -72,10 +83,14 @@ class MoreScreen extends ConsumerWidget {
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             Text(
-              'Customize your experience',
+              'Customize your experience & explore games',
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
+              ).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.textSecondary
+                        : AppTheme.textSecondaryLight,
+                  ),
             ),
           ],
         ),
@@ -126,7 +141,7 @@ class MoreScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          const Row(
             children: [
               Expanded(
                 child: _StatItem(
@@ -157,56 +172,218 @@ class MoreScreen extends ConsumerWidget {
   }
 
   Widget _buildMenuSection(BuildContext context, WidgetRef ref) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.cardDark,
-        borderRadius: BorderRadius.circular(16),
+    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Column(
+          children: [
+            _buildMenuItem(
+              context,
+              icon: Icons.bar_chart_rounded,
+              title: 'Statistics',
+              subtitle: 'View your game history and stats',
+              color: Colors.blue,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StatisticsScreen(),
+                  ),
+                );
+              },
+            ),
+            Divider(height: 1, color: borderColor),
+            _buildMenuItem(
+              context,
+              icon: Icons.settings_rounded,
+              title: 'Settings',
+              subtitle: 'Board theme, sounds, and preferences',
+              color: Colors.grey,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
+            ),
+            Divider(height: 1, color: borderColor),
+            _buildMenuItem(
+              context,
+              icon: Icons.bug_report_rounded,
+              title: 'Diagnostic Logs',
+              subtitle: 'Share error logs via native OS share sheet',
+              color: Colors.teal,
+              onTap: () async {
+                final success = await LocalDiagnosticsService.instance.exportLogFile();
+                if (!success && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No diagnostic log available to export')),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            context,
-            icon: Icons.bar_chart_rounded,
-            title: 'Statistics',
-            subtitle: 'View your game history and stats',
-            color: Colors.blue,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const StatisticsScreen(),
+    );
+  }
+
+  Widget _buildOurGamesSection(BuildContext context) {
+    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.sports_esports_outlined,
+                color: AppTheme.primaryColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Explore Karna Digital Games',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
                 ),
-              );
-            },
+              ),
+            ],
           ),
-          const Divider(height: 1, color: AppTheme.surfaceDark),
-          _buildMenuItem(
-            context,
-            icon: Icons.settings_rounded,
-            title: 'Settings',
-            subtitle: 'Board theme, sounds, and more',
-            color: Colors.grey,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
+        ),
+        Material(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor),
+            ),
+            child: Column(
+              children: [
+                _buildGameTile(
+                  context,
+                  title: 'Mahjong Master Offline',
+                  subtitle: 'Classic tile-matching puzzle, 100% ad-free',
+                  icon: Icons.grid_view_rounded,
+                  color: Colors.amber,
+                  packageName: 'com.karna.mahjong',
+                ),
+                Divider(height: 1, color: borderColor),
+                _buildGameTile(
+                  context,
+                  title: 'Block Puzzle Master',
+                  subtitle: 'Addictive block logic challenge offline',
+                  icon: Icons.category_rounded,
+                  color: Colors.deepOrange,
+                  packageName: 'com.karna.blockpuzzle',
+                ),
+                Divider(height: 1, color: borderColor),
+                _buildGameTile(
+                  context,
+                  title: 'Sudoku Master Offline',
+                  subtitle: 'Pure logic Sudoku with unlimited puzzles',
+                  icon: Icons.filter_9_plus_rounded,
+                  color: Colors.teal,
+                  packageName: 'com.karna.sudoku',
+                ),
+                Divider(height: 1, color: borderColor),
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.storefront_rounded,
+                      color: AppTheme.primaryColor,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'More Ad-Free Games',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  subtitle: Text(
+                    'Browse all games on Google Play',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  trailing: const Icon(
+                    Icons.open_in_new,
+                    size: 18,
+                    color: AppTheme.primaryColor,
+                  ),
+                  onTap: () => _launchUrl(
+                    context,
+                    'https://play.google.com/store/apps/developer?id=Karna+Digital',
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Divider(height: 1, color: AppTheme.surfaceDark),
-          _buildMenuItem(
-            context,
-            icon: Icons.cloud_upload_rounded,
-            title: 'Backup & Restore',
-            subtitle: 'Save your data to Google Drive',
-            color: Colors.green,
-            onTap: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Coming soon!')));
-            },
-          ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGameTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required String packageName,
+  }) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+      subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+      trailing: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          minimumSize: const Size(60, 32),
+          side: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+        ),
+        onPressed: () => _launchUrl(
+          context,
+          'market://details?id=$packageName',
+          fallbackWebUrl:
+              'https://play.google.com/store/apps/details?id=$packageName',
+        ),
+        child: const Text('Get', style: TextStyle(fontSize: 12)),
       ),
     );
   }
@@ -216,6 +393,9 @@ class MoreScreen extends ConsumerWidget {
     WidgetRef ref,
     AppSettings settings,
   ) {
+    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -228,101 +408,106 @@ class MoreScreen extends ConsumerWidget {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.cardDark,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              // Sound toggle
-              SwitchListTile(
-                title: const Text('Sound Effects'),
-                subtitle: const Text('Move sounds and alerts'),
-                secondary: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+        Material(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor),
+            ),
+            child: Column(
+              children: [
+                // Sound toggle
+                SwitchListTile(
+                  title: const Text('Sound Effects'),
+                  subtitle: const Text('Move sounds and alerts'),
+                  secondary: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.volume_up,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.volume_up,
-                    color: Colors.orange,
-                    size: 20,
-                  ),
+                  value: settings.soundEnabled,
+                  onChanged: (value) {
+                    ref.read(settingsProvider.notifier).toggleSound();
+                  },
                 ),
-                value: settings.soundEnabled,
-                onChanged: (value) {
-                  ref.read(settingsProvider.notifier).toggleSound();
-                },
-              ),
-              const Divider(height: 1, color: AppTheme.surfaceDark),
-              // Show legal moves toggle
-              SwitchListTile(
-                title: const Text('Show Legal Moves'),
-                subtitle: const Text('Highlight possible moves'),
-                secondary: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                Divider(height: 1, color: borderColor),
+                // Show legal moves toggle
+                SwitchListTile(
+                  title: const Text('Show Legal Moves'),
+                  subtitle: const Text('Highlight possible moves'),
+                  secondary: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.visibility,
+                      color: Colors.green,
+                      size: 20,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.visibility,
-                    color: Colors.green,
-                    size: 20,
-                  ),
+                  value: settings.showLegalMoves,
+                  onChanged: (value) {
+                    ref.read(settingsProvider.notifier).toggleShowLegalMoves();
+                  },
                 ),
-                value: settings.showLegalMoves,
-                onChanged: (value) {
-                  ref.read(settingsProvider.notifier).toggleShowLegalMoves();
-                },
-              ),
-              const Divider(height: 1, color: AppTheme.surfaceDark),
-              // Show coordinates toggle
-              SwitchListTile(
-                title: const Text('Show Coordinates'),
-                subtitle: const Text('Display a-h and 1-8'),
-                secondary: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.purple.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                Divider(height: 1, color: borderColor),
+                // Show coordinates toggle
+                SwitchListTile(
+                  title: const Text('Show Coordinates'),
+                  subtitle: const Text('Display a-h and 1-8'),
+                  secondary: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.grid_3x3,
+                      color: Colors.purple,
+                      size: 20,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.grid_3x3,
-                    color: Colors.purple,
-                    size: 20,
-                  ),
+                  value: settings.showCoordinates,
+                  onChanged: (value) {
+                    ref.read(settingsProvider.notifier).toggleCoordinates();
+                  },
                 ),
-                value: settings.showCoordinates,
-                onChanged: (value) {
-                  ref.read(settingsProvider.notifier).toggleCoordinates();
-                },
-              ),
-              const Divider(height: 1, color: AppTheme.surfaceDark),
-              // Auto flip board toggle
-              SwitchListTile(
-                title: const Text('Auto Flip Board'),
-                subtitle: const Text('Flip board for black pieces'),
-                secondary: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                Divider(height: 1, color: borderColor),
+                // Auto flip board toggle
+                SwitchListTile(
+                  title: const Text('Auto Flip Board'),
+                  subtitle: const Text('Flip board for black pieces'),
+                  secondary: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.flip, color: Colors.blue, size: 20),
                   ),
-                  child: const Icon(Icons.flip, color: Colors.blue, size: 20),
+                  value: settings.autoFlipBoard,
+                  onChanged: (value) {
+                    ref.read(settingsProvider.notifier).toggleAutoFlipBoard();
+                  },
                 ),
-                value: settings.autoFlipBoard,
-                onChanged: (value) {
-                  ref.read(settingsProvider.notifier).toggleAutoFlipBoard();
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -330,60 +515,64 @@ class MoreScreen extends ConsumerWidget {
   }
 
   Widget _buildAboutSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardDark,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primaryColor, AppTheme.primaryLight],
+    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppTheme.primaryColor, AppTheme.primaryLight],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Text(
-                    '♔',
-                    style: TextStyle(fontSize: 24, color: Colors.white),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppConstants.appName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  child: const Center(
+                    child: Text(
+                      '♔',
+                      style: TextStyle(fontSize: 24, color: Colors.white),
                     ),
                   ),
-                  Text(
-                    'Version ${AppConstants.appVersion}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppConstants.appName,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'A complete offline chess experience with AI opponent, puzzles, and analysis.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
-          ),
-        ],
+                    Text(
+                      'Version ${AppConstants.appVersion}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'A complete offline chess experience with AI opponent, puzzles, and analysis.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -421,9 +610,7 @@ class MoreScreen extends ConsumerWidget {
                     Text(title, style: Theme.of(context).textTheme.titleMedium),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
@@ -434,6 +621,38 @@ class MoreScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _launchUrl(
+    BuildContext context,
+    String primaryUrl, {
+    String? fallbackWebUrl,
+  }) async {
+    final primaryUri = Uri.parse(primaryUrl);
+    try {
+      if (await canLaunchUrl(primaryUri)) {
+        await launchUrl(primaryUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+      if (fallbackWebUrl != null) {
+        final fallbackUri = Uri.parse(fallbackWebUrl);
+        if (await canLaunchUrl(fallbackUri)) {
+          await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+          return;
+        }
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open link')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open link')),
+        );
+      }
+    }
   }
 }
 
@@ -462,9 +681,7 @@ class _StatItem extends StatelessWidget {
         ),
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );

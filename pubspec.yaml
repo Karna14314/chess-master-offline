@@ -35,6 +35,8 @@ dependencies:
   uuid: ^4.5.1
   intl: ^0.20.2
   share_plus: ^10.1.4
+  flutter_local_notifications: ^18.0.1
+  in_app_review: ^2.0.9
   audioplayers: ^6.1.0
   vibration: ^2.0.1
 

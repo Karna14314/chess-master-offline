@@ -5,7 +5,7 @@ import 'package:chess_master/screens/home/home_screen.dart';
 import 'package:chess_master/screens/puzzles/puzzle_menu_screen.dart';
 import 'package:chess_master/screens/analysis/analysis_menu_screen.dart';
 import 'package:chess_master/screens/stats/statistics_screen.dart';
-import 'package:chess_master/screens/settings/settings_screen.dart';
+import 'package:chess_master/screens/more/more_screen.dart';
 
 /// Main screen with bottom navigation
 class MainScreen extends ConsumerStatefulWidget {
@@ -23,17 +23,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     PuzzleMenuScreen(),
     AnalysisMenuScreen(),
     StatisticsScreen(),
-    SettingsScreen(),
+    MoreScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceDark,
+          color: Theme.of(context).colorScheme.surface,
           border: const Border(
             top: BorderSide(color: Colors.white10, width: 0.5),
           ),
@@ -48,9 +47,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
-          backgroundColor: AppTheme.surfaceDark,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           selectedItemColor: AppTheme.primaryColor,
-          unselectedItemColor: AppTheme.textSecondary,
+          unselectedItemColor: Theme.of(context).brightness == Brightness.dark
+              ? AppTheme.textSecondary
+              : AppTheme.textSecondaryLight,
           type: BottomNavigationBarType.fixed,
           showUnselectedLabels: true,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
@@ -76,9 +77,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               label: 'Stats',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Settings',
+              icon: Icon(Icons.more_horiz_outlined),
+              activeIcon: Icon(Icons.more_horiz),
+              label: 'More',
             ),
           ],
         ),

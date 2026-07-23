@@ -466,7 +466,8 @@ class StockfishService {
     return scoreCp;
   }
 
-  /// Internal FEN validation to prevent engine crashes
+  /// Internal FEN validation to prevent native Stockfish C++ engine crashes (SIGSEGV).
+  /// Enforces board structure, piece counts, valid kings, castling, and move numbers.
   bool _isValidFen(String fen) {
     if (fen.isEmpty) return false;
     final parts = fen.trim().split(_fenSpaceRegex);
@@ -477,10 +478,16 @@ class StockfishService {
     final rows = boardPart.split('/');
     if (rows.length != 8) return false;
 
+    int whiteKingCount = 0;
+    int blackKingCount = 0;
+
     for (final row in rows) {
       int count = 0;
       for (int i = 0; i < row.length; i++) {
         final char = row[i];
+        if (char == 'K') whiteKingCount++;
+        if (char == 'k') blackKingCount++;
+
         if (_fenDigitRegex.hasMatch(char)) {
           count += int.parse(char);
         } else if (_fenPieceRegex.hasMatch(char)) {
@@ -492,9 +499,36 @@ class StockfishService {
       if (count != 8) return false;
     }
 
+    // Must have exactly one White King and one Black King for valid Stockfish state
+    if (whiteKingCount != 1 || blackKingCount != 1) return false;
+
     // Color check
     final color = parts[1];
     if (color != 'w' && color != 'b') return false;
+
+    // Castling check
+    final castling = parts[2];
+    if (castling != '-') {
+      final validCastling = RegExp(r'^[KQkq]+$');
+      if (!validCastling.hasMatch(castling)) return false;
+    }
+
+    // En passant check
+    final ep = parts[3];
+    if (ep != '-') {
+      final validEp = RegExp(r'^[a-h][36]$');
+      if (!validEp.hasMatch(ep)) return false;
+    }
+
+    // Halfmove and fullmove checks if provided
+    if (parts.length >= 5) {
+      final halfmove = int.tryParse(parts[4]);
+      if (halfmove == null || halfmove < 0) return false;
+    }
+    if (parts.length >= 6) {
+      final fullmove = int.tryParse(parts[5]);
+      if (fullmove == null || fullmove <= 0) return false;
+    }
 
     return true;
   }
@@ -599,6 +633,9 @@ class StockfishService {
         );
       }
     });
+
+    // Stop any ongoing search before setting new position (prevents C++ worker thread SIGSEGV)
+    await _stopCurrentSearchAndWait();
 
     // Position must be set before search.
     // Strength options (UCI_Elo / UCI_LimitStrength) are configured via setSkillLevel()

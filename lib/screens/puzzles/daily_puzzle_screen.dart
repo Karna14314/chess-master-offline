@@ -56,7 +56,6 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
     final state = ref.watch(puzzleProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -535,7 +534,6 @@ class _AutoPlaySolutionScreenState extends State<_AutoPlaySolutionScreen> {
     final isFlipped = widget.puzzle.fen.contains(' w ');
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

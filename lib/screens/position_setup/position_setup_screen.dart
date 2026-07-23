@@ -200,10 +200,9 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
     final isValid = _validatePosition();
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         title: const Text('Position Setup'),
-        backgroundColor: AppTheme.surfaceDark,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

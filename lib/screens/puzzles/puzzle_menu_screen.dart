@@ -49,7 +49,6 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
     final stats = ref.watch(puzzleStatsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Colors.transparent,

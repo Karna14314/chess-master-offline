@@ -115,7 +115,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       body: SafeArea(
         child: OrientationBuilder(
           builder: (context, orientation) {
@@ -694,18 +693,43 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   Widget _buildControlBar(BuildContext context, GameSession gameState) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final iconColor = isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           IconButton(
-            icon: const Icon(Icons.undo, color: AppTheme.textSecondary),
-            onPressed: () => ref.read(gameSessionProvider.notifier).undoMove(),
+            icon: Icon(Icons.undo, color: iconColor),
+            tooltip: 'Undo Move',
+            onPressed: gameState.isCompleted
+                ? null
+                : () => ref.read(gameSessionProvider.notifier).undoMove(),
           ),
           IconButton(
-            icon: const Icon(Icons.lightbulb_outline, color: AppTheme.textSecondary),
-            onPressed: () => _showHintDialog(context, ref),
+            icon: Icon(Icons.lightbulb_outline, color: iconColor),
+            tooltip: 'Engine Hint',
+            onPressed: gameState.isCompleted
+                ? null
+                : () => _showHintDialog(context, ref),
+          ),
+          IconButton(
+            icon: Icon(Icons.swap_vert_rounded, color: iconColor),
+            tooltip: 'Flip Board',
+            onPressed: () => ref.read(gameSessionProvider.notifier).toggleFlip(),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.flag_outlined,
+              color: gameState.isCompleted ? iconColor : Colors.redAccent.shade200,
+            ),
+            tooltip: 'Resign Game',
+            onPressed: gameState.isCompleted
+                ? null
+                : () => _showResignConfirmation(context),
           ),
         ],
       ),
@@ -805,18 +829,34 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   void _showResignConfirmation(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final dialogBg = isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight;
+    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
+
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            title: const Text('Resign?'),
+            backgroundColor: dialogBg,
+            title: Text(
+              'Resign Game?',
+              style: TextStyle(color: textPrimary),
+            ),
+            content: Text(
+              'Are you sure you want to resign this match?',
+              style: TextStyle(color: isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () {
                   Navigator.pop(context);
                   ref.read(gameSessionProvider.notifier).resign();
@@ -829,12 +869,20 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   void _showDrawConfirmation(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final dialogBg = isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight;
+    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
+
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            title: const Text('Offer Draw?'),
+            backgroundColor: dialogBg,
+            title: Text(
+              'Offer Draw?',
+              style: TextStyle(color: textPrimary),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),

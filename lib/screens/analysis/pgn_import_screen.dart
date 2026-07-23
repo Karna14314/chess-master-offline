@@ -29,7 +29,6 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

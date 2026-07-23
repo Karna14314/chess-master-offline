@@ -9,6 +9,8 @@ import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:chess_master/core/services/diagnostics_service.dart';
+import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
 
 /// Settings screen for app customization
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -50,14 +52,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final settingsNotifier = ref.read(settingsProvider.notifier);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 120.0,
             floating: false,
             pinned: true,
-            backgroundColor: AppTheme.surfaceDark,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 'Settings',
@@ -66,7 +67,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppTheme.surfaceDark, AppTheme.backgroundDark],
+                    colors: [
+                      Theme.of(context).colorScheme.surface,
+                      Theme.of(context).scaffoldBackgroundColor,
+                    ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -159,10 +163,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ]),
                 const SizedBox(height: 24),
 
+                // Notifications & Reminders Section
+                _buildSectionHeader(
+                  context,
+                  'Local Notifications',
+                  Icons.notifications_none_outlined,
+                ),
+                const SizedBox(height: 12),
+                _buildSettingsCard(context, [
+                  _SwitchSetting(
+                    title: 'Daily Puzzle Reminders',
+                    subtitle: 'Local reminder when today\'s puzzle is ready',
+                    value: settings.dailyPuzzleNotificationEnabled,
+                    onChanged: (_) =>
+                        settingsNotifier.toggleDailyPuzzleNotification(),
+                  ),
+                  const Divider(color: AppTheme.borderColor),
+                  _SwitchSetting(
+                    title: 'Streak Protection Nudges',
+                    subtitle: 'Local warning before your daily streak resets',
+                    value: settings.streakNotificationEnabled,
+                    onChanged: (_) =>
+                        settingsNotifier.toggleStreakNotification(),
+                  ),
+                ]),
+                const SizedBox(height: 24),
+
                 // About Section
                 _buildSectionHeader(context, 'About', Icons.info_outline),
                 const SizedBox(height: 12),
                 _buildSettingsCard(context, [
+                  ListTile(
+                    title: Text(
+                      'Our Other Games',
+                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                    ),
+                    subtitle: Text(
+                      'Explore ad-free games by Karna Digital',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    leading: const Icon(
+                      Icons.sports_esports_outlined,
+                      color: AppTheme.primaryColor,
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppTheme.textSecondary,
+                    ),
+                    onTap: () => _launchDeveloperPage(),
+                  ),
+                  const Divider(color: AppTheme.borderColor),
                   ListTile(
                     title: Text(
                       'Rate Us on Play Store',
@@ -184,6 +237,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       color: AppTheme.textSecondary,
                     ),
                     onTap: () => _launchPlayStore(),
+                  ),
+                  const Divider(color: AppTheme.borderColor),
+                  ListTile(
+                    title: Text(
+                      'Welcome Tutorial & Skill Setup',
+                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                    ),
+                    subtitle: Text(
+                      'Revisit onboarding guide & AI difficulty setup',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    leading: const Icon(
+                      Icons.school_outlined,
+                      color: AppTheme.primaryColor,
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppTheme.textSecondary,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const OnboardingScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(color: AppTheme.borderColor),
+                  ListTile(
+                    title: Text(
+                      'Export Diagnostic Log',
+                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                    ),
+                    subtitle: Text(
+                      'Share local crash log via native share sheet',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    leading: const Icon(
+                      Icons.bug_report_outlined,
+                      color: AppTheme.primaryColor,
+                    ),
+                    trailing: const Icon(
+                      Icons.share_outlined,
+                      color: AppTheme.textSecondary,
+                    ),
+                    onTap: () => _exportDiagnosticLog(context),
                   ),
                   const Divider(color: AppTheme.borderColor),
                   ListTile(
@@ -259,20 +365,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildSettingsCard(BuildContext context, List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.cardDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Column(children: children),
       ),
-      child: Column(children: children),
     );
   }
 
@@ -315,6 +421,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         );
       }
+    }
+  }
+
+  void _launchDeveloperPage() async {
+    final uri = Uri.parse(
+      'https://play.google.com/store/apps/developer?id=Karna+Digital',
+    );
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+  }
+
+  void _exportDiagnosticLog(BuildContext context) async {
+    final success = await LocalDiagnosticsService.instance.exportLogFile();
+    if (!success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No diagnostic log available to export'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 }
@@ -618,13 +747,13 @@ class _SwitchSetting extends StatelessWidget {
       ),
       value: value,
       onChanged: onChanged,
-      thumbColor: MaterialStateProperty.resolveWith<Color?>((states) {
-        return states.contains(MaterialState.selected)
+      thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
+        return states.contains(WidgetState.selected)
             ? AppTheme.primaryColor
             : AppTheme.textHint;
       }),
-      trackColor: MaterialStateProperty.resolveWith<Color?>((states) {
-        return states.contains(MaterialState.selected)
+      trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
+        return states.contains(WidgetState.selected)
             ? AppTheme.primaryColor.withValues(alpha: 0.3)
             : AppTheme.surfaceDark;
       }),

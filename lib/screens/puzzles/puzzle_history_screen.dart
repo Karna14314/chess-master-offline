@@ -22,7 +22,6 @@ class PuzzleHistoryScreen extends ConsumerWidget {
     final statsAsync = ref.watch(puzzleStatsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         title: Text(
           'Puzzle History',

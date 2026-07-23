@@ -82,9 +82,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     final notifier = ref.read(analysisProvider.notifier);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
-        backgroundColor: AppTheme.surfaceDark,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         title: Text(
           'Game Analysis',

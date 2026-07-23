@@ -6,6 +6,8 @@ import 'package:chess_master/providers/statistics_provider.dart';
 import 'package:chess_master/models/statistics_model.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:chess_master/providers/achievement_provider.dart';
 
 /// Statistics dashboard screen
 class StatisticsScreen extends ConsumerStatefulWidget {
@@ -41,10 +43,9 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     final stats = ref.watch(statisticsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         title: const Text('Statistics'),
-        backgroundColor: AppTheme.surfaceDark,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -122,6 +123,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
 
             // Game details
             _buildGameDetails(context, stats),
+            const SizedBox(height: 24),
+
+            // Achievements section
+            _buildAchievementsSection(context),
             const SizedBox(height: 24),
 
             // Top openings
@@ -562,6 +567,102 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       return '${hours}h ${minutes}m';
     }
     return '${minutes}m';
+  }
+
+  Widget _buildAchievementsSection(BuildContext context) {
+    final achievements = ref.watch(achievementProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardLight;
+    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderLight;
+    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
+    final textSecondary = isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
+
+    final unlockedCount = achievements.where((a) => a.isUnlocked).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Achievements & Trophies',
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$unlockedCount / ${achievements.length} Unlocked',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Card(
+          color: cardColor,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: borderColor),
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: achievements.length,
+            separatorBuilder: (context, index) => Divider(color: borderColor, height: 1),
+            itemBuilder: (context, index) {
+              final ach = achievements[index];
+              return ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: ach.isUnlocked
+                        ? Colors.amber.withValues(alpha: 0.15)
+                        : textSecondary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    ach.icon,
+                    color: ach.isUnlocked ? Colors.amber : textSecondary.withValues(alpha: 0.4),
+                    size: 24,
+                  ),
+                ),
+                title: Text(
+                  ach.title,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    color: ach.isUnlocked ? textPrimary : textSecondary,
+                  ),
+                ),
+                subtitle: Text(
+                  ach.description,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: textSecondary,
+                  ),
+                ),
+                trailing: ach.isUnlocked
+                    ? const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 20)
+                    : Icon(Icons.lock_outline, color: textSecondary.withValues(alpha: 0.4), size: 20),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
 

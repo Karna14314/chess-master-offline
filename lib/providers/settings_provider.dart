@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
+import 'package:chess_master/core/services/notification_service.dart';
 
 /// Provider for user settings
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
@@ -37,6 +38,8 @@ class AppSettings {
   final bool autoFlipBoard; // Auto flip for black pieces (default OFF)
   final int lastDifficultyLevel;
   final int lastTimeControlIndex;
+  final bool dailyPuzzleNotificationEnabled;
+  final bool streakNotificationEnabled;
 
   const AppSettings({
     this.boardTheme = BoardThemeType.classicWood,
@@ -51,6 +54,8 @@ class AppSettings {
     this.autoFlipBoard = false, // Default OFF as requested
     this.lastDifficultyLevel = 5,
     this.lastTimeControlIndex = 0,
+    this.dailyPuzzleNotificationEnabled = true,
+    this.streakNotificationEnabled = true,
   });
 
   BoardTheme get currentBoardTheme => BoardTheme.fromType(boardTheme);
@@ -73,6 +78,8 @@ class AppSettings {
     bool? autoFlipBoard,
     int? lastDifficultyLevel,
     int? lastTimeControlIndex,
+    bool? dailyPuzzleNotificationEnabled,
+    bool? streakNotificationEnabled,
   }) {
     return AppSettings(
       boardTheme: boardTheme ?? this.boardTheme,
@@ -87,6 +94,10 @@ class AppSettings {
       autoFlipBoard: autoFlipBoard ?? this.autoFlipBoard,
       lastDifficultyLevel: lastDifficultyLevel ?? this.lastDifficultyLevel,
       lastTimeControlIndex: lastTimeControlIndex ?? this.lastTimeControlIndex,
+      dailyPuzzleNotificationEnabled:
+          dailyPuzzleNotificationEnabled ?? this.dailyPuzzleNotificationEnabled,
+      streakNotificationEnabled:
+          streakNotificationEnabled ?? this.streakNotificationEnabled,
     );
   }
 }
@@ -99,6 +110,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
+    final dailyPuzzleNotif = prefs.getBool('dailyPuzzleNotificationEnabled') ?? true;
+    final streakNotif = prefs.getBool('streakNotificationEnabled') ?? true;
 
     state = AppSettings(
       boardTheme: BoardThemeType.values[prefs.getInt('boardTheme') ?? 0],
@@ -114,24 +129,61 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       autoFlipBoard: prefs.getBool('autoFlipBoard') ?? false,
       lastDifficultyLevel: prefs.getInt('lastDifficultyLevel') ?? 5,
       lastTimeControlIndex: prefs.getInt('lastTimeControlIndex') ?? 0,
+      dailyPuzzleNotificationEnabled: dailyPuzzleNotif,
+      streakNotificationEnabled: streakNotif,
     );
+
+    // Sync notification schedules
+    if (dailyPuzzleNotif) {
+      NotificationService.instance.scheduleDailyPuzzleReminder();
+    }
+    if (streakNotif) {
+      NotificationService.instance.scheduleStreakReminder();
+    }
   }
 
   Future<void> _saveSettings() async {
+    final s = state;
     final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setInt('boardTheme', state.boardTheme.index);
-    await prefs.setInt('pieceSet', state.pieceSet.index);
-    await prefs.setBool('showCoordinates', state.showCoordinates);
-    await prefs.setBool('showLegalMoves', state.showLegalMoves);
-    await prefs.setBool('showLastMove', state.showLastMove);
-    await prefs.setInt('animationSpeed', state.animationSpeed.index);
-    await prefs.setBool('soundEnabled', state.soundEnabled);
-    await prefs.setBool('vibrationEnabled', state.vibrationEnabled);
-    await prefs.setBool('boardFlipped', state.boardFlipped);
-    await prefs.setBool('autoFlipBoard', state.autoFlipBoard);
-    await prefs.setInt('lastDifficultyLevel', state.lastDifficultyLevel);
-    await prefs.setInt('lastTimeControlIndex', state.lastTimeControlIndex);
+    await prefs.setInt('boardTheme', s.boardTheme.index);
+    await prefs.setInt('pieceSet', s.pieceSet.index);
+    await prefs.setBool('showCoordinates', s.showCoordinates);
+    await prefs.setBool('showLegalMoves', s.showLegalMoves);
+    await prefs.setBool('showLastMove', s.showLastMove);
+    await prefs.setInt('animationSpeed', s.animationSpeed.index);
+    await prefs.setBool('soundEnabled', s.soundEnabled);
+    await prefs.setBool('vibrationEnabled', s.vibrationEnabled);
+    await prefs.setBool('boardFlipped', s.boardFlipped);
+    await prefs.setBool('autoFlipBoard', s.autoFlipBoard);
+    await prefs.setInt('lastDifficultyLevel', s.lastDifficultyLevel);
+    await prefs.setInt('lastTimeControlIndex', s.lastTimeControlIndex);
+    await prefs.setBool(
+        'dailyPuzzleNotificationEnabled', s.dailyPuzzleNotificationEnabled);
+    await prefs.setBool(
+        'streakNotificationEnabled', s.streakNotificationEnabled);
+  }
+
+  void toggleDailyPuzzleNotification() {
+    final newValue = !state.dailyPuzzleNotificationEnabled;
+    state = state.copyWith(dailyPuzzleNotificationEnabled: newValue);
+    _saveSettings();
+    if (newValue) {
+      NotificationService.instance.scheduleDailyPuzzleReminder();
+    } else {
+      NotificationService.instance.cancelDailyPuzzleReminder();
+    }
+  }
+
+  void toggleStreakNotification() {
+    final newValue = !state.streakNotificationEnabled;
+    state = state.copyWith(streakNotificationEnabled: newValue);
+    _saveSettings();
+    if (newValue) {
+      NotificationService.instance.scheduleStreakReminder();
+    } else {
+      NotificationService.instance.cancelStreakReminder();
+    }
   }
 
   void toggleAutoFlipBoard() {

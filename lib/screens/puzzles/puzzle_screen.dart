@@ -60,7 +60,6 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     final state = ref.watch(puzzleProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

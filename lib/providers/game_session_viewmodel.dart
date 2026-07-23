@@ -10,6 +10,7 @@ import 'package:chess_master/providers/timer_provider.dart';
 import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/analysis_model.dart';
+import 'package:chess_master/providers/achievement_provider.dart';
 import 'package:chess/chess.dart' as chess;
 
 /// Provider for the active game session
@@ -431,6 +432,12 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       gameTimeSeconds:
           DateTime.now().difference(currentSession.startedAt).inSeconds,
     );
+
+    if (isWin) {
+      _ref.read(achievementProvider.notifier).checkWins(
+        difficultyLevel: currentSession.difficulty.level,
+      );
+    }
 
     state = currentSession.copyWith(
       isRecorded: true,

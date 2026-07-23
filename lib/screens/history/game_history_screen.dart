@@ -141,7 +141,6 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     final gamesAsync = ref.watch(gameHistoryProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
       appBar: AppBar(
         title: const Text('Game History'),
         centerTitle: true,
