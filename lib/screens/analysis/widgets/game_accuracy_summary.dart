@@ -23,9 +23,9 @@ class GameAccuracySummary extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,7 +58,7 @@ class GameAccuracySummary extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
                     Text(
@@ -66,7 +66,7 @@ class GameAccuracySummary extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color:
-                            isExcellent ? Colors.blue : AppTheme.textSecondary,
+                            isExcellent ? Colors.blue : AppTheme.textSecondaryFor(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -82,14 +82,14 @@ class GameAccuracySummary extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceDark,
+                color: AppTheme.surfaceColor(context),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.book_rounded,
-                    color: AppTheme.textHint,
+                    color: AppTheme.textHintFor(context),
                     size: 20,
                   ),
                   const SizedBox(width: 12),
@@ -101,7 +101,7 @@ class GameAccuracySummary extends StatelessWidget {
                           'Opening',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: AppTheme.textHint,
+                            color: AppTheme.textHintFor(context),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -109,7 +109,7 @@ class GameAccuracySummary extends StatelessWidget {
                           openingName!,
                           style: GoogleFonts.inter(
                             fontSize: 15,
-                            color: AppTheme.textPrimary,
+                            color: AppTheme.textPrimaryFor(context),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -203,7 +203,7 @@ class GameAccuracySummary extends StatelessWidget {
           Center(
             child: Text(
               'Avg Centipawn Loss: ${analysis.averageCpl.toInt()}',
-              style: GoogleFonts.inter(color: AppTheme.textHint, fontSize: 13),
+              style: GoogleFonts.inter(color: AppTheme.textHintFor(context), fontSize: 13),
             ),
           ),
         ],

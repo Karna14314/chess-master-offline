@@ -94,7 +94,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     currentTheme: settings.boardTheme,
                     onChanged: (theme) => settingsNotifier.setBoardTheme(theme),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _PieceSetSelector(
                     currentSet: settings.pieceSet,
                     onChanged: (set) => settingsNotifier.setPieceSet(set),
@@ -116,14 +116,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     value: settings.showCoordinates,
                     onChanged: (_) => settingsNotifier.toggleCoordinates(),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Show Legal Moves',
                     subtitle: 'Highlight available moves',
                     value: settings.showLegalMoves,
                     onChanged: (_) => settingsNotifier.toggleLegalMoves(),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Show Last Move',
                     subtitle: 'Highlight the last played move',
@@ -146,14 +146,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onChanged:
                         (speed) => settingsNotifier.setAnimationSpeed(speed),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Sound Effects',
                     subtitle: 'Play sounds for moves',
                     value: settings.soundEnabled,
                     onChanged: (_) => settingsNotifier.toggleSound(),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Vibration',
                     subtitle: 'Haptic feedback on moves',
@@ -178,7 +178,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onChanged: (_) =>
                         settingsNotifier.toggleDailyPuzzleNotification(),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Streak Protection Nudges',
                     subtitle: 'Local warning before your daily streak resets',
@@ -196,12 +196,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Our Other Games',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
                     ),
                     subtitle: Text(
                       'Explore ad-free games by Karna Digital',
                       style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
                     ),
@@ -209,22 +209,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Icons.sports_esports_outlined,
                       color: AppTheme.primaryColor,
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                     onTap: () => _launchDeveloperPage(),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   ListTile(
                     title: Text(
                       'Rate Us on Play Store',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
                     ),
                     subtitle: Text(
                       'Love the app? Leave a review!',
                       style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
                     ),
@@ -232,22 +232,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Icons.star_outline,
                       color: AppTheme.primaryColor,
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                     onTap: () => _launchPlayStore(),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   ListTile(
                     title: Text(
                       'Welcome Tutorial & Skill Setup',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
                     ),
                     subtitle: Text(
                       'Revisit onboarding guide & AI difficulty setup',
                       style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
                     ),
@@ -255,9 +255,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Icons.school_outlined,
                       color: AppTheme.primaryColor,
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                     onTap: () {
                       Navigator.push(
@@ -268,16 +268,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       );
                     },
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   ListTile(
                     title: Text(
                       'Export Diagnostic Log',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
                     ),
                     subtitle: Text(
                       'Share local crash log via native share sheet',
                       style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
                     ),
@@ -285,25 +285,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Icons.bug_report_outlined,
                       color: AppTheme.primaryColor,
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.share_outlined,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                     onTap: () => _exportDiagnosticLog(context),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   ListTile(
                     title: Text(
                       'Open Source & Credits',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
                     ),
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.info_outline,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                     onTap:
                         () => Navigator.push(
@@ -313,19 +313,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                         ),
                   ),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _InfoRow(title: 'App Version', value: _version),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _InfoRow(title: 'Engine', value: 'Stockfish 16'),
-                  const Divider(color: AppTheme.borderColor),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   ListTile(
                     title: Text(
                       'Licenses',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimary),
+                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                     onTap: () => _showLicenses(context),
                   ),
@@ -470,7 +470,7 @@ class _BoardThemeSelector extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
             ),
           ),
         ),
@@ -534,7 +534,7 @@ class _BoardThemeSelector extends StatelessWidget {
                         color:
                             isSelected
                                 ? AppTheme.primaryColor
-                                : AppTheme.textSecondary,
+                                : AppTheme.textSecondaryFor(context),
                       ),
                     ),
                   ],
@@ -568,7 +568,7 @@ class _PieceSetSelector extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
             ),
           ),
         ),
@@ -624,7 +624,7 @@ class _PieceSetSelector extends StatelessWidget {
                           color:
                               isSelected
                                   ? AppTheme.primaryColor
-                                  : AppTheme.textSecondary,
+                                  : AppTheme.textSecondaryFor(context),
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -665,14 +665,14 @@ class _AnimationSpeedSelector extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
             ),
           ),
           const SizedBox(height: 12),
           Container(
             height: 40,
             decoration: BoxDecoration(
-              color: AppTheme.surfaceDark,
+              color: AppTheme.surfaceColor(context),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -697,7 +697,7 @@ class _AnimationSpeedSelector extends StatelessWidget {
                               color:
                                   isSelected
                                       ? Colors.white
-                                      : AppTheme.textSecondary,
+                                      : AppTheme.textSecondaryFor(context),
                               fontWeight:
                                   isSelected
                                       ? FontWeight.bold
@@ -737,25 +737,25 @@ class _SwitchSetting extends StatelessWidget {
       title: Text(
         title,
         style: GoogleFonts.inter(
-          color: AppTheme.textPrimary,
+          color: AppTheme.textPrimaryFor(context),
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 12),
+        style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context), fontSize: 12),
       ),
       value: value,
       onChanged: onChanged,
       thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
         return states.contains(WidgetState.selected)
             ? AppTheme.primaryColor
-            : AppTheme.textHint;
+            : AppTheme.textHintFor(context);
       }),
       trackColor: WidgetStateProperty.resolveWith<Color?>((states) {
         return states.contains(WidgetState.selected)
             ? AppTheme.primaryColor.withValues(alpha: 0.3)
-            : AppTheme.surfaceDark;
+            : AppTheme.surfaceColor(context);
       }),
     );
   }
@@ -775,11 +775,11 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: GoogleFonts.inter(color: AppTheme.textPrimary)),
+          Text(title, style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context))),
           Text(
             value,
             style: GoogleFonts.inter(
-              color: AppTheme.textSecondary,
+              color: AppTheme.textSecondaryFor(context),
               fontWeight: FontWeight.w500,
             ),
           ),

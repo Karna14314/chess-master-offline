@@ -33,8 +33,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          border: const Border(
-            top: BorderSide(color: Colors.white10, width: 0.5),
+          border: Border(
+            top: BorderSide(color: AppTheme.borderColorFor(context).withValues(alpha: 0.2), width: 0.5),
           ),
           boxShadow: [
             BoxShadow(

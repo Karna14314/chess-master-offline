@@ -73,26 +73,28 @@ class MoreScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Settings & More',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'Customize your experience & explore games',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppTheme.textSecondary
-                        : AppTheme.textSecondaryLight,
-                  ),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Settings & More',
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                'Customize your experience & explore games',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppTheme.textSecondary
+                          : AppTheme.textSecondaryLight,
+                    ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -279,20 +281,11 @@ class MoreScreen extends ConsumerWidget {
               children: [
                 _buildGameTile(
                   context,
-                  title: 'Mahjong Master Offline',
-                  subtitle: 'Classic tile-matching puzzle, 100% ad-free',
-                  icon: Icons.grid_view_rounded,
-                  color: Colors.amber,
-                  packageName: 'com.karna.mahjong',
-                ),
-                Divider(height: 1, color: borderColor),
-                _buildGameTile(
-                  context,
                   title: 'Block Puzzle Master',
                   subtitle: 'Addictive block logic challenge offline',
                   icon: Icons.category_rounded,
                   color: Colors.deepOrange,
-                  packageName: 'com.karna.blockpuzzle',
+                  packageName: 'com.karnadigital.blockpuzzle',
                 ),
                 Divider(height: 1, color: borderColor),
                 _buildGameTile(
@@ -301,7 +294,7 @@ class MoreScreen extends ConsumerWidget {
                   subtitle: 'Pure logic Sudoku with unlimited puzzles',
                   icon: Icons.filter_9_plus_rounded,
                   color: Colors.teal,
-                  packageName: 'com.karna.sudoku',
+                  packageName: 'com.karnadigital.sudoku',
                 ),
                 Divider(height: 1, color: borderColor),
                 ListTile(
@@ -615,7 +608,7 @@ class MoreScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppTheme.textHint),
+              Icon(Icons.chevron_right, color: AppTheme.textHintFor(context)),
             ],
           ),
         ),

@@ -48,7 +48,7 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                 ),
               ),
               const SizedBox(height: 8),
@@ -56,7 +56,7 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                 'Analyze games from any chess platform. Paste the PGN string below.',
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.textSecondaryFor(context),
                   height: 1.5,
                 ),
               ),
@@ -67,13 +67,13 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.cardDark,
+                    color: AppTheme.cardColor(context),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color:
                           _errorMessage != null
                               ? AppTheme.error
-                              : AppTheme.borderColor,
+                              : AppTheme.borderColorFor(context),
                     ),
                   ),
                   child: TextField(
@@ -82,14 +82,14 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                     expands: true,
                     style: GoogleFonts.spaceMono(
                       fontSize: 13,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.textPrimaryFor(context),
                     ),
                     decoration: InputDecoration(
                       hintText:
                           '[Event "Casual Game"]\n[Site "?"]\n[Date "2024.01.01"]\n...\n\n1. e4 e5 2. Nf3 Nc6 ...',
                       hintStyle: GoogleFonts.spaceMono(
                         fontSize: 13,
-                        color: AppTheme.textHint,
+                        color: AppTheme.textHintFor(context),
                       ),
                       border: InputBorder.none,
                     ),

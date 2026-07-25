@@ -49,7 +49,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Error loading puzzle history',
-                    style: GoogleFonts.inter(color: AppTheme.textSecondary),
+                    style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -76,13 +76,13 @@ class PuzzleHistoryScreen extends ConsumerWidget {
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Puzzles you tackle will appear here',
-                    style: GoogleFonts.inter(color: AppTheme.textHint),
+                    style: GoogleFonts.inter(color: AppTheme.textHintFor(context)),
                   ),
                 ],
               ),
@@ -93,7 +93,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: _buildStatsCard(statsAsync),
+                child: _buildStatsCard(context, statsAsync),
               ),
               Expanded(
                 child: ListView.builder(
@@ -112,11 +112,11 @@ class PuzzleHistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsCard(PuzzleStats stats) {
+  Widget _buildStatsCard(BuildContext context, PuzzleStats stats) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: AppTheme.surfaceColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
         boxShadow: [
@@ -135,7 +135,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
             ),
           ),
           const SizedBox(height: 16),
@@ -143,18 +143,21 @@ class PuzzleHistoryScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatItem(
+                context,
                 'Rating',
                 stats.currentRating.toString(),
                 Icons.star,
                 Colors.amber,
               ),
               _buildStatItem(
+                context,
                 'Solved',
                 stats.puzzlesSolved.toString(),
                 Icons.check_circle,
                 Colors.green,
               ),
               _buildStatItem(
+                context,
                 'Success',
                 '${stats.successRate.toStringAsFixed(1)}%',
                 Icons.pie_chart,
@@ -168,6 +171,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildStatItem(
+    BuildContext context,
     String label,
     String value,
     IconData icon,
@@ -182,13 +186,13 @@ class PuzzleHistoryScreen extends ConsumerWidget {
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryFor(context),
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textHint),
+          style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textHintFor(context)),
         ),
       ],
     );
@@ -231,7 +235,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.cardDark,
+          color: AppTheme.cardColor(context),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
@@ -255,7 +259,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.textPrimaryFor(context),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -263,7 +267,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
                     dateFormat.format(lastAttempted),
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: AppTheme.textHint,
+                      color: AppTheme.textHintFor(context),
                     ),
                   ),
                 ],
@@ -285,7 +289,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
                   '$attempts attempt${attempts == 1 ? '' : 's'}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppTheme.textHint,
+                    color: AppTheme.textHintFor(context),
                   ),
                 ),
               ],

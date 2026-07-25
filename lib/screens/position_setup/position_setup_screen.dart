@@ -256,7 +256,7 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
   Widget _buildBoard(BoardTheme theme) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.cardDark, width: 2),
+        border: Border.all(color: AppTheme.cardColor(context), width: 2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: ClipRRect(
@@ -300,7 +300,7 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      color: AppTheme.cardDark,
+      color: AppTheme.cardColor(context),
       child: Column(
         children: [
           Row(
@@ -332,7 +332,7 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : AppTheme.surfaceDark,
+          color: isSelected ? AppTheme.primaryColor : AppTheme.surfaceColor(context),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? AppTheme.primaryColor : Colors.transparent,
@@ -361,7 +361,7 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.red : AppTheme.surfaceDark,
+          color: isSelected ? Colors.red : AppTheme.surfaceColor(context),
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Center(child: Icon(Icons.close, color: Colors.white)),
@@ -491,7 +491,7 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: AppTheme.cardDark,
+            fillColor: AppTheme.cardColor(context),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onSubmitted: (fen) {

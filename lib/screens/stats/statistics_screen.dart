@@ -59,7 +59,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   context: context,
                   builder:
                       (ctx) => AlertDialog(
-                        backgroundColor: AppTheme.surfaceDark,
+                        backgroundColor: AppTheme.surfaceColor(context),
                         title: const Text('Reset Statistics'),
                         content: const Text(
                           'Are you sure you want to reset all statistics? This cannot be undone.',
@@ -204,7 +204,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -300,7 +300,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -352,7 +352,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -449,7 +449,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -496,7 +496,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -539,15 +539,15 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Center(
         child: Column(
           children: [
-            const Icon(Icons.bar_chart, size: 48, color: AppTheme.textHint),
+            Icon(Icons.bar_chart, size: 48, color: AppTheme.textHintFor(context)),
             const SizedBox(height: 12),
-            Text(message, style: const TextStyle(color: AppTheme.textHint)),
+            Text(message, style: TextStyle(color: AppTheme.textHintFor(context))),
           ],
         ),
       ),
@@ -573,10 +573,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     final achievements = ref.watch(achievementProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardLight;
-    final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderLight;
+    final cardColor = isDark ? AppTheme.cardColor(context) : AppTheme.cardLight;
+    final borderColor = isDark ? AppTheme.borderColorFor(context) : AppTheme.borderLight;
     final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
-    final textSecondary = isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
+    final textSecondary = isDark ? AppTheme.textSecondaryFor(context) : AppTheme.textSecondaryLight;
 
     final unlockedCount = achievements.where((a) => a.isUnlocked).length;
 
@@ -685,7 +685,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -780,7 +780,7 @@ class _DetailRow extends StatelessWidget {
             label,
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondaryFor(context)),
           ),
           Text(
             value,

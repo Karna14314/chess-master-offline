@@ -38,7 +38,7 @@ class ChessTimerWidget extends ConsumerWidget {
         vertical: compact ? 4 : 6,
       ),
       decoration: BoxDecoration(
-        color: _getBackgroundColor(isActive, isLowTime, isTimedOut),
+        color: _getBackgroundColor(context, isActive, isLowTime, isTimedOut),
         borderRadius: BorderRadius.circular(8),
         border:
             isCurrentTurn && timerState.isRunning
@@ -64,7 +64,7 @@ class ChessTimerWidget extends ConsumerWidget {
               child: Icon(
                 Icons.warning_amber_rounded,
                 size: compact ? 14 : 16,
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
               ),
             ),
           Text(
@@ -73,7 +73,7 @@ class ChessTimerWidget extends ConsumerWidget {
               fontFamily: 'monospace',
               fontSize: compact ? 14 : 18,
               fontWeight: FontWeight.bold,
-              color: _getTextColor(isActive, isLowTime, isTimedOut),
+              color: _getTextColor(context, isActive, isLowTime, isTimedOut),
             ),
           ),
         ],
@@ -88,7 +88,7 @@ class ChessTimerWidget extends ConsumerWidget {
         vertical: compact ? 4 : 6,
       ),
       decoration: BoxDecoration(
-        color: isActive ? AppTheme.primaryColor : AppTheme.cardDark,
+        color: isActive ? AppTheme.primaryColor : AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -96,13 +96,13 @@ class ChessTimerWidget extends ConsumerWidget {
         style: TextStyle(
           fontFamily: 'monospace',
           fontSize: compact ? 14 : 18,
-          color: isActive ? AppTheme.textPrimary : AppTheme.textSecondary,
+          color: isActive ? AppTheme.textPrimaryFor(context) : AppTheme.textSecondaryFor(context),
         ),
       ),
     );
   }
 
-  Color _getBackgroundColor(bool isActive, bool isLowTime, bool isTimedOut) {
+  Color _getBackgroundColor(BuildContext context, bool isActive, bool isLowTime, bool isTimedOut) {
     if (isTimedOut) {
       return AppTheme.error.withValues(alpha: 0.8);
     }
@@ -112,14 +112,14 @@ class ChessTimerWidget extends ConsumerWidget {
     if (isActive) {
       return AppTheme.primaryColor;
     }
-    return AppTheme.cardDark;
+    return AppTheme.cardColor(context);
   }
 
-  Color _getTextColor(bool isActive, bool isLowTime, bool isTimedOut) {
+  Color _getTextColor(BuildContext context, bool isActive, bool isLowTime, bool isTimedOut) {
     if (isTimedOut || isLowTime || isActive) {
-      return AppTheme.textPrimary;
+      return AppTheme.textPrimaryFor(context);
     }
-    return AppTheme.textSecondary;
+    return AppTheme.textSecondaryFor(context);
   }
 }
 
@@ -156,7 +156,7 @@ class DualTimerWidget extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceDark,
+              color: AppTheme.surfaceColor(context),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Text(

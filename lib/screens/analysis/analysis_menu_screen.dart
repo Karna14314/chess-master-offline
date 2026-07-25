@@ -42,7 +42,7 @@ class AnalysisMenuScreen extends ConsumerWidget {
                     'Analyze your games using Stockfish.',
                     style: GoogleFonts.inter(
                       fontSize: 16,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -146,14 +146,14 @@ class AnalysisMenuScreen extends ConsumerWidget {
                           Icon(
                             Icons.query_stats_outlined,
                             size: 64,
-                            color: AppTheme.textHint.withValues(alpha: 0.5),
+                            color: AppTheme.textHintFor(context).withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No analyzed games yet',
                             style: GoogleFonts.inter(
                               fontSize: 18,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.textSecondaryFor(context),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -162,7 +162,7 @@ class AnalysisMenuScreen extends ConsumerWidget {
                             'Play a game or import a PGN to get started.',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: AppTheme.textHint,
+                              color: AppTheme.textHintFor(context),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -230,7 +230,7 @@ class _SectionHeader extends StatelessWidget {
         style: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: AppTheme.textPrimary,
+          color: AppTheme.textPrimaryFor(context),
         ),
       ),
     );
@@ -262,9 +262,9 @@ class _AnalysisOptionCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.cardDark,
+            color: AppTheme.cardColor(context),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.borderColor),
+            border: Border.all(color: AppTheme.borderColorFor(context)),
           ),
           child: Row(
             children: [
@@ -286,7 +286,7 @@ class _AnalysisOptionCard extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -294,14 +294,14 @@ class _AnalysisOptionCard extends StatelessWidget {
                       subtitle,
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryFor(context),
                         height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: AppTheme.textHint, size: 28),
+              Icon(Icons.chevron_right, color: AppTheme.textHintFor(context), size: 28),
             ],
           ),
         ),
@@ -358,16 +358,16 @@ class _SavedGameCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.cardDark,
+            color: AppTheme.cardColor(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColor),
+            border: Border.all(color: AppTheme.borderColorFor(context)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark,
+                  color: AppTheme.surfaceColor(context),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -386,7 +386,7 @@ class _SavedGameCard extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -394,7 +394,7 @@ class _SavedGameCard extends StatelessWidget {
                       '$result • ${game.moveHistory.length} moves',
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryFor(context),
                       ),
                     ),
                   ],
@@ -417,7 +417,7 @@ class _SavedGameCard extends StatelessWidget {
                     dateStr,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: AppTheme.textHint,
+                      color: AppTheme.textHintFor(context),
                     ),
                   ),
                 ],

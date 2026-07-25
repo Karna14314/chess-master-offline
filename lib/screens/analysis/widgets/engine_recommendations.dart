@@ -33,9 +33,9 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -54,7 +54,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
                 Text(
                   'Engine Analysis',
                   style: GoogleFonts.inter(
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.textPrimaryFor(context),
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -74,7 +74,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
                 Text(
                   'Depth $currentDepth',
                   style: GoogleFonts.inter(
-                    color: AppTheme.textHint,
+                    color: AppTheme.textHintFor(context),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -82,7 +82,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
               ],
             ),
           ),
-          const Divider(height: 1, color: AppTheme.surfaceDark),
+          Divider(height: 1, color: AppTheme.surfaceColor(context)),
 
           // Lines
           if (widget.lines.isEmpty && widget.isLoading)
@@ -91,7 +91,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
               child: Center(
                 child: Text(
                   'Analyzing position...',
-                  style: GoogleFonts.inter(color: AppTheme.textHint),
+                  style: GoogleFonts.inter(color: AppTheme.textHintFor(context)),
                 ),
               ),
             )
@@ -146,9 +146,9 @@ class _EngineLineRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: AppTheme.surfaceDark, width: 1),
+          bottom: BorderSide(color: AppTheme.surfaceColor(context), width: 1),
         ),
       ),
       child: Row(
@@ -161,7 +161,7 @@ class _EngineLineRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: evalBgColor,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppTheme.borderColor),
+              border: Border.all(color: AppTheme.borderColorFor(context)),
             ),
             child: Center(
               child: Text(
@@ -193,7 +193,7 @@ class _EngineLineRow extends StatelessWidget {
                   Text(
                     continuation,
                     style: GoogleFonts.spaceMono(
-                      color: AppTheme.textHint,
+                      color: AppTheme.textHintFor(context),
                       fontSize: 13,
                     ),
                     maxLines: 1,

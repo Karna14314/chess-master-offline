@@ -57,12 +57,12 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
           'Puzzles',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryFor(context),
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history, color: AppTheme.textSecondary),
+            icon: Icon(Icons.history, color: AppTheme.textSecondaryFor(context)),
             onPressed: () {
               Navigator.push(
                 context,
@@ -89,7 +89,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               Text(
                 'Quick Play',
                 style: GoogleFonts.inter(
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -124,7 +124,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               Text(
                 'Custom Range',
                 style: GoogleFonts.inter(
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -143,7 +143,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               Text(
                 'By Theme',
                 style: GoogleFonts.inter(
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -172,9 +172,9 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
@@ -206,14 +206,14 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
             title,
             style: GoogleFonts.inter(
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-              fontSize: 16,
-            ),
+            color: AppTheme.textPrimaryFor(context),
+            fontSize: 16,
           ),
-          subtitle: Text(
-            subtitle,
-            style: GoogleFonts.inter(
-              color: AppTheme.textSecondary,
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.inter(
+            color: AppTheme.textSecondaryFor(context),
               fontSize: 13,
             ),
           ),
@@ -280,9 +280,9 @@ class _StatsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: AppTheme.surfaceColor(context),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
         boxShadow: [
           BoxShadow(
             color: AppTheme.primaryColor.withValues(alpha: 0.05),
@@ -301,7 +301,7 @@ class _StatsCard extends StatelessWidget {
             label: 'Rating',
             color: Colors.amber,
           ),
-          Container(width: 1, height: 40, color: AppTheme.borderColor),
+          Container(width: 1, height: 40, color: AppTheme.borderColorFor(context)),
           _buildStatItem(
             context,
             icon: Icons.check_circle_outline,
@@ -309,7 +309,7 @@ class _StatsCard extends StatelessWidget {
             label: 'Solved',
             color: Colors.green,
           ),
-          Container(width: 1, height: 40, color: AppTheme.borderColor),
+          Container(width: 1, height: 40, color: AppTheme.borderColorFor(context)),
           _buildStatItem(
             context,
             icon: Icons.analytics_outlined,
@@ -339,14 +339,14 @@ class _StatsCard extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryFor(context),
           ),
         ),
         Text(
           label,
           style: GoogleFonts.inter(
             fontSize: 12,
-            color: AppTheme.textSecondary,
+            color: AppTheme.textSecondaryFor(context),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -363,7 +363,7 @@ class _StatsCardLoading extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
       ),
       height: 120,
@@ -393,9 +393,9 @@ class _EloRangeSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Column(
         children: [
@@ -405,7 +405,7 @@ class _EloRangeSelector extends StatelessWidget {
               Text(
                 '$minElo',
                 style: GoogleFonts.inter(
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -413,14 +413,14 @@ class _EloRangeSelector extends StatelessWidget {
               Text(
                 'Rating Range',
                 style: GoogleFonts.inter(
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.textSecondaryFor(context),
                   fontSize: 12,
                 ),
               ),
               Text(
                 '$maxElo',
                 style: GoogleFonts.inter(
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -434,7 +434,7 @@ class _EloRangeSelector extends StatelessWidget {
             max: 2500,
             divisions: 42,
             activeColor: AppTheme.primaryColor,
-            inactiveColor: AppTheme.surfaceDark,
+            inactiveColor: AppTheme.surfaceColor(context),
             onChanged: (values) {
               onMinChanged(values.start.round());
               onMaxChanged(values.end.round());
@@ -497,11 +497,11 @@ class _ThemeSelector extends StatelessWidget {
                       selected: isSelected,
                       onSelected: (_) => onThemeSelected(theme),
                       selectedColor: AppTheme.primaryColor,
-                      backgroundColor: AppTheme.cardDark,
-                      disabledColor: AppTheme.cardDark,
+                      backgroundColor: AppTheme.cardColor(context),
+                      disabledColor: AppTheme.cardColor(context),
                       labelStyle: GoogleFonts.inter(
                         color:
-                            isSelected ? Colors.white : AppTheme.textSecondary,
+                            isSelected ? Colors.white : AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -511,7 +511,7 @@ class _ThemeSelector extends StatelessWidget {
                           color:
                               isSelected
                                   ? Colors.transparent
-                                  : AppTheme.borderColor,
+                                  : AppTheme.borderColorFor(context),
                         ),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -572,7 +572,7 @@ class _StatsCardError extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
       ),
@@ -591,7 +591,7 @@ class _StatsCardError extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             error,
-            style: GoogleFonts.inter(color: AppTheme.textHint, fontSize: 12),
+            style: GoogleFonts.inter(color: AppTheme.textHintFor(context), fontSize: 12),
             textAlign: TextAlign.center,
           ),
         ],

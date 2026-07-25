@@ -43,13 +43,13 @@ class _AboutScreenState extends State<AboutScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
+          icon: Icon(Icons.arrow_back, color: AppTheme.textPrimaryFor(context)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Open Source & Credits',
           style: GoogleFonts.inter(
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryFor(context),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -62,7 +62,7 @@ class _AboutScreenState extends State<AboutScreen> {
             Text(
               'About Chess Master',
               style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -71,7 +71,7 @@ class _AboutScreenState extends State<AboutScreen> {
             Text(
               'Version: $_version',
               style: GoogleFonts.inter(
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryFor(context),
                 fontSize: 16,
               ),
             ),
@@ -103,7 +103,7 @@ class _AboutScreenState extends State<AboutScreen> {
             Text(
               'Lichess is a free and open-source chess platform. We gratefully acknowledge the Lichess community for making this dataset publicly available.',
               style: GoogleFonts.inter(
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryFor(context),
                 fontSize: 16,
               ),
             ),
@@ -137,7 +137,7 @@ class _AboutScreenState extends State<AboutScreen> {
         Text(
           title,
           style: GoogleFonts.inter(
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryFor(context),
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -146,7 +146,7 @@ class _AboutScreenState extends State<AboutScreen> {
         Text(
           content,
           style: GoogleFonts.inter(
-            color: AppTheme.textSecondary,
+            color: AppTheme.textSecondaryFor(context),
             fontSize: 16,
             height: 1.5,
           ),

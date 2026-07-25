@@ -37,9 +37,9 @@ class MoveHistoryList extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,7 +55,7 @@ class MoveHistoryList extends StatelessWidget {
               Text(
                 'Move History',
                 style: GoogleFonts.inter(
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -63,7 +63,7 @@ class MoveHistoryList extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: AppTheme.surfaceDark),
+          Divider(height: 1, color: AppTheme.surfaceColor(context)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -74,7 +74,7 @@ class MoveHistoryList extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark.withValues(alpha: 0.5),
+                  color: AppTheme.surfaceColor(context).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -85,7 +85,7 @@ class MoveHistoryList extends StatelessWidget {
                       child: Text(
                         '$moveNumber.',
                         style: GoogleFonts.spaceMono(
-                          color: AppTheme.textHint,
+                          color: AppTheme.textHintFor(context),
                           fontSize: 13,
                         ),
                       ),
@@ -142,7 +142,7 @@ class _MoveChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color textColor = isSelected ? Colors.white : AppTheme.textPrimary;
+    Color textColor = isSelected ? Colors.white : AppTheme.textPrimaryFor(context);
     Color bgColor = isSelected ? AppTheme.primaryColor : Colors.transparent;
 
     if (analysis != null && !isSelected) {

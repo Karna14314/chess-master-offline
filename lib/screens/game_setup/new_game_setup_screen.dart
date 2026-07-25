@@ -41,7 +41,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
               style: GoogleFonts.spaceGrotesk(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppTheme.textPrimaryFor(context),
               ),
             ),
             centerTitle: true,
@@ -126,7 +126,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
       style: GoogleFonts.spaceGrotesk(
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: Colors.white70,
+        color: AppTheme.textSecondaryFor(context),
         letterSpacing: 0.5,
       ),
     );
@@ -145,7 +145,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
               'Difficulty: Level ${_difficultyLevel.toInt()}',
               style: GoogleFonts.spaceGrotesk(
                 fontSize: 16,
-                color: Colors.white,
+                color: AppTheme.textPrimaryFor(context),
               ),
             ),
             Text(
@@ -162,8 +162,8 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: AppTheme.primaryColor,
-            inactiveTrackColor: Colors.white12,
-            thumbColor: Colors.white,
+            inactiveTrackColor: AppTheme.borderColorFor(context).withValues(alpha: 0.3),
+            thumbColor: Theme.of(context).colorScheme.onSurface,
             overlayColor: AppTheme.primaryColor.withValues(alpha: 0.2),
             valueIndicatorColor: AppTheme.primaryColor,
             trackHeight: 6,
@@ -224,17 +224,17 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
               color:
                   isSelected
                       ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.05),
+                      : AppTheme.cardColor(context).withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppTheme.primaryColor : Colors.white12,
+                color: isSelected ? AppTheme.primaryColor : AppTheme.borderColorFor(context).withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
             child: Text(
               timer.displayString,
               style: GoogleFonts.spaceGrotesk(
-                color: isSelected ? Colors.white : Colors.white70,
+                color: isSelected ? AppTheme.textPrimaryFor(context) : AppTheme.textSecondaryFor(context),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
             ),
@@ -306,7 +306,7 @@ class _ColorCircle extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.white12,
+            color: isSelected ? AppTheme.primaryColor : AppTheme.borderColorFor(context).withValues(alpha: 0.3),
             width: isSelected ? 3 : 1,
           ),
           boxShadow:

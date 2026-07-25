@@ -134,7 +134,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           if (state.isAnalyzing)
             LinearProgressIndicator(
               value: state.analysisProgress,
-              backgroundColor: AppTheme.surfaceDark,
+              backgroundColor: AppTheme.surfaceColor(context),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppTheme.primaryColor,
               ),

@@ -70,7 +70,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
               _getFormattedDate(),
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryFor(context),
               ),
             ),
           ],
@@ -111,6 +111,8 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
       return _buildCompletionScreen(state);
     }
 
+    final isFailed = state.state == PuzzleState.incorrect;
+
     return Column(
       children: [
         // Puzzle info
@@ -119,22 +121,23 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
           child: _buildDailyPuzzleInfo(state),
         ),
 
-        // To play indicator
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppTheme.cardDark,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            state.isWhiteTurn ? "White to Move" : "Black to Move",
-            style: GoogleFonts.inter(
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.w600,
+        // To play indicator (hide when failed)
+        if (!isFailed)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppTheme.cardColor(context),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              state.isWhiteTurn ? "White to Move" : "Black to Move",
+              style: GoogleFonts.inter(
+                color: AppTheme.textPrimaryFor(context),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 16),
+        if (!isFailed) const SizedBox(height: 16),
 
         // Status messages taking a fixed height to prevent board shaking
         SizedBox(
@@ -162,7 +165,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
           ),
         ),
 
-        // Controls (only hint and solution, no skip)
+        // Controls
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
           child: _buildDailyControls(state),
@@ -284,6 +287,85 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
 
   Widget _buildDailyControls(PuzzleGameState state) {
     final notifier = ref.read(puzzleProvider.notifier);
+    final isFailed = state.state == PuzzleState.incorrect;
+    final isCompleted = state.state == PuzzleState.completed;
+
+    if (isFailed) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => notifier.retryPuzzle(),
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text('Retry'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.textPrimaryFor(context),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _showAutoPlaySolution(state),
+              icon: const Icon(Icons.play_arrow, size: 20),
+              label: const Text('Solution'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (isCompleted) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text('Retry'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.textPrimaryFor(context),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.check_circle, size: 20),
+              label: const Text('Done'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
     return Row(
       children: [
@@ -367,7 +449,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
               style: GoogleFonts.inter(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
               ),
             ),
             const SizedBox(height: 12),
@@ -375,7 +457,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
               'You completed today\'s puzzle!',
               style: GoogleFonts.inter(
                 fontSize: 16,
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryFor(context),
               ),
               textAlign: TextAlign.center,
             ),
@@ -384,19 +466,19 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppTheme.cardDark,
+                color: AppTheme.cardColor(context),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.borderColor),
+                border: Border.all(color: AppTheme.borderColorFor(context)),
               ),
               child: Column(
                 children: [
                   _buildStatRow('Puzzle Rating', '${puzzle.rating}'),
-                  const Divider(height: 24, color: AppTheme.borderColor),
+                  Divider(height: 24, color: AppTheme.borderColorFor(context)),
                   _buildStatRow(
                     'Your Accuracy',
                     '${accuracy.toStringAsFixed(0)}%',
                   ),
-                  const Divider(height: 24, color: AppTheme.borderColor),
+                  Divider(height: 24, color: AppTheme.borderColorFor(context)),
                   _buildStatRow('Hints Used', '${state.hintsUsed}'),
                 ],
               ),
@@ -435,12 +517,12 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 14),
+          style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context), fontSize: 14),
         ),
         Text(
           value,
           style: GoogleFonts.inter(
-            color: AppTheme.textPrimary,
+            color: AppTheme.textPrimaryFor(context),
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -549,7 +631,7 @@ class _AutoPlaySolutionScreenState extends State<_AutoPlaySolutionScreen> {
             child: Text(
               'Move ${_currentMoveIndex + 1} of ${widget.puzzle.moves.length}',
               style: GoogleFonts.inter(
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryFor(context),
                 fontSize: 14,
               ),
             ),

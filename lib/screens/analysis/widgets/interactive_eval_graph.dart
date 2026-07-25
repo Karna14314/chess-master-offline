@@ -23,7 +23,7 @@ class InteractiveEvalGraph extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           'No evaluation data',
-          style: GoogleFonts.inter(color: AppTheme.textSecondary),
+          style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
         ),
       );
     }
@@ -39,9 +39,9 @@ class InteractiveEvalGraph extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.only(right: 16, top: 16, bottom: 8, left: 8),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +51,7 @@ class InteractiveEvalGraph extends StatelessWidget {
             child: Text(
               'Evaluation Graph',
               style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -71,12 +71,12 @@ class InteractiveEvalGraph extends StatelessWidget {
                   getDrawingHorizontalLine: (value) {
                     if (value == 0) {
                       return FlLine(
-                        color: AppTheme.textHint.withValues(alpha: 0.3),
+                        color: AppTheme.textHintFor(context).withValues(alpha: 0.3),
                         strokeWidth: 1.5,
                       );
                     }
                     return FlLine(
-                      color: AppTheme.textHint.withValues(alpha: 0.1),
+                      color: AppTheme.textHintFor(context).withValues(alpha: 0.1),
                       strokeWidth: 1,
                       dashArray: [5, 5],
                     );
@@ -105,7 +105,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                           child: Text(
                             '$moveNum',
                             style: GoogleFonts.inter(
-                              color: AppTheme.textHint,
+                              color: AppTheme.textHintFor(context),
                               fontSize: 10,
                             ),
                           ),
@@ -127,7 +127,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                           child: Text(
                             value.toInt().toString(),
                             style: GoogleFonts.inter(
-                              color: AppTheme.textHint,
+                              color: AppTheme.textHintFor(context),
                               fontSize: 10,
                             ),
                           ),
@@ -202,7 +202,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                     }
                   },
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (touchedSpot) => AppTheme.surfaceDark,
+                    getTooltipColor: (touchedSpot) => AppTheme.surfaceColor(context),
                     tooltipRoundedRadius: 12,
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
@@ -225,7 +225,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                   horizontalLines: [
                     HorizontalLine(
                       y: 0,
-                      color: AppTheme.textHint.withValues(alpha: 0.5),
+                      color: AppTheme.textHintFor(context).withValues(alpha: 0.5),
                       strokeWidth: 1.5,
                     ),
                   ],

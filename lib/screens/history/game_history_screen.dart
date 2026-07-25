@@ -32,7 +32,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.surfaceColor(context),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -231,21 +231,21 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
           Icon(
             Icons.history,
             size: 64,
-            color: AppTheme.textSecondary.withValues(alpha: 0.5),
+            color: AppTheme.textSecondaryFor(context).withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
             'No games found',
             style: Theme.of(
               context,
-            ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondary),
+            ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondaryFor(context)),
           ),
           const SizedBox(height: 8),
           Text(
             'Try changing your filters',
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textHint),
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textHintFor(context)),
           ),
         ],
       ),
@@ -307,7 +307,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
             date,
             style: Theme.of(
               context,
-            ).textTheme.titleSmall?.copyWith(color: AppTheme.textSecondary),
+            ).textTheme.titleSmall?.copyWith(color: AppTheme.textSecondaryFor(context)),
           ),
         ],
       ),
@@ -504,11 +504,11 @@ class _FilterChip extends StatelessWidget {
       label: Text(label),
       selected: selected,
       onSelected: onSelected,
-      backgroundColor: AppTheme.cardDark,
+      backgroundColor: AppTheme.cardColor(context),
       selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
       checkmarkColor: AppTheme.primaryColor,
       labelStyle: TextStyle(
-        color: selected ? AppTheme.primaryColor : AppTheme.textPrimary,
+        color: selected ? AppTheme.primaryColor : AppTheme.textPrimaryFor(context),
       ),
     );
   }
@@ -579,7 +579,7 @@ class _GameCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: AppTheme.cardDark,
+      color: AppTheme.cardColor(context),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -655,7 +655,7 @@ class _GameCard extends StatelessWidget {
                       '${game.moveHistory.length} moves • ${game.playerColor == PlayerColor.white ? '♔' : '♚'} as ${game.playerColor.name.capitalize()} • ${timeFormat.format(dateTime)}',
                       style: Theme.of(
                         context,
-                      ).textTheme.bodySmall?.copyWith(color: AppTheme.textHint),
+                      ).textTheme.bodySmall?.copyWith(color: AppTheme.textHintFor(context)),
                     ),
                   ],
                 ),

@@ -53,7 +53,7 @@ class CurrentMoveDetails extends StatelessWidget {
                           style: GoogleFonts.spaceMono(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
+                            color: AppTheme.textPrimaryFor(context),
                           ),
                         ),
                         if (classification.symbol.isNotEmpty) ...[
@@ -91,7 +91,7 @@ class CurrentMoveDetails extends StatelessWidget {
                       'Depth ${analysis!.engineLines.first.depth}',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: AppTheme.textHint,
+                        color: AppTheme.textHintFor(context),
                       ),
                     ),
                 ],
@@ -143,7 +143,7 @@ class _EvalChangeWidget extends StatelessWidget {
         style: GoogleFonts.spaceMono(
           fontSize: 14,
           fontWeight: FontWeight.bold,
-          color: AppTheme.textSecondary,
+          color: AppTheme.textSecondaryFor(context),
         ),
       );
     }

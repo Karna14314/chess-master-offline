@@ -213,9 +213,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           child: Container(
             margin: const EdgeInsets.only(top: 8, bottom: 8, right: 8),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceDark.withValues(alpha: 0.5),
+              color: AppTheme.surfaceColor(context).withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.borderColor),
+              border: Border.all(color: AppTheme.borderColorFor(context)),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -234,7 +234,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                               : "Friend",
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
+                            color: AppTheme.textPrimaryFor(context),
                             fontSize: 11,
                           ),
                           textAlign: TextAlign.center,
@@ -257,9 +257,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.undo,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryFor(context),
                           size: 20,
                         ),
                         onPressed:
@@ -273,9 +273,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       ),
                       const SizedBox(height: 8),
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.lightbulb_outline,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryFor(context),
                           size: 20,
                         ),
                         onPressed:
@@ -306,7 +306,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           "You",
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
+                            color: AppTheme.textPrimaryFor(context),
                             fontSize: 11,
                           ),
                           textAlign: TextAlign.center,
@@ -356,12 +356,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget _buildBottomPanel(GameSession gameState) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark.withValues(alpha: 0.8),
+        color: AppTheme.surfaceColor(context).withValues(alpha: 0.8),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(32),
           topRight: Radius.circular(32),
         ),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: SafeArea(
         top: false,
@@ -401,14 +401,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+            icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryFor(context)),
           ),
           const SizedBox(width: 8),
           Text(
             gameState.timeControl.displayString,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: AppTheme.textSecondary,
+              color: AppTheme.textSecondaryFor(context),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -420,24 +420,24 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.flip, color: AppTheme.textSecondary),
+                    icon: Icon(Icons.flip, color: AppTheme.textSecondaryFor(context)),
                     onPressed:
                         () =>
                             ref.read(gameSessionProvider.notifier).toggleFlip(),
                     tooltip: 'Flip Board',
                   ),
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.handshake_outlined,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                     onPressed: () => _showDrawConfirmation(context),
                     tooltip: 'Offer Draw',
                   ),
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.flag_outlined,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textSecondaryFor(context),
                     ),
                     onPressed: () => _showResignConfirmation(context),
                     tooltip: 'Resign',
@@ -450,7 +450,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       color:
                           _isLandscapeLocked
                               ? AppTheme.primaryColor
-                              : AppTheme.textSecondary,
+                              : AppTheme.textSecondaryFor(context),
                     ),
                     onPressed: _toggleOrientationLock,
                     tooltip: 'Toggle Landscape Lock',
@@ -468,8 +468,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
   Widget _buildMoreMenu(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, color: AppTheme.textSecondary),
-      color: AppTheme.surfaceDark,
+      icon: Icon(Icons.more_vert, color: AppTheme.textSecondaryFor(context)),
+      color: AppTheme.surfaceColor(context),
       onSelected: (value) {
         switch (value) {
           case 'settings':
@@ -487,16 +487,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           (context) => [
             PopupMenuItem(
               value: 'settings',
-              child: Text(
-                'Settings',
-                style: TextStyle(color: AppTheme.textPrimary),
+                child: Text(
+                  'Settings',
+                  style: TextStyle(color: AppTheme.textPrimaryFor(context)),
+                ),
               ),
-            ),
-            PopupMenuItem(
-              value: 'exit',
-              child: Text(
-                'Save & Exit',
-                style: TextStyle(color: AppTheme.textPrimary),
+              PopupMenuItem(
+                value: 'exit',
+                child: Text(
+                  'Save & Exit',
+                  style: TextStyle(color: AppTheme.textPrimaryFor(context)),
               ),
             ),
           ],
@@ -515,7 +515,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       barrierDismissible: false,
       builder:
           (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
+            backgroundColor: AppTheme.surfaceColor(context),
             title: Text(isWin ? 'Victory!' : 'Game Over'),
             content: Text(gameState.resultReason ?? 'Game finished'),
             actions: [
@@ -558,10 +558,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         children: [
           CircleAvatar(
             backgroundColor:
-                isActive ? AppTheme.primaryColor : AppTheme.cardDark,
+                isActive ? AppTheme.primaryColor : AppTheme.cardColor(context),
             child: Icon(
               isOpponent ? Icons.smart_toy : Icons.person,
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
               size: 20,
             ),
           ),
@@ -575,7 +575,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   name,
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.textPrimaryFor(context),
                     fontSize: 13,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -672,11 +672,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         final content = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$moveNum. ', style: const TextStyle(color: AppTheme.textHint)),
-            Text(whiteMove.san, style: const TextStyle(color: AppTheme.textPrimary)),
+            Text('$moveNum. ', style: TextStyle(color: AppTheme.textHintFor(context))),
+            Text(whiteMove.san, style: TextStyle(color: AppTheme.textPrimaryFor(context))),
             if (blackMove != null) ...[
               const SizedBox(width: 8),
-              Text(blackMove.san, style: const TextStyle(color: AppTheme.textPrimary)),
+              Text(blackMove.san, style: TextStyle(color: AppTheme.textPrimaryFor(context))),
             ],
             if (horizontal) const SizedBox(width: 16),
           ],
@@ -757,14 +757,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         context: context,
         builder:
             (context) => AlertDialog(
-              backgroundColor: AppTheme.surfaceDark,
+              backgroundColor: AppTheme.surfaceColor(context),
               title: Row(
                 children: [
                   const Icon(Icons.lightbulb, color: AppTheme.accentColor),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Engine Hint',
-                    style: TextStyle(color: AppTheme.textPrimary),
+                    style: TextStyle(color: AppTheme.textPrimaryFor(context)),
                   ),
                 ],
               ),
@@ -783,7 +783,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   const SizedBox(height: 8),
                   Text(
                     hint.explanation,
-                    style: const TextStyle(color: AppTheme.textSecondary),
+                    style: TextStyle(color: AppTheme.textSecondaryFor(context)),
                   ),
                   if (hint.tacticalMotif != null) ...[
                     const SizedBox(height: 8),
@@ -797,8 +797,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         const SizedBox(width: 4),
                         Text(
                           'Motif: ${hint.tacticalMotif}',
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
+                          style: TextStyle(
+                            color: AppTheme.textPrimaryFor(context),
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -809,8 +809,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Alternative: ${hint.alternativeMove}',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
+                      style: TextStyle(
+                        color: AppTheme.textSecondaryFor(context),
                         fontSize: 13,
                       ),
                     ),
@@ -829,27 +829,22 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   void _showResignConfirmation(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final dialogBg = isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight;
-    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
-
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: dialogBg,
+          (innerContext) => AlertDialog(
+            backgroundColor: AppTheme.surfaceColor(innerContext),
             title: Text(
               'Resign Game?',
-              style: TextStyle(color: textPrimary),
+              style: TextStyle(color: AppTheme.textPrimaryFor(innerContext)),
             ),
             content: Text(
               'Are you sure you want to resign this match?',
-              style: TextStyle(color: isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight),
+              style: TextStyle(color: AppTheme.textSecondaryFor(innerContext)),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(innerContext),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
@@ -858,7 +853,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pop(innerContext);
                   ref.read(gameSessionProvider.notifier).resign();
                 },
                 child: const Text('Resign'),
@@ -869,28 +864,23 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   void _showDrawConfirmation(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final dialogBg = isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight;
-    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
-
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: dialogBg,
+          (innerContext) => AlertDialog(
+            backgroundColor: AppTheme.surfaceColor(innerContext),
             title: Text(
               'Offer Draw?',
-              style: TextStyle(color: textPrimary),
+              style: TextStyle(color: AppTheme.textPrimaryFor(innerContext)),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(innerContext),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pop(innerContext);
                   ref.read(gameSessionProvider.notifier).handleDraw();
                 },
                 child: const Text('Offer Draw'),

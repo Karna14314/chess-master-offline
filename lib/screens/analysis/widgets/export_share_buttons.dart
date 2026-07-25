@@ -15,9 +15,9 @@ class ExportShareButtons extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -25,7 +25,7 @@ class ExportShareButtons extends StatelessWidget {
           Text(
             'Export & Share',
             style: GoogleFonts.inter(
-              color: AppTheme.textPrimary,
+              color: AppTheme.textPrimaryFor(context),
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
@@ -81,9 +81,9 @@ class _ExportButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceDark,
+          color: AppTheme.surfaceColor(context),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.borderColor),
+          border: Border.all(color: AppTheme.borderColorFor(context)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -93,7 +93,7 @@ class _ExportButton extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.inter(
-                color: AppTheme.textPrimary,
+                color: AppTheme.textPrimaryFor(context),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),

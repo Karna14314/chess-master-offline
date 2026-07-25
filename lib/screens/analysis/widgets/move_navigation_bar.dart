@@ -33,9 +33,9 @@ class MoveNavigationBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -58,13 +58,13 @@ class MoveNavigationBar extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark,
+                  color: AppTheme.surfaceColor(context),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   'Move $currentMove / $totalMoves',
                   style: GoogleFonts.inter(
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.textPrimaryFor(context),
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -85,7 +85,7 @@ class MoveNavigationBar extends StatelessWidget {
           if (onJumpToPreviousMistake != null ||
               onJumpToNextMistake != null) ...[
             const SizedBox(height: 12),
-            const Divider(color: AppTheme.surfaceDark, height: 1),
+            Divider(color: AppTheme.surfaceColor(context), height: 1),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -132,12 +132,12 @@ class _NavButton extends StatelessWidget {
             color:
                 onPressed == null
                     ? Colors.transparent
-                    : AppTheme.surfaceDark.withValues(alpha: 0.5),
+                    : AppTheme.surfaceColor(context).withValues(alpha: 0.5),
           ),
           child: Icon(
             icon,
             size: isLarge ? 32 : 24,
-            color: onPressed == null ? AppTheme.textHint : AppTheme.textPrimary,
+            color: onPressed == null ? AppTheme.textHintFor(context) : AppTheme.textPrimaryFor(context),
           ),
         ),
       ),
@@ -161,7 +161,7 @@ class _JumpButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null;
-    final displayColor = isDisabled ? AppTheme.textHint : color;
+    final displayColor = isDisabled ? AppTheme.textHintFor(context) : color;
 
     return TextButton.icon(
       onPressed: onPressed,

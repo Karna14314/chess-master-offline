@@ -23,9 +23,9 @@ class MoveExplanation extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +37,7 @@ class MoveExplanation extends StatelessWidget {
               Text(
                 'Move Explanation',
                 style: GoogleFonts.inter(
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPrimaryFor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -48,7 +48,7 @@ class MoveExplanation extends StatelessWidget {
           Text(
             explanationText,
             style: GoogleFonts.inter(
-              color: AppTheme.textSecondary,
+              color: AppTheme.textSecondaryFor(context),
               fontSize: 14,
               height: 1.5,
             ),
@@ -59,21 +59,21 @@ class MoveExplanation extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceDark,
+                color: AppTheme.surfaceColor(context),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_rounded,
-                    color: AppTheme.textHint,
+                    color: AppTheme.textHintFor(context),
                     size: 16,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Better was ${analysis!.bestMoveSan}',
                     style: GoogleFonts.spaceMono(
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.textPrimaryFor(context),
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),

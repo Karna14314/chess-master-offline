@@ -47,7 +47,7 @@ class UnifiedEvalBar extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         color: bottomColor,
-        border: Border.all(color: AppTheme.borderColor, width: 1),
+        border: Border.all(color: AppTheme.borderColorFor(context), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(

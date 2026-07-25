@@ -46,6 +46,20 @@ class AppTheme {
   static const Color legalMoveHighlight = Color(0x6090EE90);
   static const Color selectedSquareHighlight = Color(0x80FFEB3B);
 
+  // Theme-aware helpers
+  static Color cardColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark ? cardDark : cardLight;
+  static Color surfaceColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark ? surfaceDark : surfaceLight;
+  static Color borderColorFor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark ? borderColor : borderLight;
+  static Color textPrimaryFor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark ? textPrimary : textPrimaryLight;
+  static Color textSecondaryFor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark ? textSecondary : textSecondaryLight;
+  static Color textHintFor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark ? textHint : textHintLight;
+
   /// Light theme configuration
   static ThemeData get lightTheme {
     return ThemeData(

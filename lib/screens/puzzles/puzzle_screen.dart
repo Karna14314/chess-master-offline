@@ -74,9 +74,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppTheme.cardDark,
+              color: AppTheme.cardColor(context),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.borderColor),
+              border: Border.all(color: AppTheme.borderColorFor(context)),
             ),
             child: Row(
               children: [
@@ -85,7 +85,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 Text(
                   '${state.currentRating}',
                   style: GoogleFonts.inter(
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.textPrimaryFor(context),
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -115,7 +115,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const SizedBox(height: 16),
             Text(
               state.errorMessage!,
-              style: GoogleFonts.inter(color: AppTheme.textSecondary),
+              style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -243,7 +243,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
       state.isWhiteTurn ? "White to Move" : "Black to Move",
       key: const ValueKey('turn'),
       style: GoogleFonts.inter(
-        color: AppTheme.textSecondary,
+        color: AppTheme.textSecondaryFor(context),
         fontWeight: FontWeight.w600,
       ),
     );
@@ -263,7 +263,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.textPrimary,
+                foregroundColor: AppTheme.textPrimaryFor(context),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -299,7 +299,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             icon: const Icon(Icons.lightbulb_outline),
             label: const Text('Hint'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.textPrimary,
+              foregroundColor: AppTheme.textPrimaryFor(context),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -314,7 +314,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             icon: const Icon(Icons.visibility),
             label: const Text('Solution'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.textPrimary,
+              foregroundColor: AppTheme.textPrimaryFor(context),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -331,9 +331,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardDark,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -354,8 +354,8 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 Text(
                   'Rating: ${puzzle.rating}',
                   style: GoogleFonts.inter(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
+                  color: AppTheme.textSecondaryFor(context),
+                  fontSize: 12,
                   ),
                 ),
               ],
@@ -398,7 +398,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
+            backgroundColor: AppTheme.surfaceColor(context),
             title: const Text('Show Solution?'),
             content: const Text(
               'Showing the solution will end the puzzle attempt.',
