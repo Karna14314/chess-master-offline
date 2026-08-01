@@ -31,7 +31,6 @@ class MockStockfishService implements StockfishService {
 
   @override
   Future<BestMoveResult> getBestMove({
-    int? elo,
     required String fen,
     required int depth,
     int? thinkTimeMs,

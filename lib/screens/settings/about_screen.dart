@@ -79,7 +79,7 @@ class _AboutScreenState extends State<AboutScreen> {
             _buildSection(
               title: 'Engine',
               content:
-                  'Stockfish 16.1 - The powerful open source chess engine.\n\nStockfish is licensed under the GPLv3. The source code is available at github.com/official-stockfish/Stockfish.',
+                  'Stockfish 17 - The powerful open source chess engine.\n\nStockfish is licensed under the GPLv3. The source code is available at github.com/official-stockfish/Stockfish.',
             ),
             const SizedBox(height: 24),
             _buildSection(

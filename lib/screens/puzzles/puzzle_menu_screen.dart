@@ -355,23 +355,6 @@ class _StatsCard extends StatelessWidget {
   }
 }
 
-class _StatsCardLoading extends StatelessWidget {
-  const _StatsCardLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor(context),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      height: 120,
-      child: const Center(child: CircularProgressIndicator()),
-    );
-  }
-}
-
 /// ELO range selector
 class _EloRangeSelector extends StatelessWidget {
   final int minElo;
@@ -561,41 +544,4 @@ class _ThemeSelector extends StatelessWidget {
   }
 }
 
-class _StatsCardError extends StatelessWidget {
-  final String error;
 
-  const _StatsCardError({required this.error});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.error_outline, color: AppTheme.error, size: 36),
-          const SizedBox(height: 12),
-          Text(
-            'Failed to load stats',
-            style: GoogleFonts.inter(
-              color: AppTheme.error,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            error,
-            style: GoogleFonts.inter(color: AppTheme.textHintFor(context), fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}

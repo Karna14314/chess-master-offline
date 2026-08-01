@@ -5,7 +5,6 @@ import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/data/repositories/game_session_repository.dart';
-import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/models/game_session.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
@@ -41,7 +40,6 @@ class _MockGameSessionRepository implements GameSessionRepository {
 class _NoMoveStockfishService extends MockStockfishService {
   @override
   Future<BestMoveResult> getBestMove({
-    int? elo,
     required String fen,
     required int depth,
     int? thinkTimeMs,

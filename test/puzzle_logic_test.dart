@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
@@ -100,6 +101,22 @@ class MockDatabaseService implements DatabaseService {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // The AudioService singleton eagerly constructs AudioPlayer instances whose
+  // async create() would surface an unhandled MissingPluginException in a plain
+  // test() (no host platform). Mock the audioplayers channels so construction
+  // succeeds; audio is disabled for this test anyway.
+  setUp(() {
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      const MethodChannel('xyz.luan/audioplayers.global'),
+      (call) async => null,
+    );
+    messenger.setMockMethodCallHandler(
+      const MethodChannel('xyz.luan/audioplayers'),
+      (call) async => null,
+    );
+  });
 
   test('Puzzle validation should strictly check promotion moves', () async {
     // Disable audio to avoid platform channel issues

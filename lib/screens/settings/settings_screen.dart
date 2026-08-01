@@ -316,7 +316,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Divider(color: AppTheme.borderColorFor(context)),
                   _InfoRow(title: 'App Version', value: _version),
                   Divider(color: AppTheme.borderColorFor(context)),
-                  _InfoRow(title: 'Engine', value: 'Stockfish 16'),
+                  _InfoRow(title: 'Engine', value: 'Stockfish 17'),
                   Divider(color: AppTheme.borderColorFor(context)),
                   ListTile(
                     title: Text(

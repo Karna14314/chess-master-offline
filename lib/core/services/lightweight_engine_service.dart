@@ -2,7 +2,12 @@ import 'dart:math';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/models/chess_models.dart';
 
-/// A lightweight chess engine written in Dart
+/// A lightweight chess engine written in Dart.
+///
+/// DEPRECATED (legacy / dead in production): no production code in `lib/`
+/// references this service — all fallback paths use `SimpleBotService`. Kept
+/// only because `lightweight_engine_test.dart` and `bug_fixes_test.dart`
+/// exercise it (P3-c). Do not use it for new features.
 class LightweightEngineService {
   static final LightweightEngineService _instance =
       LightweightEngineService._();
@@ -220,9 +225,6 @@ class LightweightEngineService {
     -10,
     -20,
   ];
-
-  // Transposition Table (Simple Map)
-  final Map<String, int> _transpositionTable = {};
 
   // Simple Opening Book
   final Map<String, String> _openingBook = {

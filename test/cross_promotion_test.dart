@@ -95,8 +95,7 @@ void main() {
       // Verify cross-promotion section header
       expect(find.text('Explore Karna Digital Games'), findsOneWidget);
 
-      // Verify individual game titles
-      expect(find.text('Mahjong Master Offline'), findsOneWidget);
+      // Verify individual game tiles currently shown in the section
       expect(find.text('Block Puzzle Master'), findsOneWidget);
       expect(find.text('Sudoku Master Offline'), findsOneWidget);
       expect(find.text('More Ad-Free Games'), findsOneWidget);

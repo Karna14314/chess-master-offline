@@ -22,7 +22,6 @@ class StockfishService {
   static final _fenDigitRegex = RegExp(r'[1-8]');
   static final _fenPieceRegex = RegExp(r'[prnbqkPRNBQK]');
   static StockfishService? _instance;
-  Stockfish? _stockfish;
   bool _isReady = false;
   bool _isEngineBusy = false; // True when a search is claimed/in progress
   final List<_QueuedCommand> _commandQueue = [];
@@ -62,8 +61,6 @@ class StockfishService {
   // Initialization lifecycle
   Completer<void>?
   _engineReadyCompleter; // Completed when isolate reports engine binary loaded
-  bool _isEngineBinaryReady =
-      false; // Set by engine_ready from isolate (binary loaded, accepts commands)
 
   // Phase 2: Lifecycle management
   bool _isDisposed = false;
@@ -107,7 +104,6 @@ class StockfishService {
     _isDisposed = false;
     _useFallback = false;
     _isReady = false;
-    _isEngineBinaryReady = false;
     _isEngineBusy = false;
     _forceFallback = false;
     _lastFallbackTime = null;
@@ -134,7 +130,6 @@ class StockfishService {
   @visibleForTesting
   void setReadyForTesting({bool immediateReadyOk = false, SendPort? commandPort}) {
     _isReady = true;
-    _isEngineBinaryReady = true;
     _useFallback = false;
     _forceFallback = false;
     _isEngineBusy = false;
@@ -263,7 +258,6 @@ class StockfishService {
         await Future.delayed(const Duration(milliseconds: 500));
         // Reset engine state for retry while keeping the isolate alive
         _isReady = false;
-        _isEngineBinaryReady = false;
       }
     }
   }
@@ -272,7 +266,6 @@ class StockfishService {
     _lastFallbackTime = DateTime.now();
     _useFallback = true;
     _isReady = false;
-    _isEngineBinaryReady = false;
     _isEngineBusy = false;
     _engineReadyCompleter?.complete();
     _engineReadyCompleter = null;
@@ -299,7 +292,6 @@ class StockfishService {
     _lastFallbackTime = null;
     _isEngineBusy = false;
     _isReady = false;
-    _isEngineBinaryReady = false;
     _initCompleter = null;
 
     try {
@@ -333,7 +325,6 @@ class StockfishService {
     // Reset state for re-init
     _useFallback = false;
     _isReady = false;
-    _isEngineBinaryReady = false;
     _lastFallbackTime = null;
     _initCompleter = null;
 
@@ -347,30 +338,6 @@ class StockfishService {
       if (!_useFallback) {
         _enableFallback('Retry recovery failed: $e');
       }
-    }
-  }
-
-  /// Configure engine options for optimal mobile performance
-  void _configureEngine() {
-    _sendCommand('setoption name Threads value 2');
-    _sendCommand('setoption name Hash value 64');
-    _sendCommand('setoption name UCI_LimitStrength value true');
-  }
-
-  /// Wait for engine to be ready
-  Future<void> _waitForReady() async {
-    _isReady = false; // Reset ready state
-    _sendCommand('isready');
-
-    int attempts = 0;
-    // Timeout after 3 seconds (30 * 100ms)
-    while (!_isReady && attempts < 30) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      attempts++;
-    }
-
-    if (!_isReady) {
-      throw Exception('Stockfish failed to initialize (isready timeout)');
     }
   }
 
@@ -606,10 +573,12 @@ class StockfishService {
   /// [startingFen] - Optional starting FEN to emit with the full move list so
   ///   the engine can detect repetition draws.
   /// [moves] - Optional UCI move list to send with [startingFen].
+  ///
+  /// Playing strength is configured once per game via `setSkillLevel()` /
+  /// `resetForNewGame()` — it is NOT re-sent here on every move (P3-a).
   Future<BestMoveResult> getBestMove({
     required String fen,
     required int depth,
-    int? elo,
     int? thinkTimeMs,
     String? startingFen,
     List<String>? moves,
@@ -659,11 +628,6 @@ class StockfishService {
     StreamSubscription<String>? subscription;
 
     try {
-      if (elo != null) {
-        setSkillLevel(elo);
-        await _waitForReadyOk(timeout: const Duration(milliseconds: 1500));
-      }
-
       // Stop any lingering search from a previous call BEFORE attaching our
       // listener, so a stale bestmove line cannot be consumed by this search.
       await _stopCurrentSearchAndWait();
@@ -1119,7 +1083,6 @@ class StockfishService {
           }
         } else if (type == 'engine_ready') {
           // Engine isolate reports the binary loaded and is accepting commands
-          _isEngineBinaryReady = true;
           _engineReadyCompleter?.complete();
           _engineReadyCompleter = null;
         } else if (type == 'error') {
@@ -1136,10 +1099,6 @@ class StockfishService {
     } on TimeoutException {
       throw Exception('Isolate spawn timeout (SendPort not received)');
     }
-  }
-
-  void _stopEngineIsolate() {
-    _killEngineGracefully();
   }
 
   /// Kill the engine isolate if it exists. Does NOT enable fallback or dispose.
@@ -1164,20 +1123,11 @@ class StockfishService {
     _engineResponsePort?.close();
     _engineResponsePort = null;
     _isReady = false;
-    _isEngineBinaryReady = false;
     _isEngineBusy = false;
 
     // Cancel any pending init
     _engineReadyCompleter?.complete();
     _engineReadyCompleter = null;
-  }
-
-  /// Gracefully kill the engine and enable fallback.
-  /// Use this when the engine has encountered a terminal error.
-  Future<void> _killEngineGracefully() async {
-    await _killEngineIfRunning();
-    _commandQueue.clear();
-    _isDisposed = false; // Don't set disposed — allow re-init
   }
 }
 

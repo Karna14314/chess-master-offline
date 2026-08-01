@@ -430,7 +430,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     if (confirm != true) return;
 
     await ref.read(gameSessionRepositoryProvider).deleteSession(game.id);
-    ref.refresh(gameHistoryProvider);
+    ref.invalidate(gameHistoryProvider);
 
     if (context.mounted) {
       ScaffoldMessenger.of(
@@ -539,7 +539,7 @@ class _GameCard extends StatelessWidget {
     final opponentText =
         game.gameMode == GameMode.localMultiplayer
             ? 'Friend'
-            : 'Bot (${game.difficulty?.elo ?? 1200})';
+            : 'Bot (${game.difficulty.elo})';
     final displayName = customName ?? 'Game vs $opponentText';
 
     // Determine result display

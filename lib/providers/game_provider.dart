@@ -10,7 +10,12 @@ final gameProvider = StateNotifierProvider<GameNotifier, GameState>((ref) {
   return GameNotifier();
 });
 
-/// Game state notifier managing chess game logic
+/// Game state notifier managing chess game logic.
+///
+/// DEPRECATED (legacy): the live game flow uses `gameSessionProvider` /
+/// [GameSessionViewModel]. Kept only because `analysis_menu_screen.dart` still
+/// reads `gameProvider` and several tests exercise it directly (P3-c). Do not
+/// extend this notifier with new game logic.
 class GameNotifier extends StateNotifier<GameState> {
   GameNotifier() : super(GameState.initial());
 

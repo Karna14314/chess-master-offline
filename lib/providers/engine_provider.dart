@@ -177,7 +177,6 @@ class EngineNotifier extends StateNotifier<EngineState> {
           .getBestMove(
             fen: fen,
             depth: difficulty.depth,
-            elo: difficulty.elo,
             thinkTimeMs: difficulty.thinkTimeMs,
             startingFen: startingFen,
             moves: moves,

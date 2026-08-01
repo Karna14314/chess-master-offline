@@ -370,7 +370,6 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         return _allPuzzles[dailyRandom.nextInt(_allPuzzles.length)];
 
       case PuzzleFilterMode.adaptive:
-      default:
         // Adaptive: within ±200 of current rating
         final minRating = targetRating - 200;
         final maxRating = targetRating + 200;
