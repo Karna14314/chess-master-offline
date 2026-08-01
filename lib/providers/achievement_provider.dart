@@ -40,6 +40,10 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
     _loadAchievements();
   }
 
+  // Accessed by the StateNotifier's `mounted` getter, which throws after
+  // dispose in debug builds; track our own flag instead.
+  bool _isDisposed = false;
+
   static const List<Achievement> _initialAchievements = [
     Achievement(
       id: 'first_win',
@@ -87,13 +91,14 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
 
   Future<void> _loadAchievements() async {
     final prefs = await SharedPreferences.getInstance();
+    if (_isDisposed) return;
     final updated = state.map((ach) {
       final isUnlocked = prefs.getBool('ach_${ach.id}') ?? false;
       final date = prefs.getString('ach_date_${ach.id}');
       return ach.copyWith(isUnlocked: isUnlocked, unlockedDate: date);
     }).toList();
 
-    if (mounted) {
+    if (!_isDisposed) {
       state = updated;
     }
   }
@@ -109,7 +114,7 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
     await prefs.setBool('ach_$id', true);
     await prefs.setString('ach_date_$id', today);
 
-    if (!mounted) return;
+    if (_isDisposed) return;
 
     final updated = List<Achievement>.from(state);
     updated[index] = updated[index].copyWith(
@@ -117,12 +122,18 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
       unlockedDate: today,
     );
 
-    if (mounted) {
+    if (!_isDisposed) {
       state = updated;
     }
 
     // Trigger native review prompt on milestone achievement
     ReviewService.requestReviewIfAppropriate();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   /// Check conditions and unlock relevant achievements.

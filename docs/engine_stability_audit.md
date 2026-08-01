@@ -214,7 +214,8 @@ output._
 
 | # | Issue | Fix summary | Verification command | Result |
 |---|-------|-------------|----------------------|--------|
-| — | — | — | — | — |
+| 1 | P0-1 | Rejected `(none)`/`0000` in `BestMoveResult.isValid`/`parsedMove`, added `isNoMove`; `_makeBotMove` now re-checks game-end conditions when the engine reports no legal move instead of silently hanging; extracted shared `_terminalResult` helper; added `triggerBotMoveForTesting()` hook. Also hardened `AchievementNotifier` against post-dispose use (debug `mounted` throw). | `flutter test test/engine_no_legal_move_test.dart` + regression (achievements, stockfish_service, game_undo, engine_evaluation, engine_difficulty) | 7/7 new tests pass; 46 regression tests pass |
+| 2 | P0-2 | Reworked the search pipeline in `stockfish_service.dart`: atomic `_isEngineBusy` claim (no await between check and claim), bestmove listener attached only after `_stopCurrentSearchAndWait()`, per-search `_activeSearchId` token discards stale `bestmove` lines, `_searchInFlight` drives stop-wait, all subscriptions cancelled in `finally`. Added test hooks (`setReadyForTesting`, `emitEngineLineForTesting`, `hasOutputListenersForTesting`, injectable timeouts). | `flutter test test/engine_search_race_test.dart` + full engine suite | 5/5 new tests pass; 192 engine tests pass |
 
 ---
 

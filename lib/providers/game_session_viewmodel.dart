@@ -1,5 +1,6 @@
 import 'package:vibration/vibration.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/models/game_session.dart';
@@ -111,27 +112,9 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       evaluation: evaluation,
     );
 
-    GameResult? result;
-    String? resultReason;
-
-    if (board.in_checkmate) {
-      result =
-          board.turn == chess.Color.WHITE
-              ? GameResult.blackWins
-              : GameResult.whiteWins;
-      resultReason = 'Checkmate';
-    } else if (board.in_stalemate) {
-      result = GameResult.draw;
-      resultReason = 'Stalemate';
-    } else if (board.in_draw) {
-      result = GameResult.draw;
-      resultReason =
-          board.insufficient_material
-              ? 'Insufficient material'
-              : board.in_threefold_repetition
-              ? 'Threefold repetition'
-              : 'Fifty-move rule';
-    }
+    final terminal = _terminalResult(board);
+    final result = terminal?.result;
+    final resultReason = terminal?.reason;
 
     final updatedSession = currentSession.copyWith(
       fen: board.fen,
@@ -194,11 +177,40 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         botType: currentSession.botType,
       );
 
-      if (result != null && result.isValid) {
+      if (result == null) return;
+
+      if (result.isValid) {
         final (from, to, promotion) = result.parsedMove;
         final eval =
             result.evaluation != null ? result.evaluation! / 100.0 : null;
         await makeMove(from, to, promotion: promotion, evaluation: eval);
+        return;
+      }
+
+      // The engine reported no legal move (bestmove (none) / 0000) or returned
+      // an unparseable move. Reconcile with the board: if the game is over,
+      // record the result instead of silently hanging on the bot's turn.
+      final session = state;
+      if (session == null || session.isCompleted) return;
+
+      final board = chess.Chess.fromFEN(session.fen);
+      final terminal = _terminalResult(board);
+      if (terminal != null) {
+        debugPrint(
+          'ENGINE: No legal move reported; recording game end ($terminal.reason)',
+        );
+        final updated = session.copyWith(
+          result: terminal.result,
+          resultReason: terminal.reason,
+        );
+        state = updated;
+        await _repository.saveSession(updated);
+        _recordStatisticsIfNeeded();
+      } else {
+        debugPrint(
+          'ENGINE: No legal move reported but the board is not terminal; '
+          'refusing to play an invalid move.',
+        );
       }
     } finally {
       _isBotThinking = false;
@@ -208,6 +220,34 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         timerNotifier.start();
       }
     }
+  }
+
+  /// Determine the game result from the board, if the game is over.
+  /// Returns `null` when the game is still in progress.
+  ({GameResult result, String reason})? _terminalResult(chess.Chess board) {
+    if (board.in_checkmate) {
+      return (
+        result:
+            board.turn == chess.Color.WHITE
+                ? GameResult.blackWins
+                : GameResult.whiteWins,
+        reason: 'Checkmate',
+      );
+    }
+    if (board.in_stalemate) {
+      return (result: GameResult.draw, reason: 'Stalemate');
+    }
+    if (board.in_draw) {
+      return (
+        result: GameResult.draw,
+        reason: board.insufficient_material
+            ? 'Insufficient material'
+            : board.in_threefold_repetition
+            ? 'Threefold repetition'
+            : 'Fifty-move rule',
+      );
+    }
+    return null;
   }
 
   /// Update timer values
@@ -551,4 +591,8 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     return await makeMove(from, to, promotion: promotion);
   }
+
+  /// Test-only hook to drive the bot's move pipeline directly.
+  @visibleForTesting
+  Future<void> triggerBotMoveForTesting() => _makeBotMove();
 }

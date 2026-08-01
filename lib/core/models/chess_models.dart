@@ -58,9 +58,14 @@ class BestMoveResult {
     this.mateIn,
   });
 
-  /// Parse UCI move format (e.g., "e2e4") to from/to squares
+  /// UCI sentinels Stockfish reports when there is no legal move to play
+  /// (checkmate, stalemate, or a draw it recognized during the search).
+  static const Set<String> noMoveTokens = {'(none)', '0000'};
+
+  /// Parse UCI move format (e.g., "e2e4") to from/to squares.
+  /// Returns an empty record when the move is not a legal move.
   (String from, String to, String? promotion) get parsedMove {
-    if (bestMove.length < 4) return ('', '', null);
+    if (!isValid) return ('', '', null);
 
     final from = bestMove.substring(0, 2);
     final to = bestMove.substring(2, 4);
@@ -69,7 +74,14 @@ class BestMoveResult {
     return (from, to, promotion);
   }
 
-  bool get isValid => bestMove.isNotEmpty && bestMove.length >= 4;
+  /// True when the engine reported a real legal move (not a sentinel).
+  bool get isValid =>
+      bestMove.isNotEmpty &&
+      bestMove.length >= 4 &&
+      !noMoveTokens.contains(bestMove);
+
+  /// True when the engine explicitly reported there is no legal move.
+  bool get isNoMove => noMoveTokens.contains(bestMove);
 }
 
 /// Result of position analysis

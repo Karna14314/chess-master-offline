@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chess_master/providers/analysis_provider.dart';
@@ -74,6 +75,21 @@ class MockStockfishService implements StockfishService {
 
   @override
   void resetTestState() {}
+
+  @override
+  Duration searchTimeoutForTesting = const Duration(seconds: 30);
+
+  @override
+  Duration analysisTimeoutForTesting = const Duration(seconds: 10);
+
+  @override
+  bool get hasOutputListenersForTesting => false;
+
+  @override
+  void setReadyForTesting({bool immediateReadyOk = false, SendPort? commandPort}) {}
+
+  @override
+  void emitEngineLineForTesting(String line) {}
 }
 
 void main() {

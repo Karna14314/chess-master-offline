@@ -24,9 +24,25 @@ class StockfishService {
   static StockfishService? _instance;
   Stockfish? _stockfish;
   bool _isReady = false;
-  bool _isEngineBusy = false; // True when search is in progress
+  bool _isEngineBusy = false; // True when a search is claimed/in progress
   final List<_QueuedCommand> _commandQueue = [];
   bool _useFallback = false;
+
+  // Per-search identity token. A bestmove line is only accepted by the search
+  // whose id matches the current value; stale lines from abandoned searches are
+  // discarded. Also used to detect overlap between searches.
+  int _activeSearchId = 0;
+
+  // True only between sending "go" and receiving "bestmove" for the current
+  // search. Drives _stopCurrentSearchAndWait so it never waits on a search
+  // that isn't actually running.
+  bool _searchInFlight = false;
+
+  @visibleForTesting
+  Duration searchTimeoutForTesting = const Duration(seconds: 30);
+  @visibleForTesting
+  Duration analysisTimeoutForTesting = const Duration(seconds: 10);
+  bool _skipReadyOkForTesting = false;
 
   // Flag to simulate binary check failure for testing or if on unsupported platform
   bool _forceFallback = false;
@@ -96,6 +112,11 @@ class StockfishService {
     _forceFallback = false;
     _lastFallbackTime = null;
     _engineSessionId = 0;
+    _activeSearchId = 0;
+    _searchInFlight = false;
+    _skipReadyOkForTesting = false;
+    searchTimeoutForTesting = const Duration(seconds: 30);
+    analysisTimeoutForTesting = const Duration(seconds: 10);
     _engineIsolate = null;
     _engineCommandPort = null;
     _engineResponsePort = null;
@@ -107,6 +128,30 @@ class StockfishService {
     _engineReadyCompleter = null;
     statusNotifier.value = EngineStatus.initializing;
   }
+
+  /// Puts the service in a fake "ready, non-fallback" state so tests can drive
+  /// the search pipeline by injecting engine output lines.
+  @visibleForTesting
+  void setReadyForTesting({bool immediateReadyOk = false, SendPort? commandPort}) {
+    _isReady = true;
+    _isEngineBinaryReady = true;
+    _useFallback = false;
+    _forceFallback = false;
+    _isEngineBusy = false;
+    _searchInFlight = false;
+    _skipReadyOkForTesting = immediateReadyOk;
+    if (commandPort != null) _engineCommandPort = commandPort;
+    statusNotifier.value = EngineStatus.ready;
+  }
+
+  /// Injects a raw engine output line as if it came from the engine isolate.
+  @visibleForTesting
+  void emitEngineLineForTesting(String line) => _outputController.add(line);
+
+  /// Whether any listener is currently subscribed to the output stream.
+  /// Used by tests to verify subscriptions are always cleaned up.
+  @visibleForTesting
+  bool get hasOutputListenersForTesting => _outputController.hasListener;
 
   /// Initialize the Stockfish engine via proper UCI protocol handshake.
   ///
@@ -328,6 +373,8 @@ class StockfishService {
   /// This ensures Stockfish has fully processed the position before we start search.
   /// Returns true if readyok received, false on timeout.
   Future<bool> _waitForReadyOk({Duration? timeout}) async {
+    if (_skipReadyOkForTesting) return true;
+
     final effectiveTimeout = timeout ?? const Duration(milliseconds: 500);
     final stopwatch = Stopwatch()..start();
 
@@ -554,12 +601,6 @@ class StockfishService {
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
-    // Guard: If engine is busy, return fallback immediately
-    if (_isEngineBusy) {
-      debugPrint('Engine is busy, using fallback for FEN: $fen');
-      return _getSimpleBotMove(fen, depth, thinkTimeMs);
-    }
-
     // Attempt fallback recovery if cooldown has elapsed
     if (_useFallback && _shouldRetryInit()) {
       await _tryFallbackRecovery();
@@ -581,111 +622,124 @@ class StockfishService {
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
-    if (elo != null) {
-      setSkillLevel(elo);
-      await _waitForReadyOk(timeout: const Duration(milliseconds: 1500));
-    }
-
-    // Setup search listener BEFORE setting position (must be ready before go)
-    final completer = Completer<BestMoveResult>();
-    String? bestMove;
-    String? ponderMove;
-    int? evaluation;
-    int? mateIn;
-
-    late StreamSubscription subscription;
-    subscription = _outputController.stream.listen((line) {
-      final trimmedLine = line.trim();
-
-      // Parse evaluation from info line.
-      // Stockfish's "score cp" is from the side-to-move's perspective.
-      // Convert to white-relative for consistent storage.
-      if (trimmedLine.startsWith('info') && trimmedLine.contains('score')) {
-        final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
-        if (scoreMatch != null) {
-          evaluation = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
-        }
-
-        final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
-        if (mateMatch != null) {
-          mateIn = int.parse(mateMatch.group(1)!);
-        }
-      }
-
-      // Parse best move
-      if (trimmedLine.startsWith('bestmove')) {
-        final parts = trimmedLine.split(' ');
-        if (parts.length >= 2) {
-          bestMove = parts[1];
-        }
-        if (parts.length >= 4 && parts[2] == 'ponder') {
-          ponderMove = parts[3];
-        }
-
-        subscription.cancel();
-        completer.complete(
-          BestMoveResult(
-            bestMove: bestMove ?? '',
-            ponderMove: ponderMove,
-            evaluation: evaluation,
-            mateIn: mateIn,
-          ),
-        );
-      }
-    });
-
-    // Stop any ongoing search before setting new position (prevents C++ worker thread SIGSEGV)
-    await _stopCurrentSearchAndWait();
-
-    // Position must be set before search.
-    // Strength options (UCI_Elo / UCI_LimitStrength) are configured via setSkillLevel()
-    // before calling getBestMove() and should NOT be set here on every move.
-    _sendCommand('position fen $fen');
-
-    // Wait for engine to confirm position is processed before starting search
-    // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
-    final positionReady = await _waitForReadyOk(
-      timeout: const Duration(milliseconds: 1500),
-    );
-    if (!positionReady) {
-      subscription.cancel();
-      debugPrint('Position ready timeout for FEN: $fen. Using fallback.');
+    // Claim the engine slot synchronously after the readiness guards so that
+    // overlapping calls are rejected atomically — there is no await between the
+    // busy check and the claim for another caller to race through.
+    if (_isEngineBusy) {
+      debugPrint('Engine is busy, using fallback for FEN: $fen');
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
-
-    // Mark engine as busy ONLY after readyok confirmed
     _isEngineBusy = true;
 
+    final searchId = ++_activeSearchId;
+    StreamSubscription<String>? subscription;
+
     try {
+      if (elo != null) {
+        setSkillLevel(elo);
+        await _waitForReadyOk(timeout: const Duration(milliseconds: 1500));
+      }
+
+      // Stop any lingering search from a previous call BEFORE attaching our
+      // listener, so a stale bestmove line cannot be consumed by this search.
+      await _stopCurrentSearchAndWait();
+
+      final completer = Completer<BestMoveResult>();
+      String? bestMove;
+      String? ponderMove;
+      int? evaluation;
+      int? mateIn;
+
+      subscription = _outputController.stream.listen((line) {
+        if (searchId != _activeSearchId) {
+          subscription?.cancel();
+          return;
+        }
+
+        final trimmedLine = line.trim();
+
+        // Parse evaluation from info line.
+        // Stockfish's "score cp" is from the side-to-move's perspective.
+        // Convert to white-relative for consistent storage.
+        if (trimmedLine.startsWith('info') && trimmedLine.contains('score')) {
+          final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
+          if (scoreMatch != null) {
+            evaluation = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
+          }
+
+          final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
+          if (mateMatch != null) {
+            mateIn = int.parse(mateMatch.group(1)!);
+          }
+        }
+
+        // Parse best move
+        if (trimmedLine.startsWith('bestmove')) {
+          final parts = trimmedLine.split(' ');
+          if (parts.length >= 2) {
+            bestMove = parts[1];
+          }
+          if (parts.length >= 4 && parts[2] == 'ponder') {
+            ponderMove = parts[3];
+          }
+
+          subscription?.cancel();
+          if (!completer.isCompleted) {
+            completer.complete(
+              BestMoveResult(
+                bestMove: bestMove ?? '',
+                ponderMove: ponderMove,
+                evaluation: evaluation,
+                mateIn: mateIn,
+              ),
+            );
+          }
+        }
+      });
+
+      // Position must be set before search.
+      // Strength options (UCI_Elo / UCI_LimitStrength) are configured via setSkillLevel()
+      // before calling getBestMove() and should NOT be set here on every move.
+      _sendCommand('position fen $fen');
+
+      // Wait for engine to confirm position is processed before starting search
+      // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
+      final positionReady = await _waitForReadyOk(
+        timeout: const Duration(milliseconds: 1500),
+      );
+      if (!positionReady) {
+        debugPrint('Position ready timeout for FEN: $fen. Using fallback.');
+        return _getSimpleBotMove(fen, depth, thinkTimeMs);
+      }
+
       // UCI search command strategy:
       //   Bot play  → "go movetime <ms>" — time-bounded search (no depth limit)
       //   Analysis  → "go depth <depth>" — depth-bounded search (no time limit)
       //
       // Never combine depth and movetime in one "go" command (ISSUE-006).
-      // Stockfish's internal time management works best when given a single
-      // constraint. Combining them is redundant and can cause confusing behavior.
       if (thinkTimeMs != null) {
+        _searchInFlight = true;
         _sendCommand('go movetime $thinkTimeMs');
       } else {
+        _searchInFlight = true;
         _sendCommand('go depth $depth');
       }
 
-      // 30-second timeout for Stockfish response (failsafe)
+      // Failsafe timeout for Stockfish response.
       return await completer.future.timeout(
-        const Duration(seconds: 30),
+        searchTimeoutForTesting,
         onTimeout: () {
-          subscription.cancel();
           debugPrint(
             'ENGINE RECOVERY → Search timeout for FEN: $fen, using fallback for this move',
           );
           _sendCommand('stop');
           // Don't kill isolate or enable permanent fallback — engine may recover
-          _isEngineBusy = false;
           return _getSimpleBotMove(fen, depth, thinkTimeMs);
         },
       );
     } finally {
-      // Always mark engine as not busy when done
+      subscription?.cancel();
+      _searchInFlight = false;
       _isEngineBusy = false;
     }
   }
@@ -769,142 +823,151 @@ class StockfishService {
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
-    // Setup analysis listener BEFORE any commands
-    final completer = Completer<AnalysisResult>();
-    final lines = <EngineLine>[];
-    int? mainEvaluation;
-    int? mateIn;
+    // Claim the engine slot synchronously after the readiness guards (same
+    // atomicity rationale as getBestMove).
+    if (_isEngineBusy) {
+      debugPrint('Engine is busy, using fallback for analysis FEN: $fen');
+      return BasicEvaluatorService.instance.analyze(fen);
+    }
+    _isEngineBusy = true;
 
-    // Set MultiPV for multiple lines
-    _sendCommand('setoption name MultiPV value $multiPv');
+    final searchId = ++_activeSearchId;
+    StreamSubscription<String>? subscription;
 
-    late StreamSubscription subscription;
-    subscription = _outputController.stream.listen((line) {
-      final trimmedLine = line.trim();
+    try {
+      // Set MultiPV for multiple lines
+      _sendCommand('setoption name MultiPV value $multiPv');
 
-      if (trimmedLine.startsWith('info') && trimmedLine.contains('pv')) {
-        final pvMatch = _multiPvRegex.firstMatch(trimmedLine);
-        final depthMatch = _depthRegex.firstMatch(trimmedLine);
-        final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
-        final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
-        final pvMovesMatch = _pvMovesRegex.firstMatch(trimmedLine);
+      // Stop any lingering search from a previous call BEFORE attaching our
+      // listener, so a stale bestmove line cannot be consumed by this analysis.
+      await _stopCurrentSearchAndWait();
 
-        if (pvMovesMatch != null) {
-          final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
-          final currentDepth =
-              depthMatch != null ? int.parse(depthMatch.group(1)!) : 0;
-          int? eval;
-          int? mate;
+      final completer = Completer<AnalysisResult>();
+      final lines = <EngineLine>[];
+      int? mainEvaluation;
+      int? mateIn;
 
-          if (scoreMatch != null) {
-            eval = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
+      subscription = _outputController.stream.listen((line) {
+        if (searchId != _activeSearchId) {
+          subscription?.cancel();
+          return;
+        }
+
+        final trimmedLine = line.trim();
+
+        if (trimmedLine.startsWith('info') && trimmedLine.contains('pv')) {
+          final pvMatch = _multiPvRegex.firstMatch(trimmedLine);
+          final depthMatch = _depthRegex.firstMatch(trimmedLine);
+          final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
+          final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
+          final pvMovesMatch = _pvMovesRegex.firstMatch(trimmedLine);
+
+          if (pvMovesMatch != null) {
+            final pvNumber = pvMatch != null ? int.parse(pvMatch.group(1)!) : 1;
+            final currentDepth =
+                depthMatch != null ? int.parse(depthMatch.group(1)!) : 0;
+            int? eval;
+            int? mate;
+
+            if (scoreMatch != null) {
+              eval = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
+            }
+            if (mateMatch != null) {
+              mate = int.parse(mateMatch.group(1)!);
+            }
+
+            final moves = pvMovesMatch.group(1)!.split(' ');
+
+            // Store the main line evaluation
+            if (pvNumber == 1) {
+              mainEvaluation = eval;
+              mateIn = mate;
+            }
+
+            final engineLine = EngineLine(
+              rank: pvNumber,
+              evaluation: (eval ?? 0) / 100.0,
+              depth: currentDepth,
+              moves: moves,
+              isMate: mate != null,
+              mateIn: mate,
+            );
+
+            // Update or add line
+            if (lines.length >= pvNumber) {
+              lines[pvNumber - 1] = engineLine;
+            } else {
+              lines.add(engineLine);
+            }
+
+            if (onUpdate != null && mainEvaluation != null) {
+              onUpdate(
+                AnalysisResult(
+                  evaluation: mainEvaluation!,
+                  mateIn: mateIn,
+                  lines: List.from(lines),
+                  depth: currentDepth,
+                ),
+              );
+            }
           }
-          if (mateMatch != null) {
-            mate = int.parse(mateMatch.group(1)!);
-          }
+        }
 
-          final moves = pvMovesMatch.group(1)!.split(' ');
+        if (trimmedLine.startsWith('bestmove')) {
+          subscription?.cancel();
+          // Reset MultiPV to 1
+          _sendCommand('setoption name MultiPV value 1');
 
-          // Store the main line evaluation
-          if (pvNumber == 1) {
-            mainEvaluation = eval;
-            mateIn = mate;
-          }
-
-          final engineLine = EngineLine(
-            rank: pvNumber,
-            evaluation: (eval ?? 0) / 100.0,
-            depth: currentDepth,
-            moves: moves,
-            isMate: mate != null,
-            mateIn: mate,
-          );
-
-          // Update or add line
-          if (lines.length >= pvNumber) {
-            lines[pvNumber - 1] = engineLine;
-          } else {
-            lines.add(engineLine);
-          }
-
-          if (onUpdate != null && mainEvaluation != null) {
-            onUpdate(
+          if (!completer.isCompleted) {
+            completer.complete(
               AnalysisResult(
-                evaluation: mainEvaluation!,
+                evaluation: mainEvaluation ?? 0,
                 mateIn: mateIn,
-                lines: List.from(lines),
-                depth: currentDepth,
+                lines: lines,
+                depth: depth,
               ),
             );
           }
         }
+      });
+
+      // Ensure engine is at max strength for analysis (after stop, before position)
+      if (!_useFallback) {
+        setMaxStrength();
       }
 
-      if (trimmedLine.startsWith('bestmove')) {
-        subscription.cancel();
-        // Reset MultiPV to 1
-        _sendCommand('setoption name MultiPV value 1');
+      // Set position and analyze
+      _sendCommand('position fen $fen');
 
-        completer.complete(
-          AnalysisResult(
-            evaluation: mainEvaluation ?? 0,
-            mateIn: mateIn,
-            lines: lines,
-            depth: depth,
-          ),
-        );
-      }
-    });
-
-    // Stop any ongoing search before setting new position (intentional replacement)
-    // This must be called BEFORE _isEngineBusy is set to true
-    await _stopCurrentSearchAndWait();
-
-    // Ensure engine is at max strength for analysis (after stop, before position)
-    if (!_useFallback) {
-      setMaxStrength();
-    }
-
-    // Set position and analyze
-    _sendCommand('position fen $fen');
-
-    // Wait for engine to confirm position is processed before starting search
-    final positionReady = await _waitForReadyOk(
-      timeout: const Duration(milliseconds: 500),
-    );
-    if (!positionReady) {
-      subscription.cancel();
-      debugPrint(
-        'Position ready timeout for analysis FEN: $fen. Using fallback.',
+      // Wait for engine to confirm position is processed before starting search
+      final positionReady = await _waitForReadyOk(
+        timeout: const Duration(milliseconds: 500),
       );
-      return BasicEvaluatorService.instance.analyze(fen);
-    }
+      if (!positionReady) {
+        debugPrint(
+          'Position ready timeout for analysis FEN: $fen. Using fallback.',
+        );
+        return BasicEvaluatorService.instance.analyze(fen);
+      }
 
-    // Mark engine as busy ONLY after readyok confirmed
-    // (re-set to true because _stopCurrentSearch() cleared it)
-    _isEngineBusy = true;
-
-    try {
+      _searchInFlight = true;
       _sendCommand('go depth $depth');
 
       return await completer.future.timeout(
-        const Duration(
-          seconds: 10,
-        ), // Short timeout for analysis to switch to basic if stuck
+        analysisTimeoutForTesting, // Short timeout for analysis to switch to basic if stuck
         onTimeout: () {
-          subscription.cancel();
           debugPrint(
             'ENGINE RECOVERY → Analysis timeout for FEN: $fen, using fallback',
           );
           _sendCommand('stop');
           _sendCommand('setoption name MultiPV value 1');
           // Don't kill isolate or enable permanent fallback — engine may recover
-          _isEngineBusy = false;
           return BasicEvaluatorService.instance.analyze(fen);
         },
       );
     } finally {
-      // Always mark engine as not busy when done
+      subscription?.cancel();
+      _searchInFlight = false;
       _isEngineBusy = false;
     }
   }
@@ -935,26 +998,26 @@ class StockfishService {
 
   /// Stop current search and wait for it to finish (for intentional search replacement)
   Future<void> _stopCurrentSearchAndWait() async {
-    if (_isEngineBusy) {
-      final completer = Completer<void>();
-      late StreamSubscription subscription;
+    if (!_searchInFlight) return;
 
-      subscription = _outputController.stream.listen((line) {
-        if (line.trim().startsWith('bestmove')) {
-          subscription.cancel();
-          if (!completer.isCompleted) completer.complete();
-        }
-      });
+    final completer = Completer<void>();
+    late StreamSubscription subscription;
 
-      _sendCommand('stop');
-
-      try {
-        await completer.future.timeout(const Duration(seconds: 2));
-      } catch (_) {
+    subscription = _outputController.stream.listen((line) {
+      if (line.trim().startsWith('bestmove')) {
         subscription.cancel();
-      } finally {
-        _isEngineBusy = false;
+        if (!completer.isCompleted) completer.complete();
       }
+    });
+
+    _sendCommand('stop');
+
+    try {
+      await completer.future.timeout(const Duration(seconds: 2));
+    } catch (_) {
+      subscription.cancel();
+    } finally {
+      _searchInFlight = false;
     }
   }
 
