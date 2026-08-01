@@ -1,4 +1,6 @@
-Strictly validate puzzle promotion moves to fix "Wrong Solution" bugs
-Use background Isolate for PGN parsing to prevent UI freezing during Analysis import
-Fixed potential crash when leaving Puzzle screen during loading.
-Improved analysis and hint quality by utilizing full engine strength.Optimize evaluation loops in SimpleBotService
+Improved engine stability and reliability:
+• Fixed rare engine races that could produce no move or an invalid move during search
+• Guaranteed cleanup of engine listeners to prevent hangs and timeouts
+• Correctly detects threefold repetition draws, including after reloading a saved game
+• Engine strength is now set once per game for consistent, accurate play
+• General bug fixes and stability improvements
