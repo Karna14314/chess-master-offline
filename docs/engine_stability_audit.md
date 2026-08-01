@@ -230,3 +230,43 @@ output._
 ## Verification Summary
 
 _Appended at the end of the loop: `flutter test`, `flutter analyze`, `flutter build apk --debug`._
+
+**Commit `05e21b9` (P3) is the final code change; the gates below were run against that tree.**
+
+### `flutter test` — full suite
+
+```
+01:22 +315: All tests passed!
+```
+
+* 315/315 tests green, including all engine/game-loop tests. No skipped tests.
+* Two pre-existing broken tests surfaced and were fixed during the loop (see Fix Log #4, #9):
+  widget_test, SimpleBot mate-in-1 eval test, cross-promotion MoreScreen assertion,
+  puzzle promotion-logic audio channel.
+* One pre-existing SimpleBot determinism test flaked once under full-suite load but passes in
+  isolation and in the final run (Fix Log #10) — unrelated to the engine loop.
+
+### `flutter analyze`
+
+```
+69 issues found. (0 warnings, 0 errors)
+```
+
+* The 69 remaining issues are all `info`-level `avoid_print` lints in `scripts/`, `tool/`,
+  and `test/benchmarks/` (pre-existing, outside the app's `lib/`). Zero warnings and zero errors
+  in application code.
+
+### `flutter build apk --debug`
+
+```
+Running Gradle task 'assembleDebug'...  195.7s
+✓ Built build\app\outputs\flutter-apk\app-debug.apk
+```
+
+* Build succeeds. The only notice is a pre-existing template-level warning about the Kotlin
+  Gradle Plugin version in `android/` (present before this loop; does not affect the build).
+
+### Outcome
+
+All engine-stability issues (P0-1, P0-2, P1, P2, P3-a, P3-b, P3-c) are fixed, tested, and
+committed: `5a713c4`, `d8f31f0`, `5a9f76c`, `bcdb359`, `05e21b9`. The engine loop is complete.
