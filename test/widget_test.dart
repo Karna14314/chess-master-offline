@@ -210,6 +210,9 @@ class MockStockfishService implements StockfishService {
   bool get hasOutputListenersForTesting => false;
 
   @override
+  bool get isEngineBusyForTesting => false;
+
+  @override
   void setReadyForTesting({bool immediateReadyOk = false, SendPort? commandPort}) {}
 
   @override

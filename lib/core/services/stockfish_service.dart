@@ -153,6 +153,11 @@ class StockfishService {
   @visibleForTesting
   bool get hasOutputListenersForTesting => _outputController.hasListener;
 
+  /// Whether a search currently owns the engine slot. Used by tests to verify
+  /// the engine is never left wedged after timeouts/errors.
+  @visibleForTesting
+  bool get isEngineBusyForTesting => _isEngineBusy;
+
   /// Initialize the Stockfish engine via proper UCI protocol handshake.
   ///
   /// Handshake sequence:
@@ -372,6 +377,8 @@ class StockfishService {
   /// Wait for readyok response after sending position or other commands.
   /// This ensures Stockfish has fully processed the position before we start search.
   /// Returns true if readyok received, false on timeout.
+  /// The output-stream subscription is guaranteed to be cancelled on every exit
+  /// path (readyok, timeout, error) via `finally`.
   Future<bool> _waitForReadyOk({Duration? timeout}) async {
     if (_skipReadyOkForTesting) return true;
 
@@ -379,14 +386,9 @@ class StockfishService {
     final stopwatch = Stopwatch()..start();
 
     final completer = Completer<bool>();
-    StreamSubscription? subscription;
-
-    subscription = _outputController.stream.listen((line) {
-      if (line.contains('readyok')) {
-        subscription?.cancel();
-        if (!completer.isCompleted) {
-          completer.complete(true);
-        }
+    final subscription = _outputController.stream.listen((line) {
+      if (line.contains('readyok') && !completer.isCompleted) {
+        completer.complete(true);
       }
     });
 
@@ -395,19 +397,18 @@ class StockfishService {
 
     try {
       // Wait for readyok or timeout
-      final result = await completer.future.timeout(
+      return await completer.future.timeout(
         effectiveTimeout,
         onTimeout: () {
-          subscription?.cancel();
+          if (!completer.isCompleted) completer.complete(false);
           return false;
         },
       );
-
-      stopwatch.stop();
-      return result;
     } catch (e) {
-      subscription?.cancel();
       return false;
+    } finally {
+      stopwatch.stop();
+      await subscription.cancel();
     }
   }
 
@@ -459,23 +460,23 @@ class StockfishService {
 
   /// Wait for a specific pattern to appear in the engine's output stream.
   /// Returns true if the pattern was found within the timeout, false otherwise.
+  /// The output-stream subscription is guaranteed to be cancelled on every exit
+  /// path (pattern found, timeout, error) via `finally`.
   Future<bool> _waitForOutputPattern(
     String pattern, {
     Duration timeout = const Duration(seconds: 5),
   }) async {
     final completer = Completer<bool>();
-    StreamSubscription<String>? sub;
-    sub = _outputController.stream.listen((line) {
-      if (line.contains(pattern)) {
-        sub?.cancel();
-        if (!completer.isCompleted) completer.complete(true);
+    final sub = _outputController.stream.listen((line) {
+      if (line.contains(pattern) && !completer.isCompleted) {
+        completer.complete(true);
       }
     });
     try {
       return await completer.future.timeout(
         timeout,
         onTimeout: () {
-          sub?.cancel();
+          if (!completer.isCompleted) completer.complete(false);
           debugPrint(
             'ENGINE INIT: Timeout waiting for "$pattern" after $timeout',
           );
@@ -483,8 +484,9 @@ class StockfishService {
         },
       );
     } catch (e) {
-      sub?.cancel();
       return false;
+    } finally {
+      await sub.cancel();
     }
   }
 
@@ -1029,16 +1031,15 @@ class StockfishService {
   }
 
   /// Stop current search and wait for it to finish (for intentional search replacement)
+  /// The output-stream subscription is guaranteed to be cancelled on every exit
+  /// path (bestmove received, timeout) via `finally`.
   Future<void> _stopCurrentSearchAndWait() async {
     if (!_searchInFlight) return;
 
     final completer = Completer<void>();
-    late StreamSubscription subscription;
-
-    subscription = _outputController.stream.listen((line) {
-      if (line.trim().startsWith('bestmove')) {
-        subscription.cancel();
-        if (!completer.isCompleted) completer.complete();
+    final subscription = _outputController.stream.listen((line) {
+      if (line.trim().startsWith('bestmove') && !completer.isCompleted) {
+        completer.complete();
       }
     });
 
@@ -1047,8 +1048,9 @@ class StockfishService {
     try {
       await completer.future.timeout(const Duration(seconds: 2));
     } catch (_) {
-      subscription.cancel();
+      // bestmove not received in time — proceed anyway.
     } finally {
+      await subscription.cancel();
       _searchInFlight = false;
     }
   }

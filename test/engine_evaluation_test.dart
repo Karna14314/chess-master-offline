@@ -130,14 +130,15 @@ void main() {
     });
 
     test('SimpleBot: checkmate in 1 detected with correct score', () async {
-      // White can deliver mate in 1 with Qxf7#
+      // White can deliver mate in 1 with Re1-e8#. The black king on g8 is
+      // boxed in by its own pawns on f7/g7/h7, and the checking rook is not
+      // capturable, so the position is a true forced mate.
       final result = await SimpleBotService.instance.getBestMove(
-        fen:
-            'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 w kq - 0 1',
+        fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
         depth: 3,
       );
-      // White has winning position — evaluation should be positive
-      expect(result.evaluation, greaterThan(0));
+      // White delivers mate — the score should be a large positive mate score.
+      expect(result.evaluation, greaterThan(900000));
     });
 
     // ── Draw score convention ─────────────────────────────────
