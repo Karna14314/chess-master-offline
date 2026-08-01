@@ -45,6 +45,8 @@ class _NoMoveStockfishService extends MockStockfishService {
     required String fen,
     required int depth,
     int? thinkTimeMs,
+    String? startingFen,
+    List<String>? moves,
   }) async {
     return BestMoveResult(bestMove: '(none)');
   }

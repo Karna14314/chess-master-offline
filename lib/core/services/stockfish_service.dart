@@ -580,15 +580,37 @@ class StockfishService {
     return true;
   }
 
+  /// Build the UCI "position" command for a given position.
+  /// When [startingFen] and [moves] are provided, emits the full move list so
+  /// Stockfish can detect repetition draws (threefold, fifty-move rule).
+  @visibleForTesting
+  String buildPositionCommand({
+    required String fen,
+    String? startingFen,
+    List<String>? moves,
+  }) {
+    if (startingFen == null || startingFen.isEmpty) {
+      return 'position fen $fen';
+    }
+    final movesPart =
+        (moves != null && moves.isNotEmpty) ? ' moves ${moves.join(' ')}' : '';
+    return 'position fen $startingFen$movesPart';
+  }
+
   /// Get the best move for a given position
   /// [fen] - Position in FEN notation
   /// [depth] - Search depth (1-22)
   /// [thinkTimeMs] - Optional think time limit in milliseconds
+  /// [startingFen] - Optional starting FEN to emit with the full move list so
+  ///   the engine can detect repetition draws.
+  /// [moves] - Optional UCI move list to send with [startingFen].
   Future<BestMoveResult> getBestMove({
     required String fen,
     required int depth,
     int? elo,
     int? thinkTimeMs,
+    String? startingFen,
+    List<String>? moves,
   }) async {
     // Validate FEN to prevent SIGSEGV in Stockfish::Position::is_draw
     if (!_isValidFen(fen)) {
@@ -700,7 +722,11 @@ class StockfishService {
       // Position must be set before search.
       // Strength options (UCI_Elo / UCI_LimitStrength) are configured via setSkillLevel()
       // before calling getBestMove() and should NOT be set here on every move.
-      _sendCommand('position fen $fen');
+      // Send the full starting FEN + move list when available so the engine can
+      // detect threefold/fifty-move repetition draws.
+      _sendCommand(
+        buildPositionCommand(fen: fen, startingFen: startingFen, moves: moves),
+      );
 
       // Wait for engine to confirm position is processed before starting search
       // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
@@ -785,11 +811,15 @@ class StockfishService {
 
   /// Analyze a position and get multiple lines
   /// Returns evaluation and top engine lines
+  /// [startingFen] and [moves] are optional; when provided the engine is told
+  /// the full move list so it can detect repetition draws.
   Future<AnalysisResult> analyzePosition({
     required String fen,
     int depth = AppConstants.analysisDepth,
     int multiPv = AppConstants.topEngineLinesCount,
     void Function(AnalysisResult)? onUpdate,
+    String? startingFen,
+    List<String>? moves,
   }) async {
     // Validate FEN to prevent SIGSEGV
     if (!_isValidFen(fen)) {
@@ -937,7 +967,9 @@ class StockfishService {
       }
 
       // Set position and analyze
-      _sendCommand('position fen $fen');
+      _sendCommand(
+        buildPositionCommand(fen: fen, startingFen: startingFen, moves: moves),
+      );
 
       // Wait for engine to confirm position is processed before starting search
       final positionReady = await _waitForReadyOk(

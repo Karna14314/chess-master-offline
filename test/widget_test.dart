@@ -9,6 +9,7 @@ import 'package:chess_master/core/services/stockfish_service.dart';
 import 'package:chess_master/core/models/chess_models.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:chess_master/providers/engine_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockDatabaseService implements DatabaseService {
   @override
@@ -148,6 +149,8 @@ class MockStockfishService implements StockfishService {
     required String fen,
     required int depth,
     int? thinkTimeMs,
+    String? startingFen,
+    List<String>? moves,
   }) async {
     return BestMoveResult(bestMove: 'e2e4');
   }
@@ -158,6 +161,8 @@ class MockStockfishService implements StockfishService {
     int depth = 15,
     int multiPv = 1,
     void Function(AnalysisResult)? onUpdate,
+    String? startingFen,
+    List<String>? moves,
   }) async {
     return AnalysisResult(evaluation: 0, lines: [], depth: depth);
   }
@@ -176,6 +181,18 @@ class MockStockfishService implements StockfishService {
 
   @override
   void newGame() {}
+
+  @override
+  String buildPositionCommand({
+    required String fen,
+    String? startingFen,
+    List<String>? moves,
+  }) {
+    if (startingFen == null || startingFen.isEmpty) return 'position fen $fen';
+    final movesPart =
+        (moves != null && moves.isNotEmpty) ? ' moves ${moves.join(' ')}' : '';
+    return 'position fen $startingFen$movesPart';
+  }
 
   @override
   Future<bool> resetFallback() async => true;
@@ -203,6 +220,9 @@ void main() {
   testWidgets('App launches and displays bottom navigation bar', (
     WidgetTester tester,
   ) async {
+    // Onboarding has already been completed so the app lands on MainScreen.
+    SharedPreferences.setMockInitialValues({'has_completed_onboarding': true});
+
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       ProviderScope(
@@ -213,6 +233,9 @@ void main() {
         child: const ChessMasterApp(),
       ),
     );
+
+    // Let the onboarding FutureBuilder resolve and navigate to MainScreen.
+    await tester.pumpAndSettle();
 
     // Verify that the BottomNavigationBar is present.
     expect(find.byType(BottomNavigationBar), findsOneWidget);

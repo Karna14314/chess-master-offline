@@ -35,6 +35,8 @@ class MockStockfishService implements StockfishService {
     required String fen,
     required int depth,
     int? thinkTimeMs,
+    String? startingFen,
+    List<String>? moves,
   }) async {
     return BestMoveResult(bestMove: 'e2e4');
   }
@@ -45,6 +47,8 @@ class MockStockfishService implements StockfishService {
     int depth = 15,
     int multiPv = 1,
     void Function(AnalysisResult)? onUpdate,
+    String? startingFen,
+    List<String>? moves,
   }) async {
     return AnalysisResult(
       evaluation: 50,
@@ -69,6 +73,18 @@ class MockStockfishService implements StockfishService {
 
   @override
   void newGame() {}
+
+  @override
+  String buildPositionCommand({
+    required String fen,
+    String? startingFen,
+    List<String>? moves,
+  }) {
+    if (startingFen == null || startingFen.isEmpty) return 'position fen $fen';
+    final movesPart =
+        (moves != null && moves.isNotEmpty) ? ' moves ${moves.join(' ')}' : '';
+    return 'position fen $startingFen$movesPart';
+  }
 
   @override
   Future<bool> resetFallback() async => true;

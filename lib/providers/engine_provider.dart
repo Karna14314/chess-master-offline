@@ -97,10 +97,14 @@ class EngineNotifier extends StateNotifier<EngineState> {
   }
 
   /// Get best move for bot to play
+  /// [startingFen] and [moves] are optional; when provided the engine is told
+  /// the full move list so it can detect repetition draws.
   Future<BestMoveResult?> getBotMove({
     required String fen,
     required DifficultyLevel difficulty,
     BotType botType = BotType.stockfish, // Added param to match usage
+    String? startingFen,
+    List<String>? moves,
   }) async {
     // Increment search ID to invalidate previous requests
     _searchId++;
@@ -175,6 +179,8 @@ class EngineNotifier extends StateNotifier<EngineState> {
             depth: difficulty.depth,
             elo: difficulty.elo,
             thinkTimeMs: difficulty.thinkTimeMs,
+            startingFen: startingFen,
+            moves: moves,
           )
           .timeout(
             Duration(milliseconds: difficulty.thinkTimeMs * 2 + 2000),
@@ -233,7 +239,14 @@ class EngineNotifier extends StateNotifier<EngineState> {
   }
 
   /// Get a hint for the player
-  Future<HintResult?> getHint({required String fen, int depth = 15}) async {
+  /// [startingFen] and [moves] are optional; when provided the engine is told
+  /// the full move list so it can detect repetition draws.
+  Future<HintResult?> getHint({
+    required String fen,
+    int depth = 15,
+    String? startingFen,
+    List<String>? moves,
+  }) async {
     _searchId++;
     final currentSearchId = _searchId;
 
@@ -257,6 +270,8 @@ class EngineNotifier extends StateNotifier<EngineState> {
             fen: fen,
             depth: depth,
             multiPv: 2,
+            startingFen: startingFen,
+            moves: moves,
           );
 
           if (currentSearchId != _searchId) return null;

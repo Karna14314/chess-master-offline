@@ -59,6 +59,30 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     }
   }
 
+  /// Rebuild the board from the starting FEN + full move history so the
+  /// board's internal history is preserved (required for draw-by-repetition
+  /// detection). Falls back to the stored FEN if the history is inconsistent
+  /// with it (e.g. a corrupted/legacy session).
+  chess.Chess _reconstructBoard(GameSession session) {
+    final board = chess.Chess.fromFEN(session.startingFen);
+    for (final move in session.moveHistory) {
+      board.move({
+        'from': move.from,
+        'to': move.to,
+        if (move.promotion != null) 'promotion': move.promotion,
+      });
+    }
+    if (board.fen != session.fen) {
+      return chess.Chess.fromFEN(session.fen);
+    }
+    return board;
+  }
+
+  /// The session's move history as UCI strings (from+to, with promotion).
+  List<String> _uciMoves(GameSession session) => session.moveHistory
+      .map((m) => m.from + m.to + (m.promotion ?? ''))
+      .toList();
+
   /// Make a move
   Future<bool> makeMove(
     String from,
@@ -69,7 +93,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     final currentSession = state;
     if (currentSession == null || currentSession.isCompleted) return false;
 
-    final board = chess.Chess.fromFEN(currentSession.fen);
+    final board = _reconstructBoard(currentSession);
 
     // Check if player turn (unless it's a bot move being processed)
     if (!_isBotThinking &&
@@ -175,6 +199,8 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         fen: currentSession.fen,
         difficulty: currentSession.difficulty,
         botType: currentSession.botType,
+        startingFen: currentSession.startingFen,
+        moves: _uciMoves(currentSession),
       );
 
       if (result == null) return;
@@ -193,7 +219,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       final session = state;
       if (session == null || session.isCompleted) return;
 
-      final board = chess.Chess.fromFEN(session.fen);
+      final board = _reconstructBoard(session);
       final terminal = _terminalResult(board);
       if (terminal != null) {
         debugPrint(
@@ -403,7 +429,11 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     if (currentSession == null || currentSession.isCompleted) return;
 
     final engineNotifier = ref.read(engineProvider.notifier);
-    final result = await engineNotifier.getHint(fen: currentSession.fen);
+    final result = await engineNotifier.getHint(
+      fen: currentSession.fen,
+      startingFen: currentSession.startingFen,
+      moves: _uciMoves(currentSession),
+    );
 
     if (result != null && result.isValid) {
       final (from, to, promotion) = result.parsedMove;
