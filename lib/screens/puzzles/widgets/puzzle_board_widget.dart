@@ -41,30 +41,51 @@ class PuzzleBoardWidget extends StatelessWidget {
       bestMove: hintMove, // Show hint as arrow
       showHint: state.showingHint,
       hintSquare: state.hintFromSquare,
-      onSquareTap:
-          state.isPlayerTurn
-              ? (square) {
-                ref.read(puzzleProvider.notifier).selectSquare(square);
-              }
-              : null,
-      onMove:
-          state.isPlayerTurn
-              ? (from, to) async {
-                final notifier = ref.read(puzzleProvider.notifier);
+      onSquareTap: state.isPlayerTurn
+          ? (square) async {
+              final notifier = ref.read(puzzleProvider.notifier);
+              final selectedSquare = state.selectedSquare;
 
-                if (notifier.needsPromotion(from, to)) {
+              // If we have a selected square and we're tapping a legal move square
+              if (selectedSquare != null && state.legalMoves.contains(square)) {
+                // Check if this move needs promotion
+                if (notifier.needsPromotion(selectedSquare, square)) {
                   final promotion = await _showPromotionDialog(
                     context,
                     state.isWhiteTurn,
                   );
                   if (promotion != null) {
-                    notifier.tryMove(from, to, promotion: promotion);
+                    notifier.tryMove(
+                      selectedSquare,
+                      square,
+                      promotion: promotion,
+                    );
                   }
-                } else {
-                  notifier.tryMove(from, to);
+                  return;
                 }
               }
-              : null,
+
+              // Fall through to normal selection
+              notifier.selectSquare(square);
+            }
+          : null,
+      onMove: state.isPlayerTurn
+          ? (from, to) async {
+              final notifier = ref.read(puzzleProvider.notifier);
+
+              if (notifier.needsPromotion(from, to)) {
+                final promotion = await _showPromotionDialog(
+                  context,
+                  state.isWhiteTurn,
+                );
+                if (promotion != null) {
+                  notifier.tryMove(from, to, promotion: promotion);
+                }
+              } else {
+                notifier.tryMove(from, to);
+              }
+            }
+          : null,
       showCoordinates: true,
     );
   }
@@ -76,26 +97,23 @@ class PuzzleBoardWidget extends StatelessWidget {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceDark,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              'Promote Pawn',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-            ),
-            content: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
-                _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
-                _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
-                _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
-              ],
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Promote Pawn',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _PromotionButton(piece: 'q', isWhite: isWhite, label: 'Queen'),
+            _PromotionButton(piece: 'r', isWhite: isWhite, label: 'Rook'),
+            _PromotionButton(piece: 'b', isWhite: isWhite, label: 'Bishop'),
+            _PromotionButton(piece: 'n', isWhite: isWhite, label: 'Knight'),
+          ],
+        ),
+      ),
     );
   }
 }
