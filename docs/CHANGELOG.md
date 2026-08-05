@@ -31,6 +31,11 @@
 - **Local Daily Puzzle & Streak Notifications**:
   - Implemented offline on-device daily puzzle reminders and streak protection nudges via `flutter_local_notifications`.
 
+### 🧩 Puzzles
+- **Promotion Dialog Fix**:
+  - Fixed a critical bug where making a promotion move in puzzles using the tap-to-move interaction failed the puzzle instantly without showing the piece selection dialog.
+  - Achieved full parity with drag-and-drop mechanics.
+
 ### 🛡️ Privacy, Diagnostics & Open Source Positioning
 - **Local Opt-in Crash Diagnostics**:
   - Built `LocalDiagnosticsService` saving up to 512 KB of error logs locally with FIFO rotation.

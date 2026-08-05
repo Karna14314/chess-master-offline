@@ -1,8 +1,11 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
 import 'package:chess_master/models/puzzle_model.dart';
+import 'package:chess_master/screens/puzzles/widgets/puzzle_board_widget.dart';
+import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/core/services/audio_service.dart';
 import 'package:sqflite/sqflite.dart';
@@ -57,9 +60,12 @@ class MockDatabaseService implements DatabaseService {
       [];
 
   @override
+  Future<List<int>> getPlayedPuzzleIds() async => [];
+
+  @override
   Future<List<Map<String, dynamic>>> getRecentGames({
     int limit = 10,
-    bool includeCompleted = true,
+    bool includeCompleted = false,
   }) async => [];
 
   @override
@@ -70,22 +76,20 @@ class MockDatabaseService implements DatabaseService {
     required int botElo,
   }) async {}
 
-  @override
-  Future<void> saveAnalysis(
-    String gameId,
-    String fen,
-    String moves,
-    String analysisJson,
-    int depth,
-  ) async {}
+
 
   @override
-  Future<void> saveGame(Map<String, dynamic> game) async {}
+  Future<void> saveAnalysis(String gameId, String fen, String moves, String analysisJson, int depth) async {}
+
+  @override
+  Future<void> saveGame(Map<String, dynamic> gameData) async {}
 
   @override
   Future<List<Map<String, dynamic>>> searchGamesByDate({
     required DateTime start,
     required DateTime end,
+    int? limit,
+    int? offset,
   }) async => [];
 
   @override
@@ -97,17 +101,16 @@ class MockDatabaseService implements DatabaseService {
 
   @override
   Future<void> updateGameName(String id, String customName) async {}
+
+
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  // The AudioService singleton eagerly constructs AudioPlayer instances whose
-  // async create() would surface an unhandled MissingPluginException in a plain
-  // test() (no host platform). Mock the audioplayers channels so construction
-  // succeeds; audio is disabled for this test anyway.
   setUp(() {
-    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(
       const MethodChannel('xyz.luan/audioplayers.global'),
       (call) async => null,
@@ -163,5 +166,84 @@ void main() {
       PuzzleState.incorrect,
       reason: "Move without promotion should be rejected",
     );
+  });
+
+  testWidgets('Tap-to-move promotion shows dialog and handles move correctly', (
+    WidgetTester tester,
+  ) async {
+    // Disable audio to avoid platform channel issues
+    AudioService.instance.setEnabled(false);
+
+    final container = ProviderContainer(
+      overrides: [
+        databaseServiceProvider.overrideWithValue(MockDatabaseService()),
+      ],
+    );
+
+    final notifier = container.read(puzzleProvider.notifier);
+
+    final puzzle = Puzzle(
+      id: 1,
+      fen: '8/P7/8/8/8/8/k7/7K b - - 0 1',
+      moves: ['a2a3', 'a7a8q'],
+      rating: 1000,
+      themes: ['promotion'],
+      searchableThemes: ['promotion'],
+    );
+
+    notifier.loadPuzzlesForTesting([puzzle]);
+    await notifier.startNewPuzzle();
+
+    // Directly build the widget inside a material app
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
+            body: Consumer(
+              builder: (context, ref, _) {
+                final state = ref.watch(puzzleProvider);
+                // Return a non-empty widget to test
+                if (state.currentPuzzle == null) {
+                  return const Text('Loading');
+                }
+                return PuzzleBoardWidget(state: state, ref: ref);
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Check if loading is shown
+    if (find.text('Loading').evaluate().isNotEmpty) {
+      fail('Puzzle didn\'t load properly in UI');
+    }
+
+    final chessBoardFinder = find.byType(ChessBoard);
+    expect(chessBoardFinder, findsOneWidget);
+
+    tester.widget<ChessBoard>(chessBoardFinder).onSquareTap!('a7');
+    await tester.pumpAndSettle();
+
+    // Tap a8 (must get updated widget after rebuild)
+    tester.widget<ChessBoard>(chessBoardFinder).onSquareTap!('a8');
+    await tester.pumpAndSettle();
+
+    // Verify dialog is shown
+    expect(find.text('Promote Pawn'), findsOneWidget);
+
+    // Verify buttons are there
+    expect(find.text('Queen'), findsOneWidget);
+
+    // Tap the Queen promotion button
+    await tester.tap(find.text('Queen'));
+    await tester.pumpAndSettle();
+
+    // Verify puzzle progressed or is solved (correct move)
+    final state = container.read(puzzleProvider);
+    expect(state.state, equals(PuzzleState.completed));
   });
 }
