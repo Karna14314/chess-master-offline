@@ -87,13 +87,9 @@ class TimerState {
 /// Timer notifier for managing chess clock
 class TimerNotifier extends StateNotifier<TimerState> {
   Timer? _timer;
-  final void Function(bool isWhite)? onTimeout;
-  final void Function()? onLowTime;
 
   TimerNotifier({
     required TimeControl timeControl,
-    this.onTimeout,
-    this.onLowTime,
   }) : super(
          TimerState(
            whiteTime: timeControl.initialDuration,
@@ -206,13 +202,11 @@ class TimerNotifier extends StateNotifier<TimerState> {
     // Handle timeout
     if (whiteTimedOut || blackTimedOut) {
       stop();
-      onTimeout?.call(whiteTimedOut);
     }
 
     // Low time warning
     if (state.isLowTime && !state.lowTimeWarningShown) {
       state = state.copyWith(lowTimeWarningShown: true);
-      onLowTime?.call();
     }
   }
 

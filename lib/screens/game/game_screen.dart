@@ -25,6 +25,7 @@ class GameScreen extends ConsumerStatefulWidget {
 class _GameScreenState extends ConsumerState<GameScreen> {
   bool _isLandscapeLocked = false;
   final ScrollController _moveListController = ScrollController();
+  String? _initializedSessionId;
 
   @override
   void initState() {
@@ -58,6 +59,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   void _initializeTimer() {
     final gameState = ref.read(gameSessionProvider);
     if (gameState == null) return;
+    if (gameState.id == _initializedSessionId) return;
+    _initializedSessionId = gameState.id;
+
     final timerNotifier = ref.read(timerProvider.notifier);
     timerNotifier.initialize(gameState.timeControl);
     timerNotifier.setTimes(
@@ -91,6 +95,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     ref.listen<GameSession?>(gameSessionProvider, (previous, next) {
       if (next == null) return;
 
+      if (next.id != _initializedSessionId) {
+        _initializeTimer();
+      }
+
       // Handle move count change
       if (previous != null &&
           previous.moveHistory.length != next.moveHistory.length) {
@@ -99,7 +107,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       }
 
       // Handle game completion
-      if (!previous!.isCompleted && next.isCompleted && next.result != null) {
+      if (previous != null && !previous.isCompleted && next.isCompleted && next.result != null) {
         ref.read(timerProvider.notifier).stop();
         _showGameOverDialog(context, next);
       }
@@ -107,6 +115,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     // Listen for timer timeouts
     ref.listen<TimerState>(timerProvider, (previous, next) {
+      if (gameState.gameMode == GameMode.bot) return;
       if (next.isTimedOut && !gameState.isCompleted) {
         ref
             .read(gameSessionProvider.notifier)
@@ -585,9 +594,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             ),
           ),
           const SizedBox(width: 4),
-          Flexible(
-            child: ChessTimerWidget(isWhite: isWhite, isActive: isActive),
-          ),
+          if (gameState.gameMode != GameMode.bot)
+            Flexible(
+              child: ChessTimerWidget(isWhite: isWhite, isActive: isActive),
+            ),
         ],
       ),
     );

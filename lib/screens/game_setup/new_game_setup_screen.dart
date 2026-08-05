@@ -66,10 +66,12 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                   const SizedBox(height: 12),
                   _buildColorSelection(),
 
-                  const SizedBox(height: 32),
-                  _buildSectionHeader('Time Control'),
-                  const SizedBox(height: 12),
-                  _buildTimerSelection(),
+                  if (_selectedMode != GameMode.bot) ...[
+                    const SizedBox(height: 32),
+                    _buildSectionHeader('Time Control'),
+                    const SizedBox(height: 12),
+                    _buildTimerSelection(),
+                  ],
 
                   const SizedBox(height: 100), // Space for button
                 ],
@@ -247,7 +249,9 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   void _startGame() {
     final diffLevel =
         AppConstants.difficultyLevels[_difficultyLevel.toInt() - 1];
-    final timerControl = AppConstants.timeControls[_selectedTimerIndex];
+    final timerControl = _selectedMode == GameMode.bot
+        ? AppConstants.timeControls[0]
+        : AppConstants.timeControls[_selectedTimerIndex];
 
     ref
         .read(gameSessionProvider.notifier)
