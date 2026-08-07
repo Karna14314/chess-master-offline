@@ -603,7 +603,7 @@ void main() {
         // which penalizes blunders more than simple average but the volatility
         // weighting can raise the score when bad moves occur in volatile positions
         final simpleAvg = (100 + 91.39 + 20.0) / 3;
-        final harmonicMean = 3 / ((1/100) + (1/91.39) + (1/20.0));
+        final harmonicMean = 3 / ((1 / 100) + (1 / 91.39) + (1 / 20.0));
         // Result should be between harmonic mean (lower bound) and simple average (upper bound)
         expect(ga.averageAccuracy, lessThan(simpleAvg));
         expect(ga.averageAccuracy, greaterThan(harmonicMean - 5));

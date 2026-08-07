@@ -170,9 +170,8 @@ class GameAnalysis {
       totalCpl += move.centipawnLoss;
       moveAccuracies.add(move.accuracy);
 
-      final playerWinPercent = move.isWhiteMove
-          ? move.winPercentAfter
-          : 100 - move.winPercentAfter;
+      final playerWinPercent =
+          move.isWhiteMove ? move.winPercentAfter : 100 - move.winPercentAfter;
       winPercents.add(playerWinPercent);
 
       switch (move.classification) {
@@ -212,7 +211,10 @@ class GameAnalysis {
     }
 
     final count = moves.length;
-    final winBasedAccuracy = EvalConstants.gameAccuracy(moveAccuracies, winPercents);
+    final winBasedAccuracy = EvalConstants.gameAccuracy(
+      moveAccuracies,
+      winPercents,
+    );
 
     final openingMoves = <MoveAnalysis>[];
     final middleMoves = <MoveAnalysis>[];
@@ -248,12 +250,21 @@ class GameAnalysis {
       bestMoves: bestMoves,
       bookMoves: bookMoves,
       finalEval: moves.isNotEmpty ? moves.last.evalAfter : 0.0,
-      openingAccuracy: openingMoves.isEmpty ? 0.0 :
-        openingMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / openingMoves.length,
-      middlegameAccuracy: middleMoves.isEmpty ? 0.0 :
-        middleMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / middleMoves.length,
-      endgameAccuracy: endMoves.isEmpty ? 0.0 :
-        endMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / endMoves.length,
+      openingAccuracy:
+          openingMoves.isEmpty
+              ? 0.0
+              : openingMoves.map((m) => m.accuracy).reduce((a, b) => a + b) /
+                  openingMoves.length,
+      middlegameAccuracy:
+          middleMoves.isEmpty
+              ? 0.0
+              : middleMoves.map((m) => m.accuracy).reduce((a, b) => a + b) /
+                  middleMoves.length,
+      endgameAccuracy:
+          endMoves.isEmpty
+              ? 0.0
+              : endMoves.map((m) => m.accuracy).reduce((a, b) => a + b) /
+                  endMoves.length,
     );
   }
 

@@ -21,11 +21,13 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          gameSessionProvider.overrideWith((ref) => GameSessionViewModel(
-            // Mock repository is not needed just to test TimerNotifier initialization
-            throw UnimplementedError('Repository not used for this test'),
-            ref
-          )..setSession(session)),
+          gameSessionProvider.overrideWith(
+            (ref) => GameSessionViewModel(
+              // Mock repository is not needed just to test TimerNotifier initialization
+              throw UnimplementedError('Repository not used for this test'),
+              ref,
+            )..setSession(session),
+          ),
         ],
       );
 
@@ -44,15 +46,20 @@ void main() {
       final timerState = container.read(timerProvider);
       expect(timerState.hasTimer, true);
       expect(timerState.isRunning, true);
-      expect(timerState.timeControl.initialDuration, const Duration(minutes: 3));
+      expect(
+        timerState.timeControl.initialDuration,
+        const Duration(minutes: 3),
+      );
     });
 
     test('Bot game is always created with no timer', () {
       final timeControlWithTimer = AppConstants.timeControls[3]; // 3 min timer
 
-      final timeControl = GameMode.bot == GameMode.bot
-          ? AppConstants.timeControls[0] // Mocking the logic applied in NewGameSetupScreen
-          : timeControlWithTimer;
+      final timeControl =
+          GameMode.bot == GameMode.bot
+              ? AppConstants
+                  .timeControls[0] // Mocking the logic applied in NewGameSetupScreen
+              : timeControlWithTimer;
 
       final session = GameSession.create(
         gameMode: GameMode.bot,

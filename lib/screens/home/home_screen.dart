@@ -41,8 +41,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardLight;
     final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderLight;
-    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
-    final textSecondary = isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
+    final textPrimary =
+        isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
+    final textSecondary =
+        isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
 
     return Scaffold(
       body: SafeArea(
@@ -59,16 +61,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 20),
                     _buildDailyStreakAndPuzzleHero(context),
                     const SizedBox(height: 24),
-                     _buildQuickPlayHero(context),
-                     const SizedBox(height: 16),
-                     _buildAdaptiveDifficultyBanner(context, textPrimary, textSecondary),
-                     const SizedBox(height: 16),
-                   ],
-                 ),
-               ),
-             ),
+                    _buildQuickPlayHero(context),
+                    const SizedBox(height: 16),
+                    _buildAdaptiveDifficultyBanner(
+                      context,
+                      textPrimary,
+                      textSecondary,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
 
-             // Game Modes Grid
+            // Game Modes Grid
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverToBoxAdapter(
@@ -158,7 +164,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverToBoxAdapter(
-                child: _buildContinueSection(context, cardColor, borderColor, textPrimary, textSecondary),
+                child: _buildContinueSection(
+                  context,
+                  cardColor,
+                  borderColor,
+                  textPrimary,
+                  textSecondary,
+                ),
               ),
             ),
 
@@ -171,7 +183,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, Color textPrimary, Color textSecondary) {
+  Widget _buildHeader(
+    BuildContext context,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
     final streakState = ref.watch(streakProvider);
     final streakCount = streakState.streakCount;
 
@@ -184,10 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Text(
               'Welcome Back,',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: textSecondary,
-              ),
+              style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
             ),
             const SizedBox(height: 4),
             Text(
@@ -237,16 +250,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isSolved
-              ? [const Color(0xFF1B5E20), const Color(0xFF2E7D32)]
-              : [const Color(0xFFE65100), const Color(0xFFF57C00)],
+          colors:
+              isSolved
+                  ? [const Color(0xFF1B5E20), const Color(0xFF2E7D32)]
+                  : [const Color(0xFFE65100), const Color(0xFFF57C00)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: (isSolved ? Colors.green : Colors.orange).withValues(alpha: 0.3),
+            color: (isSolved ? Colors.green : Colors.orange).withValues(
+              alpha: 0.3,
+            ),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -259,13 +275,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  isSolved ? 'DAILY PUZZLE COMPLETED ✅' : 'TODAY\'S DAILY PUZZLE 🧩',
+                  isSolved
+                      ? 'DAILY PUZZLE COMPLETED ✅'
+                      : 'TODAY\'S DAILY PUZZLE 🧩',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -320,7 +341,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
-                foregroundColor: isSolved ? Colors.green.shade900 : Colors.orange.shade900,
+                foregroundColor:
+                    isSolved ? Colors.green.shade900 : Colors.orange.shade900,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -353,10 +375,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF1B5E20),
-              Color(0xFF0D0D0D),
-            ],
+            colors: [Color(0xFF1B5E20), Color(0xFF0D0D0D)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -437,14 +456,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildAdaptiveDifficultyBanner(
-    BuildContext context, Color textPrimary, Color textSecondary,
+    BuildContext context,
+    Color textPrimary,
+    Color textSecondary,
   ) {
     final stats = ref.watch(statisticsProvider);
-    final suggestion = ref.read(statisticsProvider.notifier).getDifficultySuggestion();
+    final suggestion =
+        ref.read(statisticsProvider.notifier).getDifficultySuggestion();
 
-    if (suggestion == null && stats.totalGames < 3) return const SizedBox.shrink();
+    if (suggestion == null && stats.totalGames < 3)
+      return const SizedBox.shrink();
 
-    final recommended = ref.read(statisticsProvider.notifier).getRecommendedDifficulty();
+    final recommended =
+        ref.read(statisticsProvider.notifier).getRecommendedDifficulty();
     final showSuggestion = suggestion != null;
 
     return GestureDetector(
@@ -457,14 +481,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 20),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: showSuggestion
-              ? const Color(0xFF00ACC1).withValues(alpha: 0.1)
-              : AppTheme.primaryColor.withValues(alpha: 0.08),
+          color:
+              showSuggestion
+                  ? const Color(0xFF00ACC1).withValues(alpha: 0.1)
+                  : AppTheme.primaryColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: showSuggestion
-                ? const Color(0xFF00ACC1).withValues(alpha: 0.3)
-                : AppTheme.primaryColor.withValues(alpha: 0.2),
+            color:
+                showSuggestion
+                    ? const Color(0xFF00ACC1).withValues(alpha: 0.3)
+                    : AppTheme.primaryColor.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -472,14 +498,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: showSuggestion
-                    ? const Color(0xFF00ACC1).withValues(alpha: 0.2)
-                    : AppTheme.primaryColor.withValues(alpha: 0.2),
+                color:
+                    showSuggestion
+                        ? const Color(0xFF00ACC1).withValues(alpha: 0.2)
+                        : AppTheme.primaryColor.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                showSuggestion ? Icons.trending_up_rounded : Icons.emoji_events_rounded,
-                color: showSuggestion ? const Color(0xFF00ACC1) : AppTheme.primaryColor,
+                showSuggestion
+                    ? Icons.trending_up_rounded
+                    : Icons.emoji_events_rounded,
+                color:
+                    showSuggestion
+                        ? const Color(0xFF00ACC1)
+                        : AppTheme.primaryColor,
                 size: 22,
               ),
             ),
@@ -519,7 +551,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title, Color textPrimary) {
+  Widget _buildSectionTitle(
+    BuildContext context,
+    String title,
+    Color textPrimary,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -581,10 +617,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: textSecondary,
-                ),
+                style: GoogleFonts.inter(fontSize: 11, color: textSecondary),
               ),
             ],
           ),
@@ -601,7 +634,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Color textSecondary,
   ) {
     return FutureBuilder<List<GameSession>>(
-      future: GameSessionRepository(DatabaseService.instance).getUnfinishedGames(limit: 5),
+      future: GameSessionRepository(
+        DatabaseService.instance,
+      ).getUnfinishedGames(limit: 5),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
@@ -797,7 +832,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const NewGameSetupScreen(initialMode: GameMode.bot),
+        builder:
+            (context) => const NewGameSetupScreen(initialMode: GameMode.bot),
       ),
     );
   }
@@ -806,7 +842,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const NewGameSetupScreen(initialMode: GameMode.localMultiplayer),
+        builder:
+            (context) => const NewGameSetupScreen(
+              initialMode: GameMode.localMultiplayer,
+            ),
       ),
     );
   }

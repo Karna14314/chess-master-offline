@@ -21,7 +21,8 @@ class MockGameSessionRepository extends Fake implements GameSessionRepository {
   Future<GameSession?> getSession(String id) async => null;
 
   @override
-  Future<List<GameSession>> getAllSessions({int? limit, int? offset}) async => [];
+  Future<List<GameSession>> getAllSessions({int? limit, int? offset}) async =>
+      [];
 
   @override
   Future<void> deleteSession(String id) async {}
@@ -48,7 +49,9 @@ void main() {
       overrides: [
         databaseServiceProvider.overrideWithValue(MockDatabaseService()),
         stockfishServiceProvider.overrideWithValue(MockStockfishService()),
-        gameSessionRepositoryProvider.overrideWithValue(MockGameSessionRepository()),
+        gameSessionRepositoryProvider.overrideWithValue(
+          MockGameSessionRepository(),
+        ),
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme,
@@ -60,22 +63,29 @@ void main() {
   }
 
   group('Mid-Game Control Bar Tests', () {
-    testWidgets('Primary control bar renders 4 action buttons (Undo, Hint, Flip, Resign)', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'Primary control bar renders 4 action buttons (Undo, Hint, Flip, Resign)',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(createTestableWidget(themeMode: ThemeMode.light));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpWidget(
+          createTestableWidget(themeMode: ThemeMode.light),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.byTooltip('Undo Move'), findsOneWidget);
-      expect(find.byTooltip('Engine Hint'), findsOneWidget);
-      expect(find.byTooltip('Flip Board'), findsWidgets);
-      expect(find.byTooltip('Resign Game'), findsOneWidget);
-    });
+        expect(find.byTooltip('Undo Move'), findsOneWidget);
+        expect(find.byTooltip('Engine Hint'), findsOneWidget);
+        expect(find.byTooltip('Flip Board'), findsWidgets);
+        expect(find.byTooltip('Resign Game'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Tapping Resign Game button opens confirmation dialog', (tester) async {
+    testWidgets('Tapping Resign Game button opens confirmation dialog', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -92,7 +102,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Resign Game?'), findsOneWidget);
-      expect(find.text('Are you sure you want to resign this match?'), findsOneWidget);
+      expect(
+        find.text('Are you sure you want to resign this match?'),
+        findsOneWidget,
+      );
       expect(find.text('Cancel'), findsOneWidget);
     });
   });
@@ -110,7 +123,9 @@ class _GameScreenLoaderState extends ConsumerState<GameScreenLoader> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(gameSessionProvider.notifier).startNewGame(
+      ref
+          .read(gameSessionProvider.notifier)
+          .startNewGame(
             gameMode: GameMode.bot,
             difficulty: AppConstants.difficultyLevels.first,
             timeControl: AppConstants.timeControls[0],

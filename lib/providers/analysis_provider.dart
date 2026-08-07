@@ -217,7 +217,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     if (moveIndex < -1 || moveIndex >= state.originalMoves.length) return;
 
     // Cancel any running analysis
-    _analysisToken++;
+    stopAnalysis();
     // Give the engine loop a chance to exit before starting new analysis
     await Future.delayed(Duration.zero);
 
@@ -285,6 +285,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     final fen = state.fen;
     final depth = AppConstants.analysisDepth;
     final multiPv = AppConstants.topEngineLinesCount;
+    final token = _analysisToken;
 
     try {
       final cached = await _db.getCachedEvaluation(
@@ -294,15 +295,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       );
 
       if (cached != null) {
+        if (token != _analysisToken) return;
         final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-        final lines = linesJson.map((l) => EngineLine(
-          rank: l['rank'] as int,
-          evaluation: (l['evaluation'] as num).toDouble(),
-          depth: l['depth'] as int,
-          moves: List<String>.from(l['moves']),
-          isMate: (l['isMate'] as bool?) ?? false,
-          mateIn: l['mateIn'] as int?,
-        )).toList();
+        final lines =
+            linesJson
+                .map(
+                  (l) => EngineLine(
+                    rank: l['rank'] as int,
+                    evaluation: (l['evaluation'] as num).toDouble(),
+                    depth: l['depth'] as int,
+                    moves: List<String>.from(l['moves']),
+                    isMate: (l['isMate'] as bool?) ?? false,
+                    mateIn: l['mateIn'] as int?,
+                  ),
+                )
+                .toList();
 
         state = state.copyWith(
           currentEval: (cached['evaluation'] as num).toDouble(),
@@ -322,6 +329,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         depth: depth,
         multiPv: multiPv,
         onUpdate: (partialResult) {
+          if (token != _analysisToken) return;
           state = state.copyWith(
             currentEval: partialResult.evalInPawns,
             currentEngineLines: partialResult.lines,
@@ -333,14 +341,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         },
       );
 
-      final linesJson = result.lines.map((l) => ({
-        'rank': l.rank,
-        'evaluation': l.evaluation,
-        'depth': l.depth,
-        'moves': l.moves,
-        'isMate': l.isMate,
-        'mateIn': l.mateIn,
-      })).toList();
+      if (token != _analysisToken) return;
+
+      final linesJson =
+          result.lines
+              .map(
+                (l) => ({
+                  'rank': l.rank,
+                  'evaluation': l.evaluation,
+                  'depth': l.depth,
+                  'moves': l.moves,
+                  'isMate': l.isMate,
+                  'mateIn': l.mateIn,
+                }),
+              )
+              .toList();
 
       await _db.cacheEvaluation(
         fen: fen,
@@ -361,7 +376,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     } catch (e) {
       debugPrint('Stockfish analysis failed: $e. Using BasicEvaluator.');
       try {
+        if (token != _analysisToken) return;
         final basicResult = await BasicEvaluatorService.instance.analyze(fen);
+        if (token != _analysisToken) return;
         state = state.copyWith(
           currentEval: basicResult.evalInPawns,
           currentEngineLines: basicResult.lines,
@@ -374,7 +391,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         // Silently fail
       }
     } finally {
-      _isAnalyzing = false;
+      if (token == _analysisToken) {
+        _isAnalyzing = false;
+      }
     }
   }
 
@@ -409,11 +428,17 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       // Get initial evaluation (check cache first)
       try {
         if (token != _analysisToken) return;
-        final initialData = await _getCachedOrAnalyze(board.fen, depth: 15, multiPv: 1);
+        final initialData = await _getCachedOrAnalyze(
+          board.fen,
+          depth: 15,
+          multiPv: 1,
+        );
         prevEval = initialData.eval;
       } catch (e) {
         try {
-          final basicResult = await BasicEvaluatorService.instance.analyze(board.fen);
+          final basicResult = await BasicEvaluatorService.instance.analyze(
+            board.fen,
+          );
           prevEval = basicResult.evalInPawns;
         } catch (e2) {
           prevEval = 0.0;
@@ -456,7 +481,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
           afterEval = cachedResult.eval;
           engineLines = cachedResult.lines;
-          if (cachedResult.lines.isNotEmpty && cachedResult.lines.first.moves.isNotEmpty) {
+          if (cachedResult.lines.isNotEmpty &&
+              cachedResult.lines.first.moves.isNotEmpty) {
             bestMove = cachedResult.lines.first.moves.first;
           }
         } catch (e) {
@@ -583,14 +609,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
       if (cached != null) {
         final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-        final lines = linesJson.map((l) => EngineLine(
-          rank: l['rank'] as int,
-          evaluation: (l['evaluation'] as num).toDouble(),
-          depth: l['depth'] as int,
-          moves: List<String>.from(l['moves']),
-          isMate: (l['isMate'] as bool?) ?? false,
-          mateIn: l['mateIn'] as int?,
-        )).toList();
+        final lines =
+            linesJson
+                .map(
+                  (l) => EngineLine(
+                    rank: l['rank'] as int,
+                    evaluation: (l['evaluation'] as num).toDouble(),
+                    depth: l['depth'] as int,
+                    moves: List<String>.from(l['moves']),
+                    isMate: (l['isMate'] as bool?) ?? false,
+                    mateIn: l['mateIn'] as int?,
+                  ),
+                )
+                .toList();
         return (eval: (cached['evaluation'] as num).toDouble(), lines: lines);
       }
     } catch (e) {
@@ -606,14 +637,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
     // Cache the result
     try {
-      final linesJson = result.lines.map((l) => ({
-        'rank': l.rank,
-        'evaluation': l.evaluation,
-        'depth': l.depth,
-        'moves': l.moves,
-        'isMate': l.isMate,
-        'mateIn': l.mateIn,
-      })).toList();
+      final linesJson =
+          result.lines
+              .map(
+                (l) => ({
+                  'rank': l.rank,
+                  'evaluation': l.evaluation,
+                  'depth': l.depth,
+                  'moves': l.moves,
+                  'isMate': l.isMate,
+                  'mateIn': l.mateIn,
+                }),
+              )
+              .toList();
 
       await _db.cacheEvaluation(
         fen: fen,

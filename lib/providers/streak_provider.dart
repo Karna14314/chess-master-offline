@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
-final streakProvider = StateNotifierProvider<StreakNotifier, StreakState>((ref) {
+final streakProvider = StateNotifierProvider<StreakNotifier, StreakState>((
+  ref,
+) {
   return StreakNotifier();
 });
 
@@ -40,8 +42,9 @@ class StreakNotifier extends StateNotifier<StreakState> {
   }
 
   String _yesterdayDateString() {
-    return DateFormat('yyyy-MM-dd')
-        .format(DateTime.now().subtract(const Duration(days: 1)));
+    return DateFormat(
+      'yyyy-MM-dd',
+    ).format(DateTime.now().subtract(const Duration(days: 1)));
   }
 
   Future<void> loadStreak() async {
@@ -56,7 +59,9 @@ class StreakNotifier extends StateNotifier<StreakState> {
       final lastPuzzleDate = prefs.getString('streak_last_puzzle_date') ?? '';
 
       // If last activity was before yesterday, streak broke -> reset to 0
-      if (lastDate.isNotEmpty && lastDate != todayStr && lastDate != yesterdayStr) {
+      if (lastDate.isNotEmpty &&
+          lastDate != todayStr &&
+          lastDate != yesterdayStr) {
         streak = 0;
         await prefs.setInt('streak_current_count', 0);
       }

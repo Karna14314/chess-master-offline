@@ -20,20 +20,22 @@ void main() {
     await service.dispose();
   });
 
-  test('search timeout leaves zero listeners and does not wedge the engine',
-      () async {
-    service.setReadyForTesting(immediateReadyOk: true);
-    service.searchTimeoutForTesting = const Duration(milliseconds: 50);
+  test(
+    'search timeout leaves zero listeners and does not wedge the engine',
+    () async {
+      service.setReadyForTesting(immediateReadyOk: true);
+      service.searchTimeoutForTesting = const Duration(milliseconds: 50);
 
-    final result = await service
-        .getBestMove(fen: startPos, depth: 3, thinkTimeMs: 10)
-        .timeout(const Duration(seconds: 10));
+      final result = await service
+          .getBestMove(fen: startPos, depth: 3, thinkTimeMs: 10)
+          .timeout(const Duration(seconds: 10));
 
-    expect(result, isA<BestMoveResult>());
-    expect(result.bestMove, isNotEmpty);
-    expect(service.hasOutputListenersForTesting, isFalse);
-    expect(service.isEngineBusyForTesting, isFalse);
-  });
+      expect(result, isA<BestMoveResult>());
+      expect(result.bestMove, isNotEmpty);
+      expect(service.hasOutputListenersForTesting, isFalse);
+      expect(service.isEngineBusyForTesting, isFalse);
+    },
+  );
 
   test('ready-ok timeout leaves zero listeners on the output stream', () async {
     service.setReadyForTesting(immediateReadyOk: false);
@@ -52,19 +54,21 @@ void main() {
     expect(service.isEngineBusyForTesting, isFalse);
   });
 
-  test('analysis timeout leaves zero listeners and does not wedge the engine',
-      () async {
-    service.setReadyForTesting(immediateReadyOk: true);
-    service.analysisTimeoutForTesting = const Duration(milliseconds: 50);
+  test(
+    'analysis timeout leaves zero listeners and does not wedge the engine',
+    () async {
+      service.setReadyForTesting(immediateReadyOk: true);
+      service.analysisTimeoutForTesting = const Duration(milliseconds: 50);
 
-    final result = await service
-        .analyzePosition(fen: startPos, depth: 5)
-        .timeout(const Duration(seconds: 10));
+      final result = await service
+          .analyzePosition(fen: startPos, depth: 5)
+          .timeout(const Duration(seconds: 10));
 
-    expect(result, isA<AnalysisResult>());
-    expect(service.hasOutputListenersForTesting, isFalse);
-    expect(service.isEngineBusyForTesting, isFalse);
-  });
+      expect(result, isA<AnalysisResult>());
+      expect(service.hasOutputListenersForTesting, isFalse);
+      expect(service.isEngineBusyForTesting, isFalse);
+    },
+  );
 
   test('20× forced timeouts leak no listeners and never crash', () async {
     service.setReadyForTesting(immediateReadyOk: true);

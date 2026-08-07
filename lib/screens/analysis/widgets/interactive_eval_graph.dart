@@ -71,12 +71,16 @@ class InteractiveEvalGraph extends StatelessWidget {
                   getDrawingHorizontalLine: (value) {
                     if (value == 0) {
                       return FlLine(
-                        color: AppTheme.textHintFor(context).withValues(alpha: 0.3),
+                        color: AppTheme.textHintFor(
+                          context,
+                        ).withValues(alpha: 0.3),
                         strokeWidth: 1.5,
                       );
                     }
                     return FlLine(
-                      color: AppTheme.textHintFor(context).withValues(alpha: 0.1),
+                      color: AppTheme.textHintFor(
+                        context,
+                      ).withValues(alpha: 0.1),
                       strokeWidth: 1,
                       dashArray: [5, 5],
                     );
@@ -202,7 +206,8 @@ class InteractiveEvalGraph extends StatelessWidget {
                     }
                   },
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (touchedSpot) => AppTheme.surfaceColor(context),
+                    getTooltipColor:
+                        (touchedSpot) => AppTheme.surfaceColor(context),
                     tooltipRoundedRadius: 12,
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
@@ -225,7 +230,9 @@ class InteractiveEvalGraph extends StatelessWidget {
                   horizontalLines: [
                     HorizontalLine(
                       y: 0,
-                      color: AppTheme.textHintFor(context).withValues(alpha: 0.5),
+                      color: AppTheme.textHintFor(
+                        context,
+                      ).withValues(alpha: 0.5),
                       strokeWidth: 1.5,
                     ),
                   ],

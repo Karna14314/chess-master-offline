@@ -48,24 +48,24 @@ class AppTheme {
 
   // Semantic status colors (theme-aware)
   static Color semanticSuccess(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFF4CAF50)
-      : const Color(0xFF2E7D32);
+      Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF4CAF50)
+          : const Color(0xFF2E7D32);
 
   static Color semanticError(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFFEF5350)
-      : const Color(0xFFC62828);
+      Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFFEF5350)
+          : const Color(0xFFC62828);
 
   static Color semanticWarning(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFFFFB74D)
-      : const Color(0xFFE65100);
+      Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFFFFB74D)
+          : const Color(0xFFE65100);
 
   static Color semanticInfo(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFF64B5F6)
-      : const Color(0xFF1565C0);
+      Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF64B5F6)
+          : const Color(0xFF1565C0);
 
   // Eval bar colors
   static const Color winBarWhite = Color(0xFFF5F5F5);
@@ -76,17 +76,27 @@ class AppTheme {
 
   // Theme-aware helpers
   static Color cardColor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark ? cardDark : cardLight;
+      Theme.of(context).brightness == Brightness.dark ? cardDark : cardLight;
   static Color surfaceColor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark ? surfaceDark : surfaceLight;
+      Theme.of(context).brightness == Brightness.dark
+          ? surfaceDark
+          : surfaceLight;
   static Color borderColorFor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark ? borderColor : borderLight;
+      Theme.of(context).brightness == Brightness.dark
+          ? borderColor
+          : borderLight;
   static Color textPrimaryFor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark ? textPrimary : textPrimaryLight;
+      Theme.of(context).brightness == Brightness.dark
+          ? textPrimary
+          : textPrimaryLight;
   static Color textSecondaryFor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark ? textSecondary : textSecondaryLight;
+      Theme.of(context).brightness == Brightness.dark
+          ? textSecondary
+          : textSecondaryLight;
   static Color textHintFor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark ? textHint : textHintLight;
+      Theme.of(context).brightness == Brightness.dark
+          ? textHint
+          : textHintLight;
 
   /// Light theme configuration
   static ThemeData get lightTheme {
@@ -266,7 +276,10 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: cardLight,
-        contentTextStyle: GoogleFonts.inter(color: textPrimaryLight, fontSize: 14),
+        contentTextStyle: GoogleFonts.inter(
+          color: textPrimaryLight,
+          fontSize: 14,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: borderLight, width: 1),

@@ -233,7 +233,10 @@ class MockStockfishService implements StockfishService {
   bool get isEngineBusyForTesting => false;
 
   @override
-  void setReadyForTesting({bool immediateReadyOk = false, SendPort? commandPort}) {}
+  void setReadyForTesting({
+    bool immediateReadyOk = false,
+    SendPort? commandPort,
+  }) {}
 
   @override
   void emitEngineLineForTesting(String line) {}

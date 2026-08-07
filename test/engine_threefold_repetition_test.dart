@@ -77,23 +77,24 @@ void main() {
 
     setUp(service.resetTestState);
 
-    test('emits the full move list when startingFen and moves are provided',
-        () {
+    test('emits the full move list when startingFen and moves are provided', () {
       expect(
         service.buildPositionCommand(
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1 1',
-          startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          startingFen:
+              'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
           moves: const ['e2e4', 'e7e5'],
         ),
         'position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-            ' moves e2e4 e7e5',
+        ' moves e2e4 e7e5',
       );
     });
 
     test('falls back to the current FEN when no startingFen is provided', () {
       expect(
         service.buildPositionCommand(
-          fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3',
+          fen:
+              'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3',
         ),
         'position fen r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3',
       );
@@ -103,7 +104,8 @@ void main() {
       expect(
         service.buildPositionCommand(
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1 1',
-          startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          startingFen:
+              'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         ),
         'position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       );
@@ -147,10 +149,7 @@ void main() {
       final result = await resultFuture.timeout(const Duration(seconds: 5));
       expect(result.bestMove, 'e2e4');
 
-      expect(
-        sentCommands,
-        contains('position fen $startFen moves e2e4 e7e5'),
-      );
+      expect(sentCommands, contains('position fen $startFen moves e2e4 e7e5'));
       expect(
         sentCommands.where((c) => c == 'position fen $startFen'),
         isEmpty,
@@ -163,8 +162,7 @@ void main() {
   });
 
   group('Threefold repetition is detected in the viewmodel', () {
-    test('a fresh session completes as a threefold-repetition draw',
-        () async {
+    test('a fresh session completes as a threefold-repetition draw', () async {
       final container = _makeContainer();
       addTearDown(container.dispose);
       final vm = container.read(gameSessionProvider.notifier);
@@ -190,46 +188,48 @@ void main() {
       expect(state.moveHistory.length, _perpetualMoves.length);
     });
 
-    test('a reloaded session (fromMap round-trip) detects the repetition',
-        () async {
-      final container = _makeContainer();
-      addTearDown(container.dispose);
-      final vm = container.read(gameSessionProvider.notifier);
+    test(
+      'a reloaded session (fromMap round-trip) detects the repetition',
+      () async {
+        final container = _makeContainer();
+        addTearDown(container.dispose);
+        final vm = container.read(gameSessionProvider.notifier);
 
-      final session = GameSession.create(
-        gameMode: GameMode.localMultiplayer,
-        difficulty: AppConstants.difficultyLevels[4],
-        timeControl: AppConstants.timeControls[0],
-      );
-      vm.setSession(session);
+        final session = GameSession.create(
+          gameMode: GameMode.localMultiplayer,
+          difficulty: AppConstants.difficultyLevels[4],
+          timeControl: AppConstants.timeControls[0],
+        );
+        vm.setSession(session);
 
-      // Play all but the final ply, then persist & reload the session.
-      for (final (from, to) in _perpetualMoves.take(7)) {
-        final moved = await vm
+        // Play all but the final ply, then persist & reload the session.
+        for (final (from, to) in _perpetualMoves.take(7)) {
+          final moved = await vm
+              .makeMove(from, to)
+              .timeout(const Duration(seconds: 5));
+          expect(moved, isTrue);
+        }
+        expect(vm.state!.isCompleted, isFalse);
+
+        final reloaded = GameSession.fromMap(vm.state!.toMap());
+        expect(reloaded.moveHistory.length, 7);
+
+        final reloadContainer = _makeContainer();
+        addTearDown(reloadContainer.dispose);
+        final reloadedVm = reloadContainer.read(gameSessionProvider.notifier);
+        reloadedVm.setSession(reloaded);
+
+        final (from, to) = _perpetualMoves[7];
+        final moved = await reloadedVm
             .makeMove(from, to)
             .timeout(const Duration(seconds: 5));
         expect(moved, isTrue);
-      }
-      expect(vm.state!.isCompleted, isFalse);
 
-      final reloaded = GameSession.fromMap(vm.state!.toMap());
-      expect(reloaded.moveHistory.length, 7);
-
-      final reloadContainer = _makeContainer();
-      addTearDown(reloadContainer.dispose);
-      final reloadedVm = reloadContainer.read(gameSessionProvider.notifier);
-      reloadedVm.setSession(reloaded);
-
-      final (from, to) = _perpetualMoves[7];
-      final moved = await reloadedVm
-          .makeMove(from, to)
-          .timeout(const Duration(seconds: 5));
-      expect(moved, isTrue);
-
-      final state = reloadedVm.state!;
-      expect(state.isCompleted, isTrue);
-      expect(state.result, GameResult.draw);
-      expect(state.resultReason, 'Threefold repetition');
-    });
+        final state = reloadedVm.state!;
+        expect(state.isCompleted, isTrue);
+        expect(state.result, GameResult.draw);
+        expect(state.resultReason, 'Threefold repetition');
+      },
+    );
   });
 }

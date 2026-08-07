@@ -91,7 +91,9 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
               child: Center(
                 child: Text(
                   'Analyzing position...',
-                  style: GoogleFonts.inter(color: AppTheme.textHintFor(context)),
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textHintFor(context),
+                  ),
                 ),
               ),
             )

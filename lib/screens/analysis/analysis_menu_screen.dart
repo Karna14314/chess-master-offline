@@ -16,8 +16,8 @@ class AnalysisMenuScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gameSession = ref.watch(gameSessionProvider);
-    final hasActiveGame = gameSession != null &&
-        gameSession.moveHistory.isNotEmpty;
+    final hasActiveGame =
+        gameSession != null && gameSession.moveHistory.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -145,7 +145,9 @@ class AnalysisMenuScreen extends ConsumerWidget {
                           Icon(
                             Icons.query_stats_outlined,
                             size: 64,
-                            color: AppTheme.textHintFor(context).withValues(alpha: 0.5),
+                            color: AppTheme.textHintFor(
+                              context,
+                            ).withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -300,7 +302,11 @@ class _AnalysisOptionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: AppTheme.textHintFor(context), size: 28),
+              Icon(
+                Icons.chevron_right,
+                color: AppTheme.textHintFor(context),
+                size: 28,
+              ),
             ],
           ),
         ),

@@ -20,10 +20,7 @@ class Achievement {
     this.unlockedDate,
   });
 
-  Achievement copyWith({
-    bool? isUnlocked,
-    String? unlockedDate,
-  }) {
+  Achievement copyWith({bool? isUnlocked, String? unlockedDate}) {
     return Achievement(
       id: id,
       title: title,
@@ -92,11 +89,12 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
   Future<void> _loadAchievements() async {
     final prefs = await SharedPreferences.getInstance();
     if (_isDisposed) return;
-    final updated = state.map((ach) {
-      final isUnlocked = prefs.getBool('ach_${ach.id}') ?? false;
-      final date = prefs.getString('ach_date_${ach.id}');
-      return ach.copyWith(isUnlocked: isUnlocked, unlockedDate: date);
-    }).toList();
+    final updated =
+        state.map((ach) {
+          final isUnlocked = prefs.getBool('ach_${ach.id}') ?? false;
+          final date = prefs.getString('ach_date_${ach.id}');
+          return ach.copyWith(isUnlocked: isUnlocked, unlockedDate: date);
+        }).toList();
 
     if (!_isDisposed) {
       state = updated;
@@ -157,5 +155,5 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
 
 final achievementProvider =
     StateNotifierProvider<AchievementNotifier, List<Achievement>>((ref) {
-  return AchievementNotifier();
-});
+      return AchievementNotifier();
+    });

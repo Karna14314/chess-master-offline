@@ -34,7 +34,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           border: Border(
-            top: BorderSide(color: AppTheme.borderColorFor(context).withValues(alpha: 0.2), width: 0.5),
+            top: BorderSide(
+              color: AppTheme.borderColorFor(context).withValues(alpha: 0.2),
+              width: 0.5,
+            ),
           ),
           boxShadow: [
             BoxShadow(
@@ -49,9 +52,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           onTap: (index) => setState(() => _currentIndex = index),
           backgroundColor: Theme.of(context).colorScheme.surface,
           selectedItemColor: AppTheme.primaryColor,
-          unselectedItemColor: Theme.of(context).brightness == Brightness.dark
-              ? AppTheme.textSecondary
-              : AppTheme.textSecondaryLight,
+          unselectedItemColor:
+              Theme.of(context).brightness == Brightness.dark
+                  ? AppTheme.textSecondary
+                  : AppTheme.textSecondaryLight,
           type: BottomNavigationBarType.fixed,
           showUnselectedLabels: true,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),

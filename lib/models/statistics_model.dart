@@ -102,14 +102,20 @@ class StatisticsModel {
   /// ELO trend over last N games (positive = improving)
   int get eloTrend {
     if (eloHistory.length < 2) return 0;
-    final recent = eloHistory.length > 10 ? eloHistory.sublist(eloHistory.length - 10) : eloHistory;
+    final recent =
+        eloHistory.length > 10
+            ? eloHistory.sublist(eloHistory.length - 10)
+            : eloHistory;
     return recent.last.elo - recent.first.elo;
   }
 
   /// Best ELO achieved
   int get bestElo {
     if (eloHistory.isEmpty) return currentGameElo;
-    return math.max(currentGameElo, eloHistory.map((e) => e.elo).reduce(math.max));
+    return math.max(
+      currentGameElo,
+      eloHistory.map((e) => e.elo).reduce(math.max),
+    );
   }
 
   /// Create from database map
@@ -143,9 +149,10 @@ class StatisticsModel {
     if (map['elo_history'] != null) {
       try {
         final decoded = jsonDecode(map['elo_history'] as String) as List;
-        eloHistory = decoded
-            .map((e) => EloSnapshot.fromMap(e as Map<String, dynamic>))
-            .toList();
+        eloHistory =
+            decoded
+                .map((e) => EloSnapshot.fromMap(e as Map<String, dynamic>))
+                .toList();
       } catch (_) {}
     }
 

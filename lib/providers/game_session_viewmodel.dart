@@ -82,9 +82,10 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
   }
 
   /// The session's move history as UCI strings (from+to, with promotion).
-  List<String> _uciMoves(GameSession session) => session.moveHistory
-      .map((m) => m.from + m.to + (m.promotion ?? ''))
-      .toList();
+  List<String> _uciMoves(GameSession session) =>
+      session.moveHistory
+          .map((m) => m.from + m.to + (m.promotion ?? ''))
+          .toList();
 
   /// Make a move
   Future<bool> makeMove(
@@ -269,11 +270,12 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     if (board.in_draw) {
       return (
         result: GameResult.draw,
-        reason: board.insufficient_material
-            ? 'Insufficient material'
-            : board.in_threefold_repetition
-            ? 'Threefold repetition'
-            : 'Fifty-move rule',
+        reason:
+            board.insufficient_material
+                ? 'Insufficient material'
+                : board.in_threefold_repetition
+                ? 'Threefold repetition'
+                : 'Fifty-move rule',
       );
     }
     return null;
@@ -515,10 +517,12 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       );
     }
 
+    if (!mounted) return;
+
     if (isWin) {
-      _ref.read(achievementProvider.notifier).checkWins(
-        difficultyLevel: currentSession.difficulty.level,
-      );
+      _ref
+          .read(achievementProvider.notifier)
+          .checkWins(difficultyLevel: currentSession.difficulty.level);
     }
 
     final prevElo = statsNotifier.state.currentGameElo;
@@ -530,9 +534,12 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     );
     await _repository.saveSession(state!);
 
-    final newElo = statsNotifier.state.currentGameElo;
-    if (newElo > prevElo && (newElo % 100 == 0 || (newElo > 1500 && newElo - prevElo > 50))) {
-      NotificationService.instance.showRatingMilestone(newElo);
+    if (mounted) {
+      final newElo = statsNotifier.state.currentGameElo;
+      if (newElo > prevElo &&
+          (newElo % 100 == 0 || (newElo > 1500 && newElo - prevElo > 50))) {
+        NotificationService.instance.showRatingMilestone(newElo);
+      }
     }
   }
 

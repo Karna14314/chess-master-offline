@@ -334,7 +334,8 @@ class EvalConstants {
   /// Input: centipawns (positive = white advantage)
   /// Output: 0-100 (50 = equal)
   static double centipawnsToWinPercent(double centipawns) {
-    return 50.0 + 50.0 * (2.0 / (1.0 + exp(_winPercentMultiplier * centipawns)) - 1.0);
+    return 50.0 +
+        50.0 * (2.0 / (1.0 + exp(_winPercentMultiplier * centipawns)) - 1.0);
   }
 
   /// Compute move accuracy from Win% before/after the move.
@@ -348,7 +349,10 @@ class EvalConstants {
 
   /// Compute game accuracy using volatility-weighted mean + harmonic mean.
   /// This matches the Lichess approach for combining per-move accuracies.
-  static double gameAccuracy(List<double> moveAccuracies, List<double> winPercents) {
+  static double gameAccuracy(
+    List<double> moveAccuracies,
+    List<double> winPercents,
+  ) {
     if (moveAccuracies.isEmpty) return 0.0;
     if (moveAccuracies.length == 1) return moveAccuracies.first;
 
@@ -356,11 +360,16 @@ class EvalConstants {
 
     final weights = <double>[];
     for (int i = 0; i < winPercents.length - 1; i++) {
-      final start = (i - windowSize ~/ 2).clamp(0, winPercents.length - windowSize);
+      final start = (i - windowSize ~/ 2).clamp(
+        0,
+        winPercents.length - windowSize,
+      );
       final end = start + windowSize;
       final window = winPercents.sublist(start, end);
       final mean = window.reduce((a, b) => a + b) / window.length;
-      final variance = window.map((w) => (w - mean) * (w - mean)).reduce((a, b) => a + b) / window.length;
+      final variance =
+          window.map((w) => (w - mean) * (w - mean)).reduce((a, b) => a + b) /
+          window.length;
       final stdDev = sqrt(variance);
       weights.add(stdDev.clamp(0.5, 12.0));
     }
@@ -387,7 +396,10 @@ class EvalConstants {
   }
 
   /// Classify a move based on Win% change (Lichess-compatible).
-  static MoveClassification classifyFromWinPercentDiff(double winDiff, bool isBookMove) {
+  static MoveClassification classifyFromWinPercentDiff(
+    double winDiff,
+    bool isBookMove,
+  ) {
     if (isBookMove) return MoveClassification.book;
     if (winDiff <= 2) return MoveClassification.best;
     if (winDiff <= 5) return MoveClassification.excellent;

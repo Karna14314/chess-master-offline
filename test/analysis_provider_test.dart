@@ -168,7 +168,7 @@ void main() {
         // If the token wasn't working, analyzeFullGame would continue processing
         // all moves even after goToMove
         // Analysis should either be complete (isAnalyzing=false) or partially done
-        expect(state.isAnalyzing || state.analyzedMoves.isNotEmpty, isTrue);
+        expect(state.isAnalyzing, isFalse);
       },
       timeout: const Timeout(Duration(seconds: 30)),
     );

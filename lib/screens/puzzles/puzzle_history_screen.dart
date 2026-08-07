@@ -49,7 +49,9 @@ class PuzzleHistoryScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Error loading puzzle history',
-                    style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
+                    style: GoogleFonts.inter(
+                      color: AppTheme.textSecondaryFor(context),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -82,7 +84,9 @@ class PuzzleHistoryScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Puzzles you tackle will appear here',
-                    style: GoogleFonts.inter(color: AppTheme.textHintFor(context)),
+                    style: GoogleFonts.inter(
+                      color: AppTheme.textHintFor(context),
+                    ),
                   ),
                 ],
               ),
@@ -192,7 +196,10 @@ class PuzzleHistoryScreen extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textHintFor(context)),
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: AppTheme.textHintFor(context),
+          ),
         ),
       ],
     );
