@@ -6,6 +6,7 @@ import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/providers/streak_provider.dart';
+import 'package:chess_master/providers/statistics_provider.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
 import 'package:chess_master/screens/game_setup/new_game_setup_screen.dart';
 import 'package:chess_master/screens/history/game_history_screen.dart';
@@ -58,14 +59,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 20),
                     _buildDailyStreakAndPuzzleHero(context),
                     const SizedBox(height: 24),
-                    _buildQuickPlayHero(context),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
+                     _buildQuickPlayHero(context),
+                     const SizedBox(height: 16),
+                     _buildAdaptiveDifficultyBanner(context, textPrimary, textSecondary),
+                     const SizedBox(height: 16),
+                   ],
+                 ),
+               ),
+             ),
 
-            // Game Modes Grid
+             // Game Modes Grid
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverToBoxAdapter(
@@ -427,6 +430,89 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdaptiveDifficultyBanner(
+    BuildContext context, Color textPrimary, Color textSecondary,
+  ) {
+    final stats = ref.watch(statisticsProvider);
+    final suggestion = ref.read(statisticsProvider.notifier).getDifficultySuggestion();
+
+    if (suggestion == null && stats.totalGames < 3) return const SizedBox.shrink();
+
+    final recommended = ref.read(statisticsProvider.notifier).getRecommendedDifficulty();
+    final showSuggestion = suggestion != null;
+
+    return GestureDetector(
+      onTap: () {
+        if (!showSuggestion) {
+          _startQuickGame(recommended.level);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: showSuggestion
+              ? const Color(0xFF00ACC1).withValues(alpha: 0.1)
+              : AppTheme.primaryColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: showSuggestion
+                ? const Color(0xFF00ACC1).withValues(alpha: 0.3)
+                : AppTheme.primaryColor.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: showSuggestion
+                    ? const Color(0xFF00ACC1).withValues(alpha: 0.2)
+                    : AppTheme.primaryColor.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                showSuggestion ? Icons.trending_up_rounded : Icons.emoji_events_rounded,
+                color: showSuggestion ? const Color(0xFF00ACC1) : AppTheme.primaryColor,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    showSuggestion
+                        ? suggestion
+                        : 'Rating: ${stats.currentGameElo} ELO',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    showSuggestion
+                        ? 'Based on your recent performance'
+                        : 'Recommended: ${recommended.name} (${recommended.elo})',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!showSuggestion)
+              Icon(Icons.chevron_right, color: textSecondary),
           ],
         ),
       ),

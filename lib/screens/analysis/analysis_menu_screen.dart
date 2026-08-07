@@ -7,7 +7,7 @@ import 'package:chess_master/screens/analysis/pgn_import_screen.dart';
 import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:chess_master/models/game_session.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:chess_master/providers/game_provider.dart';
+import 'package:chess_master/providers/game_session_viewmodel.dart';
 
 /// Enhanced analysis menu screen matching the new requirements
 class AnalysisMenuScreen extends ConsumerWidget {
@@ -15,11 +15,9 @@ class AnalysisMenuScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activeGame = ref.watch(gameProvider);
-    final hasActiveGame =
-        activeGame.gameMode != GameMode.analysis &&
-        activeGame.gameMode != GameMode.puzzle &&
-        activeGame.moveHistory.isNotEmpty;
+    final gameSession = ref.watch(gameSessionProvider);
+    final hasActiveGame = gameSession != null &&
+        gameSession.moveHistory.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -55,14 +53,15 @@ class AnalysisMenuScreen extends ConsumerWidget {
                       icon: Icons.grid_on_outlined,
                       color: AppTheme.primaryColor,
                       onTap: () {
+                        final session = gameSession;
+                        if (session == null) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder:
                                 (context) => AnalysisScreen(
-                                  moves: activeGame.moveHistory,
-                                  startingFen:
-                                      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                                  moves: session.moveHistory,
+                                  startingFen: session.startingFen,
                                 ),
                           ),
                         );

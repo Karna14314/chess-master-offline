@@ -10,6 +10,7 @@ import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/timer_provider.dart';
 import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
+import 'package:chess_master/services/notification_service.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/providers/achievement_provider.dart';
 import 'package:chess/chess.dart' as chess;
@@ -37,11 +38,6 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     GameMode gameMode = GameMode.bot,
     BotType botType = BotType.stockfish,
   }) async {
-    // Force No Timer for bot games
-    if (gameMode == GameMode.bot) {
-      timeControl = AppConstants.timeControls[0];
-    }
-
     // Reset engine first to ensure clean state for new game (except local multiplayer)
     if (gameMode != GameMode.localMultiplayer) {
       final engineNotifier = _ref.read(engineProvider.notifier);
@@ -510,11 +506,22 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
           DateTime.now().difference(currentSession.startedAt).inSeconds,
     );
 
+    if (currentSession.gameMode == GameMode.bot) {
+      await statsNotifier.recordGameElo(
+        botElo: currentSession.difficulty.elo,
+        isWin: isWin,
+        isLoss: isLoss,
+        isDraw: isDraw,
+      );
+    }
+
     if (isWin) {
       _ref.read(achievementProvider.notifier).checkWins(
         difficultyLevel: currentSession.difficulty.level,
       );
     }
+
+    final prevElo = statsNotifier.state.currentGameElo;
 
     state = currentSession.copyWith(
       isRecorded: true,
@@ -522,6 +529,11 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       blackAccuracy: !isWhite ? accuracy : null,
     );
     await _repository.saveSession(state!);
+
+    final newElo = statsNotifier.state.currentGameElo;
+    if (newElo > prevElo && (newElo % 100 == 0 || (newElo > 1500 && newElo - prevElo > 50))) {
+      NotificationService.instance.showRatingMilestone(newElo);
+    }
   }
 
   double _calculateAccuracy(GameSession session) {

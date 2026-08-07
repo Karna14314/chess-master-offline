@@ -1,4 +1,35 @@
 import 'dart:convert';
+import 'dart:math' as math;
+
+class EloSnapshot {
+  final int elo;
+  final int gameNumber;
+  final DateTime timestamp;
+
+  const EloSnapshot({
+    required this.elo,
+    required this.gameNumber,
+    required this.timestamp,
+  });
+
+  factory EloSnapshot.fromMap(Map<String, dynamic> map) {
+    return EloSnapshot(
+      elo: map['elo'] as int? ?? 1500,
+      gameNumber: map['gameNumber'] as int? ?? 0,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        map['timestamp'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'elo': elo,
+      'gameNumber': gameNumber,
+      'timestamp': timestamp.millisecondsSinceEpoch,
+    };
+  }
+}
 
 /// Statistics model for tracking user progress
 class StatisticsModel {
@@ -15,6 +46,12 @@ class StatisticsModel {
   final int totalGameTimeSeconds;
   final int hintsUsed;
   final int lastUpdated;
+  final int currentGameElo;
+  final int consecutiveWins;
+  final int consecutiveLosses;
+  final List<EloSnapshot> eloHistory;
+  static const int provisionalGames = 10;
+  static const int defaultGameElo = 1500;
 
   const StatisticsModel({
     this.totalGames = 0,
@@ -30,6 +67,10 @@ class StatisticsModel {
     this.totalGameTimeSeconds = 0,
     this.hintsUsed = 0,
     this.lastUpdated = 0,
+    this.currentGameElo = defaultGameElo,
+    this.consecutiveWins = 0,
+    this.consecutiveLosses = 0,
+    this.eloHistory = const [],
   });
 
   /// Win rate as a percentage
@@ -51,6 +92,25 @@ class StatisticsModel {
   /// Average game time in minutes
   double get averageGameTimeMinutes =>
       totalGames > 0 ? (totalGameTimeSeconds / totalGames) / 60 : 0;
+
+  /// Whether the player is still in provisional period
+  bool get isProvisional => totalGames < provisionalGames;
+
+  /// Current K-factor based on provisional status
+  int get kFactor => isProvisional ? 40 : 32;
+
+  /// ELO trend over last N games (positive = improving)
+  int get eloTrend {
+    if (eloHistory.length < 2) return 0;
+    final recent = eloHistory.length > 10 ? eloHistory.sublist(eloHistory.length - 10) : eloHistory;
+    return recent.last.elo - recent.first.elo;
+  }
+
+  /// Best ELO achieved
+  int get bestElo {
+    if (eloHistory.isEmpty) return currentGameElo;
+    return math.max(currentGameElo, eloHistory.map((e) => e.elo).reduce(math.max));
+  }
 
   /// Create from database map
   factory StatisticsModel.fromMap(Map<String, dynamic> map) {
@@ -79,6 +139,16 @@ class StatisticsModel {
       } catch (_) {}
     }
 
+    List<EloSnapshot> eloHistory = [];
+    if (map['elo_history'] != null) {
+      try {
+        final decoded = jsonDecode(map['elo_history'] as String) as List;
+        eloHistory = decoded
+            .map((e) => EloSnapshot.fromMap(e as Map<String, dynamic>))
+            .toList();
+      } catch (_) {}
+    }
+
     return StatisticsModel(
       totalGames: map['total_games'] as int? ?? 0,
       wins: map['wins'] as int? ?? 0,
@@ -93,6 +163,10 @@ class StatisticsModel {
       totalGameTimeSeconds: map['total_game_time_seconds'] as int? ?? 0,
       hintsUsed: map['hints_used'] as int? ?? 0,
       lastUpdated: map['last_updated'] as int? ?? 0,
+      currentGameElo: map['current_game_elo'] as int? ?? defaultGameElo,
+      consecutiveWins: map['consecutive_wins'] as int? ?? 0,
+      consecutiveLosses: map['consecutive_losses'] as int? ?? 0,
+      eloHistory: eloHistory,
     );
   }
 
@@ -117,6 +191,10 @@ class StatisticsModel {
       'total_game_time_seconds': totalGameTimeSeconds,
       'hints_used': hintsUsed,
       'last_updated': DateTime.now().millisecondsSinceEpoch,
+      'current_game_elo': currentGameElo,
+      'consecutive_wins': consecutiveWins,
+      'consecutive_losses': consecutiveLosses,
+      'elo_history': jsonEncode(eloHistory.map((e) => e.toMap()).toList()),
     };
   }
 
@@ -134,6 +212,10 @@ class StatisticsModel {
     int? totalGameTimeSeconds,
     int? hintsUsed,
     int? lastUpdated,
+    int? currentGameElo,
+    int? consecutiveWins,
+    int? consecutiveLosses,
+    List<EloSnapshot>? eloHistory,
   }) {
     return StatisticsModel(
       totalGames: totalGames ?? this.totalGames,
@@ -149,6 +231,10 @@ class StatisticsModel {
       totalGameTimeSeconds: totalGameTimeSeconds ?? this.totalGameTimeSeconds,
       hintsUsed: hintsUsed ?? this.hintsUsed,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      currentGameElo: currentGameElo ?? this.currentGameElo,
+      consecutiveWins: consecutiveWins ?? this.consecutiveWins,
+      consecutiveLosses: consecutiveLosses ?? this.consecutiveLosses,
+      eloHistory: eloHistory ?? this.eloHistory,
     );
   }
 }

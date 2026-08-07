@@ -123,7 +123,7 @@ class AppConstants {
 
   // Analysis
   static const int analysisDepth = 18;
-  static const int topEngineLinesCount = 3;
+  static const int topEngineLinesCount = 5;
 }
 
 /// Represents a difficulty level configuration
@@ -318,6 +318,82 @@ class EvalConstants {
     if (cpl <= thresholdInaccuracyCp) return MoveClassification.good;
     if (cpl <= thresholdMistakeCp) return MoveClassification.inaccuracy;
     if (cpl <= thresholdBlunderCp) return MoveClassification.mistake;
+    return MoveClassification.blunder;
+  }
+
+  // ──────────────────────────────────────────────
+  // Lichess Win% Accuracy Model (Phase 2)
+  // ──────────────────────────────────────────────
+
+  /// Multiplier for the logistic win% curve.
+  /// Calibrated against 2300+ Lichess rapid games.
+  static const double _winPercentMultiplier = -0.00368208;
+
+  /// Convert centipawn evaluation to Win% using Lichess formula.
+  /// Win% = 50 + 50 * (2 / (1 + exp(-0.00368208 * centipawns)) - 1)
+  /// Input: centipawns (positive = white advantage)
+  /// Output: 0-100 (50 = equal)
+  static double centipawnsToWinPercent(double centipawns) {
+    return 50.0 + 50.0 * (2.0 / (1.0 + exp(_winPercentMultiplier * centipawns)) - 1.0);
+  }
+
+  /// Compute move accuracy from Win% before/after the move.
+  /// Accuracy% = 103.1668 * exp(-0.04354 * winDiff) - 3.1669
+  /// winDiff = winPercentBefore - winPercentAfter (positive = lost chances)
+  static double accuracyFromWinPercentDiff(double winDiff) {
+    if (winDiff <= 0) return 100.0;
+    final raw = 103.1668 * exp(-0.04354 * winDiff) - 3.1669;
+    return raw.clamp(minAccuracy, maxAccuracy);
+  }
+
+  /// Compute game accuracy using volatility-weighted mean + harmonic mean.
+  /// This matches the Lichess approach for combining per-move accuracies.
+  static double gameAccuracy(List<double> moveAccuracies, List<double> winPercents) {
+    if (moveAccuracies.isEmpty) return 0.0;
+    if (moveAccuracies.length == 1) return moveAccuracies.first;
+
+    final windowSize = (winPercents.length / 10).round().clamp(2, 8);
+
+    final weights = <double>[];
+    for (int i = 0; i < winPercents.length - 1; i++) {
+      final start = (i - windowSize ~/ 2).clamp(0, winPercents.length - windowSize);
+      final end = start + windowSize;
+      final window = winPercents.sublist(start, end);
+      final mean = window.reduce((a, b) => a + b) / window.length;
+      final variance = window.map((w) => (w - mean) * (w - mean)).reduce((a, b) => a + b) / window.length;
+      final stdDev = sqrt(variance);
+      weights.add(stdDev.clamp(0.5, 12.0));
+    }
+
+    while (weights.length < moveAccuracies.length) {
+      weights.add(weights.isEmpty ? 1.0 : weights.last);
+    }
+
+    double weightedSum = 0;
+    double weightTotal = 0;
+    for (int i = 0; i < moveAccuracies.length; i++) {
+      weightedSum += moveAccuracies[i] * weights[i];
+      weightTotal += weights[i];
+    }
+    final weightedMean = weightedSum / weightTotal;
+
+    double harmonicSum = 0;
+    for (final acc in moveAccuracies) {
+      harmonicSum += 1.0 / acc.clamp(1.0, 100.0);
+    }
+    final harmonicMean = moveAccuracies.length / harmonicSum;
+
+    return (weightedMean + harmonicMean) / 2.0;
+  }
+
+  /// Classify a move based on Win% change (Lichess-compatible).
+  static MoveClassification classifyFromWinPercentDiff(double winDiff, bool isBookMove) {
+    if (isBookMove) return MoveClassification.book;
+    if (winDiff <= 2) return MoveClassification.best;
+    if (winDiff <= 5) return MoveClassification.excellent;
+    if (winDiff <= 10) return MoveClassification.good;
+    if (winDiff <= 20) return MoveClassification.inaccuracy;
+    if (winDiff <= 40) return MoveClassification.mistake;
     return MoveClassification.blunder;
   }
 }

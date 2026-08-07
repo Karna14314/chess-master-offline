@@ -10,6 +10,7 @@ import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:chess_master/screens/game/widgets/timer_widget.dart';
 import 'package:chess_master/core/services/audio_service.dart';
 import 'package:chess_master/screens/settings/settings_screen.dart';
+import 'package:chess_master/screens/analysis/analysis_screen.dart';
 import 'package:chess_master/screens/widgets/engine_status_indicator.dart';
 import 'package:chess_master/models/game_session.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
@@ -115,7 +116,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     // Listen for timer timeouts
     ref.listen<TimerState>(timerProvider, (previous, next) {
-      if (gameState.gameMode == GameMode.bot) return;
       if (next.isTimedOut && !gameState.isCompleted) {
         ref
             .read(gameSessionProvider.notifier)
@@ -522,34 +522,75 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceColor(context),
-            title: Text(isWin ? 'Victory!' : 'Game Over'),
-            content: Text(gameState.resultReason ?? 'Game finished'),
-            actions: [
-              TextButton(
-                onPressed:
-                    () => {Navigator.pop(context), Navigator.pop(context)},
-                child: const Text('Home'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ref
-                      .read(gameSessionProvider.notifier)
-                      .startNewGame(
-                        playerColor: gameState.playerColor,
-                        difficulty: gameState.difficulty,
-                        timeControl: gameState.timeControl,
-                        gameMode: gameState.gameMode,
-                        botType: gameState.botType,
-                      );
-                },
-                child: const Text('New Game'),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(
+              isWin ? Icons.emoji_events_rounded : Icons.flag_rounded,
+              color: isWin ? Colors.amber : AppTheme.primaryColor,
+            ),
+            const SizedBox(width: 12),
+            Text(isWin ? 'Victory!' : 'Game Over'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(gameState.resultReason ?? 'Game finished'),
+            if (gameState.whiteAccuracy != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Accuracy: ${(gameState.whiteAccuracy ?? gameState.blackAccuracy ?? 0).toStringAsFixed(0)}%',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
               ),
             ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Home'),
           ),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AnalysisScreen(
+                    moves: gameState.moveHistory,
+                    startingFen: gameState.startingFen,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.analytics_outlined, size: 18),
+            label: const Text('Analyze'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(gameSessionProvider.notifier).startNewGame(
+                playerColor: gameState.playerColor,
+                difficulty: gameState.difficulty,
+                timeControl: gameState.timeControl,
+                gameMode: gameState.gameMode,
+                botType: gameState.botType,
+              );
+            },
+            child: const Text('New Game'),
+          ),
+        ],
+      ),
     );
   }
 

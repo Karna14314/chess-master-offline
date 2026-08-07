@@ -33,20 +33,43 @@ double computeAccuracy({
   return EvalConstants.accuracyFromCpl(cpl);
 }
 
+/// Compute move accuracy using the Lichess Win%-based model.
+/// This is more accurate than CPL-based because it accounts for the fact
+/// that the same centipawn loss has different impact in different positions.
+double computeWinPercentAccuracy({
+  required double evalBeforePawns,
+  required double evalAfterPawns,
+  required bool isWhiteMove,
+}) {
+  final winBefore = EvalConstants.centipawnsToWinPercent(evalBeforePawns * 100);
+  final winAfter = EvalConstants.centipawnsToWinPercent(evalAfterPawns * 100);
+
+  double winDiff;
+  if (isWhiteMove) {
+    winDiff = winBefore - winAfter;
+  } else {
+    winDiff = (100 - winBefore) - (100 - winAfter);
+  }
+
+  return EvalConstants.accuracyFromWinPercentDiff(winDiff);
+}
+
 /// Model for move analysis data
 class MoveAnalysis {
   final int moveIndex;
   final String san; // Standard Algebraic Notation
   final String fen; // Position after the move
-  final double evalBefore; // Evaluation before the move (white-relative)
-  final double evalAfter; // Evaluation after the move (white-relative)
+  final double evalBefore; // Evaluation before the move (white-relative, pawns)
+  final double evalAfter; // Evaluation after the move (white-relative, pawns)
+  final double winPercentBefore; // Win% before the move (Lichess formula)
+  final double winPercentAfter; // Win% after the move (Lichess formula)
   final String? bestMove; // Best move in this position (UCI format)
   final String? bestMoveSan; // Best move in SAN format
   final MoveClassification classification;
   final List<EngineLine> engineLines;
   final bool isWhiteMove;
   final double centipawnLoss; // CPL for this move
-  final double accuracy; // Per-move accuracy 0.0–100.0
+  final double accuracy; // Per-move accuracy 0.0–100.0 (Win%-based)
 
   const MoveAnalysis({
     required this.moveIndex,
@@ -54,6 +77,8 @@ class MoveAnalysis {
     required this.fen,
     required this.evalBefore,
     required this.evalAfter,
+    this.winPercentBefore = 50.0,
+    this.winPercentAfter = 50.0,
     this.bestMove,
     this.bestMoveSan,
     required this.classification,
@@ -76,6 +101,9 @@ class MoveAnalysis {
   bool get wasBestMove => classification == MoveClassification.best;
 }
 
+/// Game phase classification
+enum GamePhase { opening, middlegame, endgame }
+
 /// Full game analysis result
 class GameAnalysis {
   final List<MoveAnalysis> moves;
@@ -92,6 +120,9 @@ class GameAnalysis {
   final int bestMoves;
   final int bookMoves;
   final double finalEval;
+  final double openingAccuracy;
+  final double middlegameAccuracy;
+  final double endgameAccuracy;
 
   const GameAnalysis({
     required this.moves,
@@ -108,15 +139,15 @@ class GameAnalysis {
     this.bestMoves = 0,
     this.bookMoves = 0,
     this.finalEval = 0.0,
+    this.openingAccuracy = 0.0,
+    this.middlegameAccuracy = 0.0,
+    this.endgameAccuracy = 0.0,
   });
 
   factory GameAnalysis.empty() {
     return const GameAnalysis(moves: [], averageAccuracy: 0.0);
   }
 
-  /// Calculate accuracy from moves using CPL-based model.
-  /// Uses per-move accuracy derived from centipawn loss rather than
-  /// fixed per-classification scores.
   factory GameAnalysis.fromMoves(List<MoveAnalysis> moves) {
     if (moves.isEmpty) return GameAnalysis.empty();
 
@@ -130,12 +161,19 @@ class GameAnalysis {
     int brilliantMoves = 0;
     int bestMoves = 0;
     int bookMoves = 0;
-    double totalAccuracy = 0;
     double totalCpl = 0;
 
+    final moveAccuracies = <double>[];
+    final winPercents = <double>[];
+
     for (final move in moves) {
-      totalAccuracy += move.accuracy;
       totalCpl += move.centipawnLoss;
+      moveAccuracies.add(move.accuracy);
+
+      final playerWinPercent = move.isWhiteMove
+          ? move.winPercentAfter
+          : 100 - move.winPercentAfter;
+      winPercents.add(playerWinPercent);
 
       switch (move.classification) {
         case MoveClassification.blunder:
@@ -174,9 +212,30 @@ class GameAnalysis {
     }
 
     final count = moves.length;
+    final winBasedAccuracy = EvalConstants.gameAccuracy(moveAccuracies, winPercents);
+
+    final openingMoves = <MoveAnalysis>[];
+    final middleMoves = <MoveAnalysis>[];
+    final endMoves = <MoveAnalysis>[];
+
+    for (int i = 0; i < moves.length; i++) {
+      final phase = _phaseForMove(i, moves.length);
+      switch (phase) {
+        case GamePhase.opening:
+          openingMoves.add(moves[i]);
+          break;
+        case GamePhase.middlegame:
+          middleMoves.add(moves[i]);
+          break;
+        case GamePhase.endgame:
+          endMoves.add(moves[i]);
+          break;
+      }
+    }
+
     return GameAnalysis(
       moves: moves,
-      averageAccuracy: totalAccuracy / count,
+      averageAccuracy: winBasedAccuracy,
       averageCpl: totalCpl / count,
       blunders: blunders,
       misses: misses,
@@ -189,7 +248,20 @@ class GameAnalysis {
       bestMoves: bestMoves,
       bookMoves: bookMoves,
       finalEval: moves.isNotEmpty ? moves.last.evalAfter : 0.0,
+      openingAccuracy: openingMoves.isEmpty ? 0.0 :
+        openingMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / openingMoves.length,
+      middlegameAccuracy: middleMoves.isEmpty ? 0.0 :
+        middleMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / middleMoves.length,
+      endgameAccuracy: endMoves.isEmpty ? 0.0 :
+        endMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / endMoves.length,
     );
+  }
+
+  static GamePhase _phaseForMove(int moveIndex, int totalMoves) {
+    if (totalMoves <= 10) return GamePhase.opening;
+    if (moveIndex < totalMoves * 0.15) return GamePhase.opening;
+    if (moveIndex > totalMoves * 0.75) return GamePhase.endgame;
+    return GamePhase.middlegame;
   }
 
   /// Get all evaluations for graphing

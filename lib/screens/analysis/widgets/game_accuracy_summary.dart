@@ -206,8 +206,103 @@ class GameAccuracySummary extends StatelessWidget {
               style: GoogleFonts.inter(color: AppTheme.textHintFor(context), fontSize: 13),
             ),
           ),
+
+          if (analysis.moves.length > 10) ...[
+            const SizedBox(height: 16),
+            Divider(color: AppTheme.borderColorFor(context)),
+            const SizedBox(height: 12),
+            Text(
+              'Accuracy by Phase',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimaryFor(context),
+              ),
+            ),
+            const SizedBox(height: 10),
+            _PhaseAccuracyRow(
+              label: 'Opening',
+              accuracy: analysis.openingAccuracy,
+              color: const Color(0xFF8E24AA),
+              icon: Icons.menu_book_outlined,
+            ),
+            const SizedBox(height: 6),
+            _PhaseAccuracyRow(
+              label: 'Middlegame',
+              accuracy: analysis.middlegameAccuracy,
+              color: const Color(0xFF1E88E5),
+              icon: Icons.psychology_outlined,
+            ),
+            const SizedBox(height: 6),
+            _PhaseAccuracyRow(
+              label: 'Endgame',
+              accuracy: analysis.endgameAccuracy,
+              color: const Color(0xFF43A047),
+              icon: Icons.flag_outlined,
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _PhaseAccuracyRow extends StatelessWidget {
+  final String label;
+  final double accuracy;
+  final Color color;
+  final IconData icon;
+
+  const _PhaseAccuracyRow({
+    required this.label,
+    required this.accuracy,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = accuracy.clamp(0.0, 100.0);
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 70,
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textSecondaryFor(context),
+            ),
+          ),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: pct / 100.0,
+              backgroundColor: color.withValues(alpha: 0.15),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              minHeight: 8,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 40,
+          child: Text(
+            '${pct.toStringAsFixed(0)}%',
+            textAlign: TextAlign.right,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

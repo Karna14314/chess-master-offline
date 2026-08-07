@@ -76,6 +76,83 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     if (mounted) {}
   }
 
+  void _startPracticeMode(BuildContext context, AnalysisState state, AnalysisNotifier notifier) {
+    final currentMoveIndex = state.currentMoveIndex;
+    if (currentMoveIndex < 0) return;
+
+    final analyzedMove = state.analyzedMoves[currentMoveIndex];
+    final classification = analyzedMove.classification;
+
+    if (classification != MoveClassification.blunder &&
+        classification != MoveClassification.mistake &&
+        classification != MoveClassification.inaccuracy &&
+        classification != MoveClassification.miss) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This move was already good! Practice your mistakes instead.'),
+        ),
+      );
+      return;
+    }
+
+    final prevMoveIndex = currentMoveIndex - 1;
+    String practiceFen;
+    if (prevMoveIndex >= 0 && prevMoveIndex < state.analyzedMoves.length) {
+      practiceFen = state.analyzedMoves[prevMoveIndex].fen;
+    } else {
+      practiceFen = state.startingFen;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Practice Position'),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+          ),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.fitness_center_rounded, size: 64, color: const Color(0xFF00ACC1)),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Practice Mode',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Find the best move in this position.\nYour original move was: ${analyzedMove.san} (${classification.name})',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'FEN: $practiceFen',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.analytics_rounded),
+                    label: const Text('Back to Analysis'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(analysisProvider);
@@ -225,29 +302,45 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                                 }
                               }
                               : null,
-                      onJumpToNextMistake:
-                          state.analyzedMoves.isNotEmpty
-                              ? () {
-                                for (
-                                  int i = state.currentMoveIndex + 1;
-                                  i < state.analyzedMoves.length;
-                                  i++
-                                ) {
-                                  final c =
-                                      state.analyzedMoves[i].classification;
-                                  if (c == MoveClassification.blunder ||
-                                      c == MoveClassification.mistake) {
-                                    notifier.goToMove(i);
-                                    return;
-                                  }
-                                }
-                              }
-                              : null,
-                    ),
+                       onJumpToNextMistake:
+                           state.analyzedMoves.isNotEmpty
+                               ? () {
+                                 for (
+                                   int i = state.currentMoveIndex + 1;
+                                   i < state.analyzedMoves.length;
+                                   i++
+                                 ) {
+                                   final c =
+                                       state.analyzedMoves[i].classification;
+                                   if (c == MoveClassification.blunder ||
+                                       c == MoveClassification.mistake) {
+                                     notifier.goToMove(i);
+                                     return;
+                                   }
+                                 }
+                               }
+                               : null,
+                       onPracticeFromHere: state.currentMoveIndex >= 0
+                           ? () => _startPracticeMode(context, state, notifier)
+                           : null,
+                     ),
 
                     // --- 3. Current Move Details ---
                     if (state.currentMoveAnalysis != null)
-                      CurrentMoveDetails(analysis: state.currentMoveAnalysis!),
+                      CurrentMoveDetails(
+                        analysis: state.currentMoveAnalysis!,
+                        onRetry: () {
+                          if (state.currentMoveIndex > 0) {
+                            notifier.goToMove(state.currentMoveIndex - 1);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Try to find a better move!'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                      ),
 
                     // --- 4. Move Explanation ---
                     if (state.currentMoveAnalysis != null)
@@ -308,8 +401,12 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   String _buildPgn(AnalysisState state) {
     if (state.originalMoves.isEmpty) return "";
     StringBuffer sb = StringBuffer();
-    sb.writeln('[Event "Analysis"]');
+    sb.writeln('[Event "ChessMaster Game"]');
+    sb.writeln('[Site "ChessMaster Offline"]');
     sb.writeln('[Date "${DateTime.now().toIso8601String().split('T')[0]}"]');
+    sb.writeln('[White "Player"]');
+    sb.writeln('[Black "Bot"]');
+    sb.writeln('[Result "*"]');
     sb.writeln();
     for (int i = 0; i < state.originalMoves.length; i++) {
       if (i % 2 == 0) {
@@ -317,6 +414,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       }
       sb.write('${state.originalMoves[i].san} ');
     }
+    sb.write('*');
     return sb.toString().trim();
   }
 }

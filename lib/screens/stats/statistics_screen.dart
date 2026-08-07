@@ -8,6 +8,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/providers/achievement_provider.dart';
+import 'package:chess_master/screens/stats/widgets/rating_graph.dart';
 
 /// Statistics dashboard screen
 class StatisticsScreen extends ConsumerStatefulWidget {
@@ -107,6 +108,17 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           children: [
             // Overall stats cards
             _buildOverviewSection(context, stats),
+            const SizedBox(height: 16),
+
+            // Player ELO card
+            _buildEloCard(context, stats),
+            const SizedBox(height: 16),
+
+            // Rating history graph
+            RatingGraph(
+              eloHistory: stats.eloHistory,
+              currentElo: stats.currentGameElo,
+            ),
             const SizedBox(height: 24),
 
             // Win/Loss/Draw pie chart
@@ -193,6 +205,127 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildEloCard(BuildContext context, StatisticsModel stats) {
+    final elo = stats.currentGameElo;
+    final trend = stats.eloTrend;
+    final isProvisional = stats.isProvisional;
+
+    Color eloColor;
+    if (elo >= 2000) eloColor = const Color(0xFF7B1FA2);
+    else if (elo >= 1800) eloColor = const Color(0xFF1E88E5);
+    else if (elo >= 1600) eloColor = const Color(0xFF43A047);
+    else if (elo >= 1400) eloColor = const Color(0xFFFB8C00);
+    else eloColor = const Color(0xFFE53935);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: eloColor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.trending_up_rounded, color: eloColor, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '$elo',
+                      style: GoogleFonts.inter(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: eloColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (isProvisional)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'PROVISIONAL',
+                          style: GoogleFonts.inter(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber[800],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      'Game ELO',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppTheme.textSecondaryFor(context),
+                      ),
+                    ),
+                    if (trend != 0) ...[
+                      const SizedBox(width: 8),
+                      Icon(
+                        trend > 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                        size: 14,
+                        color: trend > 0 ? Colors.green : Colors.red,
+                      ),
+                      Text(
+                        '${trend > 0 ? "+" : ""}$trend',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: trend > 0 ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (stats.bestElo > elo)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'Best',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppTheme.textHintFor(context),
+                  ),
+                ),
+                Text(
+                  '${stats.bestElo}',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondaryFor(context),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 

@@ -163,6 +163,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ]),
                 const SizedBox(height: 24),
 
+                // Analysis Section
+                _buildSectionHeader(
+                  context,
+                  'Analysis',
+                  Icons.analytics_outlined,
+                ),
+                const SizedBox(height: 12),
+                _buildSettingsCard(context, [
+                  _SwitchSetting(
+                    title: 'Show Win Probability',
+                    subtitle: 'Display Win% instead of centipawns',
+                    value: settings.showWinPercent,
+                    onChanged: (_) => settingsNotifier.toggleShowWinPercent(),
+                  ),
+                  Divider(color: AppTheme.borderColorFor(context)),
+                  _SwitchSetting(
+                    title: 'Auto-analyze After Game',
+                    subtitle: 'Open analysis when game ends',
+                    value: settings.autoAnalyzeAfterGame,
+                    onChanged: (_) => settingsNotifier.toggleAutoAnalyze(),
+                  ),
+                ]),
+                const SizedBox(height: 24),
+
                 // Notifications & Reminders Section
                 _buildSectionHeader(
                   context,

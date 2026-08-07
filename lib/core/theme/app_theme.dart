@@ -46,6 +46,34 @@ class AppTheme {
   static const Color legalMoveHighlight = Color(0x6090EE90);
   static const Color selectedSquareHighlight = Color(0x80FFEB3B);
 
+  // Semantic status colors (theme-aware)
+  static Color semanticSuccess(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF4CAF50)
+      : const Color(0xFF2E7D32);
+
+  static Color semanticError(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFFEF5350)
+      : const Color(0xFFC62828);
+
+  static Color semanticWarning(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFFFFB74D)
+      : const Color(0xFFE65100);
+
+  static Color semanticInfo(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF64B5F6)
+      : const Color(0xFF1565C0);
+
+  // Eval bar colors
+  static const Color winBarWhite = Color(0xFFF5F5F5);
+  static const Color winBarBlack = Color(0xFF424242);
+  static const Color evalPositive = Color(0xFF4CAF50);
+  static const Color evalNegative = Color(0xFFE53935);
+  static const Color evalNeutral = Color(0xFF757575);
+
   // Theme-aware helpers
   static Color cardColor(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark ? cardDark : cardLight;

@@ -13,6 +13,7 @@ class MoveNavigationBar extends StatelessWidget {
   final VoidCallback onLast;
   final VoidCallback? onJumpToPreviousMistake;
   final VoidCallback? onJumpToNextMistake;
+  final VoidCallback? onPracticeFromHere;
 
   const MoveNavigationBar({
     super.key,
@@ -26,6 +27,7 @@ class MoveNavigationBar extends StatelessWidget {
     required this.onLast,
     this.onJumpToPreviousMistake,
     this.onJumpToNextMistake,
+    this.onPracticeFromHere,
   });
 
   @override
@@ -82,29 +84,32 @@ class MoveNavigationBar extends StatelessWidget {
             ],
           ),
 
-          if (onJumpToPreviousMistake != null ||
-              onJumpToNextMistake != null) ...[
-            const SizedBox(height: 12),
-            Divider(color: AppTheme.surfaceColor(context), height: 1),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _JumpButton(
-                  icon: Icons.history_rounded,
-                  label: 'Prev Mistake',
-                  onPressed: onJumpToPreviousMistake,
-                  color: Colors.orange,
-                ),
-                _JumpButton(
-                  icon: Icons.update_rounded,
-                  label: 'Next Mistake',
-                  onPressed: onJumpToNextMistake,
-                  color: Colors.redAccent,
-                ),
-              ],
-            ),
-          ],
+          const SizedBox(height: 12),
+          Divider(color: AppTheme.surfaceColor(context), height: 1),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _JumpButton(
+                icon: Icons.history_rounded,
+                label: 'Prev Mistake',
+                onPressed: onJumpToPreviousMistake,
+                color: Colors.orange,
+              ),
+              _JumpButton(
+                icon: Icons.update_rounded,
+                label: 'Next Mistake',
+                onPressed: onJumpToNextMistake,
+                color: Colors.redAccent,
+              ),
+              _JumpButton(
+                icon: Icons.fitness_center_rounded,
+                label: 'Practice',
+                onPressed: onPracticeFromHere,
+                color: const Color(0xFF00ACC1),
+              ),
+            ],
+          ),
         ],
       ),
     );

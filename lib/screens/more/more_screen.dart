@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
@@ -8,12 +9,35 @@ import 'package:chess_master/screens/stats/statistics_screen.dart';
 import 'package:chess_master/screens/settings/settings_screen.dart';
 import 'package:chess_master/core/services/diagnostics_service.dart';
 
-/// More screen - contains settings, stats, cross-promotion, and additional options
-class MoreScreen extends ConsumerWidget {
+class MoreScreen extends ConsumerStatefulWidget {
   const MoreScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends ConsumerState<MoreScreen> {
+  String _version = AppConstants.appVersion;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() => _version = info.version);
+      }
+    } catch (_) {
+      // keep fallback
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
@@ -552,7 +576,7 @@ class MoreScreen extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      'Version ${AppConstants.appVersion}',
+                      'Version $_version',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],

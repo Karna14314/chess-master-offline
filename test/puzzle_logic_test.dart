@@ -102,6 +102,26 @@ class MockDatabaseService implements DatabaseService {
   @override
   Future<void> updateGameName(String id, String customName) async {}
 
+  @override
+  Future<void> cacheEvaluation({
+    required String fen,
+    required int depth,
+    required int multiPv,
+    required double evaluation,
+    required String engineLines,
+    bool isMate = false,
+    int? mateIn,
+  }) async {}
+
+  @override
+  Future<Map<String, dynamic>?> getCachedEvaluation({
+    required String fen,
+    required int requiredDepth,
+    required int requiredMultiPv,
+  }) async => null;
+
+  @override
+  Future<void> clearEvaluationCache() async {}
 
 }
 

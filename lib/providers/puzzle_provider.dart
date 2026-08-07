@@ -683,32 +683,11 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     // Play completion sound
     AudioService.instance.playGameEnd();
 
-    // Calculate rating change
-    int ratingChange = 0;
-    final currentRating = state.currentRating;
     final puzzleRating = puzzle.rating;
-
-    if (solved) {
-      // K-factor style rating change
-      final expectedScore =
-          1 / (1 + pow(10, (puzzleRating - currentRating) / 400));
-      ratingChange = (32 * (1 - expectedScore)).round();
-      if (state.hintsUsed > 0) {
-        ratingChange =
-            (ratingChange * 0.5).round(); // Reduce gain if hints used
-      }
-    } else {
-      final expectedScore =
-          1 / (1 + pow(10, (puzzleRating - currentRating) / 400));
-      ratingChange = -(32 * expectedScore).round();
-    }
-
-    final newRating = (currentRating + ratingChange).clamp(100, 3000);
     final newStreak = solved ? state.streak + 1 : 0;
 
     state = state.copyWith(
       state: solved ? PuzzleState.completed : PuzzleState.incorrect,
-      currentRating: newRating,
       streak: newStreak,
       isPlayerTurn: false,
     );
@@ -724,7 +703,13 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     await statsNotifier.recordPuzzleAttempt(
       solved: solved,
       puzzleRating: puzzleRating,
+      hintsUsed: state.hintsUsed,
     );
+
+    // Sync rating back from statistics provider
+    final updatedStats = _ref.read(statisticsProvider);
+    if (!mounted) return;
+    state = state.copyWith(currentRating: updatedStats.currentPuzzleRating);
   }
 
   /// Show hint for current position - shows full move with arrow

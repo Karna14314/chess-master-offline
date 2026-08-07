@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
+import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Modern evaluation bar widget showing position assessment.
@@ -8,6 +9,7 @@ class UnifiedEvalBar extends StatelessWidget {
   final bool isMate;
   final int? mateIn;
   final bool isFlipped;
+  final bool showWinPercent;
 
   const UnifiedEvalBar({
     super.key,
@@ -15,32 +17,41 @@ class UnifiedEvalBar extends StatelessWidget {
     this.isMate = false,
     this.mateIn,
     this.isFlipped = false,
+    this.showWinPercent = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Clamp evaluation between -10 and +10 for display purposes
-    final clampedEval = evaluation.clamp(-10.0, 10.0);
-
-    // Convert to percentage (0.0 to 1.0 where 0.5 is equal)
-    double whitePercentage;
-
+    double winPercent;
     if (isMate && mateIn != null) {
-      whitePercentage = mateIn! > 0 ? 0.95 : 0.05;
+      winPercent = mateIn! > 0 ? 95.0 : 5.0;
     } else {
-      // Use a curve so that central values are more responsive
-      whitePercentage = 0.5 + (clampedEval / 20.0);
-      whitePercentage = whitePercentage.clamp(0.05, 0.95);
+      winPercent = EvalConstants.centipawnsToWinPercent(evaluation * 100);
     }
 
-    // If flipped, reverse the visual representation (black on bottom)
-    final topPercentage = isFlipped ? whitePercentage : 1.0 - whitePercentage;
-    final topColor = isFlipped ? Colors.white : const Color(0xFF303030);
-    final bottomColor = isFlipped ? const Color(0xFF303030) : Colors.white;
+    final displayPercentage = showWinPercent ? winPercent : null;
+    final rawFillFraction = showWinPercent ? winPercent / 100.0 : null;
 
-    final evalText = _getEvalText();
+    final clampedEval = evaluation.clamp(-10.0, 10.0);
+    double whiteFraction;
+    if (isMate && mateIn != null) {
+      whiteFraction = mateIn! > 0 ? 0.95 : 0.05;
+    } else {
+      whiteFraction = 0.5 + (clampedEval / 20.0);
+      whiteFraction = whiteFraction.clamp(0.05, 0.95);
+    }
+
+    final fillFraction = rawFillFraction ?? whiteFraction;
+
+    final topPercentage = isFlipped ? fillFraction : 1.0 - fillFraction;
+    final topColor = isFlipped ? AppTheme.winBarWhite : AppTheme.winBarBlack;
+    final bottomColor = isFlipped ? AppTheme.winBarBlack : AppTheme.winBarWhite;
+
+    final evalText = displayPercentage != null
+        ? '${displayPercentage.toStringAsFixed(0)}%'
+        : _getEvalText();
     final textOnTop =
-        isFlipped ? (whitePercentage > 0.5) : (whitePercentage < 0.5);
+        isFlipped ? (fillFraction > 0.5) : (fillFraction < 0.5);
 
     return Container(
       width: 28, // Wider than original for better readability
@@ -87,8 +98,8 @@ class UnifiedEvalBar extends StatelessWidget {
                 style: GoogleFonts.inter(
                   color:
                       textOnTop
-                          ? (isFlipped ? Colors.black : Colors.white)
-                          : (isFlipped ? Colors.white : Colors.black),
+                          ? (isFlipped ? const Color(0xFF424242) : Colors.white)
+                          : (isFlipped ? Colors.white : const Color(0xFF424242)),
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),

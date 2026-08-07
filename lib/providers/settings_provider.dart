@@ -40,6 +40,8 @@ class AppSettings {
   final int lastTimeControlIndex;
   final bool dailyPuzzleNotificationEnabled;
   final bool streakNotificationEnabled;
+  final bool showWinPercent;
+  final bool autoAnalyzeAfterGame;
 
   const AppSettings({
     this.boardTheme = BoardThemeType.classicWood,
@@ -51,11 +53,13 @@ class AppSettings {
     this.soundEnabled = true,
     this.vibrationEnabled = true,
     this.boardFlipped = false,
-    this.autoFlipBoard = false, // Default OFF as requested
+    this.autoFlipBoard = false,
     this.lastDifficultyLevel = 5,
     this.lastTimeControlIndex = 0,
     this.dailyPuzzleNotificationEnabled = true,
     this.streakNotificationEnabled = true,
+    this.showWinPercent = true,
+    this.autoAnalyzeAfterGame = false,
   });
 
   BoardTheme get currentBoardTheme => BoardTheme.fromType(boardTheme);
@@ -80,6 +84,8 @@ class AppSettings {
     int? lastTimeControlIndex,
     bool? dailyPuzzleNotificationEnabled,
     bool? streakNotificationEnabled,
+    bool? showWinPercent,
+    bool? autoAnalyzeAfterGame,
   }) {
     return AppSettings(
       boardTheme: boardTheme ?? this.boardTheme,
@@ -98,6 +104,8 @@ class AppSettings {
           dailyPuzzleNotificationEnabled ?? this.dailyPuzzleNotificationEnabled,
       streakNotificationEnabled:
           streakNotificationEnabled ?? this.streakNotificationEnabled,
+      showWinPercent: showWinPercent ?? this.showWinPercent,
+      autoAnalyzeAfterGame: autoAnalyzeAfterGame ?? this.autoAnalyzeAfterGame,
     );
   }
 }
@@ -131,6 +139,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       lastTimeControlIndex: prefs.getInt('lastTimeControlIndex') ?? 0,
       dailyPuzzleNotificationEnabled: dailyPuzzleNotif,
       streakNotificationEnabled: streakNotif,
+      showWinPercent: prefs.getBool('showWinPercent') ?? true,
+      autoAnalyzeAfterGame: prefs.getBool('autoAnalyzeAfterGame') ?? false,
     );
 
     // Sync notification schedules
@@ -162,6 +172,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         'dailyPuzzleNotificationEnabled', s.dailyPuzzleNotificationEnabled);
     await prefs.setBool(
         'streakNotificationEnabled', s.streakNotificationEnabled);
+    await prefs.setBool('showWinPercent', s.showWinPercent);
+    await prefs.setBool('autoAnalyzeAfterGame', s.autoAnalyzeAfterGame);
   }
 
   void toggleDailyPuzzleNotification() {
@@ -248,6 +260,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   void setLastTimeControl(int index) {
     state = state.copyWith(lastTimeControlIndex: index);
+    _saveSettings();
+  }
+
+  void toggleShowWinPercent() {
+    state = state.copyWith(showWinPercent: !state.showWinPercent);
+    _saveSettings();
+  }
+
+  void toggleAutoAnalyze() {
+    state = state.copyWith(autoAnalyzeAfterGame: !state.autoAnalyzeAfterGame);
     _saveSettings();
   }
 }

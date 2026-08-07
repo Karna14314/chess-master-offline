@@ -30,7 +30,7 @@ class DatabaseService {
 
       return await openDatabase(
         path,
-        version: 8,
+        version: 10,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -141,7 +141,11 @@ class DatabaseService {
         total_moves INTEGER DEFAULT 0,
         total_game_time_seconds INTEGER DEFAULT 0,
         hints_used INTEGER DEFAULT 0,
-        last_updated INTEGER
+        last_updated INTEGER,
+        current_game_elo INTEGER DEFAULT 1500,
+        consecutive_wins INTEGER DEFAULT 0,
+        consecutive_losses INTEGER DEFAULT 0,
+        elo_history TEXT
       )
     ''');
 
@@ -165,7 +169,7 @@ class DatabaseService {
       )
     ''');
 
-    // Analysis cache table
+    // Analysis cache table (full game analysis)
     await db.execute('''
       CREATE TABLE analysis_cache (
         game_id TEXT PRIMARY KEY,
@@ -174,6 +178,21 @@ class DatabaseService {
         analysis_json TEXT NOT NULL,
         engine_depth INTEGER,
         analyzed_at INTEGER
+      )
+    ''');
+
+    // Position eval cache (per-position evaluations)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS eval_cache (
+        fen TEXT NOT NULL,
+        depth INTEGER NOT NULL,
+        multipv INTEGER NOT NULL,
+        evaluation REAL NOT NULL,
+        engine_lines TEXT NOT NULL,
+        is_mate INTEGER DEFAULT 0,
+        mate_in INTEGER,
+        created_at INTEGER DEFAULT (strftime('%s', 'now')),
+        PRIMARY KEY (fen, depth, multipv)
       )
     ''');
   }
@@ -297,6 +316,29 @@ class DatabaseService {
           'ALTER TABLE saved_games ADD COLUMN blackAccuracy REAL',
         );
         debugPrint('Added new columns to saved_games table');
+        break;
+      case 9:
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS eval_cache (
+            fen TEXT NOT NULL,
+            depth INTEGER NOT NULL,
+            multipv INTEGER NOT NULL,
+            evaluation REAL NOT NULL,
+            engine_lines TEXT NOT NULL,
+            is_mate INTEGER DEFAULT 0,
+            mate_in INTEGER,
+            created_at INTEGER DEFAULT (strftime('%s', 'now')),
+            PRIMARY KEY (fen, depth, multipv)
+          )
+        ''');
+        debugPrint('Added eval_cache table');
+        break;
+      case 10:
+        await db.execute('ALTER TABLE statistics ADD COLUMN current_game_elo INTEGER DEFAULT 1500');
+        await db.execute('ALTER TABLE statistics ADD COLUMN consecutive_wins INTEGER DEFAULT 0');
+        await db.execute('ALTER TABLE statistics ADD COLUMN consecutive_losses INTEGER DEFAULT 0');
+        await db.execute('ALTER TABLE statistics ADD COLUMN elo_history TEXT');
+        debugPrint('Added game ELO columns to statistics table');
         break;
     }
   }
@@ -598,6 +640,71 @@ class DatabaseService {
     }
 
     await updateStatistics(updates);
+  }
+
+  // ==================== EVAL CACHE OPERATIONS ====================
+
+  /// Cache a position evaluation result
+  Future<void> cacheEvaluation({
+    required String fen,
+    required int depth,
+    required int multiPv,
+    required double evaluation,
+    required String engineLines,
+    bool isMate = false,
+    int? mateIn,
+  }) async {
+    try {
+      final db = await database;
+      await db.insert(
+        'eval_cache',
+        {
+          'fen': fen,
+          'depth': depth,
+          'multipv': multiPv,
+          'evaluation': evaluation,
+          'engine_lines': engineLines,
+          'is_mate': isMate ? 1 : 0,
+          'mate_in': mateIn,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      debugPrint('Error caching eval: $e');
+    }
+  }
+
+  /// Get cached evaluation for a position.
+  /// Returns null if no cached result meets the requirements.
+  Future<Map<String, dynamic>?> getCachedEvaluation({
+    required String fen,
+    required int requiredDepth,
+    required int requiredMultiPv,
+  }) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'eval_cache',
+        where: 'fen = ? AND depth >= ? AND multipv >= ?',
+        whereArgs: [fen, requiredDepth, requiredMultiPv],
+        orderBy: 'depth DESC',
+        limit: 1,
+      );
+      return results.isNotEmpty ? results.first : null;
+    } catch (e) {
+      debugPrint('Error getting cached eval: $e');
+      return null;
+    }
+  }
+
+  /// Clear all cached evaluations
+  Future<void> clearEvaluationCache() async {
+    try {
+      final db = await database;
+      await db.delete('eval_cache');
+    } catch (e) {
+      debugPrint('Error clearing eval cache: $e');
+    }
   }
 
   /// Close database

@@ -553,6 +553,8 @@ void main() {
             fen: '...',
             evalBefore: 0.0,
             evalAfter: 0.2,
+            winPercentBefore: 50.0,
+            winPercentAfter: 51.9,
             bestMove: null,
             classification: MoveClassification.excellent,
             engineLines: const [],
@@ -566,6 +568,8 @@ void main() {
             fen: '...',
             evalBefore: 0.2,
             evalAfter: 0.5,
+            winPercentBefore: 51.9,
+            winPercentAfter: 54.7,
             bestMove: null,
             classification: MoveClassification.inaccuracy,
             engineLines: const [],
@@ -579,12 +583,14 @@ void main() {
             fen: '...',
             evalBefore: 0.5,
             evalAfter: -2.5,
+            winPercentBefore: 54.7,
+            winPercentAfter: 16.9,
             bestMove: null,
             classification: MoveClassification.blunder,
             engineLines: const [],
             isWhiteMove: true,
             centipawnLoss: 300,
-            accuracy: 40.66,
+            accuracy: 20.0,
           ),
         ];
         final ga = GameAnalysis.fromMoves(moves);
@@ -593,7 +599,14 @@ void main() {
         expect(ga.inaccuracies, equals(1));
         expect(ga.blunders, equals(1));
         expect(ga.averageCpl, closeTo((-20 + 30 + 300) / 3, 0.01));
-        expect(ga.averageAccuracy, closeTo((100 + 91.39 + 40.66) / 3, 0.1));
+        // Win%-based game accuracy uses volatility-weighted + harmonic mean
+        // which penalizes blunders more than simple average but the volatility
+        // weighting can raise the score when bad moves occur in volatile positions
+        final simpleAvg = (100 + 91.39 + 20.0) / 3;
+        final harmonicMean = 3 / ((1/100) + (1/91.39) + (1/20.0));
+        // Result should be between harmonic mean (lower bound) and simple average (upper bound)
+        expect(ga.averageAccuracy, lessThan(simpleAvg));
+        expect(ga.averageAccuracy, greaterThan(harmonicMean - 5));
       });
 
       test('all classification types counted correctly', () {

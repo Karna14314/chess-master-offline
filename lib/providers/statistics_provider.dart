@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/models/statistics_model.dart';
 import 'package:chess_master/core/services/database_service.dart';
+import 'package:chess_master/core/constants/app_constants.dart';
 
 /// Provider for user statistics
 final statisticsProvider =
@@ -77,6 +79,39 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     await _saveStatistics();
   }
 
+  /// Record game result with ELO calculation
+  Future<void> recordGameElo({
+    required int botElo,
+    required bool isWin,
+    required bool isLoss,
+    required bool isDraw,
+  }) async {
+    final expectedScore = 1.0 / (1.0 + math.pow(10, (botElo - state.currentGameElo) / 400));
+    final actualScore = isWin ? 1.0 : isDraw ? 0.5 : 0.0;
+
+    final eloChange = (state.kFactor * (actualScore - expectedScore)).round();
+    final newElo = (state.currentGameElo + eloChange).clamp(100, 3200);
+
+    final newConsecutiveWins = isWin ? state.consecutiveWins + 1 : 0;
+    final newConsecutiveLosses = isLoss ? state.consecutiveLosses + 1 : 0;
+
+    final newHistory = List<EloSnapshot>.from(state.eloHistory)
+      ..add(EloSnapshot(
+        elo: newElo,
+        gameNumber: state.totalGames + 1,
+        timestamp: DateTime.now(),
+      ));
+
+    state = state.copyWith(
+      currentGameElo: newElo,
+      consecutiveWins: newConsecutiveWins,
+      consecutiveLosses: newConsecutiveLosses,
+      eloHistory: newHistory,
+    );
+
+    await _saveStatistics();
+  }
+
   /// Record hint usage
   Future<void> recordHintUsed() async {
     state = state.copyWith(hintsUsed: state.hintsUsed + 1);
@@ -87,20 +122,23 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
   Future<void> recordPuzzleAttempt({
     required bool solved,
     required int puzzleRating,
+    int hintsUsed = 0,
   }) async {
     // Calculate new puzzle rating using ELO-like system
     int newRating = state.currentPuzzleRating;
     const k = 32; // K-factor for rating changes
 
     if (solved) {
-      // Increase rating more if solved harder puzzle
       final ratingDiff = puzzleRating - state.currentPuzzleRating;
-      final expectedScore = 1 / (1 + pow(10, -ratingDiff / 400));
-      newRating += (k * (1 - expectedScore)).round();
+      final expectedScore = 1 / (1 + math.pow(10, -ratingDiff / 400));
+      int change = (k * (1 - expectedScore)).round();
+      if (hintsUsed > 0) {
+        change = (change * 0.5).round();
+      }
+      newRating += change;
     } else {
-      // Decrease rating less if failed harder puzzle
       final ratingDiff = puzzleRating - state.currentPuzzleRating;
-      final expectedScore = 1 / (1 + pow(10, -ratingDiff / 400));
+      final expectedScore = 1 / (1 + math.pow(10, -ratingDiff / 400));
       newRating += (k * (0 - expectedScore)).round();
     }
 
@@ -121,14 +159,30 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     state = const StatisticsModel();
     await _saveStatistics();
   }
-}
 
-/// Power function for ELO calculations
-double pow(double base, double exp) {
-  double result = 1;
-  int intExp = exp.abs().round();
-  for (int i = 0; i < intExp; i++) {
-    result *= base;
+  /// Get the recommended difficulty level based on player ELO.
+  /// Returns the closest difficulty level to the player's current ELO.
+  DifficultyLevel getRecommendedDifficulty() {
+    return AppConstants.difficultyLevels.reduce((a, b) =>
+      (a.elo - state.currentGameElo).abs() < (b.elo - state.currentGameElo).abs() ? a : b);
   }
-  return exp < 0 ? 1 / result : result;
+
+  /// Get a suggestion message based on recent performance.
+  String? getDifficultySuggestion() {
+    if (state.consecutiveWins >= 3) {
+      final nextLevel = AppConstants.difficultyLevels.firstWhere(
+        (d) => d.elo > state.currentGameElo,
+        orElse: () => AppConstants.difficultyLevels.last,
+      );
+      return "You're on a ${state.consecutiveWins}-game win streak! Try ${nextLevel.name} (${nextLevel.elo} ELO)?";
+    }
+    if (state.consecutiveLosses >= 3) {
+      final prevLevel = AppConstants.difficultyLevels.lastWhere(
+        (d) => d.elo < state.currentGameElo,
+        orElse: () => AppConstants.difficultyLevels.first,
+      );
+      return "Tough losses. Try ${prevLevel.name} (${prevLevel.elo} ELO) to build confidence?";
+    }
+    return null;
+  }
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/chess.dart' as chess;
@@ -6,6 +7,7 @@ import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/core/services/stockfish_service.dart' as stockfish;
 import 'package:chess_master/core/services/basic_evaluator_service.dart';
+import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 
 /// Provider for analysis state
@@ -157,6 +159,7 @@ class AnalysisState {
 /// Analysis notifier managing game analysis
 class AnalysisNotifier extends StateNotifier<AnalysisState> {
   stockfish.StockfishService? _stockfish;
+  final DatabaseService _db = DatabaseService.instance;
   bool _isInitialized = false;
   bool _isAnalyzing = false; // Guard flag to prevent concurrent analysis
   int _analysisToken = 0; // Cancellation token for analyzeFullGame
@@ -274,17 +277,50 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
   /// Toggle live analysis
 
-  /// Analyze current position
+  /// Analyze current position (with eval caching)
   Future<void> _analyzeCurrentPosition() async {
     if (_stockfish == null || !_isInitialized) return;
-    if (_isAnalyzing) return; // Prevent concurrent analysis calls
+    if (_isAnalyzing) return;
+
+    final fen = state.fen;
+    final depth = AppConstants.analysisDepth;
+    final multiPv = AppConstants.topEngineLinesCount;
+
+    try {
+      final cached = await _db.getCachedEvaluation(
+        fen: fen,
+        requiredDepth: depth,
+        requiredMultiPv: multiPv,
+      );
+
+      if (cached != null) {
+        final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
+        final lines = linesJson.map((l) => EngineLine(
+          rank: l['rank'] as int,
+          evaluation: (l['evaluation'] as num).toDouble(),
+          depth: l['depth'] as int,
+          moves: List<String>.from(l['moves']),
+          isMate: (l['isMate'] as bool?) ?? false,
+          mateIn: l['mateIn'] as int?,
+        )).toList();
+
+        state = state.copyWith(
+          currentEval: (cached['evaluation'] as num).toDouble(),
+          currentEngineLines: lines,
+          bestMove: lines.isNotEmpty ? lines.first.moves.first : null,
+        );
+        return;
+      }
+    } catch (e) {
+      debugPrint('Eval cache lookup failed: $e');
+    }
 
     try {
       _isAnalyzing = true;
       final result = await _stockfish!.analyzePosition(
-        fen: state.fen,
-        depth: AppConstants.analysisDepth,
-        multiPv: AppConstants.topEngineLinesCount,
+        fen: fen,
+        depth: depth,
+        multiPv: multiPv,
         onUpdate: (partialResult) {
           state = state.copyWith(
             currentEval: partialResult.evalInPawns,
@@ -297,6 +333,25 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         },
       );
 
+      final linesJson = result.lines.map((l) => ({
+        'rank': l.rank,
+        'evaluation': l.evaluation,
+        'depth': l.depth,
+        'moves': l.moves,
+        'isMate': l.isMate,
+        'mateIn': l.mateIn,
+      })).toList();
+
+      await _db.cacheEvaluation(
+        fen: fen,
+        depth: depth,
+        multiPv: multiPv,
+        evaluation: result.evalInPawns,
+        engineLines: jsonEncode(linesJson),
+        isMate: result.lines.isNotEmpty && result.lines.first.isMate,
+        mateIn: result.lines.isNotEmpty ? result.lines.first.mateIn : null,
+      );
+
       state = state.copyWith(
         currentEval: result.evalInPawns,
         currentEngineLines: result.lines,
@@ -306,9 +361,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     } catch (e) {
       debugPrint('Stockfish analysis failed: $e. Using BasicEvaluator.');
       try {
-        final basicResult = await BasicEvaluatorService.instance.analyze(
-          state.fen,
-        );
+        final basicResult = await BasicEvaluatorService.instance.analyze(fen);
         state = state.copyWith(
           currentEval: basicResult.evalInPawns,
           currentEngineLines: basicResult.lines,
@@ -353,21 +406,14 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
       double prevEval = 0.0;
 
-      // Get initial evaluation
+      // Get initial evaluation (check cache first)
       try {
         if (token != _analysisToken) return;
-        final initialResult = await _stockfish!.analyzePosition(
-          fen: board.fen,
-          depth: 15,
-          multiPv: 1,
-        );
-        prevEval = initialResult.evalInPawns;
+        final initialData = await _getCachedOrAnalyze(board.fen, depth: 15, multiPv: 1);
+        prevEval = initialData.eval;
       } catch (e) {
-        // Use fallback
         try {
-          final basicResult = await BasicEvaluatorService.instance.analyze(
-            board.fen,
-          );
+          final basicResult = await BasicEvaluatorService.instance.analyze(board.fen);
           prevEval = basicResult.evalInPawns;
         } catch (e2) {
           prevEval = 0.0;
@@ -393,26 +439,25 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           'promotion': move.promotion,
         });
 
-        // Get evaluation after move and best move from PV
+        // Get evaluation after move (check cache first)
         double afterEval = 0.0;
         List<EngineLine> engineLines = [];
         String? bestMove;
 
         try {
-          // Check guard flag before making engine call
           if (!_isAnalyzing) break;
           if (token != _analysisToken) return;
-          final result = await _stockfish!.analyzePosition(
-            fen: board.fen,
+
+          final cachedResult = await _getCachedOrAnalyze(
+            board.fen,
             depth: 15,
             multiPv: 3,
           );
 
-          afterEval = result.evalInPawns;
-          engineLines = result.lines;
-          // Derive best move from PV output (first line)
-          if (result.lines.isNotEmpty && result.lines.first.moves.isNotEmpty) {
-            bestMove = result.lines.first.moves.first;
+          afterEval = cachedResult.eval;
+          engineLines = cachedResult.lines;
+          if (cachedResult.lines.isNotEmpty && cachedResult.lines.first.moves.isNotEmpty) {
+            bestMove = cachedResult.lines.first.moves.first;
           }
         } catch (e) {
           try {
@@ -426,7 +471,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
               bestMove = basicResult.lines.first.moves.first;
             }
           } catch (e2) {
-            afterEval = prevEval; // Assume no change if failed
+            afterEval = prevEval;
           }
         }
 
@@ -456,11 +501,13 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           evalAfter: afterEval,
           isWhiteMove: isWhiteMove,
         );
-        final moveAccuracy = computeAccuracy(
-          evalBefore: prevEval,
-          evalAfter: afterEval,
+        final moveAccuracy = computeWinPercentAccuracy(
+          evalBeforePawns: prevEval,
+          evalAfterPawns: afterEval,
           isWhiteMove: isWhiteMove,
         );
+        final winBefore = EvalConstants.centipawnsToWinPercent(prevEval * 100);
+        final winAfter = EvalConstants.centipawnsToWinPercent(afterEval * 100);
         analyzedMoves.add(
           MoveAnalysis(
             moveIndex: i,
@@ -468,6 +515,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             fen: board.fen,
             evalBefore: prevEval,
             evalAfter: afterEval,
+            winPercentBefore: winBefore,
+            winPercentAfter: winAfter,
             bestMove: bestMove,
             classification: classification,
             engineLines: engineLines,
@@ -518,10 +567,73 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     state = const AnalysisState();
   }
 
-  /// Dispose
+  /// Helper: get cached evaluation or run analysis and cache the result.
+  Future<({double eval, List<EngineLine> lines})> _getCachedOrAnalyze(
+    String fen, {
+    required int depth,
+    required int multiPv,
+  }) async {
+    // Check cache first
+    try {
+      final cached = await _db.getCachedEvaluation(
+        fen: fen,
+        requiredDepth: depth,
+        requiredMultiPv: multiPv,
+      );
+
+      if (cached != null) {
+        final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
+        final lines = linesJson.map((l) => EngineLine(
+          rank: l['rank'] as int,
+          evaluation: (l['evaluation'] as num).toDouble(),
+          depth: l['depth'] as int,
+          moves: List<String>.from(l['moves']),
+          isMate: (l['isMate'] as bool?) ?? false,
+          mateIn: l['mateIn'] as int?,
+        )).toList();
+        return (eval: (cached['evaluation'] as num).toDouble(), lines: lines);
+      }
+    } catch (e) {
+      debugPrint('Eval cache lookup failed: $e');
+    }
+
+    // Run analysis
+    final result = await _stockfish!.analyzePosition(
+      fen: fen,
+      depth: depth,
+      multiPv: multiPv,
+    );
+
+    // Cache the result
+    try {
+      final linesJson = result.lines.map((l) => ({
+        'rank': l.rank,
+        'evaluation': l.evaluation,
+        'depth': l.depth,
+        'moves': l.moves,
+        'isMate': l.isMate,
+        'mateIn': l.mateIn,
+      })).toList();
+
+      await _db.cacheEvaluation(
+        fen: fen,
+        depth: depth,
+        multiPv: multiPv,
+        evaluation: result.evalInPawns,
+        engineLines: jsonEncode(linesJson),
+        isMate: result.lines.isNotEmpty && result.lines.first.isMate,
+        mateIn: result.lines.isNotEmpty ? result.lines.first.mateIn : null,
+      );
+    } catch (e) {
+      debugPrint('Failed to cache eval: $e');
+    }
+
+    return (eval: result.evalInPawns, lines: result.lines);
+  }
+
   @override
   void dispose() {
-    _stockfish?.dispose();
+    _stockfish?.stopAnalysis();
     super.dispose();
   }
 }
