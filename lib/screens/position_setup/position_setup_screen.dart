@@ -332,7 +332,10 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : AppTheme.surfaceColor(context),
+          color:
+              isSelected
+                  ? AppTheme.primaryColor
+                  : AppTheme.surfaceColor(context),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? AppTheme.primaryColor : Colors.transparent,

@@ -62,7 +62,10 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.history, color: AppTheme.textSecondaryFor(context)),
+            icon: Icon(
+              Icons.history,
+              color: AppTheme.textSecondaryFor(context),
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -206,14 +209,14 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
             title,
             style: GoogleFonts.inter(
               fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimaryFor(context),
-            fontSize: 16,
+              color: AppTheme.textPrimaryFor(context),
+              fontSize: 16,
+            ),
           ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: GoogleFonts.inter(
-            color: AppTheme.textSecondaryFor(context),
+          subtitle: Text(
+            subtitle,
+            style: GoogleFonts.inter(
+              color: AppTheme.textSecondaryFor(context),
               fontSize: 13,
             ),
           ),
@@ -301,7 +304,11 @@ class _StatsCard extends StatelessWidget {
             label: 'Rating',
             color: Colors.amber,
           ),
-          Container(width: 1, height: 40, color: AppTheme.borderColorFor(context)),
+          Container(
+            width: 1,
+            height: 40,
+            color: AppTheme.borderColorFor(context),
+          ),
           _buildStatItem(
             context,
             icon: Icons.check_circle_outline,
@@ -309,7 +316,11 @@ class _StatsCard extends StatelessWidget {
             label: 'Solved',
             color: Colors.green,
           ),
-          Container(width: 1, height: 40, color: AppTheme.borderColorFor(context)),
+          Container(
+            width: 1,
+            height: 40,
+            color: AppTheme.borderColorFor(context),
+          ),
           _buildStatItem(
             context,
             icon: Icons.analytics_outlined,
@@ -484,7 +495,9 @@ class _ThemeSelector extends StatelessWidget {
                       disabledColor: AppTheme.cardColor(context),
                       labelStyle: GoogleFonts.inter(
                         color:
-                            isSelected ? Colors.white : AppTheme.textSecondaryFor(context),
+                            isSelected
+                                ? Colors.white
+                                : AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -543,5 +556,3 @@ class _ThemeSelector extends StatelessWidget {
         .join(' ');
   }
 }
-
-

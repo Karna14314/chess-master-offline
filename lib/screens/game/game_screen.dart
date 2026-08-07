@@ -108,7 +108,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       }
 
       // Handle game completion
-      if (previous != null && !previous.isCompleted && next.isCompleted && next.result != null) {
+      if (previous != null &&
+          !previous.isCompleted &&
+          next.isCompleted &&
+          next.result != null) {
         ref.read(timerProvider.notifier).stop();
         _showGameOverDialog(context, next);
       }
@@ -410,7 +413,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryFor(context)),
+            icon: Icon(
+              Icons.arrow_back,
+              color: AppTheme.textSecondaryFor(context),
+            ),
           ),
           const SizedBox(width: 8),
           Text(
@@ -429,7 +435,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.flip, color: AppTheme.textSecondaryFor(context)),
+                    icon: Icon(
+                      Icons.flip,
+                      color: AppTheme.textSecondaryFor(context),
+                    ),
                     onPressed:
                         () =>
                             ref.read(gameSessionProvider.notifier).toggleFlip(),
@@ -496,16 +505,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           (context) => [
             PopupMenuItem(
               value: 'settings',
-                child: Text(
-                  'Settings',
-                  style: TextStyle(color: AppTheme.textPrimaryFor(context)),
-                ),
+              child: Text(
+                'Settings',
+                style: TextStyle(color: AppTheme.textPrimaryFor(context)),
               ),
-              PopupMenuItem(
-                value: 'exit',
-                child: Text(
-                  'Save & Exit',
-                  style: TextStyle(color: AppTheme.textPrimaryFor(context)),
+            ),
+            PopupMenuItem(
+              value: 'exit',
+              child: Text(
+                'Save & Exit',
+                style: TextStyle(color: AppTheme.textPrimaryFor(context)),
               ),
             ),
           ],
@@ -522,75 +531,81 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(
-              isWin ? Icons.emoji_events_rounded : Icons.flag_rounded,
-              color: isWin ? Colors.amber : AppTheme.primaryColor,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceColor(context),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(width: 12),
-            Text(isWin ? 'Victory!' : 'Game Over'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(gameState.resultReason ?? 'Game finished'),
-            if (gameState.whiteAccuracy != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Accuracy: ${(gameState.whiteAccuracy ?? gameState.blackAccuracy ?? 0).toStringAsFixed(0)}%',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+            title: Row(
+              children: [
+                Icon(
+                  isWin ? Icons.emoji_events_rounded : Icons.flag_rounded,
+                  color: isWin ? Colors.amber : AppTheme.primaryColor,
                 ),
+                const SizedBox(width: 12),
+                Text(isWin ? 'Victory!' : 'Game Over'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(gameState.resultReason ?? 'Game finished'),
+                if (gameState.whiteAccuracy != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Accuracy: ${(gameState.whiteAccuracy ?? gameState.blackAccuracy ?? 0).toStringAsFixed(0)}%',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                child: const Text('Home'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => AnalysisScreen(
+                            moves: gameState.moveHistory,
+                            startingFen: gameState.startingFen,
+                          ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.analytics_outlined, size: 18),
+                label: const Text('Analyze'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref
+                      .read(gameSessionProvider.notifier)
+                      .startNewGame(
+                        playerColor: gameState.playerColor,
+                        difficulty: gameState.difficulty,
+                        timeControl: gameState.timeControl,
+                        gameMode: gameState.gameMode,
+                        botType: gameState.botType,
+                      );
+                },
+                child: const Text('New Game'),
               ),
             ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Home'),
           ),
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AnalysisScreen(
-                    moves: gameState.moveHistory,
-                    startingFen: gameState.startingFen,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.analytics_outlined, size: 18),
-            label: const Text('Analyze'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(gameSessionProvider.notifier).startNewGame(
-                playerColor: gameState.playerColor,
-                difficulty: gameState.difficulty,
-                timeControl: gameState.timeControl,
-                gameMode: gameState.gameMode,
-                botType: gameState.botType,
-              );
-            },
-            child: const Text('New Game'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -723,11 +738,20 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         final content = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$moveNum. ', style: TextStyle(color: AppTheme.textHintFor(context))),
-            Text(whiteMove.san, style: TextStyle(color: AppTheme.textPrimaryFor(context))),
+            Text(
+              '$moveNum. ',
+              style: TextStyle(color: AppTheme.textHintFor(context)),
+            ),
+            Text(
+              whiteMove.san,
+              style: TextStyle(color: AppTheme.textPrimaryFor(context)),
+            ),
             if (blackMove != null) ...[
               const SizedBox(width: 8),
-              Text(blackMove.san, style: TextStyle(color: AppTheme.textPrimaryFor(context))),
+              Text(
+                blackMove.san,
+                style: TextStyle(color: AppTheme.textPrimaryFor(context)),
+              ),
             ],
             if (horizontal) const SizedBox(width: 16),
           ],
@@ -746,7 +770,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget _buildControlBar(BuildContext context, GameSession gameState) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final iconColor = isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
+    final iconColor =
+        isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -756,31 +781,36 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           IconButton(
             icon: Icon(Icons.undo, color: iconColor),
             tooltip: 'Undo Move',
-            onPressed: gameState.isCompleted
-                ? null
-                : () => ref.read(gameSessionProvider.notifier).undoMove(),
+            onPressed:
+                gameState.isCompleted
+                    ? null
+                    : () => ref.read(gameSessionProvider.notifier).undoMove(),
           ),
           IconButton(
             icon: Icon(Icons.lightbulb_outline, color: iconColor),
             tooltip: 'Engine Hint',
-            onPressed: gameState.isCompleted
-                ? null
-                : () => _showHintDialog(context, ref),
+            onPressed:
+                gameState.isCompleted
+                    ? null
+                    : () => _showHintDialog(context, ref),
           ),
           IconButton(
             icon: Icon(Icons.swap_vert_rounded, color: iconColor),
             tooltip: 'Flip Board',
-            onPressed: () => ref.read(gameSessionProvider.notifier).toggleFlip(),
+            onPressed:
+                () => ref.read(gameSessionProvider.notifier).toggleFlip(),
           ),
           IconButton(
             icon: Icon(
               Icons.flag_outlined,
-              color: gameState.isCompleted ? iconColor : Colors.redAccent.shade200,
+              color:
+                  gameState.isCompleted ? iconColor : Colors.redAccent.shade200,
             ),
             tooltip: 'Resign Game',
-            onPressed: gameState.isCompleted
-                ? null
-                : () => _showResignConfirmation(context),
+            onPressed:
+                gameState.isCompleted
+                    ? null
+                    : () => _showResignConfirmation(context),
           ),
         ],
       ),

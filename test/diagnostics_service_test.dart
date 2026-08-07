@@ -9,15 +9,16 @@ void main() {
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('diagnostics_test_');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'getApplicationDocumentsDirectory') {
-          return tempDir.path;
-        }
-        return null;
-      },
-    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (MethodCall methodCall) async {
+            if (methodCall.method == 'getApplicationDocumentsDirectory') {
+              return tempDir.path;
+            }
+            return null;
+          },
+        );
     LocalDiagnosticsService.instance.resetForTesting();
   });
 
@@ -28,17 +29,20 @@ void main() {
   });
 
   group('LocalDiagnosticsService Tests', () {
-    test('Service initializes log file locally in documents directory', () async {
-      final service = LocalDiagnosticsService.instance;
-      await service.initialize();
+    test(
+      'Service initializes log file locally in documents directory',
+      () async {
+        final service = LocalDiagnosticsService.instance;
+        await service.initialize();
 
-      expect(service.isInitialized, isTrue);
-      expect(service.logFile, isNotNull);
-      expect(await service.logFile!.exists(), isTrue);
+        expect(service.isInitialized, isTrue);
+        expect(service.logFile, isNotNull);
+        expect(await service.logFile!.exists(), isTrue);
 
-      final content = await service.readLogs();
-      expect(content, contains('ChessMaster Diagnostic Log Started'));
-    });
+        final content = await service.readLogs();
+        expect(content, contains('ChessMaster Diagnostic Log Started'));
+      },
+    );
 
     test('Writes INFO, WARN, and ERROR log entries correctly', () async {
       final service = LocalDiagnosticsService.instance;
@@ -46,7 +50,10 @@ void main() {
 
       await service.logInfo('Test info message');
       await service.logWarning('Test warning message');
-      await service.logError('Test error message', stackTrace: StackTrace.current);
+      await service.logError(
+        'Test error message',
+        stackTrace: StackTrace.current,
+      );
 
       final logs = await service.readLogs();
       expect(logs, contains('[INFO] Test info message'));

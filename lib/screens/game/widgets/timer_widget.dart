@@ -96,13 +96,21 @@ class ChessTimerWidget extends ConsumerWidget {
         style: TextStyle(
           fontFamily: 'monospace',
           fontSize: compact ? 14 : 18,
-          color: isActive ? AppTheme.textPrimaryFor(context) : AppTheme.textSecondaryFor(context),
+          color:
+              isActive
+                  ? AppTheme.textPrimaryFor(context)
+                  : AppTheme.textSecondaryFor(context),
         ),
       ),
     );
   }
 
-  Color _getBackgroundColor(BuildContext context, bool isActive, bool isLowTime, bool isTimedOut) {
+  Color _getBackgroundColor(
+    BuildContext context,
+    bool isActive,
+    bool isLowTime,
+    bool isTimedOut,
+  ) {
     if (isTimedOut) {
       return AppTheme.error.withValues(alpha: 0.8);
     }
@@ -115,7 +123,12 @@ class ChessTimerWidget extends ConsumerWidget {
     return AppTheme.cardColor(context);
   }
 
-  Color _getTextColor(BuildContext context, bool isActive, bool isLowTime, bool isTimedOut) {
+  Color _getTextColor(
+    BuildContext context,
+    bool isActive,
+    bool isLowTime,
+    bool isTimedOut,
+  ) {
     if (isTimedOut || isLowTime || isActive) {
       return AppTheme.textPrimaryFor(context);
     }

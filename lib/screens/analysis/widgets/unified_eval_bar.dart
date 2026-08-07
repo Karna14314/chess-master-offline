@@ -47,11 +47,11 @@ class UnifiedEvalBar extends StatelessWidget {
     final topColor = isFlipped ? AppTheme.winBarWhite : AppTheme.winBarBlack;
     final bottomColor = isFlipped ? AppTheme.winBarBlack : AppTheme.winBarWhite;
 
-    final evalText = displayPercentage != null
-        ? '${displayPercentage.toStringAsFixed(0)}%'
-        : _getEvalText();
-    final textOnTop =
-        isFlipped ? (fillFraction > 0.5) : (fillFraction < 0.5);
+    final evalText =
+        displayPercentage != null
+            ? '${displayPercentage.toStringAsFixed(0)}%'
+            : _getEvalText();
+    final textOnTop = isFlipped ? (fillFraction > 0.5) : (fillFraction < 0.5);
 
     return Container(
       width: 28, // Wider than original for better readability
@@ -99,7 +99,9 @@ class UnifiedEvalBar extends StatelessWidget {
                   color:
                       textOnTop
                           ? (isFlipped ? const Color(0xFF424242) : Colors.white)
-                          : (isFlipped ? Colors.white : const Color(0xFF424242)),
+                          : (isFlipped
+                              ? Colors.white
+                              : const Color(0xFF424242)),
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),

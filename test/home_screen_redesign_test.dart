@@ -32,32 +32,39 @@ void main() {
   }
 
   group('HomeScreen Redesign Tests', () {
-    testWidgets('Renders Daily Streak badge, Daily Puzzle Hero, and Game Mode tiles in light theme', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'Renders Daily Streak badge, Daily Puzzle Hero, and Game Mode tiles in light theme',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(createTestableWidget(themeMode: ThemeMode.light));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpWidget(
+          createTestableWidget(themeMode: ThemeMode.light),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      // Verify Header and Streak Badge
-      expect(find.text('Welcome Back,'), findsOneWidget);
-      expect(find.text('Chess Master'), findsOneWidget);
-      expect(find.textContaining('Day'), findsWidgets);
+        // Verify Header and Streak Badge
+        expect(find.text('Welcome Back,'), findsOneWidget);
+        expect(find.text('Chess Master'), findsOneWidget);
+        expect(find.textContaining('Day'), findsWidgets);
 
-      // Verify Daily Puzzle Hero
-      expect(find.textContaining('TODAY\'S DAILY PUZZLE'), findsOneWidget);
-      expect(find.text('Solve Daily Puzzle Now'), findsOneWidget);
+        // Verify Daily Puzzle Hero
+        expect(find.textContaining('TODAY\'S DAILY PUZZLE'), findsOneWidget);
+        expect(find.text('Solve Daily Puzzle Now'), findsOneWidget);
 
-      // Verify Game Modes Grid
-      expect(find.text('Play Bot'), findsOneWidget);
-      expect(find.text('Daily Puzzle'), findsOneWidget);
-      expect(find.text('Play Friend'), findsOneWidget);
-      expect(find.text('Analyze Game'), findsOneWidget);
-    });
+        // Verify Game Modes Grid
+        expect(find.text('Play Bot'), findsOneWidget);
+        expect(find.text('Daily Puzzle'), findsOneWidget);
+        expect(find.text('Play Friend'), findsOneWidget);
+        expect(find.text('Analyze Game'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Renders dynamic dashboard cleanly in dark theme mode', (tester) async {
+    testWidgets('Renders dynamic dashboard cleanly in dark theme mode', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -70,23 +77,28 @@ void main() {
       expect(find.text('Quick Play vs AI'), findsOneWidget);
     });
 
-    testWidgets('Tapping Solve Daily Puzzle Hero navigates to DailyPuzzleScreen', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'Tapping Solve Daily Puzzle Hero navigates to DailyPuzzleScreen',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(createTestableWidget(themeMode: ThemeMode.light));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpWidget(
+          createTestableWidget(themeMode: ThemeMode.light),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      final solveButton = find.text('Solve Daily Puzzle Now');
-      expect(solveButton, findsOneWidget);
+        final solveButton = find.text('Solve Daily Puzzle Now');
+        expect(solveButton, findsOneWidget);
 
-      await tester.tap(solveButton);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+        await tester.tap(solveButton);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.byType(DailyPuzzleScreen), findsOneWidget);
-    });
+        expect(find.byType(DailyPuzzleScreen), findsOneWidget);
+      },
+    );
   });
 }

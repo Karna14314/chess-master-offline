@@ -114,7 +114,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const SizedBox(height: 16),
             Text(
               state.errorMessage!,
-              style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
+              style: GoogleFonts.inter(
+                color: AppTheme.textSecondaryFor(context),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -353,8 +355,8 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 Text(
                   'Rating: ${puzzle.rating}',
                   style: GoogleFonts.inter(
-                  color: AppTheme.textSecondaryFor(context),
-                  fontSize: 12,
+                    color: AppTheme.textSecondaryFor(context),
+                    fontSize: 12,
                   ),
                 ),
               ],

@@ -13,7 +13,9 @@ void main() {
   GoogleFonts.config.allowRuntimeFetching = false;
 
   group('Theme Support Tests', () {
-    testWidgets('AppTheme defines distinct light and dark ThemeData', (WidgetTester tester) async {
+    testWidgets('AppTheme defines distinct light and dark ThemeData', (
+      WidgetTester tester,
+    ) async {
       final light = AppTheme.lightTheme;
       final dark = AppTheme.darkTheme;
 
@@ -27,7 +29,9 @@ void main() {
       expect(dark.colorScheme.surface, equals(AppTheme.surfaceDark));
     });
 
-    testWidgets('Scaffolds adapt dynamically to light theme mode', (WidgetTester tester) async {
+    testWidgets('Scaffolds adapt dynamically to light theme mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -48,7 +52,9 @@ void main() {
       expect(scaffold.backgroundColor, isNot(equals(AppTheme.backgroundDark)));
     });
 
-    testWidgets('Scaffolds adapt dynamically to dark theme mode', (WidgetTester tester) async {
+    testWidgets('Scaffolds adapt dynamically to dark theme mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [

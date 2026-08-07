@@ -142,7 +142,8 @@ class _MoveChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color textColor = isSelected ? Colors.white : AppTheme.textPrimaryFor(context);
+    Color textColor =
+        isSelected ? Colors.white : AppTheme.textPrimaryFor(context);
     Color bgColor = isSelected ? AppTheme.primaryColor : Colors.transparent;
 
     if (analysis != null && !isSelected) {

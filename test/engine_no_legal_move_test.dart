@@ -104,9 +104,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           databaseServiceProvider.overrideWithValue(MockDatabaseService()),
-          stockfishServiceProvider.overrideWithValue(
-            _NoMoveStockfishService(),
-          ),
+          stockfishServiceProvider.overrideWithValue(_NoMoveStockfishService()),
           gameSessionRepositoryProvider.overrideWithValue(
             _MockGameSessionRepository(),
           ),
@@ -118,36 +116,37 @@ void main() {
     GameSessionViewModel viewModel() =>
         container.read(gameSessionProvider.notifier);
 
-    test('bot in a checkmated position records the result instead of hanging',
-        () async {
-      final vm = viewModel();
-      final session = GameSession.create(
-        gameMode: GameMode.bot,
-        botType: BotType.stockfish,
-        playerColor: PlayerColor.white,
-        difficulty: AppConstants.difficultyLevels[4],
-        timeControl: AppConstants.timeControls[0],
-      );
-      // Scholar's mate — black (bot) to move is checkmated.
-      vm.setSession(
-        session.copyWith(
-          fen:
-              'r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1',
-        ),
-      );
-
-      await vm.triggerBotMoveForTesting().timeout(const Duration(seconds: 5));
-
-      final state = vm.state!;
-      expect(state.isCompleted, isTrue);
-      expect(state.result, GameResult.whiteWins);
-      expect(state.resultReason, 'Checkmate');
-      // No garbage move was appended to history.
-      expect(state.moveHistory, isEmpty);
-    });
-
     test(
-        'bot with no legal move in a non-terminal position does not hang or '
+      'bot in a checkmated position records the result instead of hanging',
+      () async {
+        final vm = viewModel();
+        final session = GameSession.create(
+          gameMode: GameMode.bot,
+          botType: BotType.stockfish,
+          playerColor: PlayerColor.white,
+          difficulty: AppConstants.difficultyLevels[4],
+          timeControl: AppConstants.timeControls[0],
+        );
+        // Scholar's mate — black (bot) to move is checkmated.
+        vm.setSession(
+          session.copyWith(
+            fen:
+                'r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1',
+          ),
+        );
+
+        await vm.triggerBotMoveForTesting().timeout(const Duration(seconds: 5));
+
+        final state = vm.state!;
+        expect(state.isCompleted, isTrue);
+        expect(state.result, GameResult.whiteWins);
+        expect(state.resultReason, 'Checkmate');
+        // No garbage move was appended to history.
+        expect(state.moveHistory, isEmpty);
+      },
+    );
+
+    test('bot with no legal move in a non-terminal position does not hang or '
         'play an invalid move', () async {
       final vm = viewModel();
       final session = GameSession.create(
@@ -171,32 +170,34 @@ void main() {
       expect(state.moveHistory, isEmpty);
     });
 
-    test('player move into bot turn does not hang when engine reports (none)',
-        () async {
-      final vm = viewModel();
-      final session = GameSession.create(
-        gameMode: GameMode.bot,
-        botType: BotType.stockfish,
-        playerColor: PlayerColor.white,
-        difficulty: AppConstants.difficultyLevels[4],
-        timeControl: AppConstants.timeControls[0],
-      );
-      vm.setSession(session);
+    test(
+      'player move into bot turn does not hang when engine reports (none)',
+      () async {
+        final vm = viewModel();
+        final session = GameSession.create(
+          gameMode: GameMode.bot,
+          botType: BotType.stockfish,
+          playerColor: PlayerColor.white,
+          difficulty: AppConstants.difficultyLevels[4],
+          timeControl: AppConstants.timeControls[0],
+        );
+        vm.setSession(session);
 
-      final moved = await vm
-          .makeMove('e2', 'e4')
-          .timeout(const Duration(seconds: 5));
-      expect(moved, isTrue);
+        final moved = await vm
+            .makeMove('e2', 'e4')
+            .timeout(const Duration(seconds: 5));
+        expect(moved, isTrue);
 
-      // Let the (fire-and-forget) bot move pipeline complete.
-      await Future<void>.delayed(const Duration(milliseconds: 600));
+        // Let the (fire-and-forget) bot move pipeline complete.
+        await Future<void>.delayed(const Duration(milliseconds: 600));
 
-      final state = vm.state!;
-      expect(state.isCompleted, isFalse);
-      // Only the player's move is in history — no garbage bot move.
-      expect(state.moveHistory.length, 1);
-      expect(state.moveHistory.single.from, 'e2');
-      expect(state.moveHistory.single.to, 'e4');
-    });
+        final state = vm.state!;
+        expect(state.isCompleted, isFalse);
+        // Only the player's move is in history — no garbage bot move.
+        expect(state.moveHistory.length, 1);
+        expect(state.moveHistory.single.from, 'e2');
+        expect(state.moveHistory.single.to, 'e4');
+      },
+    );
   });
 }

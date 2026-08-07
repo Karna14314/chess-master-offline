@@ -87,39 +87,39 @@ class CurrentMoveDetails extends StatelessWidget {
                 children: [
                   _EvalChangeWidget(evalLoss: analysis!.evalLoss, color: color),
                   const SizedBox(height: 4),
-                     if (analysis!.engineLines.isNotEmpty)
-                     Text(
-                       'Depth ${analysis!.engineLines.first.depth}',
-                       style: GoogleFonts.inter(
-                         fontSize: 12,
-                         color: AppTheme.textHintFor(context),
-                       ),
-                     ),
-                 ],
-               ),
-             ],
-           ),
-           const SizedBox(height: 12),
-           if (_canRetry(classification) && onRetry != null)
-             SizedBox(
-               width: double.infinity,
-               child: OutlinedButton.icon(
-                 onPressed: onRetry,
-                 icon: const Icon(Icons.refresh_rounded, size: 18),
-                 label: const Text('Retry This Move'),
-                 style: OutlinedButton.styleFrom(
-                   foregroundColor: const Color(0xFF00ACC1),
-                   side: const BorderSide(color: Color(0xFF00ACC1)),
-                   shape: RoundedRectangleBorder(
-                     borderRadius: BorderRadius.circular(12),
-                   ),
-                   padding: const EdgeInsets.symmetric(vertical: 10),
-                 ),
-               ),
-             ),
-         ],
-       ),
-     );
+                  if (analysis!.engineLines.isNotEmpty)
+                    Text(
+                      'Depth ${analysis!.engineLines.first.depth}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppTheme.textHintFor(context),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_canRetry(classification) && onRetry != null)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Retry This Move'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF00ACC1),
+                  side: const BorderSide(color: Color(0xFF00ACC1)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   bool _canRetry(MoveClassification c) {

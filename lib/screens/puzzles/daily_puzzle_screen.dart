@@ -517,7 +517,10 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context), fontSize: 14),
+          style: GoogleFonts.inter(
+            color: AppTheme.textSecondaryFor(context),
+            fontSize: 14,
+          ),
         ),
         Text(
           value,

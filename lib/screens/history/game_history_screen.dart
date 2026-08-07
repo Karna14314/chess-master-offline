@@ -236,16 +236,16 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
           const SizedBox(height: 16),
           Text(
             'No games found',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondaryFor(context)),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: AppTheme.textSecondaryFor(context),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Try changing your filters',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textHintFor(context)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.textHintFor(context),
+            ),
           ),
         ],
       ),
@@ -305,9 +305,9 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
           const SizedBox(width: 8),
           Text(
             date,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(color: AppTheme.textSecondaryFor(context)),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: AppTheme.textSecondaryFor(context),
+            ),
           ),
         ],
       ),
@@ -508,7 +508,8 @@ class _FilterChip extends StatelessWidget {
       selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
       checkmarkColor: AppTheme.primaryColor,
       labelStyle: TextStyle(
-        color: selected ? AppTheme.primaryColor : AppTheme.textPrimaryFor(context),
+        color:
+            selected ? AppTheme.primaryColor : AppTheme.textPrimaryFor(context),
       ),
     );
   }
@@ -653,9 +654,9 @@ class _GameCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${game.moveHistory.length} moves • ${game.playerColor == PlayerColor.white ? '♔' : '♚'} as ${game.playerColor.name.capitalize()} • ${timeFormat.format(dateTime)}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: AppTheme.textHintFor(context)),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textHintFor(context),
+                      ),
                     ),
                   ],
                 ),

@@ -23,8 +23,9 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -58,15 +59,19 @@ class NotificationService {
     try {
       if (Platform.isAndroid) {
         final androidImplementation =
-            _notificationsPlugin.resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>();
+            _notificationsPlugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >();
         final granted =
             await androidImplementation?.requestNotificationsPermission();
         return granted ?? false;
       } else if (Platform.isIOS || Platform.isMacOS) {
         final iosImplementation =
-            _notificationsPlugin.resolvePlatformSpecificImplementation<
-                IOSFlutterLocalNotificationsPlugin>();
+            _notificationsPlugin
+                .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin
+                >();
         final granted = await iosImplementation?.requestPermissions(
           alert: true,
           badge: true,
@@ -87,7 +92,8 @@ class NotificationService {
     const androidDetails = AndroidNotificationDetails(
       'daily_puzzle_channel',
       'Daily Puzzle Reminders',
-      channelDescription: 'Local notification when Today\'s Chess Puzzle is ready',
+      channelDescription:
+          'Local notification when Today\'s Chess Puzzle is ready',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     );
@@ -119,7 +125,8 @@ class NotificationService {
     const androidDetails = AndroidNotificationDetails(
       'streak_reminder_channel',
       'Streak Protection Reminders',
-      channelDescription: 'Local notification to protect your daily chess streak',
+      channelDescription:
+          'Local notification to protect your daily chess streak',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     );

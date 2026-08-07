@@ -66,7 +66,9 @@ class GameAccuracySummary extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color:
-                            isExcellent ? Colors.blue : AppTheme.textSecondaryFor(context),
+                            isExcellent
+                                ? Colors.blue
+                                : AppTheme.textSecondaryFor(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -203,7 +205,10 @@ class GameAccuracySummary extends StatelessWidget {
           Center(
             child: Text(
               'Avg Centipawn Loss: ${analysis.averageCpl.toInt()}',
-              style: GoogleFonts.inter(color: AppTheme.textHintFor(context), fontSize: 13),
+              style: GoogleFonts.inter(
+                color: AppTheme.textHintFor(context),
+                fontSize: 13,
+              ),
             ),
           ),
 

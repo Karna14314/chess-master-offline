@@ -88,15 +88,14 @@ class TimerState {
 class TimerNotifier extends StateNotifier<TimerState> {
   Timer? _timer;
 
-  TimerNotifier({
-    required TimeControl timeControl,
-  }) : super(
-         TimerState(
-           whiteTime: timeControl.initialDuration,
-           blackTime: timeControl.initialDuration,
-           timeControl: timeControl,
-         ),
-       );
+  TimerNotifier({required TimeControl timeControl})
+    : super(
+        TimerState(
+          whiteTime: timeControl.initialDuration,
+          blackTime: timeControl.initialDuration,
+          timeControl: timeControl,
+        ),
+      );
 
   /// Initialize timer with time control
   void initialize(TimeControl timeControl) {

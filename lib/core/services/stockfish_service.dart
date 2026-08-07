@@ -128,7 +128,10 @@ class StockfishService {
   /// Puts the service in a fake "ready, non-fallback" state so tests can drive
   /// the search pipeline by injecting engine output lines.
   @visibleForTesting
-  void setReadyForTesting({bool immediateReadyOk = false, SendPort? commandPort}) {
+  void setReadyForTesting({
+    bool immediateReadyOk = false,
+    SendPort? commandPort,
+  }) {
     _isReady = true;
     _useFallback = false;
     _forceFallback = false;

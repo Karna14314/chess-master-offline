@@ -199,16 +199,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: 'Daily Puzzle Reminders',
                     subtitle: 'Local reminder when today\'s puzzle is ready',
                     value: settings.dailyPuzzleNotificationEnabled,
-                    onChanged: (_) =>
-                        settingsNotifier.toggleDailyPuzzleNotification(),
+                    onChanged:
+                        (_) => settingsNotifier.toggleDailyPuzzleNotification(),
                   ),
                   Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Streak Protection Nudges',
                     subtitle: 'Local warning before your daily streak resets',
                     value: settings.streakNotificationEnabled,
-                    onChanged: (_) =>
-                        settingsNotifier.toggleStreakNotification(),
+                    onChanged:
+                        (_) => settingsNotifier.toggleStreakNotification(),
                   ),
                 ]),
                 const SizedBox(height: 24),
@@ -220,7 +220,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Our Other Games',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
                     ),
                     subtitle: Text(
                       'Explore ad-free games by Karna Digital',
@@ -243,7 +245,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Rate Us on Play Store',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
                     ),
                     subtitle: Text(
                       'Love the app? Leave a review!',
@@ -266,7 +270,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Welcome Tutorial & Skill Setup',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
                     ),
                     subtitle: Text(
                       'Revisit onboarding guide & AI difficulty setup',
@@ -296,7 +302,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Export Diagnostic Log',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
                     ),
                     subtitle: Text(
                       'Share local crash log via native share sheet',
@@ -319,7 +327,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Open Source & Credits',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
                     ),
                     leading: Icon(
                       Icons.info_outline,
@@ -345,7 +355,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Licenses',
-                      style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
                     ),
                     trailing: Icon(
                       Icons.chevron_right,
@@ -389,8 +401,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildSettingsCard(BuildContext context, List<Widget> children) {
-    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
-    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+    final cardColor =
+        Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
+    final borderColor =
+        Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
 
     return Material(
       color: cardColor,
@@ -767,7 +782,10 @@ class _SwitchSetting extends StatelessWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context), fontSize: 12),
+        style: GoogleFonts.inter(
+          color: AppTheme.textSecondaryFor(context),
+          fontSize: 12,
+        ),
       ),
       value: value,
       onChanged: onChanged,
@@ -799,7 +817,10 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context))),
+          Text(
+            title,
+            style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
+          ),
           Text(
             value,
             style: GoogleFonts.inter(

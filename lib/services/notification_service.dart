@@ -13,7 +13,9 @@ class NotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const initSettings = InitializationSettings(android: androidSettings);
 
     try {
@@ -26,8 +28,11 @@ class NotificationService {
 
   Future<bool> requestPermission() async {
     try {
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final android =
+          _plugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
       if (android == null) return false;
       final granted = await android.requestNotificationsPermission();
       return granted ?? false;
@@ -39,8 +44,11 @@ class NotificationService {
 
   Future<bool> hasPermission() async {
     try {
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final android =
+          _plugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
       if (android == null) return false;
       return await android.areNotificationsEnabled() ?? false;
     } catch (_) {
@@ -157,7 +165,9 @@ class NotificationService {
   }
 
   Future<void> scheduleDailyPuzzleReminder() async {
-    debugPrint('Daily puzzle reminder scheduled (timezone scheduling requires platform setup)');
+    debugPrint(
+      'Daily puzzle reminder scheduled (timezone scheduling requires platform setup)',
+    );
   }
 
   Future<void> scheduleStreakReminder() async {

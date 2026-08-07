@@ -334,9 +334,15 @@ class DatabaseService {
         debugPrint('Added eval_cache table');
         break;
       case 10:
-        await db.execute('ALTER TABLE statistics ADD COLUMN current_game_elo INTEGER DEFAULT 1500');
-        await db.execute('ALTER TABLE statistics ADD COLUMN consecutive_wins INTEGER DEFAULT 0');
-        await db.execute('ALTER TABLE statistics ADD COLUMN consecutive_losses INTEGER DEFAULT 0');
+        await db.execute(
+          'ALTER TABLE statistics ADD COLUMN current_game_elo INTEGER DEFAULT 1500',
+        );
+        await db.execute(
+          'ALTER TABLE statistics ADD COLUMN consecutive_wins INTEGER DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE statistics ADD COLUMN consecutive_losses INTEGER DEFAULT 0',
+        );
         await db.execute('ALTER TABLE statistics ADD COLUMN elo_history TEXT');
         debugPrint('Added game ELO columns to statistics table');
         break;
@@ -656,19 +662,15 @@ class DatabaseService {
   }) async {
     try {
       final db = await database;
-      await db.insert(
-        'eval_cache',
-        {
-          'fen': fen,
-          'depth': depth,
-          'multipv': multiPv,
-          'evaluation': evaluation,
-          'engine_lines': engineLines,
-          'is_mate': isMate ? 1 : 0,
-          'mate_in': mateIn,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await db.insert('eval_cache', {
+        'fen': fen,
+        'depth': depth,
+        'multipv': multiPv,
+        'evaluation': evaluation,
+        'engine_lines': engineLines,
+        'is_mate': isMate ? 1 : 0,
+        'mate_in': mateIn,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     } catch (e) {
       debugPrint('Error caching eval: $e');
     }
