@@ -543,12 +543,15 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         }
 
         // ── Step C: Compute centipawn loss from player's perspective ──
-        // bestEval and actualEval are white-relative pawns.
+        // bestEval and actualEval are white-relative PAWNS (evalInPawns).
         // For white: CPL = bestEval - actualEval (positive = player did worse)
         // For black: CPL = actualEval - bestEval (positive = player did worse)
+        // Multiply the pawn delta by 100: classifyMoveCpl()'s thresholds
+        // (10/20/50/100/200) are expressed in CENTIPAWNS, not pawns. Without the
+        // conversion every non-tactical move landed at "Best Move".
         final double centipawnLoss = isWhiteMove
-            ? (bestEval - actualEval)
-            : (actualEval - bestEval);
+            ? (bestEval - actualEval) * 100.0
+            : (actualEval - bestEval) * 100.0;
         final double cplAbs = centipawnLoss.abs();
 
         // ── Step D: Classify using CPL thresholds ──
