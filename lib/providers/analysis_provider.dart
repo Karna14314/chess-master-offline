@@ -147,7 +147,7 @@ class AnalysisState {
 
   /// Get all evaluations for graphing
   List<double> get evaluations {
-    if (analyzedMoves.isEmpty) return [0.0];
+    if (analyzedMoves.isEmpty) return [currentEval];
     List<double> evals = [analyzedMoves.first.evalBefore];
     for (final move in analyzedMoves) {
       evals.add(move.evalAfter);
@@ -239,16 +239,33 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       lastTo = move.to;
     }
 
+    // Instantly sync evaluation state from analyzedMoves if available
+    double currentEval = state.currentEval;
+    List<EngineLine> currentEngineLines = state.currentEngineLines;
+    String? bestMove = state.bestMove;
+
+    if (moveIndex >= 0 && moveIndex < state.analyzedMoves.length) {
+      final analyzedMove = state.analyzedMoves[moveIndex];
+      currentEval = analyzedMove.evalAfter;
+      currentEngineLines = analyzedMove.engineLines;
+      bestMove = analyzedMove.bestMove;
+    } else if (moveIndex == -1 && state.analyzedMoves.isNotEmpty) {
+      currentEval = state.analyzedMoves.first.evalBefore;
+    }
+
     state = state.copyWith(
       currentMoveIndex: moveIndex,
       board: board,
       lastMoveFrom: moveIndex >= 0 ? lastFrom : null,
       lastMoveTo: moveIndex >= 0 ? lastTo : null,
+      currentEval: currentEval,
+      currentEngineLines: currentEngineLines,
+      bestMove: bestMove,
       clearSelection: true,
     );
 
-    // Analyze new position
-    if (_isInitialized && state.isLiveAnalysis) {
+    // Analyze new position if live analysis is active and full game analysis isn't running
+    if (_isInitialized && state.isLiveAnalysis && !state.isAnalyzing) {
       await _analyzeCurrentPosition();
     }
   }

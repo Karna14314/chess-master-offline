@@ -207,5 +207,36 @@ void main() {
       },
       timeout: const Timeout(Duration(seconds: 10)),
     );
+
+    test('goToMove syncs currentEval and currentEngineLines from analyzedMoves', () async {
+      final moves = [
+        const ChessMove(
+          from: 'e2',
+          to: 'e4',
+          san: 'e4',
+          isCapture: false,
+          isCheck: false,
+          isCheckmate: false,
+          isCastle: false,
+          fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
+        ),
+      ];
+      await notifier.loadGame(moves: moves);
+
+      // Perform full analysis
+      await notifier.analyzeFullGame();
+
+      final stateAfterAnalysis = container.read(analysisProvider);
+      expect(stateAfterAnalysis.analyzedMoves, isNotEmpty);
+
+      final expectedEval = stateAfterAnalysis.analyzedMoves.first.evalAfter;
+
+      // Navigate to move 0
+      await notifier.goToMove(0);
+
+      final stateAtMove0 = container.read(analysisProvider);
+      expect(stateAtMove0.currentMoveIndex, equals(0));
+      expect(stateAtMove0.currentEval, equals(expectedEval));
+    });
   });
 }

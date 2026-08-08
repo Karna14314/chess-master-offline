@@ -657,7 +657,7 @@ class StockfishService {
 
           final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
           if (mateMatch != null) {
-            mateIn = int.parse(mateMatch.group(1)!);
+            mateIn = _toWhiteRelative(int.parse(mateMatch.group(1)!), fen);
           }
         }
 
@@ -798,12 +798,6 @@ class StockfishService {
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
-    // Guard: If engine is busy, return fallback immediately
-    if (_isEngineBusy) {
-      debugPrint('Engine is busy, using fallback for analysis FEN: $fen');
-      return BasicEvaluatorService.instance.analyze(fen);
-    }
-
     // Attempt fallback recovery if cooldown has elapsed
     if (_useFallback && _shouldRetryInit()) {
       await _tryFallbackRecovery();
@@ -819,11 +813,9 @@ class StockfishService {
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
-    // Claim the engine slot synchronously after the readiness guards (same
-    // atomicity rationale as getBestMove).
-    if (_isEngineBusy) {
-      debugPrint('Engine is busy, using fallback for analysis FEN: $fen');
-      return BasicEvaluatorService.instance.analyze(fen);
+    // If engine is busy with a previous search, stop it first so the new position search takes over
+    if (_isEngineBusy || _searchInFlight) {
+      await _stopCurrentSearchAndWait();
     }
     _isEngineBusy = true;
 
@@ -869,7 +861,7 @@ class StockfishService {
               eval = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
             }
             if (mateMatch != null) {
-              mate = int.parse(mateMatch.group(1)!);
+              mate = _toWhiteRelative(int.parse(mateMatch.group(1)!), fen);
             }
 
             final moves = pvMovesMatch.group(1)!.split(' ');
