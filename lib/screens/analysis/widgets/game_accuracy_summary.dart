@@ -164,6 +164,8 @@ class GameAccuracySummary extends StatelessWidget {
                 color: Color(MoveClassification.good.color),
                 icon: Icons.check_circle_outline_rounded,
               ),
+              // Book moves are not detected yet (no opening database), so the
+              // chip stays hidden rather than always reporting zero.
               if (analysis.bookMoves > 0)
                 _StatChip(
                   label: 'Book',

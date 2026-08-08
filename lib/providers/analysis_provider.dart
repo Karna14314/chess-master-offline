@@ -8,6 +8,7 @@ import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/core/services/stockfish_service.dart' as stockfish;
 import 'package:chess_master/core/services/basic_evaluator_service.dart';
 import 'package:chess_master/core/services/database_service.dart';
+import 'package:chess_master/core/services/static_exchange_evaluator.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 
 /// Provider for analysis state
@@ -521,6 +522,33 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           }
         }
 
+        // How much worse the engine's second line is than its best, in
+        // centipawns from the mover's perspective. Used to detect an "only
+        // good move" (Great). Null when MultiPV returned a single line.
+        double? secondBestCpl;
+        if (bestLines.length >= 2) {
+          final firstEval = bestLines[0].evaluation;
+          final secondEval = bestLines[1].evaluation;
+          final margin = isWhiteMove
+              ? (firstEval - secondEval)
+              : (secondEval - firstEval);
+          secondBestCpl = (margin * 100.0).abs();
+        }
+
+        // Static exchange evaluation of the played move, computed on the
+        // position BEFORE the move. Negative = material was given up.
+        double? seeCentipawns;
+        try {
+          seeCentipawns = StaticExchangeEvaluator.evaluate(
+            board,
+            move.from,
+            move.to,
+            promotion: move.promotion,
+          ).toDouble();
+        } catch (_) {
+          seeCentipawns = null;
+        }
+
         // ── Step B: Play the actual move and evaluate ──
         board.move({
           'from': move.from,
@@ -563,15 +591,6 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             : (actualEval - bestEval) * 100.0;
         final double cplAbs = centipawnLoss.abs();
 
-        // ── Step D: Classify using CPL thresholds ──
-        final classification = classifyMoveCpl(
-          centipawnLoss: cplAbs,
-          bestMove: bestMoveForPlayer,
-          actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
-          isMateBefore: bestIsMate,
-          isMateAfter: actualIsMate,
-        );
-
         // The position actually reached before this ply. For the first ply
         // there is no previous ply, so it is the current position's eval.
         final double actualEvalBeforeMove = actualEvalSoFar ?? bestEval;
@@ -593,6 +612,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           evalBeforePawns: actualEvalBeforeMove,
           evalAfterPawns: actualEval,
           isWhiteMove: isWhiteMove,
+        );
+
+        // ── Step D: Classify using CPL thresholds ──
+        // SEE and the MultiPV second-line margin promote a sound move to
+        // Brilliant/Great; the Win% pair enables the non-mate Miss case.
+        final classification = classifyMoveCpl(
+          centipawnLoss: cplAbs,
+          bestMove: bestMoveForPlayer,
+          actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
+          isMateBefore: bestIsMate,
+          isMateAfter: actualIsMate,
+          seeCentipawns: seeCentipawns,
+          secondBestCentipawnLoss: secondBestCpl,
+          playerWinPercentBefore: winBefore,
+          winPercentDiff: winDiff,
         );
 
         // Debug logging — now shows CPL-based classification

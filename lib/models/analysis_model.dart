@@ -379,6 +379,24 @@ MoveClassification classifyMove({
   }
 }
 
+/// Maximum CPL a move may cost and still qualify as Brilliant or Great.
+/// Both labels describe moves that hold the evaluation, so this stays tight.
+const double brilliantGreatMaxCpl = 20.0;
+
+/// Minimum material (in centipawns, negative) the static exchange evaluation
+/// must show for a sound move to count as a sacrifice. -100 is a clean pawn.
+const double brilliantMinSacrificeCp = -100.0;
+
+/// How much worse the engine's second-best line must be for the played move to
+/// count as the only good move (Great).
+const double greatOnlyMoveMarginCp = 30.0;
+
+/// Minimum player Win% before the move for a Miss to be possible.
+const double missMinWinPercentBefore = 80.0;
+
+/// Minimum Win% drop for a winning position to count as a Miss.
+const double missMinWinPercentDrop = 25.0;
+
 /// Classify a move based on centipawn loss (CPL) relative to the engine's best move.
 /// This is how Lichess and Chess.com classify moves — by comparing the evaluation
 /// of the player's move against the evaluation of the engine's best move from the
@@ -394,12 +412,27 @@ MoveClassification classifyMove({
 ///   - CPL ≤ 100 cp: Inaccuracy
 ///   - CPL ≤ 200 cp: Mistake
 ///   - CPL > 200 cp: Blunder
+///
+/// Optional signals refine a sound move (CPL ≤ [brilliantGreatMaxCpl]) into
+/// Brilliant or Great, and let a non-mate move be flagged as a Miss:
+///   - [seeCentipawns]: static exchange evaluation of the played move. A
+///     negative value means material was given up; combined with a low CPL
+///     that is a sound sacrifice → Brilliant.
+///   - [secondBestCentipawnLoss]: how much worse the engine's SECOND line is
+///     than its best. When the next-best alternative is materially worse the
+///     move played was effectively the only good one → Great.
+///   - [playerWinPercentBefore]/[winPercentDiff]: a winning position that was
+///     substantially thrown away → Miss (mirrors the Win%-based rule).
 MoveClassification classifyMoveCpl({
   required double centipawnLoss,
   required String? bestMove,
   required String actualMove,
   bool isMateBefore = false,
   bool isMateAfter = false,
+  double? seeCentipawns,
+  double? secondBestCentipawnLoss,
+  double? playerWinPercentBefore,
+  double? winPercentDiff,
 }) {
   // ── Mate handling ──
   if (isMateBefore || isMateAfter) {
@@ -421,10 +454,38 @@ MoveClassification classifyMoveCpl({
     return MoveClassification.best;
   }
 
+  final isBestMoveMatch =
+      bestMove != null && actualMove.toLowerCase() == bestMove.toLowerCase();
+
+  // ── Brilliant: a sound sacrifice ──
+  // Material is given up by static exchange, yet the evaluation barely moves,
+  // so the sacrifice is justified by the resulting position.
+  if (centipawnLoss <= brilliantGreatMaxCpl &&
+      seeCentipawns != null &&
+      seeCentipawns <= brilliantMinSacrificeCp) {
+    return MoveClassification.brilliant;
+  }
+
+  // ── Great: effectively the only good move ──
+  // The move holds the evaluation while every other engine line is clearly
+  // worse, i.e. there was no comparable alternative.
+  if (centipawnLoss <= brilliantGreatMaxCpl &&
+      secondBestCentipawnLoss != null &&
+      secondBestCentipawnLoss >= greatOnlyMoveMarginCp) {
+    return MoveClassification.great;
+  }
+
   // ── Best move match ──
-  if (bestMove != null &&
-      actualMove.toLowerCase() == bestMove.toLowerCase()) {
+  if (isBestMoveMatch) {
     return MoveClassification.best;
+  }
+
+  // ── Miss: a winning position substantially thrown away ──
+  if (playerWinPercentBefore != null &&
+      winPercentDiff != null &&
+      playerWinPercentBefore >= missMinWinPercentBefore &&
+      winPercentDiff >= missMinWinPercentDrop) {
+    return MoveClassification.miss;
   }
 
   // ── CPL Thresholds ──
