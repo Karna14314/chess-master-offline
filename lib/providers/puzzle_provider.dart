@@ -202,7 +202,6 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
   PuzzleNotifier(this._ref) : super(const PuzzleGameState());
 
-  // Helper class for mode config
   void setModeConfig({
     PuzzleFilterMode mode = PuzzleFilterMode.adaptive,
     int? minRating,
@@ -213,6 +212,8 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     _minRating = minRating ?? 400;
     _maxRating = maxRating ?? 2500;
     _themeFilter = theme ?? 'all';
+    state = state.copyWith(currentPuzzle: null);
+    startNewPuzzle();
   }
 
   /// Initialize and load puzzles

@@ -9,6 +9,9 @@ import 'package:chess_master/screens/stats/statistics_screen.dart';
 import 'package:chess_master/screens/settings/settings_screen.dart';
 import 'package:chess_master/core/services/diagnostics_service.dart';
 
+import 'package:chess_master/providers/statistics_provider.dart';
+import 'package:chess_master/providers/puzzle_provider.dart';
+
 class MoreScreen extends ConsumerStatefulWidget {
   const MoreScreen({super.key});
 
@@ -125,6 +128,15 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
   }
 
   Widget _buildQuickStatsCard(BuildContext context, WidgetRef ref) {
+    final gameStats = ref.watch(statisticsProvider);
+    final puzzleStats = ref.watch(puzzleStatsProvider);
+
+    final gamesCount = gameStats.totalGames;
+    final winRate = gameStats.totalGames > 0
+        ? '${gameStats.winRate.toStringAsFixed(0)}%'
+        : '0%';
+    final puzzlesCount = puzzleStats.solvedCount;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -167,26 +179,26 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          const Row(
+          Row(
             children: [
               Expanded(
                 child: _StatItem(
                   label: 'Games',
-                  value: '0',
+                  value: '$gamesCount',
                   icon: Icons.sports_esports,
                 ),
               ),
               Expanded(
                 child: _StatItem(
                   label: 'Win Rate',
-                  value: '0%',
+                  value: winRate,
                   icon: Icons.emoji_events,
                 ),
               ),
               Expanded(
                 child: _StatItem(
                   label: 'Puzzles',
-                  value: '0',
+                  value: '$puzzlesCount',
                   icon: Icons.extension,
                 ),
               ),

@@ -21,7 +21,7 @@ class Puzzle {
   factory Puzzle.fromJson(Map<String, dynamic> json) {
     final themes =
         (json['themes'] as String? ?? '')
-            .split(',')
+            .split(RegExp(r'[,\s]+'))
             .where((t) => t.isNotEmpty)
             .toList();
 

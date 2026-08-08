@@ -296,13 +296,20 @@ MoveClassification classifyMove({
   required String? bestMove,
   required String actualMove,
 }) {
-  // Normalize CPL to non-negative loss (clamped at 0.0 for depth fluctuation noise)
-  final rawCpl = computeCentipawnLoss(
-    evalBefore: evalBefore,
-    evalAfter: evalAfter,
-    isWhiteMove: isWhiteMove,
-  );
-  final cpl = rawCpl < 0 ? 0.0 : rawCpl;
+  // Convert evaluation pawns to centipawns
+  final cpBefore = evalBefore * 100.0;
+  final cpAfter = evalAfter * 100.0;
+
+  // Lichess Win% for player making the move
+  final winBeforeRaw = EvalConstants.centipawnsToWinPercent(cpBefore);
+  final winAfterRaw = EvalConstants.centipawnsToWinPercent(cpAfter);
+
+  final playerWinBefore = isWhiteMove ? winBeforeRaw : (100.0 - winBeforeRaw);
+  final playerWinAfter = isWhiteMove ? winAfterRaw : (100.0 - winAfterRaw);
+
+  // Win probability loss (0.0 to 100.0 %)
+  final rawWinDiff = playerWinBefore - playerWinAfter;
+  final winDiff = rawWinDiff < 0 ? 0.0 : rawWinDiff;
 
   // ── Mate handling ──
   final isMateScore =
@@ -324,7 +331,7 @@ MoveClassification classifyMove({
       return MoveClassification.miss;
     }
 
-    if (cpl >= EvalConstants.thresholdBlunderCp) {
+    if (winDiff >= 25.0) {
       return MoveClassification.blunder;
     }
     return MoveClassification.best;
@@ -338,22 +345,21 @@ MoveClassification classifyMove({
     return MoveClassification.best;
   }
 
-  // Missed Win / Miss
-  double playerEvalBefore = isWhiteMove ? evalBefore : -evalBefore;
-  if (playerEvalBefore >= 3.0 && cpl >= 200) {
+  // Missed Win / Miss (had >3.0 pawns advantage and lost >25% win prob)
+  if (playerWinBefore >= 80.0 && winDiff >= 25.0) {
     return MoveClassification.miss;
   }
 
-  // Standard Centipawn Loss-based classification
-  if (cpl <= 10) {
+  // ── Lichess Win-Probability Loss Thresholds ──
+  if (winDiff <= 1.0) {
     return MoveClassification.best;
-  } else if (cpl <= 25) {
+  } else if (winDiff <= 4.0) {
     return MoveClassification.excellent;
-  } else if (cpl <= 50) {
+  } else if (winDiff <= 8.0) {
     return MoveClassification.good;
-  } else if (cpl <= 100) {
+  } else if (winDiff <= 15.0) {
     return MoveClassification.inaccuracy;
-  } else if (cpl <= 200) {
+  } else if (winDiff <= 25.0) {
     return MoveClassification.mistake;
   } else {
     return MoveClassification.blunder;
