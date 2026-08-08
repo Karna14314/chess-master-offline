@@ -19,7 +19,7 @@ void main() {
 }
 
 /// Node budgets to compare. Lower = faster, noisier.
-const _budgets = <int>[150000];
+const _budgets = <int>[50000];
 
 const _game = <String>[
   'e2e4', 'e7e5',
@@ -72,10 +72,18 @@ class _AppState extends State<_App> {
       // Let the platform settle before touching the native engine: calling
       // initialize() in the first frame races the Stockfish binary's own
       // startup and loses the uciok handshake.
-      await Future<void>.delayed(const Duration(seconds: 6));
+      await Future<void>.delayed(const Duration(seconds: 12));
 
       final engine = StockfishService.instance;
-      await engine.initialize();
+      // Retry the handshake: on a cold start the native binary can still be
+      // coming up when initialize() runs, and the service latches to fallback.
+      for (var attempt = 1; attempt <= 4; attempt++) {
+        await engine.initialize();
+        if (!engine.isUsingFallback) break;
+        _log('ENGINE attempt $attempt hit fallback, retrying…');
+        engine.resetTestState();
+        await Future<void>.delayed(const Duration(seconds: 5));
+      }
       _log('ENGINE ready=${engine.isReady} fallback=${engine.isUsingFallback}');
       if (engine.isUsingFallback) {
         setState(() => _status = 'ERROR: fallback engine');

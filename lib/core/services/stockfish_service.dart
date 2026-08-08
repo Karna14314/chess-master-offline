@@ -956,6 +956,7 @@ class StockfishService {
     _pendingAnalysis = analysisCompleter.future;
 
     final searchId = ++_activeSearchId;
+    final callStarted = DateTime.now();
     StreamSubscription<String>? subscription;
 
     try {
@@ -983,6 +984,13 @@ class StockfishService {
       final lines = <EngineLine>[];
       int? mainEvaluation;
       int? mateIn;
+
+      // Per-depth accumulation so the final result can be taken from the
+      // deepest COMPLETED iteration rather than whatever was mid-flight when
+      // `bestmove` arrived. Keyed by depth, then by MultiPV rank.
+      final linesByDepth = <int, Map<int, EngineLine>>{};
+      final evalByDepth = <int, int?>{};
+      final mateByDepth = <int, int?>{};
 
       subscription = _outputController.stream.listen((line) {
         if (searchId != _activeSearchId) {
@@ -1028,12 +1036,6 @@ class StockfishService {
               effectiveEval = mate > 0 ? (10000 - mate * 10) : (-10000 + mate.abs() * 10);
             }
 
-            // Store the main line evaluation
-            if (pvNumber == 1) {
-              mainEvaluation = effectiveEval;
-              mateIn = mate;
-            }
-
             final engineLine = EngineLine(
               rank: pvNumber,
               evaluation: (effectiveEval ?? 0) / 100.0,
@@ -1043,7 +1045,28 @@ class StockfishService {
               mateIn: mate,
             );
 
-            // Update or add line
+            // ── Deterministic result capture ──
+            // Stockfish emits a full set of MultiPV lines for depth 1, then 2,
+            // and so on. Overwriting a single flat list meant the captured
+            // result depended on exactly which iteration was in flight when
+            // `bestmove` arrived — the same position could resolve at a
+            // different depth, or with lines from two different depths mixed,
+            // on every run. Group lines by the depth that produced them and
+            // only publish a completed iteration (see `bestmove` below).
+            final bucket = linesByDepth.putIfAbsent(currentDepth, () => {});
+            bucket[pvNumber] = engineLine;
+
+            if (pvNumber == 1) {
+              evalByDepth[currentDepth] = effectiveEval;
+              mateByDepth[currentDepth] = mate;
+
+              // Progressive UI updates may use the in-flight iteration; only
+              // the final committed result has to be deterministic.
+              mainEvaluation = effectiveEval;
+              mateIn = mate;
+            }
+
+            // Keep the live view in sync for onUpdate consumers.
             if (lines.length >= pvNumber) {
               lines[pvNumber - 1] = engineLine;
             } else {
@@ -1069,12 +1092,40 @@ class StockfishService {
           _sendCommand('setoption name MultiPV value 1');
 
           if (!completer.isCompleted) {
+            // Publish the deepest iteration that produced a COMPLETE set of
+            // MultiPV lines. A partially-emitted deeper iteration is discarded,
+            // so the same position always resolves to the same eval instead of
+            // depending on when `bestmove` happened to interrupt the search.
+            int? bestDepth;
+            for (final entry in linesByDepth.entries) {
+              final complete = entry.value.length >= multiPv;
+              if (!complete) continue;
+              if (bestDepth == null || entry.key > bestDepth) {
+                bestDepth = entry.key;
+              }
+            }
+            // If no iteration completed (very short search), fall back to the
+            // deepest partial one so a result is still returned.
+            bestDepth ??= linesByDepth.keys.isEmpty
+                ? null
+                : linesByDepth.keys.reduce((a, b) => a > b ? a : b);
+
+            final committedLines = bestDepth == null
+                ? lines
+                : (linesByDepth[bestDepth]!.entries.toList()
+                      ..sort((a, b) => a.key.compareTo(b.key)))
+                    .map((e) => e.value)
+                    .toList();
+
             completer.complete(
               AnalysisResult(
-                evaluation: mainEvaluation ?? 0,
-                mateIn: mateIn,
-                lines: lines,
-                depth: depth,
+                evaluation: bestDepth == null
+                    ? (mainEvaluation ?? 0)
+                    : (evalByDepth[bestDepth] ?? mainEvaluation ?? 0),
+                mateIn:
+                    bestDepth == null ? mateIn : mateByDepth[bestDepth],
+                lines: committedLines,
+                depth: bestDepth ?? depth,
               ),
             );
           }
@@ -1103,13 +1154,13 @@ class StockfishService {
       }
 
       _searchInFlight = true;
-      // A node-bounded search is deterministic: the engine stops after exactly
-      // N nodes regardless of how fast the device is, so the same position
-      // always returns the same score. A depth-bounded search is not, because
-      // the result depends on which `info` line arrives before `bestmove`.
+      // Node-bounded search caps total work regardless of device speed.
+      // (Reproducibility comes from the completed-iteration capture in the
+      // bestmove handler, not from the search bound itself.)
       _sendCommand(nodes != null ? 'go nodes $nodes' : 'go depth $depth');
+      final searchStarted = DateTime.now();
 
-      return await completer.future.timeout(
+      final searchResult = await completer.future.timeout(
         analysisTimeoutForTesting, // Short timeout for analysis to switch to basic if stuck
         onTimeout: () {
           debugPrint(
@@ -1121,6 +1172,18 @@ class StockfishService {
           return BasicEvaluatorService.instance.analyze(fen);
         },
       );
+
+      // Overhead accounting: how much of this call was actual searching versus
+      // the surrounding stop/position/isready/MultiPV round trips.
+      final searchMs =
+          DateTime.now().difference(searchStarted).inMilliseconds;
+      final totalMs = DateTime.now().difference(callStarted).inMilliseconds;
+      debugPrint(
+        '⏱️ SEARCH totalMs=$totalMs searchMs=$searchMs '
+        'overheadMs=${totalMs - searchMs}',
+      );
+
+      return searchResult;
     } finally {
       subscription?.cancel();
       _searchInFlight = false;
