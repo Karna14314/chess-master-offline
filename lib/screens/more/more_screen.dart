@@ -135,7 +135,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
     final winRate = gameStats.totalGames > 0
         ? '${gameStats.winRate.toStringAsFixed(0)}%'
         : '0%';
-    final puzzlesCount = puzzleStats.solvedCount;
+    final puzzlesCount = puzzleStats.puzzlesSolved;
 
     return Container(
       padding: const EdgeInsets.all(20),
