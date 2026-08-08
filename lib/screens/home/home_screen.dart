@@ -174,6 +174,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildHeader(BuildContext context, Color textPrimary, Color textSecondary) {
     final streakState = ref.watch(streakProvider);
     final streakCount = streakState.streakCount;
+    final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final isActivityToday = streakState.lastActivityDate == todayStr;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -204,21 +206,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.15),
+            color: isActivityToday
+                ? const Color(0xFFFF6D00).withValues(alpha: 0.18)
+                : Colors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+            border: Border.all(
+              color: isActivityToday
+                  ? const Color(0xFFFF6D00).withValues(alpha: 0.6)
+                  : Colors.orange.withValues(alpha: 0.3),
+            ),
+            boxShadow: isActivityToday
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFFF6D00).withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🔥', style: TextStyle(fontSize: 16)),
+              Text(
+                isActivityToday ? '🔥' : '⚡',
+                style: const TextStyle(fontSize: 16),
+              ),
               const SizedBox(width: 6),
               Text(
                 '$streakCount Day${streakCount == 1 ? '' : 's'}',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.orange.shade700,
+                  color: isActivityToday ? const Color(0xFFFF6D00) : Colors.orange,
                 ),
               ),
             ],
@@ -238,8 +258,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isSolved
-              ? [const Color(0xFF1B5E20), const Color(0xFF2E7D32)]
-              : [const Color(0xFFE65100), const Color(0xFFF57C00)],
+              ? [const Color(0xFF1E5128), const Color(0xFF2E7D32)]
+              : [const Color(0xFFD84315), const Color(0xFFFF6D00)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -274,15 +294,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
-              if (streakState.streakCount > 0)
-                Text(
-                  '🔥 ${streakState.streakCount} Day Streak',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              Text(
+                '🔥 ${streakState.streakCount} Day Streak',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -354,21 +373,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
             colors: [
-              Color(0xFF1B5E20),
-              Color(0xFF0D0D0D),
+              Color(0xFF1E3C72),
+              Color(0xFF2A5298),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.3),
+              color: const Color(0xFF1E3C72).withValues(alpha: 0.3),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
           ],
           border: Border.all(
-            color: AppTheme.borderColor.withValues(alpha: 0.5),
+            color: Colors.white.withValues(alpha: 0.2),
           ),
         ),
         child: Stack(
@@ -386,7 +405,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -397,7 +416,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -405,7 +424,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryLight,
+                        color: Colors.white,
                         letterSpacing: 1.0,
                       ),
                     ),
@@ -424,7 +443,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     'Jump into an instant match against Stockfish',
                     style: GoogleFonts.inter(
                       fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: Colors.white.withValues(alpha: 0.85),
                     ),
                   ),
                 ],

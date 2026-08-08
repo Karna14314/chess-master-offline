@@ -9,6 +9,7 @@ import 'package:chess_master/models/puzzle_model.dart';
 import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/core/services/audio_service.dart';
 import 'package:chess_master/providers/statistics_provider.dart';
+import 'package:chess_master/providers/streak_provider.dart';
 
 /// Parse puzzles in a separate isolate
 List<Puzzle> _parsePuzzles(String jsonString) {
@@ -694,6 +695,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
     // Update database
     final db = _ref.read(databaseServiceProvider);
+
+    if (solved) {
+      _ref.read(streakProvider.notifier).markPuzzleSolvedToday();
+    }
 
     // Save to puzzle progress tracking history
     await db.savePuzzleProgress(puzzle.id, solved);

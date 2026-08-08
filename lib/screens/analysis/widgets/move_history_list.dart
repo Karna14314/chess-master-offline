@@ -142,27 +142,31 @@ class _MoveChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color textColor = isSelected ? Colors.white : AppTheme.textPrimaryFor(context);
-    Color bgColor = isSelected ? AppTheme.primaryColor : Colors.transparent;
+    final classification = analysis?.classification;
+    final cColor = classification != null ? Color(classification.color) : null;
 
-    if (analysis != null && !isSelected) {
-      final cColor = Color(analysis!.classification.color);
-      // Highlight blunders/mistakes/brilliant even if not selected
-      if (analysis!.classification == MoveClassification.blunder ||
-          analysis!.classification == MoveClassification.mistake ||
-          analysis!.classification == MoveClassification.brilliant) {
-        textColor = cColor;
-      }
-    }
+    Color textColor = isSelected
+        ? Colors.white
+        : (cColor ?? AppTheme.textPrimaryFor(context));
+    Color bgColor = isSelected
+        ? AppTheme.primaryColor
+        : (cColor != null ? cColor.withValues(alpha: 0.1) : Colors.transparent);
+
+    final symbol = _getSymbol(classification);
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(6),
+          border: isSelected
+              ? Border.all(color: AppTheme.primaryColor)
+              : (cColor != null
+                  ? Border.all(color: cColor.withValues(alpha: 0.3))
+                  : null),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -170,23 +174,28 @@ class _MoveChip extends StatelessWidget {
             Text(
               move.san,
               style: GoogleFonts.spaceMono(
-                color: textColor,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 14,
+                color: isSelected ? Colors.white : textColor,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                fontSize: 13,
               ),
             ),
-            if (analysis != null &&
-                analysis!.classification.symbol.isNotEmpty) ...[
-              const SizedBox(width: 2),
-              Text(
-                analysis!.classification.symbol,
-                style: GoogleFonts.inter(
-                  color:
-                      isSelected
-                          ? Colors.white
-                          : Color(analysis!.classification.color),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+            if (symbol.isNotEmpty) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.3)
+                      : (cColor ?? Colors.grey).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  symbol,
+                  style: GoogleFonts.inter(
+                    color: isSelected ? Colors.white : (cColor ?? Colors.white),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
@@ -194,5 +203,34 @@ class _MoveChip extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getSymbol(MoveClassification? c) {
+    if (c == null) return '';
+    switch (c) {
+      case MoveClassification.blunder:
+        return '??';
+      case MoveClassification.miss:
+        return '?';
+      case MoveClassification.mistake:
+        return '?';
+      case MoveClassification.inaccuracy:
+        return '?!';
+      case MoveClassification.brilliant:
+        return '!!';
+      case MoveClassification.great:
+        return '!';
+      case MoveClassification.best:
+        return '★';
+      case MoveClassification.book:
+        return '📖';
+      case MoveClassification.excellent:
+        return '✓';
+      case MoveClassification.good:
+        return '';
+      case MoveClassification.forced:
+      case MoveClassification.onlyMove:
+        return '';
+    }
   }
 }

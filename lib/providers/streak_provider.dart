@@ -59,6 +59,11 @@ class StreakNotifier extends StateNotifier<StreakState> {
       if (lastDate.isNotEmpty && lastDate != todayStr && lastDate != yesterdayStr) {
         streak = 0;
         await prefs.setInt('streak_current_count', 0);
+      } else if (lastDate == todayStr || lastDate == yesterdayStr) {
+        if (streak == 0) {
+          streak = 1;
+          await prefs.setInt('streak_current_count', 1);
+        }
       }
 
       final isSolvedToday = (lastPuzzleDate == todayStr);
@@ -80,11 +85,19 @@ class StreakNotifier extends StateNotifier<StreakState> {
       int currentStreak = prefs.getInt('streak_current_count') ?? 0;
 
       if (lastDate == todayStr) {
-        // Already recorded activity today
+        if (currentStreak == 0) {
+          currentStreak = 1;
+          await prefs.setInt('streak_current_count', 1);
+        }
+        if (!mounted) return;
+        state = state.copyWith(
+          streakCount: currentStreak,
+          lastActivityDate: todayStr,
+        );
         return;
       } else if (lastDate == yesterdayStr) {
         // Continuous streak! Increment.
-        currentStreak += 1;
+        currentStreak = (currentStreak == 0 ? 1 : currentStreak) + 1;
       } else {
         // Streak started today
         currentStreak = 1;

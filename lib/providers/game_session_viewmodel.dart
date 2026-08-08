@@ -13,6 +13,7 @@ import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/services/notification_service.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/providers/achievement_provider.dart';
+import 'package:chess_master/providers/streak_provider.dart';
 import 'package:chess/chess.dart' as chess;
 
 /// Provider for the active game session
@@ -156,6 +157,9 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     state = updatedSession;
     await _repository.saveSession(updatedSession);
+
+    // Record streak activity whenever player plays a move or completes a game
+    _ref.read(streakProvider.notifier).recordActivity();
 
     if (result != null) {
       _recordStatisticsIfNeeded();
