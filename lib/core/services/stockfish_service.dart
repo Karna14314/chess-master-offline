@@ -1145,21 +1145,25 @@ class StockfishService {
   static const int livePlayThreads = 1;
   static const int livePlayHashMb = 32;
 
-  /// Upper bounds for batch analysis. Deliberately conservative: the engine
-  /// runs in a spawned isolate alongside the UI on phones that may be thermally
-  /// constrained, and higher thread counts have historically been a source of
-  /// native crashes in this integration.
-  static const int maxAnalysisThreads = 3;
+  /// Upper bound on threads for batch analysis.
+  ///
+  /// Deliberately pinned to 1. Multi-threaded Stockfish (Lazy SMP) is
+  /// non-deterministic: helper threads race to fill the shared transposition
+  /// table, so the same position at the same depth can return a different
+  /// score between runs. Post-game review must be reproducible — a user
+  /// re-opening the same game has to see the same classifications — and a
+  /// measured Threads=3 run shifted evaluations enough to change per-move
+  /// labels (blunders 0 -> 2) on an identical game.
+  ///
+  /// Hash is still raised, which is a pure win: a larger table cannot change
+  /// the result of a deterministic single-threaded search, it only avoids
+  /// re-searching positions already visited.
+  static const int maxAnalysisThreads = 1;
   static const int analysisHashMb = 128;
 
-  /// Threads to use for batch analysis on this device: half the available
-  /// cores (leaving headroom for the UI isolate and the platform), clamped to
-  /// [maxAnalysisThreads] and never below 1.
-  int get _analysisThreads {
-    final cores = Platform.numberOfProcessors;
-    if (cores <= 2) return 1;
-    return (cores ~/ 2).clamp(1, maxAnalysisThreads);
-  }
+  /// Threads to use for batch analysis. See [maxAnalysisThreads] for why this
+  /// stays at 1 regardless of how many cores the device has.
+  int get _analysisThreads => maxAnalysisThreads;
 
   /// Raise Threads/Hash for a full-game batch analysis pass.
   /// Must be paired with [setLivePlayStrength] when the pass finishes or is
