@@ -53,52 +53,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             onPressed:
                 () => ref.read(statisticsProvider.notifier).loadStatistics(),
           ),
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'reset') {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder:
-                      (ctx) => AlertDialog(
-                        backgroundColor: AppTheme.surfaceColor(context),
-                        title: const Text('Reset Statistics'),
-                        content: const Text(
-                          'Are you sure you want to reset all statistics? This cannot be undone.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text(
-                              'Reset',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                      ),
-                );
-                if (confirm == true) {
-                  ref.read(statisticsProvider.notifier).resetStatistics();
-                }
-              }
-            },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(
-                    value: 'reset',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_forever, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Reset All Stats'),
-                      ],
-                    ),
-                  ),
-                ],
-          ),
         ],
       ),
       body: SingleChildScrollView(
