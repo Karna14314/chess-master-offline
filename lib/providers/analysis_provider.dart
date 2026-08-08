@@ -145,10 +145,13 @@ class AnalysisState {
     return '$colorPrefix$pieceChar';
   }
 
-  /// Get all evaluations for graphing
+  /// Get all evaluations for graphing.
+  ///
+  /// Index i == the position after i plies (index 0 = start position), built
+  /// from the ACTUALLY reached evals so the curve matches the real game.
   List<double> get evaluations {
     if (analyzedMoves.isEmpty) return [currentEval];
-    List<double> evals = [analyzedMoves.first.evalBefore];
+    List<double> evals = [analyzedMoves.first.actualEvalBeforeMove];
     for (final move in analyzedMoves) {
       evals.add(move.evalAfter);
     }
@@ -444,6 +447,12 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       final analyzedMoves = <MoveAnalysis>[];
       final board = chess.Chess.fromFEN(state.startingFen);
 
+      // Evaluation of the position ACTUALLY reached so far (white-relative
+      // pawns). Seeded with the first position's best eval and then carried
+      // forward as each ply's actualEval, so the graph/before-display series
+      // follows the real game instead of the counterfactual best line.
+      double? actualEvalSoFar;
+
       // ── Per-move analysis loop ──
       // For each position we do ONE engine analysis that gives us:
       //   1. bestEval: evaluation of the engine's top line (the best move)
@@ -563,15 +572,25 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           isMateAfter: actualIsMate,
         );
 
-        // Win% for display
-        final winBest = EvalConstants.centipawnsToWinPercent(bestEval * 100);
+        // The position actually reached before this ply. For the first ply
+        // there is no previous ply, so it is the current position's eval.
+        final double actualEvalBeforeMove = actualEvalSoFar ?? bestEval;
+        actualEvalSoFar = actualEval;
+
+        // Win% for display — "before" uses the ACTUAL prior position so the
+        // displayed before/after pair matches the real game continuity.
+        final winBest = EvalConstants.centipawnsToWinPercent(
+          actualEvalBeforeMove * 100,
+        );
         final winActual = EvalConstants.centipawnsToWinPercent(actualEval * 100);
         final winBefore = isWhiteMove ? winBest : (100.0 - winBest);
         final winAfter = isWhiteMove ? winActual : (100.0 - winActual);
         final rawWinDiff = winBefore - winAfter;
         final winDiff = rawWinDiff < 0 ? 0.0 : rawWinDiff;
+        // Accuracy is derived from the same before/after pair that is
+        // displayed, so the badge and the win% delta never disagree.
         final moveAccuracy = computeWinPercentAccuracy(
-          evalBeforePawns: bestEval,
+          evalBeforePawns: actualEvalBeforeMove,
           evalAfterPawns: actualEval,
           isWhiteMove: isWhiteMove,
         );
@@ -593,6 +612,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             fen: board.fen,
             evalBefore: bestEval,
             evalAfter: actualEval,
+            actualEvalBeforeMove: actualEvalBeforeMove,
             winPercentBefore: winBefore,
             winPercentAfter: winAfter,
             bestMove: bestMoveForPlayer,

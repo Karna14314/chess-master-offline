@@ -4,8 +4,15 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class InteractiveEvalGraph extends StatelessWidget {
+  /// Evaluation series where index i is the position AFTER i plies, so
+  /// index 0 is the starting position and the list has plies + 1 entries.
   final List<double> evaluations;
+
+  /// Currently selected ply index, where -1 means "start position"
+  /// (before any move has been played).
   final int? currentMoveIndex;
+
+  /// Called with a ply index (-1 == start position).
   final ValueChanged<int>? onMoveSelected;
 
   const InteractiveEvalGraph({
@@ -14,6 +21,12 @@ class InteractiveEvalGraph extends StatelessWidget {
     this.currentMoveIndex,
     this.onMoveSelected,
   });
+
+  /// Convert a ply index (-1 == start) to an x coordinate on the graph.
+  int _plyToX(int ply) => ply + 1;
+
+  /// Convert an x coordinate on the graph back to a ply index (-1 == start).
+  int _xToPly(int x) => x - 1;
 
   @override
   Widget build(BuildContext context) {
@@ -28,11 +41,18 @@ class InteractiveEvalGraph extends StatelessWidget {
       );
     }
 
-    // Create spots for the line chart
+    // Create spots for the line chart. x == number of plies played, so x=0 is
+    // the starting position and x=n is the position after ply n.
     final spots = List.generate(
       evaluations.length,
       (i) => FlSpot(i.toDouble(), evaluations[i].clamp(-10.0, 10.0)),
     );
+
+    // Selected ply mapped into graph x-space and clamped to the plotted range,
+    // so the marker stays correct at the start position and at the last ply.
+    final int? selectedX = currentMoveIndex == null
+        ? null
+        : _plyToX(currentMoveIndex!).clamp(0, evaluations.length - 1);
 
     return Container(
       height: 180, // Increased height for better interaction and visibility
@@ -99,7 +119,8 @@ class InteractiveEvalGraph extends StatelessWidget {
                         if (value == meta.max || value == meta.min) {
                           return const SizedBox.shrink();
                         }
-                        final moveNum = (value ~/ 2) + 1;
+                        // x is plies played; ply 1-2 => move 1, 3-4 => move 2.
+                        final moveNum = ((value.toInt() - 1) ~/ 2) + 1;
                         return SideTitleWidget(
                           meta: meta,
                           child: Text(
@@ -148,7 +169,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                     dotData: FlDotData(
                       show: true,
                       getDotPainter: (spot, percent, barData, index) {
-                        final isSelected = index == currentMoveIndex;
+                        final isSelected = index == selectedX;
                         final color =
                             spot.y >= 0
                                 ? Colors.white
@@ -161,7 +182,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                         );
                       },
                       checkToShowDot: (spot, barData) {
-                        return spot.x.toInt() == currentMoveIndex;
+                        return spot.x.toInt() == selectedX;
                       },
                     ),
                     belowBarData: BarAreaData(
@@ -198,7 +219,8 @@ class InteractiveEvalGraph extends StatelessWidget {
                     if (event is FlTapUpEvent &&
                         response?.lineBarSpots != null) {
                       final spot = response!.lineBarSpots!.first;
-                      onMoveSelected?.call(spot.x.toInt());
+                      // x is a position index; convert back to a ply index.
+                      onMoveSelected?.call(_xToPly(spot.x.toInt()));
                     }
                   },
                   touchTooltipData: LineTouchTooltipData(
@@ -206,9 +228,20 @@ class InteractiveEvalGraph extends StatelessWidget {
                     tooltipRoundedRadius: 12,
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
-                        final moveNum = (spot.x ~/ 2) + 1;
-                        final isWhiteMove = spot.x.toInt() % 2 == 0;
+                        final ply = _xToPly(spot.x.toInt());
                         final sign = spot.y >= 0 ? '+' : '';
+                        if (ply < 0) {
+                          return LineTooltipItem(
+                            'Start\n$sign${spot.y.toStringAsFixed(2)}',
+                            GoogleFonts.spaceMono(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        }
+                        final moveNum = (ply ~/ 2) + 1;
+                        final isWhiteMove = ply % 2 == 0;
                         return LineTooltipItem(
                           'Move $moveNum${isWhiteMove ? '' : '...'}\n$sign${spot.y.toStringAsFixed(2)}',
                           GoogleFonts.spaceMono(
@@ -230,10 +263,10 @@ class InteractiveEvalGraph extends StatelessWidget {
                     ),
                   ],
                   verticalLines:
-                      currentMoveIndex != null
+                      selectedX != null
                           ? [
                             VerticalLine(
-                              x: currentMoveIndex!.toDouble(),
+                              x: selectedX.toDouble(),
                               color: AppTheme.primaryColor,
                               strokeWidth: 2,
                               dashArray: [5, 5],

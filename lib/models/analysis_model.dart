@@ -59,8 +59,19 @@ class MoveAnalysis {
   final int moveIndex;
   final String san; // Standard Algebraic Notation
   final String fen; // Position after the move
-  final double evalBefore; // Evaluation before the move (white-relative, pawns)
+  /// Engine BEST-move evaluation for the position before this move
+  /// (white-relative, pawns). This is the counterfactual "what the position was
+  /// worth with perfect play" value and is the CPL baseline — it is NOT the
+  /// evaluation of the position that was actually reached. Use
+  /// [actualEvalBeforeMove] for graphs and before/after display.
+  final double evalBefore;
   final double evalAfter; // Evaluation after the move (white-relative, pawns)
+
+  /// Evaluation of the position ACTUALLY reached before this move was played,
+  /// i.e. [evalAfter] of the previous ply (white-relative, pawns). For the
+  /// first ply this equals [evalBefore]. Used for the eval graph and the
+  /// before/after series so they follow the real game, not the best line.
+  final double actualEvalBeforeMove;
   final double winPercentBefore; // Win% before the move (Lichess formula)
   final double winPercentAfter; // Win% after the move (Lichess formula)
   final String? bestMove; // Best move in this position (UCI format)
@@ -79,6 +90,7 @@ class MoveAnalysis {
     required this.fen,
     required this.evalBefore,
     required this.evalAfter,
+    double? actualEvalBeforeMove,
     this.winPercentBefore = 50.0,
     this.winPercentAfter = 50.0,
     this.bestMove,
@@ -90,7 +102,7 @@ class MoveAnalysis {
     required this.accuracy,
     this.isMateBefore = false,
     this.isMateAfter = false,
-  });
+  }) : actualEvalBeforeMove = actualEvalBeforeMove ?? evalBefore;
 
   /// Calculate evaluation loss (in pawns, positive = bad for player)
   double get evalLoss {
@@ -268,10 +280,16 @@ class GameAnalysis {
     return GamePhase.middlegame;
   }
 
-  /// Get all evaluations for graphing
+  /// Get all evaluations for graphing.
+  ///
+  /// Index i == the position after i plies, so index 0 is the starting position
+  /// and index n is the position after move n. This uses the ACTUALLY reached
+  /// evaluations (`actualEvalBeforeMove` for the start, then each `evalAfter`)
+  /// rather than the counterfactual best-line `evalBefore`, so the curve
+  /// follows the real game and is continuous between plies.
   List<double> get evaluations {
     if (moves.isEmpty) return [0.0];
-    List<double> evals = [moves.first.evalBefore];
+    List<double> evals = [moves.first.actualEvalBeforeMove];
     for (final move in moves) {
       evals.add(move.evalAfter);
     }
