@@ -4,6 +4,7 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/analysis_provider.dart';
+import 'package:chess_master/providers/settings_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -16,6 +17,7 @@ import 'package:chess_master/screens/analysis/widgets/move_explanation.dart';
 import 'package:chess_master/screens/analysis/widgets/game_accuracy_summary.dart';
 import 'package:chess_master/screens/analysis/widgets/move_history_list.dart';
 import 'package:chess_master/screens/analysis/widgets/export_share_buttons.dart';
+import 'package:chess_master/screens/analysis/widgets/interactive_eval_graph.dart';
 
 class AnalysisScreen extends ConsumerStatefulWidget {
   final List<ChessMove>? moves;
@@ -170,6 +172,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(analysisProvider);
+    final settings = ref.watch(settingsProvider);
     final notifier = ref.read(analysisProvider.notifier);
 
     return Scaffold(
@@ -218,6 +221,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                     child: UnifiedEvalBar(
                       evaluation: state.currentEval,
                       isFlipped: _isFlipped,
+                      showWinPercent: settings.showWinPercent,
                     ),
                   ),
                 ),
@@ -349,6 +353,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                         isLoading:
                             state.isLiveAnalysis &&
                             state.currentEngineLines.isEmpty,
+                        fen: state.fen,
                       ),
                       ExportShareButtons(pgn: _buildPgn(state), fen: state.fen),
                     ],
@@ -361,13 +366,40 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                   padding: const EdgeInsets.only(bottom: 24),
                   child: Column(
                     children: [
-                      if (state.fullAnalysis != null)
+                      if (state.fullAnalysis != null) ...[
+                        if (state.analyzedMoves.isNotEmpty)
+                          InteractiveEvalGraph(
+                            evaluations: state.evaluations,
+                            currentMoveIndex: state.currentMoveIndex,
+                            onMoveSelected: notifier.goToMove,
+                          ),
                         GameAccuracySummary(
                           analysis: state.fullAnalysis!,
                           openingName:
                               state.fullAnalysis!.moves.length > 5
                                   ? "Custom Opening"
                                   : null,
+                        ),
+                      ] else if (!state.isAnalyzing)
+                        Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.analytics_outlined,
+                                size: 48,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Not enough moves to analyze.\nPlay a game with at least a few moves.',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.textSecondaryFor(context),
+                                ),
+                              ),
+                            ],
+                          ),
                         )
                       else
                         Padding(

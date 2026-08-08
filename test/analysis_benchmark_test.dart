@@ -108,6 +108,9 @@ class MockStockfishService implements StockfishService {
 
   @override
   void emitEngineLineForTesting(String line) {}
+
+  @override
+  bool isValidFenForTesting(String fen) => true;
 }
 
 void main() {

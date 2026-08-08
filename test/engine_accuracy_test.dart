@@ -316,8 +316,8 @@ void main() {
       });
 
       // NOTE: classifyMove() uses Lichess Win%-based thresholds, NOT CPL thresholds.
-      // Win% diff thresholds: ≤1.0→best, ≤4.0→excellent, ≤8.0→good,
-      //                       ≤15.0→inaccuracy, ≤25.0→mistake, >25.0→blunder
+      // Win% diff thresholds: ≤2.0→best, ≤5.0→excellent, ≤10.0→good,
+      //                       ≤20.0→inaccuracy, ≤40.0→mistake, >40.0→blunder
 
       test('Win% diff ~0.9% (CPL=10cp, 1.0→0.9) → Best', () {
         final result = classifyMove(
@@ -327,7 +327,7 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        // winDiff ≈ 0.9% → best (≤1.0)
+        // winDiff ≈ 0.9% → best (≤2.0)
         expect(result, equals(MoveClassification.best));
       });
 
@@ -339,7 +339,7 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        // winDiff ≈ 2.7% → excellent (≤4.0)
+        // winDiff ≈ 2.7% → excellent (≤5.0)
         expect(result, equals(MoveClassification.excellent));
       });
 
@@ -351,7 +351,7 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        // winDiff ≈ 6.7% → good (≤8.0)
+        // winDiff ≈ 6.7% → good (≤10.0)
         expect(result, equals(MoveClassification.good));
       });
 
@@ -363,11 +363,11 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        // winDiff ≈ 13.2% → inaccuracy (≤15.0)
+        // winDiff ≈ 13.2% → inaccuracy (≤20.0)
         expect(result, equals(MoveClassification.inaccuracy));
       });
 
-      test('Win% diff ~26% (CPL=300cp, 1.0→-2.0) → Blunder', () {
+      test('Win% diff ~26% (CPL=300cp, 1.0→-2.0) → Mistake', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: -2.0,
@@ -375,8 +375,8 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        // winDiff ≈ 26.3% → blunder (>25.0)
-        expect(result, equals(MoveClassification.blunder));
+        // winDiff ≈ 26.3% → mistake (≤40.0)
+        expect(result, equals(MoveClassification.mistake));
       });
 
       test('improvement (eval improves) → Best (winDiff clamped to 0)', () {
@@ -387,11 +387,11 @@ void main() {
           bestMove: null,
           actualMove: 'e2e4',
         );
-        // Negative winDiff clamped to 0 → best (≤1.0)
+        // Negative winDiff clamped to 0 → best (≤2.0)
         expect(result, equals(MoveClassification.best));
       });
 
-      test('black move Win% diff ~26% (CPL=300cp) → Blunder', () {
+      test('black move Win% diff ~26% (CPL=300cp) → Mistake', () {
         final result = classifyMove(
           evalBefore: -1.0,
           evalAfter: 2.0,
@@ -400,8 +400,8 @@ void main() {
           actualMove: 'e7e5',
         );
         // Black's playerWinBefore ≈ 63.4%, playerWinAfter ≈ 31.6%
-        // winDiff ≈ 31.8% → blunder (>25.0)
-        expect(result, equals(MoveClassification.blunder));
+        // winDiff ≈ 31.8% → mistake (≤40.0)
+        expect(result, equals(MoveClassification.mistake));
       });
 
       test('black move improvement → Best (winDiff clamped to 0)', () {
@@ -412,8 +412,45 @@ void main() {
           bestMove: null,
           actualMove: 'e7e5',
         );
-        // Negative winDiff clamped to 0 → best (≤1.0)
+        // Negative winDiff clamped to 0 → best (≤2.0)
         expect(result, equals(MoveClassification.best));
+      });
+
+      // ── Boundary tests for new thresholds ─────────────────────
+      test('Win% diff ~1.8% (CPL=20cp, 0.2→0.0) → Best (boundary)', () {
+        // At eval ≈ 0.2 pawns, losing 20cp gives winDiff ≈ 1.8% ≤ 2.0
+        final result = classifyMove(
+          evalBefore: 0.2,
+          evalAfter: 0.0,
+          isWhiteMove: true,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.best));
+      });
+
+      test('Win% diff ~5.5% (CPL=60cp, 0.3→-0.3) → Good (was excellent)', () {
+        // At eval ≈ 0.3 pawns, losing 60cp gives winDiff ≈ 5.5% > 5.0
+        final result = classifyMove(
+          evalBefore: 0.3,
+          evalAfter: -0.3,
+          isWhiteMove: true,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.good));
+      });
+
+      test('Win% diff ~49% (CPL=500cp, 1.0→-4.0) → Blunder', () {
+        final result = classifyMove(
+          evalBefore: 1.0,
+          evalAfter: -4.0,
+          isWhiteMove: true,
+          bestMove: null,
+          actualMove: 'd2d4',
+        );
+        // winDiff ≈ 49% → blunder (>40.0)
+        expect(result, equals(MoveClassification.blunder));
       });
     });
 
@@ -422,13 +459,29 @@ void main() {
     group('classifyMove mate handling', () {
       test('mate score: best move match → Best', () {
         final result = classifyMove(
-          evalBefore: 1500, // Mate score (white winning)
-          evalAfter: 1500,
+          evalBefore: 99.0, // Mate score in pawns (converted from centipawns)
+          evalAfter: 99.0,
           isWhiteMove: true,
           bestMove: 'qg7h7',
           actualMove: 'qg7h7',
+          isMateBefore: true,
+          isMateAfter: true,
         );
         expect(result, equals(MoveClassification.best));
+      });
+
+      test('mate score: lost mate → Miss', () {
+        final result = classifyMove(
+          evalBefore: 99.0, // White had forced mate
+          evalAfter: -99.0, // White now has forced mate against — lost mate
+          isWhiteMove: true,
+          bestMove: null,
+          actualMove: 'f7f6',
+          isMateBefore: true,
+          isMateAfter: true,
+        );
+        // hadMate (evalBefore > 0) && lostMate (evalAfter < 0) → miss
+        expect(result, equals(MoveClassification.miss));
       });
 
       test(
@@ -436,10 +489,12 @@ void main() {
         () {
           final result = classifyMove(
             evalBefore: 0.0, // Equal position
-            evalAfter: 1500, // White now has forced mate — bad for black
+            evalAfter: 99.0, // White now has forced mate — bad for black
             isWhiteMove: false,
             bestMove: null,
             actualMove: 'f7f6',
+            isMateBefore: false,
+            isMateAfter: true,
           );
           expect(result, equals(MoveClassification.blunder));
         },

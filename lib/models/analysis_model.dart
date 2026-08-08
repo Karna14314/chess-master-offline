@@ -70,6 +70,8 @@ class MoveAnalysis {
   final bool isWhiteMove;
   final double centipawnLoss; // CPL for this move
   final double accuracy; // Per-move accuracy 0.0–100.0 (Win%-based)
+  final bool isMateBefore; // True if evalBefore represents a forced mate
+  final bool isMateAfter; // True if evalAfter represents a forced mate
 
   const MoveAnalysis({
     required this.moveIndex,
@@ -86,6 +88,8 @@ class MoveAnalysis {
     required this.isWhiteMove,
     required this.centipawnLoss,
     required this.accuracy,
+    this.isMateBefore = false,
+    this.isMateAfter = false,
   });
 
   /// Calculate evaluation loss (in pawns, positive = bad for player)
@@ -279,22 +283,17 @@ class GameAnalysis {
 ///
 /// Evaluation is always white-relative (positive = good for white).
 ///
-/// Classification thresholds are defined in [EvalConstants] (in centipawns):
-///   - CPL ≤ 5 cp: Best
-///   - CPL ≤ 20 cp: Excellent
-///   - CPL ≤ 50 cp: Good
-///   - CPL ≤ 100 cp: Inaccuracy
-///   - CPL ≤ 200 cp: Mistake
-///   - CPL > 200 cp: Blunder
-///
-/// Improvement (CPL < 0 by more than 50cp): Excellent
-/// Mate scores (abs > 1000) are handled separately.
+/// [isMateBefore]/[isMateAfter] indicate whether the position is a forced mate
+/// (Stockfish reported "score mate N" without "score cp"). Mate positions are
+/// classified separately using mate-specific logic.
 MoveClassification classifyMove({
   required double evalBefore,
   required double evalAfter,
   required bool isWhiteMove,
   required String? bestMove,
   required String actualMove,
+  bool isMateBefore = false,
+  bool isMateAfter = false,
 }) {
   // Convert evaluation pawns to centipawns
   final cpBefore = evalBefore * 100.0;
@@ -312,20 +311,14 @@ MoveClassification classifyMove({
   final winDiff = rawWinDiff < 0 ? 0.0 : rawWinDiff;
 
   // ── Mate handling ──
-  final isMateScore =
-      evalBefore.abs() > EvalConstants.mateThreshold ||
-      evalAfter.abs() > EvalConstants.mateThreshold;
-
-  if (isMateScore) {
+  if (isMateBefore || isMateAfter) {
     if (bestMove != null &&
         actualMove.toLowerCase() == bestMove.toLowerCase()) {
       return MoveClassification.best;
     }
 
-    bool hadMate =
-        (isWhiteMove ? evalBefore : -evalBefore) > EvalConstants.mateThreshold;
-    bool lostMate =
-        (isWhiteMove ? evalAfter : -evalAfter) < EvalConstants.mateThreshold;
+    final hadMate = isMateBefore && (isWhiteMove ? evalBefore > 0 : evalBefore < 0);
+    final lostMate = isMateAfter && (isWhiteMove ? evalAfter < 0 : evalAfter > 0);
 
     if (hadMate && lostMate) {
       return MoveClassification.miss;
@@ -351,15 +344,17 @@ MoveClassification classifyMove({
   }
 
   // ── Lichess Win-Probability Loss Thresholds ──
-  if (winDiff <= 1.0) {
+  // Tightened from original (1/4/8/15/25) to produce meaningful distribution.
+  // These match Lichess's classification boundaries.
+  if (winDiff <= 2.0) {
     return MoveClassification.best;
-  } else if (winDiff <= 4.0) {
+  } else if (winDiff <= 5.0) {
     return MoveClassification.excellent;
-  } else if (winDiff <= 8.0) {
+  } else if (winDiff <= 10.0) {
     return MoveClassification.good;
-  } else if (winDiff <= 15.0) {
+  } else if (winDiff <= 20.0) {
     return MoveClassification.inaccuracy;
-  } else if (winDiff <= 25.0) {
+  } else if (winDiff <= 40.0) {
     return MoveClassification.mistake;
   } else {
     return MoveClassification.blunder;

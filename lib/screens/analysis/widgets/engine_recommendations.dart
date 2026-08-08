@@ -1,16 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/models/chess_models.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Convert a list of UCI moves to SAN given a starting FEN.
+List<String> _uciToSan(String startingFen, List<String> uciMoves) {
+  try {
+    final board = chess.Chess.fromFEN(startingFen);
+    final sanMoves = <String>[];
+    for (final uci in uciMoves) {
+      if (uci.length < 4) {
+        sanMoves.add(uci);
+        continue;
+      }
+      final from = uci.substring(0, 2);
+      final to = uci.substring(2, 4);
+      final promotion = uci.length > 4 ? uci.substring(4, 5) : null;
+
+      // Find the move in legal moves and get SAN BEFORE making it
+      final legalMoves = board.generate_moves();
+      chess.Move? targetMove;
+      for (final m in legalMoves) {
+        if (m.fromAlgebraic == from && m.toAlgebraic == to &&
+            (promotion == null || m.promotion?.name == promotion)) {
+          targetMove = m;
+          break;
+        }
+      }
+      if (targetMove != null) {
+        sanMoves.add(board.move_to_san(targetMove));
+        board.make_move(targetMove);
+      } else {
+        sanMoves.add(uci);
+      }
+    }
+    return sanMoves;
+  } catch (_) {
+    return uciMoves;
+  }
+}
+
 class EngineRecommendations extends StatefulWidget {
   final List<EngineLine> lines;
   final bool isLoading;
+  final String? fen;
 
   const EngineRecommendations({
     super.key,
     required this.lines,
     this.isLoading = false,
+    this.fen,
   });
 
   @override
@@ -96,7 +136,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
               ),
             )
           else
-            ...displayLines.map((line) => _EngineLineRow(line: line)),
+            ...displayLines.map((line) => _EngineLineRow(line: line, fen: widget.fen)),
 
           // Expand / Collapse button
           if (widget.lines.length > 1)
@@ -128,8 +168,9 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
 
 class _EngineLineRow extends StatelessWidget {
   final EngineLine line;
+  final String? fen;
 
-  const _EngineLineRow({required this.line});
+  const _EngineLineRow({required this.line, this.fen});
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +180,15 @@ class _EngineLineRow extends StatelessWidget {
     final evalColor = isPositive ? Colors.white : Colors.black;
     final evalBgColor = isPositive ? const Color(0xFF303030) : Colors.white;
 
-    final moveList = line.sanMoves ?? line.moves;
+    // Convert UCI to SAN if FEN is available
+    List<String> moveList;
+    if (line.sanMoves != null && line.sanMoves!.isNotEmpty) {
+      moveList = line.sanMoves!;
+    } else if (fen != null && fen!.isNotEmpty) {
+      moveList = _uciToSan(fen!, line.moves);
+    } else {
+      moveList = line.moves;
+    }
     final bestMove = moveList.isNotEmpty ? moveList.first : '';
     final continuation =
         moveList.length > 1 ? moveList.skip(1).take(5).join(' ') : '';

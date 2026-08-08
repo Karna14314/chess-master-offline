@@ -68,6 +68,8 @@ class StockfishService {
       0; // Incremented on each _startEngineIsolate to detect stale messages
   DateTime? _lastFallbackTime;
   static const Duration _fallbackRetryCooldown = Duration(seconds: 30);
+  int _consecutiveCrashes = 0;
+  static const int _maxConsecutiveCrashes = 3; // Circuit breaker threshold
 
   // RegExps for parsing engine output
   static final RegExp _scoreCpRegex = RegExp(r'score cp (-?\d+)');
@@ -111,6 +113,7 @@ class StockfishService {
     _activeSearchId = 0;
     _searchInFlight = false;
     _skipReadyOkForTesting = false;
+    _consecutiveCrashes = 0;
     searchTimeoutForTesting = const Duration(seconds: 30);
     analysisTimeoutForTesting = const Duration(seconds: 10);
     _engineIsolate = null;
@@ -176,7 +179,23 @@ class StockfishService {
     statusNotifier.value = EngineStatus.initializing;
     debugPrint('ENGINE LIFECYCLE → Starting Stockfish initialization');
 
-    // --- Step 0: Verify binary is not force-disabled ---
+    // --- Step 0: Circuit breaker — too many crashes, stay in fallback ---
+    // Only activate if we've had actual isolate crashes (not just init failures).
+    // Reset counter if we've been in fallback for a while (recovery window).
+    if (_consecutiveCrashes >= _maxConsecutiveCrashes) {
+      final timeSinceFallback = _lastFallbackTime != null
+          ? DateTime.now().difference(_lastFallbackTime!)
+          : Duration.zero;
+      if (timeSinceFallback < const Duration(minutes: 5)) {
+        _enableFallback('Circuit breaker: $_consecutiveCrashes consecutive crashes');
+        return;
+      } else {
+        // Recovery window elapsed — reset and try again
+        _consecutiveCrashes = 0;
+      }
+    }
+
+    // --- Step 1: Verify binary is not force-disabled ---
     if (_forceFallback) {
       _enableFallback('Binary verification failed (forceFallback)');
       return;
@@ -227,8 +246,8 @@ class StockfishService {
 
         // --- Step 4: Send engine options ---
         debugPrint('ENGINE INIT: Applying engine options');
-        _sendCommandDirect('setoption name Threads value 2');
-        _sendCommandDirect('setoption name Hash value 64');
+        _sendCommandDirect('setoption name Threads value 1'); // Single thread for stability
+        _sendCommandDirect('setoption name Hash value 32'); // 32MB to reduce memory pressure
         _sendCommandDirect('setoption name UCI_LimitStrength value true');
 
         // --- Step 5: Send "isready", wait for "readyok" ---
@@ -482,8 +501,13 @@ class StockfishService {
     return scoreCp;
   }
 
+  /// Test-only accessor for [_isValidFen].
+  @visibleForTesting
+  bool isValidFenForTesting(String fen) => _isValidFen(fen);
+
   /// Internal FEN validation to prevent native Stockfish C++ engine crashes (SIGSEGV).
-  /// Enforces board structure, piece counts, valid kings, castling, and move numbers.
+  /// Enforces board structure, piece counts, valid kings, castling, move numbers,
+  /// pawn placement, and king adjacency.
   bool _isValidFen(String fen) {
     if (fen.isEmpty) return false;
     final parts = fen.trim().split(_fenSpaceRegex);
@@ -496,18 +520,44 @@ class StockfishService {
 
     int whiteKingCount = 0;
     int blackKingCount = 0;
+    int whitePawnCount = 0;
+    int blackPawnCount = 0;
+    int whiteNonPawnCount = 0;
+    int blackNonPawnCount = 0;
 
-    for (final row in rows) {
+    // Track king positions for adjacency check (row, col)
+    int? whiteKingRow, whiteKingCol, blackKingRow, blackKingCol;
+
+    for (int rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+      final row = rows[rowIdx];
       int count = 0;
       for (int i = 0; i < row.length; i++) {
         final char = row[i];
-        if (char == 'K') whiteKingCount++;
-        if (char == 'k') blackKingCount++;
+        if (char == 'K') {
+          whiteKingCount++;
+          whiteKingRow = rowIdx;
+          whiteKingCol = count;
+        }
+        if (char == 'k') {
+          blackKingCount++;
+          blackKingRow = rowIdx;
+          blackKingCol = count;
+        }
+        if (char == 'P') whitePawnCount++;
+        if (char == 'p') blackPawnCount++;
 
-        if (_fenDigitRegex.hasMatch(char)) {
-          count += int.parse(char);
-        } else if (_fenPieceRegex.hasMatch(char)) {
+        if (_fenPieceRegex.hasMatch(char)) {
           count += 1;
+          // Count non-pawn, non-king pieces for promotion sanity check
+          if (char != 'K' && char != 'k' && char != 'P' && char != 'p') {
+            if (char == char.toUpperCase()) {
+              whiteNonPawnCount++;
+            } else {
+              blackNonPawnCount++;
+            }
+          }
+        } else if (_fenDigitRegex.hasMatch(char)) {
+          count += int.parse(char);
         } else {
           return false; // Invalid character
         }
@@ -518,15 +568,45 @@ class StockfishService {
     // Must have exactly one White King and one Black King for valid Stockfish state
     if (whiteKingCount != 1 || blackKingCount != 1) return false;
 
+    // Kings must not be adjacent (would mean illegal position with both kings in check)
+    if (whiteKingRow != null && blackKingRow != null &&
+        whiteKingCol != null && blackKingCol != null) {
+      final rowDiff = (whiteKingRow - blackKingRow).abs();
+      final colDiff = (whiteKingCol - blackKingCol).abs();
+      if (rowDiff <= 1 && colDiff <= 1) return false;
+    }
+
+    // No pawns on rank 1 or 8 (they must have promoted)
+    if (rows[0].contains('P') || rows[0].contains('p')) return false;
+    if (rows[7].contains('P') || rows[7].contains('p')) return false;
+
+    // Pawn count sanity (max 8 per side)
+    if (whitePawnCount > 8 || blackPawnCount > 8) return false;
+
+    // Promotion sanity: non-pawn pieces beyond the starting set indicate promotions.
+    // Max 8 promotions per side (all 8 pawns promote). Starting pieces: Q,B,R,N = 4 types.
+    // If you have > 4 non-pawn pieces (e.g., 3 queens), some pawns must have promoted.
+    // Upper bound: starting 6 non-pawn pieces (Q+B+R+N = 4, but you start with 8 non-pawn
+    // pieces: KQRBNB NK = 8) minus captures plus promotions. Simple check: max 14 non-pawn
+    // pieces (8 original - 1 king + 7 promoted = 14, but captures reduce this).
+    if (whiteNonPawnCount > 8 || blackNonPawnCount > 8) return false;
+
     // Color check
     final color = parts[1];
     if (color != 'w' && color != 'b') return false;
 
-    // Castling check
+    // Castling check — must not have duplicate flags and must be consistent with king/rook positions
     final castling = parts[2];
     if (castling != '-') {
       final validCastling = RegExp(r'^[KQkq]+$');
       if (!validCastling.hasMatch(castling)) return false;
+      // Check for duplicate characters
+      if (castling.length != castling.split('').toSet().length) return false;
+      // If castling rights exist, king must be on e1/e8
+      if (castling.contains('K') && !rows[7].contains('K')) return false;
+      // White king on e1 for any white castling
+      if ((castling.contains('K') || castling.contains('Q')) && whiteKingRow != 7) return false;
+      if ((castling.contains('k') || castling.contains('q')) && blackKingRow != 0) return false;
     }
 
     // En passant check
@@ -657,7 +737,10 @@ class StockfishService {
 
           final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
           if (mateMatch != null) {
-            mateIn = _toWhiteRelative(int.parse(mateMatch.group(1)!), fen);
+            final rawMate = _toWhiteRelative(int.parse(mateMatch.group(1)!), fen);
+            mateIn = rawMate;
+            // Convert mate to centipawn value for consistent evaluation
+            evaluation = rawMate > 0 ? (10000 - rawMate * 10) : (-10000 + rawMate.abs() * 10);
           }
         }
 
@@ -775,6 +858,12 @@ class StockfishService {
     return thinkTimeMs.clamp(500, 1200);
   }
 
+  // Pending analysis for dedup: when a second analyzePosition call comes in
+  // for the same FEN while the first is still running, the second call awaits
+  // this future instead of starting a new search.
+  Future<AnalysisResult>? _pendingAnalysis;
+  String? _pendingAnalysisFen;
+
   /// Analyze a position and get multiple lines
   /// Returns evaluation and top engine lines
   /// [startingFen] and [moves] are optional; when provided the engine is told
@@ -813,24 +902,44 @@ class StockfishService {
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
-    // If engine is busy with a previous search, stop it first so the new position search takes over
+    // Dedup: if a search for the same FEN is already running, await it instead
+    // of starting a new search. This prevents overlapping searches and ensures
+    // both callers get the same result.
+    if (_pendingAnalysis != null && _pendingAnalysisFen == fen && _isEngineBusy) {
+      return _pendingAnalysis!;
+    }
+
+    // If engine is busy with a different search, stop it first
     if (_isEngineBusy || _searchInFlight) {
       await _stopCurrentSearchAndWait();
     }
     _isEngineBusy = true;
 
+    // Track this search for dedup
+    _pendingAnalysisFen = fen;
+    final analysisCompleter = Completer<AnalysisResult>();
+    _pendingAnalysis = analysisCompleter.future;
+
     final searchId = ++_activeSearchId;
     StreamSubscription<String>? subscription;
 
     try {
-      // Set MultiPV for multiple lines
-      _sendCommand('setoption name MultiPV value $multiPv');
-
       // Stop any lingering search from a previous call BEFORE attaching our
       // listener, so a stale bestmove line cannot be consumed by this analysis.
+      final wasStopped = _searchInFlight;
       await _stopCurrentSearchAndWait();
 
-      final completer = Completer<AnalysisResult>();
+      // Reset engine state before new analysis to prevent SIGSEGV from stale TT entries.
+      // Only send ucinewgame when we actually stopped a previous search, to avoid
+      // unnecessary engine overhead on the common first-call path.
+      if (wasStopped) {
+        _sendCommandDirect('ucinewgame');
+      }
+
+      // Set MultiPV for multiple lines
+      _sendCommand('setoption name MultiPv value $multiPv');
+
+      final completer = analysisCompleter;
       final lines = <EngineLine>[];
       int? mainEvaluation;
       int? mateIn;
@@ -866,15 +975,25 @@ class StockfishService {
 
             final moves = pvMovesMatch.group(1)!.split(' ');
 
+            // Convert mate score to centipawns for consistent handling.
+            // Mate in N → large centipawn value so classifyMate() works.
+            // White-relative: positive = white mates, negative = black mates.
+            int? effectiveEval = eval;
+            if (mate != null) {
+              // Mate in N moves: use a large value that decreases as mate gets farther.
+              // 10000 - mate*10 ensures mate-in-1 >> mate-in-2 >> ... >> best non-mate.
+              effectiveEval = mate > 0 ? (10000 - mate * 10) : (-10000 + mate.abs() * 10);
+            }
+
             // Store the main line evaluation
             if (pvNumber == 1) {
-              mainEvaluation = eval;
+              mainEvaluation = effectiveEval;
               mateIn = mate;
             }
 
             final engineLine = EngineLine(
               rank: pvNumber,
-              evaluation: (eval ?? 0) / 100.0,
+              evaluation: (effectiveEval ?? 0) / 100.0,
               depth: currentDepth,
               moves: moves,
               isMate: mate != null,
@@ -959,6 +1078,10 @@ class StockfishService {
       subscription?.cancel();
       _searchInFlight = false;
       _isEngineBusy = false;
+      if (_pendingAnalysisFen == fen) {
+        _pendingAnalysis = null;
+        _pendingAnalysisFen = null;
+      }
     }
   }
 
@@ -1051,6 +1174,22 @@ class StockfishService {
       _engineResponsePort!.sendPort,
     );
 
+    // Track consecutive isolate crashes for circuit breaker
+    _consecutiveCrashes++;
+
+    // Set up a death detection port
+    final deathPort = ReceivePort();
+    _engineIsolate!.addErrorListener(deathPort.sendPort);
+    deathPort.listen((message) {
+      debugPrint('ENGINE CRASH: Isolate died with error: $message');
+      _isReady = false;
+      _isEngineBusy = false;
+      _engineCommandPort = null;
+      _engineIsolate = null;
+      statusNotifier.value = EngineStatus.failed;
+      deathPort.close();
+    });
+
     // Listen for the command port and stdout from the isolate
     final completer = Completer<void>();
     _engineResponseSubscription = _engineResponsePort!.listen((message) {
@@ -1068,6 +1207,7 @@ class StockfishService {
             _outputController.add(line);
             if (line.contains('readyok')) {
               _isReady = true;
+              _consecutiveCrashes = 0; // Reset crash counter on successful ready
               statusNotifier.value = EngineStatus.ready;
               // Process any queued commands now that engine is fully initialized
               _processCommandQueue();
@@ -1116,6 +1256,7 @@ class StockfishService {
     _engineResponsePort = null;
     _isReady = false;
     _isEngineBusy = false;
+    _searchInFlight = false;
 
     // Cancel any pending init
     _engineReadyCompleter?.complete();

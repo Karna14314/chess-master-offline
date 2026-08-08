@@ -213,6 +213,14 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     // engine lines for every position including the starting one.
     if (_isInitialized && moves.isNotEmpty) {
       analyzeFullGame();
+    } else if (_isInitialized && moves.isEmpty) {
+      // No moves to analyze — emit empty analysis immediately so Report tab
+      // doesn't show infinite spinner.
+      state = state.copyWith(
+        isAnalyzing: false,
+        analysisProgress: 1.0,
+        fullAnalysis: GameAnalysis.empty(),
+      );
     }
   }
 
@@ -438,6 +446,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
       double prevEval = 0.0;
       String? prevBestMove; // bestMove from the "before" position
+      bool prevIsMate = false; // Whether prevEval represents a forced mate
 
       // ── Step 1: Evaluate the starting position ──
       // Fetch with multiPv:3 so we get engine lines AND the best move for the
@@ -450,28 +459,40 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           multiPv: 3,
         );
         prevEval = initialData.eval;
-        if (initialData.lines.isNotEmpty &&
-            initialData.lines.first.moves.isNotEmpty) {
-          prevBestMove = initialData.lines.first.moves.first;
+        if (initialData.lines.isNotEmpty) {
+          prevIsMate = initialData.lines.first.isMate;
+          if (initialData.lines.first.moves.isNotEmpty) {
+            prevBestMove = initialData.lines.first.moves.first;
+          }
         }
       } catch (e) {
         try {
           final basicResult =
               await BasicEvaluatorService.instance.analyze(board.fen);
           prevEval = basicResult.evalInPawns;
+          prevIsMate = false; // Basic evaluator never reports mate
           if (basicResult.lines.isNotEmpty &&
               basicResult.lines.first.moves.isNotEmpty) {
             prevBestMove = basicResult.lines.first.moves.first;
           }
         } catch (e2) {
           prevEval = 0.0;
+          prevIsMate = false;
         }
       }
 
       // ── Step 2: Per-move analysis loop ──
       for (int i = 0; i < moves.length; i++) {
-        // Check cancellation token
-        if (token != _analysisToken) return;
+        // Check cancellation token — save partial results before exiting
+        if (token != _analysisToken) {
+          if (analyzedMoves.isNotEmpty) {
+            state = state.copyWith(
+              analyzedMoves: List.from(analyzedMoves),
+              fullAnalysis: GameAnalysis.fromMoves(analyzedMoves),
+            );
+          }
+          return;
+        }
 
         final move = moves[i];
         final isWhiteMove = board.turn == chess.Color.WHITE;
@@ -494,9 +515,18 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         double afterEval = evalBefore;
         List<EngineLine> engineLines = [];
         String? afterBestMove; // bestMove for the NEXT iteration
+        bool afterIsMate = false; // Whether afterEval represents a forced mate
 
         try {
-          if (token != _analysisToken) return;
+          if (token != _analysisToken) {
+            if (analyzedMoves.isNotEmpty) {
+              state = state.copyWith(
+                analyzedMoves: List.from(analyzedMoves),
+                fullAnalysis: GameAnalysis.fromMoves(analyzedMoves),
+              );
+            }
+            return;
+          }
           if (!_isAnalyzing) break;
 
           final cachedResult = await _getCachedOrAnalyze(
@@ -507,9 +537,11 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
           afterEval = cachedResult.eval;
           engineLines = cachedResult.lines;
-          if (cachedResult.lines.isNotEmpty &&
-              cachedResult.lines.first.moves.isNotEmpty) {
-            afterBestMove = cachedResult.lines.first.moves.first;
+          if (cachedResult.lines.isNotEmpty) {
+            afterIsMate = cachedResult.lines.first.isMate;
+            if (cachedResult.lines.first.moves.isNotEmpty) {
+              afterBestMove = cachedResult.lines.first.moves.first;
+            }
           }
         } catch (e) {
           try {
@@ -518,12 +550,14 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             );
             afterEval = basicResult.evalInPawns;
             engineLines = basicResult.lines;
+            afterIsMate = false;
             if (basicResult.lines.isNotEmpty &&
                 basicResult.lines.first.moves.isNotEmpty) {
               afterBestMove = basicResult.lines.first.moves.first;
             }
           } catch (e2) {
             afterEval = evalBefore;
+            afterIsMate = false;
           }
         }
 
@@ -538,6 +572,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           isWhiteMove: isWhiteMove,
           bestMove: bestMoveForPlayer,
           actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
+          isMateBefore: prevIsMate,
+          isMateAfter: afterIsMate,
         );
 
         final cpl = computeCentipawnLoss(
@@ -582,12 +618,15 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             isWhiteMove: isWhiteMove,
             centipawnLoss: cpl,
             accuracy: moveAccuracy,
+            isMateBefore: prevIsMate,
+            isMateAfter: afterIsMate,
           ),
         );
 
         // (e) Carry forward for next iteration
         prevEval = afterEval;
         prevBestMove = afterBestMove;
+        prevIsMate = afterIsMate;
 
         // Update progress — emit partial fullAnalysis so the Report tab
         // renders progressively instead of showing a spinner until the end.

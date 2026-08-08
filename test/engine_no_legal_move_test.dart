@@ -48,6 +48,9 @@ class _NoMoveStockfishService extends MockStockfishService {
   }) async {
     return BestMoveResult(bestMove: '(none)');
   }
+
+  @override
+  bool isValidFenForTesting(String fen) => true;
 }
 
 void main() {

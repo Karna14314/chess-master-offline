@@ -122,8 +122,8 @@ class AppConstants {
   static const double pieceScale = 0.85;
 
   // Analysis
-  static const int analysisDepth = 18;
-  static const int topEngineLinesCount = 5;
+  static const int analysisDepth = 15;
+  static const int topEngineLinesCount = 3;
 }
 
 /// Represents a difficulty level configuration
