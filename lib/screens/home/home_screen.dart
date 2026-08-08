@@ -15,6 +15,7 @@ import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:chess_master/screens/puzzles/daily_puzzle_screen.dart';
 import 'package:chess_master/screens/analysis/analysis_menu_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 /// Home screen - main dynamic dashboard for the Chess App
 class HomeScreen extends ConsumerStatefulWidget {
