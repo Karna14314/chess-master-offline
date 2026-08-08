@@ -1,267 +1,257 @@
-# Post-Game Analysis Pipeline — Audit & Fix Record
+# Analysis Pipeline — Session Fixes & Open Items
 
-Status: all five confirmed bugs fixed, each in its own commit.
-Verified on-device (Redmi 22041219PI) against the **real Stockfish engine**
-(`ready=true fallback=false`), depth 15, MultiPV 3.
+Authoritative record for the post-game analysis feature (Stockfish/UCI).
+Consolidates the correctness pass, the performance pass, and everything left
+open. Supersedes the fix list previously held here; the measurement detail
+behind the performance work lives in `ANALYSIS_PERF_PLAN.md`.
 
-| Commit | Bug | Summary |
+Branch: `master` · All commits pushed · Head at time of writing: `967eac9`
+
+---
+
+## Fixed this session
+
+| # | Commit | Summary |
 |---|---|---|
-| `a8254f9` | 1 | centipawnLoss converted to centipawns (×100) before classification |
-| `15758f2` | 2 | `score mate 0` sign resolved from FEN side-to-move |
-| `5582d05` | 3 | `actualEvalBeforeMove` added; eval-graph ply mapping fixed |
-| `3ee31d1` | 4 | Brilliant / Great / Miss made reachable (SEE + MultiPV) |
-| `28b56b5` | 5 | Per-side accuracy header on the Report tab |
+| 1 | `a8254f9` | CPL unit conversion (pawns → centipawns) |
+| 2 | `15758f2` | `score mate 0` sign resolved from FEN side-to-move |
+| 3 | `5582d05` | `actualEvalBeforeMove` + eval-graph ply mapping |
+| 4 | `3ee31d1` | Brilliant/Great/Miss made reachable (SEE + MultiPV) |
+| 5 | `28b56b5` | Per-side accuracy header on the Report tab |
+| 6 | `c1c35d3` | Audit docs + on-device verification harness |
+| 7 | `ca1ca1b` | Isolate ready-signal race causing silent fallback-engine use |
+| 8 | `967eac9` | Batch analysis depth 15→12, MultiPV 3→1 (named constants) |
 
----
+Supporting commits from the same session (performance pass):
+`191662f` carry-forward, `70edc5b` TT retention, `af3f3fb` + `73bbea0`
+Threads/Hash, `d10abbb` incremental aggregates, `b6cf25e` per-ply progress,
+`159ca8f` nodes-limited search option, `0757dc3` completed-iteration capture,
+`80ba71d` + `d7dbd32` perf docs.
 
-## BUG 1 — pawns vs centipawns (root cause of "everything is Best Move")
+### 1. `a8254f9` — CPL pawns → centipawns
+**Broken:** `bestEval`/`actualEval` are `evalInPawns`, but `classifyMoveCpl`'s
+thresholds (10/20/50/100/200) are centipawns. The pawn delta was passed
+straight through, so a 1.0-pawn error scored as `1` and landed in the `<= 10`
+"Best" band — effectively every non-tactical move was labelled Best Move.
+**Changed:** multiply the delta by 100 — `analysis_provider.dart:589-591`.
+**Verified:** on-device run produced a real spread (Best/Excellent/Good/
+Inaccuracy/Mistake/Blunder) where previously everything was Best Move.
 
-**File:** `lib/providers/analysis_provider.dart` (Step C of `analyzeFullGame`)
-
-`bestEval` / `actualEval` come from `AnalysisResult.evalInPawns`, i.e. **pawns**.
-The delta was passed straight into `classifyMoveCpl`, whose thresholds
-(10/20/50/100/200) are **centipawns**. A 1.0-pawn error scored as `1` and fell in
-the `<= 10` "Best" band, so effectively every non-tactical move was "Best Move".
-
-```dart
-final double centipawnLoss = isWhiteMove
-    ? (bestEval - actualEval) * 100.0
-    : (actualEval - bestEval) * 100.0;
-```
-
-Audited the other CPL derivations — no other site needed changing:
-
-| Site | Status |
-|---|---|
-| `EvalConstants.computeCpl` | already converts via `toCentipawns` (×100) |
-| `computeWinPercentAccuracy` | already converts `eval * 100` before win% |
-| `computeCentipawnLoss` (model) | delegates to `computeCpl`, correct |
-| `MoveAnalysis.evalLoss` | intentionally a **pawns** delta — only feeds the UI ± arrow and the "dropping N pawns" text |
-
-`classifyMove()` (Win%-based) and the threshold values themselves were left alone.
-
----
-
-## BUG 2 — `score mate 0` sign
-
-**File:** `lib/core/services/stockfish_service.dart`
-
-`_toWhiteRelative` negates for black-to-move, but negating zero is zero, so
-`mate 0` (side to move is checkmated **now**) always produced `-10000`
+### 2. `15758f2` — `score mate 0` sign
+**Broken:** `_toWhiteRelative` negates for black-to-move, but negating zero is
+zero, so `mate 0` (side to move is checkmated *now*) always produced −10000
 regardless of who was mated.
+**Changed:** added `mateToWhiteRelative()` deriving the winner from the FEN
+side-to-move for N == 0 — `stockfish_service.dart:505-522`; wired into both
+parse paths (`getBestMove`, `analyzePosition`).
+**Verified:** `test/stockfish_mate_sign_test.dart`, 7 tests, real checkmate
+FENs both directions (Fool's mate = white mated, Scholar's = black mated).
 
-Added `mateToWhiteRelative(rawMate, fen)`:
-* `N != 0` → delegates to `_toWhiteRelative` (unchanged behaviour)
-* `N == 0` → winner derived from FEN side-to-move; black to move ⇒ black is
-  mated ⇒ white-relative **positive**
+### 3. `5582d05` — `actualEvalBeforeMove` + graph mapping
+**Broken:** `evalBefore` holds the engine's *best-move* eval — a counterfactual,
+not the position actually reached. Using it for the graph made the curve
+discontinuous and inflated "before" win% for a player who had already slipped.
+The graph also treated series index as ply index, off-by-one at ply −1 and last.
+**Changed:** new `MoveAnalysis.actualEvalBeforeMove` (`analysis_model.dart:57-70`),
+both `evaluations` getters rebuilt from the actual series, and ply↔x mapping
+`x = ply + 1` / `ply = x - 1` applied to marker, vertical line, tap handler,
+axis labels and tooltip — `interactive_eval_graph.dart`.
+**Verified:** `test/analysis_eval_series_test.dart`, 8 tests.
 
-Wired into both parse paths (`getBestMove` and `analyzePosition`).
+### 4. `3ee31d1` — Brilliant/Great/Miss reachable
+**Broken:** `classifyMoveCpl` could only emit best/miss/blunder/excellent/good/
+inaccuracy/mistake. Brilliant, Great and Book were never produced, though the
+UI rendered chips for them.
+**Changed:** new `StaticExchangeEvaluator` (`core/services/static_exchange_evaluator.dart`)
+plus optional signals on `classifyMoveCpl` (`analysis_model.dart:397-470`):
+Brilliant = CPL ≤ 20 ∧ SEE ≤ −100; Great = CPL ≤ 20 ∧ second line ≥ 30cp worse;
+Miss = win% before ≥ 80 ∧ drop ≥ 25. Book stays gated off (no opening DB).
+**Verified:** `test/move_classification_labels_test.dart`, 18 tests, including
+an assertion that the original CPL bands classify exactly as before. On-device
+Game B fired Brilliant (Evans Gambit sac), Great, and Miss on real data.
 
-**Tests:** `test/stockfish_mate_sign_test.dart` — real checkmate FENs for both
-directions (Fool's mate = white mated, Scholar's mate = black mated), at the
-helper level and through both pipelines. 7 tests, all pass.
+### 5. `28b56b5` — Per-side accuracy header
+**Broken:** overall accuracy was computed but only surfaced in the game-over
+dialog; `GameAnalysis` had no per-side field.
+**Changed:** `whiteAccuracy`/`blackAccuracy` using the same Lichess model
+restricted to each side's plies (`analysis_model.dart`), rendered by new
+`screens/analysis/widgets/accuracy_header.dart` at the top of the Report tab.
+**Verified:** `test/game_accuracy_per_side_test.dart`, 5 tests.
 
----
+### 6. `c1c35d3` — Docs + verification harness
+Added `lib/main_verify_analysis.dart`, the on-device entrypoint that drives the
+real `analyzeFullGame` and prints the per-move table. The `integration_test`
+route was abandoned — its Gradle module fails under AGP 9 on this project.
 
-## BUG 3 — `evalBefore` semantics / eval-graph off-by-one
+### 7. `ca1ca1b` — Isolate ready-signal race
+**Broken:** the isolate sent `engine_ready` immediately after the `Stockfish()`
+constructor while the engine was still `StockfishState.starting`. The main
+thread then sent `uci`, the write was rejected (`Bad state: Stockfish is not
+ready`), and `initialize()` waited the full 5s for a `uciok` that could never
+arrive. Every retry failed identically and the service latched to the fallback
+evaluator on cold start.
+**Changed:** announce readiness only when state actually reaches `ready`, and
+surface error/disposed instead of timing out — `stockfish_service.dart:1447-1478`.
+**Why it matters beyond tests:** this silently affected real users on cold
+start, and it invalidated a full config sweep that ran on the fallback
+evaluator while producing plausible-looking numbers. Caught only by checking
+the init log.
+**Verified:** cold-start init now succeeds first attempt, zero fallback retries.
 
-**Files:** `lib/models/analysis_model.dart`, `lib/providers/analysis_provider.dart`,
-`lib/screens/analysis/widgets/interactive_eval_graph.dart`
+### 8. `967eac9` — Batch depth 15→12, MultiPV 3→1
+**Changed:** hardcoded `depth: 15, multiPv: 3` at both batch call sites replaced
+with `AppConstants.batchAnalysisDepth` / `batchAnalysisMultiPv`
+(`app_constants.dart:128-153`, `analysis_provider.dart:534-535,603-604`).
+**Measured** on-device, 24-ply game, real engine:
 
-`evalBefore` is the engine's **best-move** eval for the pre-move position — a
-counterfactual. Using it for the graph made the curve discontinuous
-(`evalBefore[i] != evalAfter[i-1]` whenever the previous ply lost anything) and
-inflated the "before" win% for a player who had already slipped.
+| Config | Full game | Per position |
+|---|---|---|
+| d15/MPV3/T1 (was) | 131.8s | 5273ms |
+| d15/MPV1/T1 | 48.1s | 1924ms |
+| **d12/MPV1/T1 (shipped)** | **17.3s** sweep · **20.4s** real pipeline | 850ms |
+| d10/MPV1/T4 | 6.6s | 266ms |
 
-* New field `MoveAnalysis.actualEvalBeforeMove` (defaults to `evalBefore`)
-  carries the previous ply's `evalAfter`.
-* `evalBefore` is **unchanged** and remains the CPL baseline.
-* Both `evaluations` getters, the displayed win% pair and per-move accuracy now
-  use the actual series.
-* Graph index contract documented and fixed: **series index `i` == position
-  after `i` plies** (length = plies + 1). Ply ↔ x mapping is `x = ply + 1` /
-  `ply = x - 1`, applied to the marker, vertical line, tap handler, axis move
-  numbers and tooltip. Fixes the off-by-one at ply `-1` (start) and the last ply;
-  the start position now renders a "Start" tooltip.
-
-**Tests:** `test/analysis_eval_series_test.dart` — 8 tests covering the field
-default, series length/continuity, exclusion of the counterfactual eval, and
-ply↔x round-tripping.
-
----
-
-## BUG 4 — unreachable classifications
-
-**Option (a) — real detection — was implemented**, because the required inputs
-were already being fetched (MultiPV=3 lines, board in hand at classify time);
-only the detection logic was missing. **Book** is the exception and stays gated
-off (option b): there is no opening database to match against, and its chip is
-already conditional (`if (analysis.bookMoves > 0)`) so it never renders a
-permanent zero.
-
-New `lib/core/services/static_exchange_evaluator.dart` — least-valuable-attacker
-swap-off returning material swing in centipawns; a side never enters a losing
-exchange; the board is left unmodified.
-
-`classifyMoveCpl` gained **optional** signals (thresholds untouched):
-
-| Label | Rule |
-|---|---|
-| Brilliant | `CPL <= 20` **and** `SEE <= -100` (sound sacrifice) |
-| Great | `CPL <= 20` **and** second-best MultiPV line `>= 30cp` worse (only good move) |
-| Miss (non-mate) | `winBefore >= 80` **and** `winDrop >= 25` — reuses the rule that was dead in `classifyMove` |
-
-Precedence: **Brilliant > Great > Best > Miss > CPL bands.**
-`forced` / `onlyMove` remain unemitted; they are folded into the `bestMoves`
-counter by `GameAnalysis.fromMoves` and render identically to Best, so they are
-not user-visible dead labels.
-
-**Tests:** `test/move_classification_labels_test.dart` — 18 tests covering SEE,
-each new label, precedence, and an explicit assertion that the original CPL
-bands still classify exactly as before.
-
----
-
-## BUG 5 — accuracy not shown on the analysis screen
-
-**Files:** `lib/models/analysis_model.dart`,
-`lib/screens/analysis/widgets/accuracy_header.dart` (new),
-`lib/screens/analysis/analysis_screen.dart`
-
-`GameAnalysis` had no per-side field, so `whiteAccuracy` / `blackAccuracy` were
-added using the same Lichess volatility-weighted + harmonic model restricted to
-each side's plies. Rendered by a new `AccuracyHeader` at the top of the Report
-tab.
-
-**Tests:** `test/game_accuracy_per_side_test.dart` — 5 tests (empty, one-sided,
-independence, range clamping).
+End-to-end through the real pipeline: **131.8s → 20.4s, 6.5x faster**, with
+`searchesPerPly=1.04` and unchanged classification counts.
 
 ---
 
-## Verification — real engine, on device
+## Known issues — NOT fixed, tracked for next session
 
-Harness: `lib/main_verify_analysis.dart` (temporary entrypoint; drives the real
-`analyzeFullGame`). The `integration_test` route was abandoned — its Gradle
-module fails under AGP 9 on this project.
+### 1. Non-determinism in Stockfish evaluation  ← **next priority**
+The same position can yield different evals, and therefore different labels,
+across runs. `analyzePosition` resolves on whichever `info` line arrived before
+`bestmove` rather than at a fixed work budget, so the captured result depends
+on timing; `_stopCurrentSearchAndWait` can also cut a search short on its 2s
+timeout.
 
-```
-flutter run -t lib/main_verify_analysis.dart -d <device> --debug
-# then grep logcat for the VERIFY prefix
-```
+**Measured:** two cold-cache runs of the *unmodified pre-session baseline*
+produced White 88.5%/Black 92.1%/CPL 55.1 versus White 94.4%/Black 98.2%/CPL
+31.0. A `go nodes 150000` probe mismatched on **22 of 25 positions** on
+immediate re-run, including a sign flip (+0.27 → −0.27).
 
-### Game A — quiet Italian (24 plies)
+**Why not fixed:** it is a correctness problem and each pass this session was
+explicitly scoped (correctness pass, then performance pass). A partial fix
+landed in `0757dc3` — `bestmove` now publishes the deepest *completed* MultiPV
+iteration rather than whatever was mid-flight — but it is **not validated**;
+the determinism re-run never completed cleanly.
 
-```
-MOVE     |SIDE|SAN     |EVAL_BEFORE(best)|EVAL_AFTER|ACTUAL_BEFORE|   CPL|  ACC%|CLASS
-1.       |W   |e4      |             0.54|      0.51|         0.54|     3|  98.8|Best Move
-1....    |B   |e5      |             0.51|      0.54|         0.51|     3|  98.8|Best Move
-2.       |W   |Nf3     |             0.54|      0.46|         0.54|     8|  96.8|Best Move
-2....    |B   |Nc6     |             0.46|      0.00|         0.46|    46| 100.0|Good
-3.       |W   |Bc4     |             0.00|      0.15|         0.00|    15| 100.0|Excellent
-3....    |B   |Nf6     |             0.15|     -0.35|         0.15|    50| 100.0|Best Move
-4.       |W   |d3      |            -0.35|     -0.40|        -0.35|     5|  98.0|Best Move
-4....    |B   |Bc5     |            -0.40|     -0.70|        -0.40|    30| 100.0|Good
-5.       |W   |O-O     |            -0.70|      0.08|        -0.70|    78| 100.0|Inaccuracy
-5....    |B   |d6      |             0.08|     -0.40|         0.08|    48| 100.0|Good
-6.       |W   |c3      |            -0.40|     -0.70|        -0.40|    30|  88.4|Good
-6....    |B   |Bg4     |            -0.70|      0.59|        -0.70|   129|  58.5|Mistake
-7.       |W   |h3      |             0.59|     -1.15|         0.59|   174|  48.6|Mistake
-7....    |B   |Bh5     |            -1.15|     -1.05|        -1.15|    10|  96.1|Best Move
-8.       |W   |g4      |            -1.05|     -1.60|        -1.05|    55|  80.7|Inaccuracy
-8....    |B   |Bg6     |            -1.60|     -1.70|        -1.60|    10| 100.0|Best Move
-9.       |W   |g5      |            -1.70|     -1.85|        -1.70|    15|  94.6|Excellent
-9....    |B   |Nd7     |            -1.85|     -1.75|        -1.85|    10|  96.4|Excellent
-10.      |W   |d4      |            -1.75|     -0.58|        -1.75|   117| 100.0|Mistake
-10....   |B   |exd4    |            -0.58|      0.00|        -0.58|    58|  78.7|Inaccuracy
-11.      |W   |cxd4    |             0.00|     -1.45|         0.00|   145|  55.3|Mistake
-11....   |B   |Bb6     |            -1.45|     -1.40|        -1.45|     5|  98.1|Best Move
-12.      |W   |d5      |            -1.40|     -1.35|        -1.40|     5| 100.0|Best Move
-12....   |B   |Ne7     |            -1.35|     -1.25|        -1.35|    10|  96.2|Excellent
+**To fix:** switch the batch pass to `go nodes N` (the `nodes:` parameter
+already exists on `analyzePosition`, added in `159ca8f`, off by default), then
+prove it with a repeat-run comparison. Note the earlier probe showed node
+limiting alone was *not* sufficient — the capture path had to be fixed too, so
+both changes need validating together.
 
-White accuracy: 85.4%   Black accuracy: 91.0%   Average CPL: 44.1
-COUNTS best:9 excellent:4 good:4 inaccuracy:3 mistake:4 blunder:0
-EVAL_SERIES len=25 plies=24            (BUG 3: plies + 1 ✔)
-```
+**Everything below depends on this being fixed first.**
 
-### Game B — Evans Gambit with a queen grab (20 plies)
+### 2. d10 vs d12 depth tradeoff — unresolved
+d10/MPV1/T4 = 6.6s versus shipped d12/MPV1/T1 = 20.4s. d10 meets the <10s
+target, but there is currently no trustworthy way to quantify what accuracy it
+costs, because the reference it would be compared against is itself unstable
+(#1). "d10 is fine" and "d10 is worse but noise hides it" are indistinguishable
+in the present data.
 
-```
-MOVE     |SIDE|SAN     |EVAL_BEFORE(best)|EVAL_AFTER|ACTUAL_BEFORE|   CPL|  ACC%|CLASS
-1.       |W   |e4      |             0.54|      0.51|         0.54|     3|  98.8|Best Move
-1....    |B   |e5      |             0.51|      0.54|         0.51|     3|  98.8|Best Move
-2.       |W   |Nf3     |             0.54|      0.46|         0.54|     8|  96.8|Best Move
-2....    |B   |Nc6     |             0.46|      0.00|         0.46|    46| 100.0|Good
-3.       |W   |Bc4     |             0.00|      0.15|         0.00|    15| 100.0|Excellent
-3....    |B   |Bc5     |             0.15|     -0.15|         0.15|    30| 100.0|Good
-4.       |W   |b4      |            -0.15|      0.02|        -0.15|    17| 100.0|Brilliant
-4....    |B   |Bxb4    |             0.02|     -1.90|         0.02|   192| 100.0|Mistake
-5.       |W   |c3      |            -1.90|     -2.10|        -1.90|    20|  93.0|Good
-5....    |B   |Ba5     |            -2.10|     -2.00|        -2.10|    10|  96.5|Excellent
-6.       |W   |d4      |            -2.00|     -2.20|        -2.00|    20|  93.1|Good
-6....    |B   |Qg5     |            -2.20|      7.95|        -2.20|  1015|   3.2|Blunder
-7.       |W   |dxe5    |             7.95|     -1.00|         7.95|   895|   6.7|Miss
-7....    |B   |Qxg2    |            -1.00|      3.35|        -1.00|   435|  17.8|Best Move
-8.       |W   |Rg1     |             3.35|      2.50|         3.35|    85|  76.5|Inaccuracy
-8....    |B   |Qh3     |             2.50|      2.65|         2.50|    15|  95.1|Great
-9.       |W   |Bxf7+   |             2.65|      2.90|         2.65|    25| 100.0|Good
-9....    |B   |Ke7     |             2.90|      4.97|         2.90|   207|  58.7|Blunder
-10.      |W   |Bxg8    |             4.97|      1.25|         4.97|   372|  31.8|Blunder
-10....   |B   |Rxg8    |             1.25|     -1.80|         1.25|   305| 100.0|Blunder
+**To resolve:** re-run the agreement sweep **through the real pipeline**, not
+`lib/main_sweep.dart` — the standalone harness passes `bestMove: null`, dropping
+the best-move-match shortcut, and compares raw CPL bands, which amplifies small
+eval jitter into band flips. Its 13-17% agreement figures are not meaningful.
 
-White accuracy: 54.7%   Black accuracy: 39.3%   Average CPL: 185.9
-COUNTS best:4 excellent:2 good:5 inaccuracy:1 mistake:1 blunder:4 miss:1 great:1 brilliant:1
-EVAL_SERIES len=21 plies=20
-DISTINCT_CLASSES Best Move,Good,Excellent,Brilliant,Mistake,Blunder,Miss,Inaccuracy,Great
-```
+### 3. Tiered / two-pass analysis — not implemented
+Proposed: a fast nodes-limited pass over all plies, escalating to a deeper
+search only where the cheap-pass eval swing sits near a CPL threshold.
 
-Every previously-unreachable label now fires on real data:
-**Brilliant** (4.b4, the Evans Gambit pawn sacrifice, SEE −100 with CPL 17),
-**Great** (8...Qh3, only move within tolerance), **Miss** (7.dxe5 throwing away
-a +7.95 position), plus Blunder / Mistake / Inaccuracy / Good / Excellent / Best.
+**Measured (unreliable, see #1):** at `nodes=150000` the cheap pass differed
+from d15 by 92cp mean / 317cp worst, and a CPL<5 or CPL>400 confidence gate
+left **79% of plies** in the gray zone — with 2 of its 5 confident calls wrong.
+That measurement predates the capture fix and was taken against a
+non-deterministic reference, so it should be re-taken rather than trusted.
 
----
+**Needs:** #1 fixed to define "near boundary" reliably, then a run logging
+cheap-pass and escalated-pass evals side by side to calibrate the trigger width.
 
-## Residual findings (NOT fixed — flagged for review)
+### 4. Great-move detection is dormant
+Great requires MultiPV ≥ 2 to compare against the second-best line
+(`secondBestCentipawnLoss`). The shipped config uses MultiPV 1, so the input is
+always null and Great never fires. The chip is conditional (`greatMoves > 0`)
+so it hides rather than showing a permanent zero — **working as intended, not a
+regression**. Documented at the threshold constant in `analysis_model.dart`.
 
-1. **Search instability makes CPL disagree with the best-move label.**
-   Game B ply 7...Qxg2 shows `CPL 435` yet classifies as **Best Move**, because
-   the played move string matched the engine's `bestMove` and that check
-   short-circuits before the CPL bands. The two evals come from two independent
-   depth-15 searches (position-before vs position-after), which can disagree by
-   several pawns in sharp positions. The label is right; the displayed CPL is
-   misleading. Options: trust `lines[0].evaluation` for the after-eval when the
-   played move matches the PV, or clamp CPL to 0 on a best-move match.
+Restoring globally costs ~2.2x (17.3s → 38.7s at d12, measured). Better option
+for later: run MPV 2-3 only on plies flagged by the tiered approach (#3) — the
+same selective-deeper-search mechanism.
 
-2. **CPL and accuracy now use deliberately different baselines** (BUG 3).
-   CPL compares against the engine's best move; accuracy compares against the
-   position actually reached. Game B ply 10...Rxg8 therefore shows
-   `CPL 305 / Blunder` alongside `ACC 100.0%` — the move was bad versus best play
-   but improved on the position Black actually inherited. Correct by design, but
-   showing both numbers side by side in the UI may confuse users.
+### 5. Two cosmetic/UX inconsistencies (low priority)
+- **CPL can contradict its label.** e.g. `CPL 435` displayed next to "Best
+  Move": the best-move string match short-circuits before the CPL bands are
+  reached, and the two evals came from independent searches that disagreed in a
+  sharp position. The label is right; the adjacent number is confusing.
+- **CPL and accuracy use different baselines by design.** CPL compares against
+  best play, accuracy against the position actually reached, so a move can show
+  "Blunder" alongside "ACC 100.0%". Correct behaviour, confusing presentation.
+  Prefer a tooltip/footnote over a logic change.
 
-3. **`forced` / `onlyMove` are still never emitted.** They are counted as Best
-   and styled identically, so nothing is visibly dead, but the enum members are
-   unreachable.
+### 6. `forced` / `onlyMove` still unreachable
+Same category Brilliant/Great were in before this session: the enum members
+exist and the UI has arms for them, but nothing emits them. They are folded
+into the `bestMoves` counter and render identically to Best, so nothing is
+visibly broken. Deferred by explicit instruction.
 
-4. **`classifyMove()` (Win%-based) and `EvalConstants.classifyCpl` remain dead
-   code** — the pipeline uses `classifyMoveCpl` exclusively. `classifyMove` was
-   left untouched per instructions; consider deleting in a separate cleanup.
+### 7. `classifyMove()` and `EvalConstants.classifyCpl()` are dead code
+The live pipeline uses `classifyMoveCpl()` exclusively. Both were left
+untouched throughout this session per instruction. Note `classifyCpl` uses a
+≤5 "best" band while the live path uses ≤10 — a real inconsistency waiting to
+mislead someone. Candidate for removal or consolidation.
 
-5. **Report tab hardcodes `"Custom Opening"`** for games longer than 5 moves
-   (`analysis_screen.dart`), unrelated to the fixes above.
+### 8. Threads=4 showed no speedup — unexplained
+d12/T1 = 17.3s versus d12/T4 = 17.9s; four threads were marginally *slower*.
+This contradicts typical Stockfish Lazy SMP scaling and is flagged as
+suspicious rather than accepted. Both tested points were shallow, where a
+search may complete before helper threads contribute; thread-pool overhead
+eating the gain is equally consistent with the data.
+
+**Clean test, not yet run:** T1 vs T4 at d15, where searches run ~5s and there
+is room for parallelism to show. Only worth revisiting if depth increases again.
+
+Related: `73bbea0` pins batch analysis to Threads=1 because Lazy SMP is
+non-deterministic — a measured T3 run changed labels (blunders 0 → 2). Since
+T4 buys no speed, that constraint currently costs nothing.
 
 ---
 
-## Test summary
+## Suggested next-session order
+
+1. **Fix determinism** (`go nodes N` + validate the `0757dc3` capture fix
+   together) — unblocks everything else.
+2. **Re-run the real-pipeline agreement sweep**: d10 vs d12 vs d15 against a
+   stable reference.
+3. **Decide** — stay at d12, drop to d10, or build tiered escalation — with
+   trustworthy numbers.
+4. **Revisit Great-move and tiered MultiPV escalation together**; they are the
+   same underlying mechanism (selective deeper search on a subset of plies).
+
+---
+
+## Test baseline
 
 ```
-test/stockfish_mate_sign_test.dart           7 passed
-test/analysis_eval_series_test.dart          8 passed
-test/move_classification_labels_test.dart   18 passed
-test/game_accuracy_per_side_test.dart        5 passed
-test/engine_accuracy_test.dart              73 passed (no regressions)
+382 passing
+3 failing  — pre-existing, environment-only:
+  engine_no_legal_move_test.dart          (1)
+  engine_threefold_repetition_test.dart   (2)
 ```
 
-Pre-existing failures unrelated to these changes:
-`engine_threefold_repetition_test.dart` (2) — `databaseFactory not initialized`
-in the desktop test environment; fails identically on the pre-fix commit.
+All three fail identically on the pre-session commit (`databaseFactory not
+initialized` — sqflite has no desktop binding in the test environment) and are
+unrelated to this work.
+
+Tests added this session: `stockfish_mate_sign_test.dart` (7),
+`analysis_eval_series_test.dart` (8), `move_classification_labels_test.dart`
+(18), `game_accuracy_per_side_test.dart` (5),
+`game_analysis_accumulator_test.dart` (6).
+
+## Temporary harnesses (not part of the app)
+
+`lib/main_verify_analysis.dart` · `lib/main_verify_nodes.dart` ·
+`lib/main_sweep.dart` — on-device measurement entrypoints, run via
+`flutter run -t <file>` or by temporarily swapping into `lib/main.dart`. Safe
+to delete; retained so the measurements above can be reproduced.
