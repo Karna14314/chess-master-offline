@@ -2,20 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/game_model.dart';
-
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/analysis_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Import our newly created reusable widgets
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/screens/analysis/widgets/unified_eval_bar.dart';
 import 'package:chess_master/screens/analysis/widgets/move_navigation_bar.dart';
 import 'package:chess_master/screens/analysis/widgets/current_move_details.dart';
 import 'package:chess_master/screens/analysis/widgets/engine_recommendations.dart';
 import 'package:chess_master/screens/analysis/widgets/move_explanation.dart';
-import 'package:chess_master/screens/analysis/widgets/interactive_eval_graph.dart';
 import 'package:chess_master/screens/analysis/widgets/game_accuracy_summary.dart';
 import 'package:chess_master/screens/analysis/widgets/move_history_list.dart';
 import 'package:chess_master/screens/analysis/widgets/export_share_buttons.dart';
@@ -30,12 +27,15 @@ class AnalysisScreen extends ConsumerStatefulWidget {
   ConsumerState<AnalysisScreen> createState() => _AnalysisScreenState();
 }
 
-class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
+class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
+    with SingleTickerProviderStateMixin {
   bool _isFlipped = false;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -48,6 +48,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
@@ -71,12 +72,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     }
   }
 
-  Future<void> _startFullAnalysis() async {
-    await ref.read(analysisProvider.notifier).analyzeFullGame();
-    if (mounted) {}
-  }
-
-  void _startPracticeMode(BuildContext context, AnalysisState state, AnalysisNotifier notifier) {
+  void _startPracticeMode(
+    BuildContext context,
+    AnalysisState state,
+    AnalysisNotifier notifier,
+  ) {
     final currentMoveIndex = state.currentMoveIndex;
     if (currentMoveIndex < 0) return;
 
@@ -117,7 +117,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.fitness_center_rounded, size: 64, color: const Color(0xFF00ACC1)),
+                  const Icon(
+                    Icons.fitness_center_rounded,
+                    size: 64,
+                    color: Color(0xFF00ACC1),
+                  ),
                   const SizedBox(height: 24),
                   Text(
                     'Practice Mode',
@@ -141,7 +145,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                     icon: const Icon(Icons.analytics_rounded),
                     label: const Text('Back to Analysis'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
                     ),
                   ),
                 ],
@@ -163,234 +170,235 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         title: Text(
-          'Game Analysis',
+          'Analysis Board',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold),
         ),
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (value) {
-              if (value == 'flip') {
-                setState(() {
-                  _isFlipped = !_isFlipped;
-                });
-              } else if (value == 'analyze') {
-                _startFullAnalysis();
-              }
+          IconButton(
+            icon: const Icon(Icons.flip_camera_android_rounded),
+            tooltip: 'Flip Board',
+            onPressed: () {
+              setState(() {
+                _isFlipped = !_isFlipped;
+              });
             },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(
-                    value: 'flip',
-                    child: Row(
-                      children: [
-                        Icon(Icons.flip_camera_android_rounded),
-                        SizedBox(width: 8),
-                        Text('Flip Board'),
-                      ],
-                    ),
-                  ),
-                  if (state.originalMoves.isNotEmpty && !state.isAnalyzing)
-                    const PopupMenuItem(
-                      value: 'analyze',
-                      child: Row(
-                        children: [
-                          Icon(Icons.analytics_rounded),
-                          SizedBox(width: 8),
-                          Text('Analyze Full Game'),
-                        ],
-                      ),
-                    ),
-                ],
           ),
         ],
       ),
       body: Column(
         children: [
-          // Global Loading Indicator for full game analysis
+          // Top Loading Progress Bar for Auto Full Game Analysis
           if (state.isAnalyzing)
             LinearProgressIndicator(
-              value: state.analysisProgress,
+              value: state.analysisProgress > 0 ? state.analysisProgress : null,
               backgroundColor: AppTheme.surfaceColor(context),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppTheme.primaryColor,
               ),
             ),
 
-          // Unified Scrollable View
+          // Main Board & Navigation Section (Fixed on top)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left side: Eval Bar
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.width - 64,
+                    child: UnifiedEvalBar(
+                      evaluation: state.currentEval,
+                      isFlipped: _isFlipped,
+                    ),
+                  ),
+                ),
+                // Right side: Chess Board
+                Expanded(
+                  child: AspectRatio(
+                    aspectRatio: 1.0,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: ChessBoard(
+                        fen: state.fen,
+                        isFlipped: _isFlipped,
+                        selectedSquare: state.selectedSquare,
+                        legalMoves: state.legalMoves,
+                        lastMoveFrom: state.lastMoveFrom,
+                        lastMoveTo: state.lastMoveTo,
+                        bestMove: state.bestMove,
+                        onSquareTap: null,
+                        onMove: null,
+                        showCoordinates: true,
+                        enableMoveAnimation: true,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Move Navigation Controls
+          MoveNavigationBar(
+            canGoPrevious: state.canGoPrevious,
+            canGoNext: state.canGoNext,
+            currentMove: state.currentMoveIndex + 1,
+            totalMoves: state.totalMoves,
+            onFirst: notifier.firstMove,
+            onPrevious: notifier.previousMove,
+            onNext: notifier.nextMove,
+            onLast: notifier.lastMove,
+            onJumpToPreviousMistake:
+                state.analyzedMoves.isNotEmpty
+                    ? () {
+                      for (int i = state.currentMoveIndex - 1; i >= 0; i--) {
+                        if (i < state.analyzedMoves.length) {
+                          final c = state.analyzedMoves[i].classification;
+                          if (c == MoveClassification.blunder ||
+                              c == MoveClassification.mistake ||
+                              c == MoveClassification.inaccuracy ||
+                              c == MoveClassification.miss) {
+                            notifier.goToMove(i);
+                            return;
+                          }
+                        }
+                      }
+                    }
+                    : null,
+            onJumpToNextMistake:
+                state.analyzedMoves.isNotEmpty
+                    ? () {
+                      for (
+                        int i = state.currentMoveIndex + 1;
+                        i < state.analyzedMoves.length;
+                        i++
+                      ) {
+                        final c = state.analyzedMoves[i].classification;
+                        if (c == MoveClassification.blunder ||
+                            c == MoveClassification.mistake ||
+                            c == MoveClassification.inaccuracy ||
+                            c == MoveClassification.miss) {
+                          notifier.goToMove(i);
+                          return;
+                        }
+                      }
+                    }
+                    : null,
+            onPracticeFromHere:
+                state.currentMoveIndex >= 0
+                    ? () => _startPracticeMode(context, state, notifier)
+                    : null,
+          ),
+
+          // Lichess Style Tab Bar Header
+          Container(
+            color: AppTheme.cardColor(context),
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: AppTheme.primaryColor,
+              labelColor: AppTheme.primaryColor,
+              unselectedLabelColor: AppTheme.textSecondaryFor(context),
+              labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              tabs: const [
+                Tab(text: 'Analysis 🔍'),
+                Tab(text: 'Report 📊'),
+                Tab(text: 'Moves 📜'),
+              ],
+            ),
+          ),
+
+          // Tab Views
           Expanded(
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 32.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // --- 1. Board & Evaluation Bar Layout ---
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Left side: Eval Bar
-                          Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: SizedBox(
-                              height:
-                                  MediaQuery.of(context).size.width -
-                                  64, // Matches board size
-                              child: UnifiedEvalBar(
-                                evaluation: state.currentEval,
-                                isFlipped: _isFlipped,
-                              ),
-                            ),
-                          ),
-                          // Right side: Chess Board
-                          Expanded(
-                            child: AspectRatio(
-                              aspectRatio: 1.0,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: ChessBoard(
-                                  fen: state.fen,
-                                  isFlipped: _isFlipped,
-                                  selectedSquare: state.selectedSquare,
-                                  legalMoves: state.legalMoves,
-                                  lastMoveFrom: state.lastMoveFrom,
-                                  lastMoveTo: state.lastMoveTo,
-                                  bestMove: state.bestMove,
-                                  onSquareTap: null, // read-only
-                                  onMove: null, // read-only
-                                  showCoordinates: true,
-                                  enableMoveAnimation: true,
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Tab 1: Current Move Analysis & Engine PV Lines
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Column(
+                    children: [
+                      if (state.currentMoveAnalysis != null) ...[
+                        CurrentMoveDetails(
+                          analysis: state.currentMoveAnalysis!,
+                          onRetry: () {
+                            if (state.currentMoveIndex > 0) {
+                              notifier.goToMove(state.currentMoveIndex - 1);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Try to find a better move!'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        MoveExplanation(analysis: state.currentMoveAnalysis!),
+                      ],
+                      EngineRecommendations(
+                        lines: state.currentEngineLines,
+                        isLoading:
+                            state.isLiveAnalysis &&
+                            state.currentEngineLines.isEmpty,
+                      ),
+                      ExportShareButtons(pgn: _buildPgn(state), fen: state.fen),
+                    ],
+                  ),
+                ),
+
+                // Tab 2: Game Accuracy & Classification Summary Report
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Column(
+                    children: [
+                      if (state.fullAnalysis != null)
+                        GameAccuracySummary(
+                          analysis: state.fullAnalysis!,
+                          openingName:
+                              state.fullAnalysis!.moves.length > 5
+                                  ? "Custom Opening"
+                                  : null,
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Column(
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Analyzing game positions...',
+                                style: GoogleFonts.inter(
+                                  color: AppTheme.textSecondaryFor(context),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-
-                    // --- 2. Move Navigation ---
-                    MoveNavigationBar(
-                      canGoPrevious: state.canGoPrevious,
-                      canGoNext: state.canGoNext,
-                      currentMove: state.currentMoveIndex + 1,
-                      totalMoves: state.totalMoves,
-                      onFirst: notifier.firstMove,
-                      onPrevious: notifier.previousMove,
-                      onNext: notifier.nextMove,
-                      onLast: notifier.lastMove,
-                      // Jump logic (Find previous/next move index with blunder/mistake classification)
-                      onJumpToPreviousMistake:
-                          state.analyzedMoves.isNotEmpty
-                              ? () {
-                                for (
-                                  int i = state.currentMoveIndex - 1;
-                                  i >= 0;
-                                  i--
-                                ) {
-                                  if (i < state.analyzedMoves.length) {
-                                    final c =
-                                        state.analyzedMoves[i].classification;
-                                    if (c == MoveClassification.blunder ||
-                                        c == MoveClassification.mistake) {
-                                      notifier.goToMove(i);
-                                      return;
-                                    }
-                                  }
-                                }
-                              }
-                              : null,
-                       onJumpToNextMistake:
-                           state.analyzedMoves.isNotEmpty
-                               ? () {
-                                 for (
-                                   int i = state.currentMoveIndex + 1;
-                                   i < state.analyzedMoves.length;
-                                   i++
-                                 ) {
-                                   final c =
-                                       state.analyzedMoves[i].classification;
-                                   if (c == MoveClassification.blunder ||
-                                       c == MoveClassification.mistake) {
-                                     notifier.goToMove(i);
-                                     return;
-                                   }
-                                 }
-                               }
-                               : null,
-                       onPracticeFromHere: state.currentMoveIndex >= 0
-                           ? () => _startPracticeMode(context, state, notifier)
-                           : null,
-                     ),
-
-                    // --- 3. Current Move Details ---
-                    if (state.currentMoveAnalysis != null)
-                      CurrentMoveDetails(
-                        analysis: state.currentMoveAnalysis!,
-                        onRetry: () {
-                          if (state.currentMoveIndex > 0) {
-                            notifier.goToMove(state.currentMoveIndex - 1);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Try to find a better move!'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-
-                    // --- 4. Move Explanation ---
-                    if (state.currentMoveAnalysis != null)
-                      MoveExplanation(analysis: state.currentMoveAnalysis!),
-
-                    // --- 5. Engine Recommendations ---
-                    EngineRecommendations(
-                      lines: state.currentEngineLines,
-                      isLoading:
-                          state.isLiveAnalysis &&
-                          state.currentEngineLines.isEmpty,
-                    ),
-
-                    // --- 6. Evaluation Graph ---
-                    if (state.evaluations.isNotEmpty)
-                      InteractiveEvalGraph(
-                        evaluations: state.evaluations,
-                        currentMoveIndex:
-                            state.currentMoveIndex >= 0
-                                ? state.currentMoveIndex + 1
-                                : 0,
-                        onMoveSelected: (index) {
-                          notifier.goToMove(index - 1);
-                        },
-                      ),
-
-                    // --- 7. Game Summary ---
-                    if (state.fullAnalysis != null)
-                      GameAccuracySummary(
-                        analysis: state.fullAnalysis!,
-                        openingName:
-                            state.fullAnalysis!.moves.length > 5
-                                ? "Custom Opening"
-                                : null, // Mocked for now, can be extracted later
-                      ),
-
-                    // --- 8. Move List History ---
-                    if (state.originalMoves.isNotEmpty)
-                      MoveHistoryList(
-                        moves: state.originalMoves,
-                        analyzedMoves: state.analyzedMoves,
-                        currentIndex: state.currentMoveIndex,
-                        onMoveSelected: notifier.goToMove,
-                      ),
-
-                    // --- 9. Export and Share ---
-                    ExportShareButtons(pgn: _buildPgn(state), fen: state.fen),
-                  ],
+                        ),
+                    ],
+                  ),
                 ),
-              ),
+
+                // Tab 3: Move History Table
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Column(
+                    children: [
+                      if (state.originalMoves.isNotEmpty)
+                        MoveHistoryList(
+                          moves: state.originalMoves,
+                          analyzedMoves: state.analyzedMoves,
+                          currentIndex: state.currentMoveIndex,
+                          onMoveSelected: notifier.goToMove,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -206,9 +206,12 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       clearError: true,
     );
 
-    // Start live analysis if engine is ready
+    // Start live analysis and full game analysis if engine is ready
     if (_isInitialized) {
-      await _analyzeCurrentPosition();
+      _analyzeCurrentPosition();
+      if (moves.isNotEmpty) {
+        analyzeFullGame();
+      }
     }
   }
 
@@ -443,11 +446,18 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
         final move = moves[i];
         final isWhiteMove = board.turn == chess.Color.WHITE;
+        final fenBefore = board.fen;
 
-        // Yield to event loop every 5 moves to prevent ANR
-        if (i % 5 == 0 && i > 0) {
-          await Future.delayed(Duration.zero);
-        }
+        // Obtain evaluation & bestMove BEFORE applying player move
+        double evalBefore = prevEval;
+        String? bestMoveForPlayer;
+        try {
+          final beforeResult = await _getCachedOrAnalyze(fenBefore, depth: 15, multiPv: 1);
+          evalBefore = beforeResult.eval;
+          if (beforeResult.lines.isNotEmpty && beforeResult.lines.first.moves.isNotEmpty) {
+            bestMoveForPlayer = beforeResult.lines.first.moves.first;
+          }
+        } catch (_) {}
 
         // Apply the actual move
         board.move({
@@ -456,10 +466,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           'promotion': move.promotion,
         });
 
-        // Get evaluation after move (check cache first)
-        double afterEval = 0.0;
+        // Get evaluation & engine lines AFTER move
+        double afterEval = evalBefore;
         List<EngineLine> engineLines = [];
-        String? bestMove;
 
         try {
           if (!_isAnalyzing) break;
@@ -473,9 +482,6 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
           afterEval = cachedResult.eval;
           engineLines = cachedResult.lines;
-          if (cachedResult.lines.isNotEmpty && cachedResult.lines.first.moves.isNotEmpty) {
-            bestMove = cachedResult.lines.first.moves.first;
-          }
         } catch (e) {
           try {
             final basicResult = await BasicEvaluatorService.instance.analyze(
@@ -483,21 +489,17 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             );
             afterEval = basicResult.evalInPawns;
             engineLines = basicResult.lines;
-            if (basicResult.lines.isNotEmpty &&
-                basicResult.lines.first.moves.isNotEmpty) {
-              bestMove = basicResult.lines.first.moves.first;
-            }
           } catch (e2) {
-            afterEval = prevEval;
+            afterEval = evalBefore;
           }
         }
 
-        // Classify the move
+        // Classify the move using player's best move evaluated before
         final classification = classifyMove(
-          evalBefore: prevEval,
+          evalBefore: evalBefore,
           evalAfter: afterEval,
           isWhiteMove: isWhiteMove,
-          bestMove: bestMove,
+          bestMove: bestMoveForPlayer,
           actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
         );
 
@@ -534,7 +536,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             evalAfter: afterEval,
             winPercentBefore: winBefore,
             winPercentAfter: winAfter,
-            bestMove: bestMove,
+            bestMove: bestMoveForPlayer,
             classification: classification,
             engineLines: engineLines,
             isWhiteMove: isWhiteMove,

@@ -568,6 +568,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     final isCorrect = expectedMove.toLowerCase() == uciMove.toLowerCase();
 
     if (!isCorrect) {
+      // Visually move the piece to destination first so user sees their input
+      _applyUciMove(uciMove);
+
       // Wrong move - play error sound
       AudioService.instance.playCheck(); // Using check sound as error indicator
 
@@ -576,11 +579,15 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       // Puzzle failed!
       _onPuzzleCompleted(false);
 
-      state = state.copyWith(
-        state: PuzzleState.incorrect,
-        errorMessage: 'Not the best move. Try again!',
-        clearSelection: true,
-      );
+      // Show error state after short delay for piece animation
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (!mounted) return;
+        state = state.copyWith(
+          state: PuzzleState.incorrect,
+          errorMessage: 'Not the best move. Try again!',
+          clearSelection: true,
+        );
+      });
 
       return;
     }
