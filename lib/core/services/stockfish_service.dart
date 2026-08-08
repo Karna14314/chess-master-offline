@@ -40,7 +40,7 @@ class StockfishService {
   @visibleForTesting
   Duration searchTimeoutForTesting = const Duration(seconds: 30);
   @visibleForTesting
-  Duration analysisTimeoutForTesting = const Duration(seconds: 10);
+  Duration analysisTimeoutForTesting = const Duration(seconds: 5);
   bool _skipReadyOkForTesting = false;
 
   // Flag to simulate binary check failure for testing or if on unsupported platform

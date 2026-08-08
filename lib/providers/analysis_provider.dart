@@ -444,44 +444,14 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       final analyzedMoves = <MoveAnalysis>[];
       final board = chess.Chess.fromFEN(state.startingFen);
 
-      double prevEval = 0.0;
-      String? prevBestMove; // bestMove from the "before" position
-      bool prevIsMate = false; // Whether prevEval represents a forced mate
-
-      // ── Step 1: Evaluate the starting position ──
-      // Fetch with multiPv:3 so we get engine lines AND the best move for the
-      // first position without a separate call.
-      try {
-        if (token != _analysisToken) return;
-        final initialData = await _getCachedOrAnalyze(
-          board.fen,
-          depth: 15,
-          multiPv: 3,
-        );
-        prevEval = initialData.eval;
-        if (initialData.lines.isNotEmpty) {
-          prevIsMate = initialData.lines.first.isMate;
-          if (initialData.lines.first.moves.isNotEmpty) {
-            prevBestMove = initialData.lines.first.moves.first;
-          }
-        }
-      } catch (e) {
-        try {
-          final basicResult =
-              await BasicEvaluatorService.instance.analyze(board.fen);
-          prevEval = basicResult.evalInPawns;
-          prevIsMate = false; // Basic evaluator never reports mate
-          if (basicResult.lines.isNotEmpty &&
-              basicResult.lines.first.moves.isNotEmpty) {
-            prevBestMove = basicResult.lines.first.moves.first;
-          }
-        } catch (e2) {
-          prevEval = 0.0;
-          prevIsMate = false;
-        }
-      }
-
-      // ── Step 2: Per-move analysis loop ──
+      // ── Per-move analysis loop ──
+      // For each position we do ONE engine analysis that gives us:
+      //   1. bestEval: evaluation of the engine's top line (the best move)
+      //   2. bestMove: the engine's top move in UCI format
+      //   3. engineLines: top MultiPV lines for display
+      // Then we play the ACTUAL move and evaluate that position.
+      // Centipawn loss = bestEval - actualEval (from player's perspective).
+      // This matches how Lichess/Chess.com classify moves.
       for (int i = 0; i < moves.length; i++) {
         // Check cancellation token — save partial results before exiting
         if (token != _analysisToken) {
@@ -497,25 +467,11 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         final move = moves[i];
         final isWhiteMove = board.turn == chess.Color.WHITE;
 
-        // (a) "Before" eval — reuse prevEval from previous iteration.
-        //     No redundant engine call needed.
-        final evalBefore = prevEval;
-
-        // (b) bestMove for this position — reuse from previous iteration.
-        final bestMoveForPlayer = prevBestMove;
-
-        // (c) Apply the actual move
-        board.move({
-          'from': move.from,
-          'to': move.to,
-          'promotion': move.promotion,
-        });
-
-        // Evaluate the resulting position ("after" eval)
-        double afterEval = evalBefore;
-        List<EngineLine> engineLines = [];
-        String? afterBestMove; // bestMove for the NEXT iteration
-        bool afterIsMate = false; // Whether afterEval represents a forced mate
+        // ── Step A: Analyze the current position to get bestEval + bestMove ──
+        double bestEval = 0.0;
+        String? bestMoveForPlayer;
+        List<EngineLine> bestLines = [];
+        bool bestIsMate = false;
 
         try {
           if (token != _analysisToken) {
@@ -527,106 +483,125 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             }
             return;
           }
-          if (!_isAnalyzing) break;
 
-          final cachedResult = await _getCachedOrAnalyze(
+          final positionData = await _getCachedOrAnalyze(
             board.fen,
             depth: 15,
             multiPv: 3,
           );
-
-          afterEval = cachedResult.eval;
-          engineLines = cachedResult.lines;
-          if (cachedResult.lines.isNotEmpty) {
-            afterIsMate = cachedResult.lines.first.isMate;
-            if (cachedResult.lines.first.moves.isNotEmpty) {
-              afterBestMove = cachedResult.lines.first.moves.first;
+          bestEval = positionData.eval;
+          bestLines = positionData.lines;
+          if (positionData.lines.isNotEmpty) {
+            bestIsMate = positionData.lines.first.isMate;
+            if (positionData.lines.first.moves.isNotEmpty) {
+              bestMoveForPlayer = positionData.lines.first.moves.first;
             }
           }
         } catch (e) {
           try {
-            final basicResult = await BasicEvaluatorService.instance.analyze(
-              board.fen,
-            );
-            afterEval = basicResult.evalInPawns;
-            engineLines = basicResult.lines;
-            afterIsMate = false;
+            final basicResult =
+                await BasicEvaluatorService.instance.analyze(board.fen);
+            bestEval = basicResult.evalInPawns;
+            bestLines = basicResult.lines;
             if (basicResult.lines.isNotEmpty &&
                 basicResult.lines.first.moves.isNotEmpty) {
-              afterBestMove = basicResult.lines.first.moves.first;
+              bestMoveForPlayer = basicResult.lines.first.moves.first;
             }
           } catch (e2) {
-            afterEval = evalBefore;
-            afterIsMate = false;
+            bestEval = 0.0;
           }
         }
 
-        // (d) Classify using the consistent (evalBefore, afterEval) pair.
-        //     Previously classifyMove() received a freshly-fetched evalBefore
-        //     while CPL/accuracy used prevEval — the mismatch produced
-        //     artificially small winDiff values (≤1.0), classifying everything
-        //     as "best". Now all three use the same pair.
-        final classification = classifyMove(
-          evalBefore: evalBefore,
-          evalAfter: afterEval,
-          isWhiteMove: isWhiteMove,
+        // ── Step B: Play the actual move and evaluate ──
+        board.move({
+          'from': move.from,
+          'to': move.to,
+          'promotion': move.promotion,
+        });
+
+        double actualEval = bestEval;
+        bool actualIsMate = false;
+
+        try {
+          final actualData = await _getCachedOrAnalyze(
+            board.fen,
+            depth: 15,
+            multiPv: 3,
+          );
+          actualEval = actualData.eval;
+          if (actualData.lines.isNotEmpty) {
+            actualIsMate = actualData.lines.first.isMate;
+          }
+        } catch (e) {
+          try {
+            final basicResult =
+                await BasicEvaluatorService.instance.analyze(board.fen);
+            actualEval = basicResult.evalInPawns;
+          } catch (e2) {
+            actualEval = bestEval;
+          }
+        }
+
+        // ── Step C: Compute centipawn loss from player's perspective ──
+        // bestEval and actualEval are white-relative pawns.
+        // For white: CPL = bestEval - actualEval (positive = player did worse)
+        // For black: CPL = actualEval - bestEval (positive = player did worse)
+        final double centipawnLoss = isWhiteMove
+            ? (bestEval - actualEval)
+            : (actualEval - bestEval);
+        final double cplAbs = centipawnLoss.abs();
+
+        // ── Step D: Classify using CPL thresholds ──
+        final classification = classifyMoveCpl(
+          centipawnLoss: cplAbs,
           bestMove: bestMoveForPlayer,
           actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
-          isMateBefore: prevIsMate,
-          isMateAfter: afterIsMate,
+          isMateBefore: bestIsMate,
+          isMateAfter: actualIsMate,
         );
 
-        final cpl = computeCentipawnLoss(
-          evalBefore: evalBefore,
-          evalAfter: afterEval,
-          isWhiteMove: isWhiteMove,
-        );
+        // Win% for display
+        final winBest = EvalConstants.centipawnsToWinPercent(bestEval * 100);
+        final winActual = EvalConstants.centipawnsToWinPercent(actualEval * 100);
+        final winBefore = isWhiteMove ? winBest : (100.0 - winBest);
+        final winAfter = isWhiteMove ? winActual : (100.0 - winActual);
+        final rawWinDiff = winBefore - winAfter;
+        final winDiff = rawWinDiff < 0 ? 0.0 : rawWinDiff;
         final moveAccuracy = computeWinPercentAccuracy(
-          evalBeforePawns: evalBefore,
-          evalAfterPawns: afterEval,
+          evalBeforePawns: bestEval,
+          evalAfterPawns: actualEval,
           isWhiteMove: isWhiteMove,
         );
-        final winBefore =
-            EvalConstants.centipawnsToWinPercent(evalBefore * 100);
-        final winAfter =
-            EvalConstants.centipawnsToWinPercent(afterEval * 100);
 
-        // Debug logging
-        if (i < 5) {
-          debugPrint(
-            '📊 Move ${i + 1}: ${move.san} | '
-            'Before: ${evalBefore.toStringAsFixed(2)} | '
-            'After: ${afterEval.toStringAsFixed(2)} | '
-            'CPL: ${cpl.toStringAsFixed(0)} | '
-            'WinDiff: ${(isWhiteMove ? (EvalConstants.centipawnsToWinPercent(evalBefore * 100) - EvalConstants.centipawnsToWinPercent(afterEval * 100)) : ((100 - EvalConstants.centipawnsToWinPercent(evalBefore * 100)) - (100 - EvalConstants.centipawnsToWinPercent(afterEval * 100)))).toStringAsFixed(1)} | '
-            'Class: ${classification.name}',
-          );
-        }
+        // Debug logging — now shows CPL-based classification
+        debugPrint(
+          '📊 Move ${i + 1}: ${move.san} | '
+          'Best: ${bestEval.toStringAsFixed(2)} | '
+          'Actual: ${actualEval.toStringAsFixed(2)} | '
+          'CPL: ${cplAbs.toStringAsFixed(0)} | '
+          'WinDiff: ${winDiff.toStringAsFixed(1)} | '
+          'Class: ${classification.name}',
+        );
 
         analyzedMoves.add(
           MoveAnalysis(
             moveIndex: i,
             san: move.san,
             fen: board.fen,
-            evalBefore: evalBefore,
-            evalAfter: afterEval,
+            evalBefore: bestEval,
+            evalAfter: actualEval,
             winPercentBefore: winBefore,
             winPercentAfter: winAfter,
             bestMove: bestMoveForPlayer,
             classification: classification,
-            engineLines: engineLines,
+            engineLines: bestLines,
             isWhiteMove: isWhiteMove,
-            centipawnLoss: cpl,
+            centipawnLoss: cplAbs,
             accuracy: moveAccuracy,
-            isMateBefore: prevIsMate,
-            isMateAfter: afterIsMate,
+            isMateBefore: bestIsMate,
+            isMateAfter: actualIsMate,
           ),
         );
-
-        // (e) Carry forward for next iteration
-        prevEval = afterEval;
-        prevBestMove = afterBestMove;
-        prevIsMate = afterIsMate;
 
         // Update progress — emit partial fullAnalysis so the Report tab
         // renders progressively instead of showing a spinner until the end.

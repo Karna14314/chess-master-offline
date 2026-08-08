@@ -454,6 +454,138 @@ void main() {
       });
     });
 
+    // ── CPL-Based Classification (classifyMoveCpl) ─────────────
+    // Used in the redesigned analysis loop. Compares best move eval vs
+    // actual move eval from the SAME position.
+
+    group('classifyMoveCpl', () {
+      test('CPL = 0 → Best', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 0.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.best));
+      });
+
+      test('CPL = 10 → Best (boundary)', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 10.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.best));
+      });
+
+      test('CPL = 15 → Excellent', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 15.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.excellent));
+      });
+
+      test('CPL = 20 → Excellent (boundary)', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 20.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.excellent));
+      });
+
+      test('CPL = 35 → Good', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 35.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.good));
+      });
+
+      test('CPL = 50 → Good (boundary)', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 50.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.good));
+      });
+
+      test('CPL = 75 → Inaccuracy', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 75.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.inaccuracy));
+      });
+
+      test('CPL = 100 → Inaccuracy (boundary)', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 100.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.inaccuracy));
+      });
+
+      test('CPL = 150 → Mistake', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 150.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.mistake));
+      });
+
+      test('CPL = 200 → Mistake (boundary)', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 200.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.mistake));
+      });
+
+      test('CPL = 250 → Blunder', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 250.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.blunder));
+      });
+
+      test('CPL = 500 → Blunder', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 500.0,
+          bestMove: null,
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.blunder));
+      });
+
+      test('bestMove match → Best regardless of CPL', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 300.0,
+          bestMove: 'e2e4',
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.best));
+      });
+
+      test('bestMove match is case-insensitive', () {
+        final result = classifyMoveCpl(
+          centipawnLoss: 300.0,
+          bestMove: 'E2E4',
+          actualMove: 'e2e4',
+        );
+        expect(result, equals(MoveClassification.best));
+      });
+    });
+
     // ── Mate Handling in classifyMove ─────────────────────────
 
     group('classifyMove mate handling', () {

@@ -121,8 +121,8 @@ class AppConstants {
   static const double boardPadding = 8.0;
   static const double pieceScale = 0.85;
 
-  // Analysis
-  static const int analysisDepth = 15;
+  // Analysis — depth 12 is ~3x faster than 15 and still accurate for move classification
+  static const int analysisDepth = 12;
   static const int topEngineLinesCount = 3;
 }
 

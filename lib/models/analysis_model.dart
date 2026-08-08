@@ -360,3 +360,67 @@ MoveClassification classifyMove({
     return MoveClassification.blunder;
   }
 }
+
+/// Classify a move based on centipawn loss (CPL) relative to the engine's best move.
+/// This is how Lichess and Chess.com classify moves — by comparing the evaluation
+/// of the player's move against the evaluation of the engine's best move from the
+/// same position.
+///
+/// [centipawnLoss] is always positive (or zero) and represents how many centipawns
+/// worse the player's move was compared to the best move.
+///
+/// Thresholds (aligned with Lichess/Chess.com):
+///   - CPL ≤ 10 cp: Best
+///   - CPL ≤ 20 cp: Excellent
+///   - CPL ≤ 50 cp: Good
+///   - CPL ≤ 100 cp: Inaccuracy
+///   - CPL ≤ 200 cp: Mistake
+///   - CPL > 200 cp: Blunder
+MoveClassification classifyMoveCpl({
+  required double centipawnLoss,
+  required String? bestMove,
+  required String actualMove,
+  bool isMateBefore = false,
+  bool isMateAfter = false,
+}) {
+  // ── Mate handling ──
+  if (isMateBefore || isMateAfter) {
+    if (bestMove != null &&
+        actualMove.toLowerCase() == bestMove.toLowerCase()) {
+      return MoveClassification.best;
+    }
+
+    final hadMate = isMateBefore;
+    final lostMate = isMateAfter;
+
+    if (hadMate && lostMate) {
+      return MoveClassification.miss;
+    }
+
+    if (centipawnLoss >= 200.0) {
+      return MoveClassification.blunder;
+    }
+    return MoveClassification.best;
+  }
+
+  // ── Best move match ──
+  if (bestMove != null &&
+      actualMove.toLowerCase() == bestMove.toLowerCase()) {
+    return MoveClassification.best;
+  }
+
+  // ── CPL Thresholds ──
+  if (centipawnLoss <= 10.0) {
+    return MoveClassification.best;
+  } else if (centipawnLoss <= 20.0) {
+    return MoveClassification.excellent;
+  } else if (centipawnLoss <= 50.0) {
+    return MoveClassification.good;
+  } else if (centipawnLoss <= 100.0) {
+    return MoveClassification.inaccuracy;
+  } else if (centipawnLoss <= 200.0) {
+    return MoveClassification.mistake;
+  } else {
+    return MoveClassification.blunder;
+  }
+}
