@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:stockfish_chess_engine/stockfish_chess_engine.dart';
+import 'package:stockfish_chess_engine/stockfish_chess_engine_state.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/core/services/simple_bot_service.dart';
@@ -1235,19 +1236,25 @@ class StockfishService {
   static const int analysisHashMb = 128;
 
   /// Threads to use for batch analysis. See [maxAnalysisThreads] for why this
-  /// stays at 1 regardless of how many cores the device has.
+  /// defaults to 1 regardless of how many cores the device has.
   int get _analysisThreads => maxAnalysisThreads;
 
   /// Raise Threads/Hash for a full-game batch analysis pass.
   /// Must be paired with [setLivePlayStrength] when the pass finishes or is
   /// cancelled, so live play returns to its low-footprint configuration.
-  void setAnalysisStrength() {
+  ///
+  /// [threadsOverride] raises the thread count above the reproducibility-safe
+  /// default. Only safe when the completed analysis is persisted and replayed
+  /// from storage, so a user never re-runs the same game and sees different
+  /// numbers. Used by the config sweep harness for measurement.
+  void setAnalysisStrength({int? threadsOverride, int? hashMbOverride}) {
     if (_isDisposed || _useFallback) return;
-    final threads = _analysisThreads;
+    final threads = threadsOverride ?? _analysisThreads;
+    final hash = hashMbOverride ?? analysisHashMb;
     _sendCommand('setoption name Threads value $threads');
-    _sendCommand('setoption name Hash value $analysisHashMb');
+    _sendCommand('setoption name Hash value $hash');
     debugPrint(
-      'ENGINE CONFIG: batch analysis Threads=$threads Hash=${analysisHashMb}MB '
+      'ENGINE CONFIG: batch analysis Threads=$threads Hash=${hash}MB '
       '(cores=${Platform.numberOfProcessors})',
     );
   }
@@ -1443,9 +1450,34 @@ void _stockfishIsolateEntryPoint(SendPort sendPort) {
             stockfish!.stdout.listen((line) {
               sendPort.send({'type': 'stdout', 'line': line});
             });
-            // Signal to the main thread that the engine binary loaded successfully.
-            // The main thread awaits this before starting the UCI handshake.
-            sendPort.send({'type': 'engine_ready'});
+
+            // Signal readiness only once the engine actually reaches the
+            // ready state. Announcing right after the constructor meant the
+            // main thread sent "uci" while the engine was still starting;
+            // the write was rejected with "Bad state: Stockfish is not
+            // ready", and initialize() then waited the full 5s for a uciok
+            // that could never arrive — every attempt failed and the service
+            // latched to the fallback evaluator on cold start.
+            if (stockfish!.state.value == StockfishState.ready) {
+              sendPort.send({'type': 'engine_ready'});
+            } else {
+              late final VoidCallback listener;
+              listener = () {
+                final st = stockfish!.state.value;
+                if (st == StockfishState.ready) {
+                  stockfish!.state.removeListener(listener);
+                  sendPort.send({'type': 'engine_ready'});
+                } else if (st == StockfishState.error ||
+                    st == StockfishState.disposed) {
+                  stockfish!.state.removeListener(listener);
+                  sendPort.send({
+                    'type': 'error',
+                    'message': 'Engine reached $st before becoming ready',
+                  });
+                }
+              };
+              stockfish!.state.addListener(listener);
+            }
           } catch (e) {
             sendPort.send({
               'type': 'error',

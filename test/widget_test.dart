@@ -202,7 +202,7 @@ class MockStockfishService implements StockfishService {
   void setMaxStrength() {}
 
   @override
-  void setAnalysisStrength() {}
+  void setAnalysisStrength({int? threadsOverride, int? hashMbOverride}) {}
 
   @override
   void setLivePlayStrength() {}
