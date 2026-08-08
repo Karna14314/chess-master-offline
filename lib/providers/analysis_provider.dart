@@ -436,6 +436,12 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     // Ensure engine is at maximum strength for full game analysis
     _stockfish!.setMaxStrength();
 
+    // Flush the transposition table ONCE at the start of the batch so the run
+    // does not inherit entries from prior live play. Per-ply flushes are
+    // suppressed via isBatchAnalysis, letting the engine reuse TT work across
+    // consecutive plies of this game.
+    _stockfish!.newGame();
+
     state = state.copyWith(
       isAnalyzing: true,
       analysisProgress: 0.0,
@@ -522,6 +528,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
               board.fen,
               depth: 15,
               multiPv: 3,
+              isBatchAnalysis: true,
             );
             engineQueries++;
           }
@@ -590,6 +597,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             board.fen,
             depth: 15,
             multiPv: 3,
+            isBatchAnalysis: true,
           );
           engineQueries++;
           actualEval = actualData.eval;
@@ -756,6 +764,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     String fen, {
     required int depth,
     required int multiPv,
+    bool isBatchAnalysis = false,
   }) async {
     // Check cache first
     try {
@@ -786,6 +795,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       fen: fen,
       depth: depth,
       multiPv: multiPv,
+      isBatchAnalysis: isBatchAnalysis,
     );
 
     // Cache the result

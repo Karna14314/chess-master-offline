@@ -889,6 +889,12 @@ class StockfishService {
   /// Returns evaluation and top engine lines
   /// [startingFen] and [moves] are optional; when provided the engine is told
   /// the full move list so it can detect repetition draws.
+  ///
+  /// [isBatchAnalysis] marks this call as part of a sequential full-game pass.
+  /// Consecutive plies of one game are closely related positions, so the
+  /// transposition table is deliberately NOT flushed between them — see the
+  /// `ucinewgame` guard below. Leave false for live play, new analysis
+  /// sessions and non-sequential position jumps.
   Future<AnalysisResult> analyzePosition({
     required String fen,
     int depth = AppConstants.analysisDepth,
@@ -896,6 +902,7 @@ class StockfishService {
     void Function(AnalysisResult)? onUpdate,
     String? startingFen,
     List<String>? moves,
+    bool isBatchAnalysis = false,
   }) async {
     // Validate FEN to prevent SIGSEGV
     if (!_isValidFen(fen)) {
@@ -953,7 +960,12 @@ class StockfishService {
       // Reset engine state before new analysis to prevent SIGSEGV from stale TT entries.
       // Only send ucinewgame when we actually stopped a previous search, to avoid
       // unnecessary engine overhead on the common first-call path.
-      if (wasStopped) {
+      //
+      // During a sequential full-game pass this is suppressed: each ply issues
+      // back-to-back searches, so ucinewgame fired every ply and wiped the
+      // transposition table between positions that differ by a single move.
+      // Keeping the TT lets the engine reuse that work.
+      if (wasStopped && !isBatchAnalysis) {
         _sendCommandDirect('ucinewgame');
       }
 
