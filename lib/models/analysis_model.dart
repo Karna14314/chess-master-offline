@@ -136,6 +136,12 @@ class GameAnalysis {
   final int bestMoves;
   final int bookMoves;
   final double finalEval;
+
+  /// Accuracy for White's moves only (0-100), same model as [averageAccuracy].
+  final double whiteAccuracy;
+
+  /// Accuracy for Black's moves only (0-100), same model as [averageAccuracy].
+  final double blackAccuracy;
   final double openingAccuracy;
   final double middlegameAccuracy;
   final double endgameAccuracy;
@@ -155,6 +161,8 @@ class GameAnalysis {
     this.bestMoves = 0,
     this.bookMoves = 0,
     this.finalEval = 0.0,
+    this.whiteAccuracy = 0.0,
+    this.blackAccuracy = 0.0,
     this.openingAccuracy = 0.0,
     this.middlegameAccuracy = 0.0,
     this.endgameAccuracy = 0.0,
@@ -230,6 +238,21 @@ class GameAnalysis {
     final count = moves.length;
     final winBasedAccuracy = EvalConstants.gameAccuracy(moveAccuracies, winPercents);
 
+    // Per-side accuracy uses the same model, restricted to that side's plies.
+    double sideAccuracy(bool white) {
+      final sideAccuracies = <double>[];
+      final sideWinPercents = <double>[];
+      for (final move in moves) {
+        if (move.isWhiteMove != white) continue;
+        sideAccuracies.add(move.accuracy);
+        sideWinPercents.add(
+          move.isWhiteMove ? move.winPercentAfter : 100 - move.winPercentAfter,
+        );
+      }
+      if (sideAccuracies.isEmpty) return 0.0;
+      return EvalConstants.gameAccuracy(sideAccuracies, sideWinPercents);
+    }
+
     final openingMoves = <MoveAnalysis>[];
     final middleMoves = <MoveAnalysis>[];
     final endMoves = <MoveAnalysis>[];
@@ -264,6 +287,8 @@ class GameAnalysis {
       bestMoves: bestMoves,
       bookMoves: bookMoves,
       finalEval: moves.isNotEmpty ? moves.last.evalAfter : 0.0,
+      whiteAccuracy: sideAccuracy(true),
+      blackAccuracy: sideAccuracy(false),
       openingAccuracy: openingMoves.isEmpty ? 0.0 :
         openingMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / openingMoves.length,
       middlegameAccuracy: middleMoves.isEmpty ? 0.0 :

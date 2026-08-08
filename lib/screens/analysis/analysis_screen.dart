@@ -18,6 +18,7 @@ import 'package:chess_master/screens/analysis/widgets/game_accuracy_summary.dart
 import 'package:chess_master/screens/analysis/widgets/move_history_list.dart';
 import 'package:chess_master/screens/analysis/widgets/export_share_buttons.dart';
 import 'package:chess_master/screens/analysis/widgets/interactive_eval_graph.dart';
+import 'package:chess_master/screens/analysis/widgets/accuracy_header.dart';
 
 class AnalysisScreen extends ConsumerStatefulWidget {
   final List<ChessMove>? moves;
@@ -367,6 +368,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                   child: Column(
                     children: [
                       if (state.fullAnalysis != null) ...[
+                        AccuracyHeader(analysis: state.fullAnalysis!),
                         if (state.analyzedMoves.isNotEmpty)
                           InteractiveEvalGraph(
                             evaluations: state.evaluations,
