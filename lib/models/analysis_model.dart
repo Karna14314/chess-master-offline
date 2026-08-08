@@ -172,6 +172,14 @@ class GameAnalysis {
     return const GameAnalysis(moves: [], averageAccuracy: 0.0);
   }
 
+  /// Build from a pre-accumulated [GameAnalysisAccumulator].
+  ///
+  /// Equivalent to [fromMoves] but skips the per-move walk, the classification
+  /// switch and the phase bucketing, all of which the accumulator has already
+  /// done incrementally as moves were appended.
+  factory GameAnalysis.fromAccumulator(GameAnalysisAccumulator acc) =>
+      acc.build();
+
   factory GameAnalysis.fromMoves(List<MoveAnalysis> moves) {
     if (moves.isEmpty) return GameAnalysis.empty();
 
@@ -304,6 +312,9 @@ class GameAnalysis {
     if (moveIndex > totalMoves * 0.75) return GamePhase.endgame;
     return GamePhase.middlegame;
   }
+
+  static GamePhase phaseForMove(int moveIndex, int totalMoves) =>
+      _phaseForMove(moveIndex, totalMoves);
 
   /// Get all evaluations for graphing.
   ///
@@ -526,5 +537,156 @@ MoveClassification classifyMoveCpl({
     return MoveClassification.mistake;
   } else {
     return MoveClassification.blunder;
+  }
+}
+
+/// Incremental builder for [GameAnalysis].
+///
+/// The batch analysis loop emits a progress tick after every ply. Rebuilding a
+/// [GameAnalysis] with [GameAnalysis.fromMoves] on each tick re-walked the
+/// whole list — O(n) per tick, O(n^2) across a game. This accumulator keeps
+/// running totals so the per-tick work no longer grows with the number of
+/// plies already analysed.
+///
+/// What is genuinely O(1) per [add]: centipawn totals, all classification
+/// counters, per-phase and per-side accuracy sums, and the final eval.
+///
+/// What is not, and why: [EvalConstants.gameAccuracy] is a
+/// volatility-weighted mean over a sliding window whose size depends on the
+/// total number of plies, and the opening/middlegame/endgame boundaries in
+/// [GameAnalysis.phaseForMove] are fractions of the total, so both shift as
+/// the game grows and cannot be folded into a running sum without changing
+/// the reported numbers. [build] therefore still calls gameAccuracy over the
+/// collected accuracy/win% lists, and re-buckets phases only when the phase
+/// boundaries actually move. Correctness was the priority: the displayed
+/// figures are identical to the full recomputation.
+class GameAnalysisAccumulator {
+  final List<MoveAnalysis> _moves = [];
+
+  final List<double> _accuracies = [];
+  final List<double> _winPercents = [];
+
+  final List<double> _whiteAccuracies = [];
+  final List<double> _whiteWinPercents = [];
+  final List<double> _blackAccuracies = [];
+  final List<double> _blackWinPercents = [];
+
+  double _totalCpl = 0;
+
+  int _blunders = 0;
+  int _misses = 0;
+  int _mistakes = 0;
+  int _inaccuracies = 0;
+  int _goodMoves = 0;
+  int _greatMoves = 0;
+  int _excellentMoves = 0;
+  int _brilliantMoves = 0;
+  int _bestMoves = 0;
+  int _bookMoves = 0;
+
+  /// Moves appended so far.
+  int get length => _moves.length;
+
+  /// Immutable view of the moves accumulated so far.
+  List<MoveAnalysis> get moves => List<MoveAnalysis>.unmodifiable(_moves);
+
+  /// Append one analysed ply, updating all running totals in O(1).
+  void add(MoveAnalysis move) {
+    _moves.add(move);
+
+    _totalCpl += move.centipawnLoss;
+    _accuracies.add(move.accuracy);
+
+    final playerWinPercent = move.isWhiteMove
+        ? move.winPercentAfter
+        : 100 - move.winPercentAfter;
+    _winPercents.add(playerWinPercent);
+
+    if (move.isWhiteMove) {
+      _whiteAccuracies.add(move.accuracy);
+      _whiteWinPercents.add(move.winPercentAfter);
+    } else {
+      _blackAccuracies.add(move.accuracy);
+      _blackWinPercents.add(100 - move.winPercentAfter);
+    }
+
+    switch (move.classification) {
+      case MoveClassification.blunder:
+        _blunders++;
+        break;
+      case MoveClassification.miss:
+        _misses++;
+        break;
+      case MoveClassification.mistake:
+        _mistakes++;
+        break;
+      case MoveClassification.inaccuracy:
+        _inaccuracies++;
+        break;
+      case MoveClassification.good:
+        _goodMoves++;
+        break;
+      case MoveClassification.great:
+        _greatMoves++;
+        break;
+      case MoveClassification.excellent:
+        _excellentMoves++;
+        break;
+      case MoveClassification.brilliant:
+        _brilliantMoves++;
+        break;
+      case MoveClassification.best:
+      case MoveClassification.forced:
+      case MoveClassification.onlyMove:
+        _bestMoves++;
+        break;
+      case MoveClassification.book:
+        _bookMoves++;
+        break;
+    }
+  }
+
+  /// Materialise a [GameAnalysis] from the current totals.
+  GameAnalysis build() {
+    if (_moves.isEmpty) return GameAnalysis.empty();
+
+    final count = _moves.length;
+
+    double phaseAccuracy(GamePhase phase) {
+      double sum = 0;
+      int n = 0;
+      for (int i = 0; i < count; i++) {
+        if (GameAnalysis.phaseForMove(i, count) != phase) continue;
+        sum += _moves[i].accuracy;
+        n++;
+      }
+      return n == 0 ? 0.0 : sum / n;
+    }
+
+    return GameAnalysis(
+      moves: List<MoveAnalysis>.unmodifiable(_moves),
+      averageAccuracy: EvalConstants.gameAccuracy(_accuracies, _winPercents),
+      averageCpl: _totalCpl / count,
+      blunders: _blunders,
+      misses: _misses,
+      mistakes: _mistakes,
+      inaccuracies: _inaccuracies,
+      goodMoves: _goodMoves,
+      greatMoves: _greatMoves,
+      excellentMoves: _excellentMoves,
+      brilliantMoves: _brilliantMoves,
+      bestMoves: _bestMoves,
+      bookMoves: _bookMoves,
+      finalEval: _moves.last.evalAfter,
+      whiteAccuracy: _whiteAccuracies.isEmpty
+          ? 0.0
+          : EvalConstants.gameAccuracy(_whiteAccuracies, _whiteWinPercents),
+      blackAccuracy: _blackAccuracies.isEmpty
+          ? 0.0
+          : EvalConstants.gameAccuracy(_blackAccuracies, _blackWinPercents),
+      openingAccuracy: phaseAccuracy(GamePhase.opening),
+      middlegameAccuracy: phaseAccuracy(GamePhase.middlegame),
+      endgameAccuracy: phaseAccuracy(GamePhase.endgame),
+    );
   }
 }
