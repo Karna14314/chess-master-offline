@@ -891,6 +891,11 @@ class StockfishService {
   /// [startingFen] and [moves] are optional; when provided the engine is told
   /// the full move list so it can detect repetition draws.
   ///
+  /// [nodes], when set, bounds the search by node count (`go nodes N`) instead
+  /// of by depth, and [depth] is ignored. This is both much faster and
+  /// deterministic — the engine stops after exactly N nodes, so the same
+  /// position always yields the same score on any device.
+  ///
   /// [isBatchAnalysis] marks this call as part of a sequential full-game pass.
   /// Consecutive plies of one game are closely related positions, so the
   /// transposition table is deliberately NOT flushed between them — see the
@@ -904,6 +909,7 @@ class StockfishService {
     String? startingFen,
     List<String>? moves,
     bool isBatchAnalysis = false,
+    int? nodes,
   }) async {
     // Validate FEN to prevent SIGSEGV
     if (!_isValidFen(fen)) {
@@ -1097,7 +1103,11 @@ class StockfishService {
       }
 
       _searchInFlight = true;
-      _sendCommand('go depth $depth');
+      // A node-bounded search is deterministic: the engine stops after exactly
+      // N nodes regardless of how fast the device is, so the same position
+      // always returns the same score. A depth-bounded search is not, because
+      // the result depends on which `info` line arrives before `bestmove`.
+      _sendCommand(nodes != null ? 'go nodes $nodes' : 'go depth $depth');
 
       return await completer.future.timeout(
         analysisTimeoutForTesting, // Short timeout for analysis to switch to basic if stuck

@@ -228,3 +228,92 @@ negligible against a ~5.5 s search.
 4. **Cache key vs live path.** Live analysis writes depth-12 entries that a
    depth-15 batch query can never satisfy, so the batch always re-searches.
 5. Move SQLite cache I/O off the UI isolate (reduced FIX 4).
+
+---
+
+# Appendix — `go nodes` prototype (measured, REFUTED)
+
+Prototype of the nodes-limited cheap pass. Engine support added
+(`analyzePosition(nodes:)`, `stockfish_service.dart`), measured on-device with
+`lib/main_verify_nodes.dart` against the real engine on the same 24-ply game.
+
+**The <10s target is not reachable this way. Three independent blockers.**
+
+## Blocker 1 — the pipeline is overhead-bound, not search-bound
+
+| Budget | ms/position | 25 positions |
+|---|---|---|
+| `go depth 15`, MultiPV 3 (today) | 5 389 | 134 724 ms |
+| `go nodes 50 000`, MultiPV 1 | 961 | 24 037 ms |
+| `go nodes 150 000`, MultiPV 1 | 3 118 | 77 949 ms |
+
+Stockfish on this class of ARM chip runs roughly 1M nodes/sec single-threaded,
+so 50 000 nodes is ~50 ms of actual searching — yet a position costs 961 ms.
+**~900 ms per position is fixed overhead**, not search: `stop` +
+`_stopCurrentSearchAndWait` (up to 2s timeout), `position` + `isready` +
+`_waitForReadyOk` (500ms budget), MultiPV set/reset, the isolate SendPort round
+trip, and a SQLite read+write per position.
+
+At ~900ms × 25 positions the floor is **~22 s before the engine searches
+anything**. Even a zero-cost evaluator cannot reach 10 s through this transport.
+
+## Blocker 2 — `go nodes` is NOT deterministic here
+
+The central premise — fixed nodes gives reproducible results — **failed**:
+
+```
+DETERMINISM nodes=150000 mismatches=22/25
+pos=20  a=+0.27  b=-0.27     <- sign flip, same position, same build
+pos=23  a=-1.45  b=-1.16
+```
+
+22 of 25 positions returned different evals on immediate re-run. This confirms
+the non-determinism is **in this code's result-capture, not in the search
+bound**: `analyzePosition` resolves from whichever `info` line was last seen
+when `bestmove` arrives, and searches can be cut short by the stop timeout. The
+node budget never gets a chance to make anything reproducible.
+
+## Blocker 3 — triage would escalate 79% of plies
+
+```
+TRIAGE budget=150000 plies=24
+  confidentCorrect = 3
+  confidentWrong   = 2
+  grayZone         = 19  (79% need escalation)
+meanAbsDiffCp = 91.9   worstAbsDiffCp = 317
+```
+
+The cheap pass differs from depth-15 by **92 cp on average** — wider than the
+entire inaccuracy band (50-100cp) — so almost nothing lands outside the gray
+zone. Worse, of the 5 plies it *was* confident about, **2 were wrong**. A 40%
+error rate on exactly the calls the tier is designed to shortcut.
+
+The 17/8 split was optimistic; measured is 5/19 the other way, and unsafe.
+
+## Blocker 4 — stability
+
+Back-to-back rapid searches produced a **SIGSEGV** (`signal 11 SEGV_ACCERR`,
+DartWorker) that killed the app and required an adb restart; the engine then
+failed its uciok handshake repeatedly and fell back. Shortening searches means
+*more* start/stop cycles per second — the exact pattern that crashed.
+
+## Conclusion
+
+Nodes-limiting is the wrong lever. The bottleneck is per-search transport
+overhead and a result-capture race, both of which get *worse* with more,
+shorter searches. Recommended order instead:
+
+1. **Fix the result-capture race first** (follow-up #1). Nothing here is
+   trustworthy until the same position reliably returns the same eval.
+2. **Then attack the ~900ms/position overhead** — batch positions into one
+   engine conversation instead of a full stop/position/isready/go cycle each,
+   and move SQLite off the hot path. This is what unlocks any speed target.
+3. **Only then** consider reducing depth/MultiPV, with the overhead gone and
+   a deterministic baseline to compare against.
+
+Realistic expectation once overhead is fixed: depth 12 + MultiPV 1 at ~200ms
+of real search per position lands near **5-8 s** for a 24-ply game. That is
+achievable — but not before steps 1 and 2.
+
+The `nodes:` parameter is kept: it is small, harmless, off by default, and
+becomes useful once the overhead and race are fixed.

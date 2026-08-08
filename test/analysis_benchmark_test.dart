@@ -49,6 +49,7 @@ class MockStockfishService implements StockfishService {
     String? startingFen,
     List<String>? moves,
     bool isBatchAnalysis = false,
+    int? nodes,
   }) async {
     return AnalysisResult(
       evaluation: 50,
