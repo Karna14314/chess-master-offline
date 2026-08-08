@@ -162,7 +162,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     _ref.read(streakProvider.notifier).recordActivity();
 
     if (result != null) {
-      _recordStatisticsIfNeeded();
+      await _recordStatisticsIfNeeded();
     } else if (currentSession.gameMode == GameMode.bot &&
         !updatedSession.isPlayerTurn &&
         !_isBotThinking) {
@@ -238,7 +238,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         );
         state = updated;
         await _repository.saveSession(updated);
-        _recordStatisticsIfNeeded();
+        await _recordStatisticsIfNeeded();
       } else {
         debugPrint(
           'ENGINE: No legal move reported but the board is not terminal; '
@@ -313,7 +313,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     state = updatedSession;
     await _repository.saveSession(updatedSession);
-    _recordStatisticsIfNeeded();
+    await _recordStatisticsIfNeeded();
   }
 
   Future<void> resign() async {
@@ -332,7 +332,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     state = updatedSession;
     await _repository.saveSession(updatedSession);
-    _recordStatisticsIfNeeded();
+    await _recordStatisticsIfNeeded();
   }
 
   Future<void> handleDraw() async {
@@ -346,7 +346,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     state = updatedSession;
     await _repository.saveSession(updatedSession);
-    _recordStatisticsIfNeeded();
+    await _recordStatisticsIfNeeded();
   }
 
   Future<void> undoMove() async {
@@ -479,7 +479,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     }
   }
 
-  void _recordStatisticsIfNeeded() async {
+  Future<void> _recordStatisticsIfNeeded() async {
     final currentSession = state;
     if (currentSession == null ||
         !currentSession.isCompleted ||
