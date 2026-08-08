@@ -206,12 +206,13 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       clearError: true,
     );
 
-    // Start live analysis and full game analysis if engine is ready
-    if (_isInitialized) {
-      _analyzeCurrentPosition();
-      if (moves.isNotEmpty) {
-        analyzeFullGame();
-      }
+    // Start full game analysis if engine is ready.
+    // Don't also run _analyzeCurrentPosition() here — it contends with
+    // analyzeFullGame() for the single-threaded engine and one will silently
+    // fail due to the _isAnalyzing guard. The full-game loop already populates
+    // engine lines for every position including the starting one.
+    if (_isInitialized && moves.isNotEmpty) {
+      analyzeFullGame();
     }
   }
 
@@ -399,6 +400,17 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   }
 
   /// Run full game analysis
+  ///
+  /// Pipeline overview (optimised):
+  ///   1. Evaluate the starting position once → prevEval + bestMove.
+  ///   2. For each move:
+  ///      a. Reuse prevEval as the "before" eval (no extra engine call).
+  ///      b. Reuse prevBestMove as the engine's best move for this position.
+  ///      c. Apply the player's move, evaluate the resulting position → afterEval.
+  ///      d. Classify using the consistent (prevEval, afterEval) pair.
+  ///      e. Store afterEval's bestMove for the *next* iteration's step (b).
+  ///   3. Emit partial fullAnalysis every 5 moves so the Report tab renders
+  ///      progressively instead of showing a spinner until completion.
   Future<void> analyzeFullGame() async {
     if (_isAnalyzing) return; // Prevent concurrent analysis
     if (_stockfish == null) {
@@ -425,54 +437,67 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       final board = chess.Chess.fromFEN(state.startingFen);
 
       double prevEval = 0.0;
+      String? prevBestMove; // bestMove from the "before" position
 
-      // Get initial evaluation (check cache first)
+      // ── Step 1: Evaluate the starting position ──
+      // Fetch with multiPv:3 so we get engine lines AND the best move for the
+      // first position without a separate call.
       try {
         if (token != _analysisToken) return;
-        final initialData = await _getCachedOrAnalyze(board.fen, depth: 15, multiPv: 1);
+        final initialData = await _getCachedOrAnalyze(
+          board.fen,
+          depth: 15,
+          multiPv: 3,
+        );
         prevEval = initialData.eval;
+        if (initialData.lines.isNotEmpty &&
+            initialData.lines.first.moves.isNotEmpty) {
+          prevBestMove = initialData.lines.first.moves.first;
+        }
       } catch (e) {
         try {
-          final basicResult = await BasicEvaluatorService.instance.analyze(board.fen);
+          final basicResult =
+              await BasicEvaluatorService.instance.analyze(board.fen);
           prevEval = basicResult.evalInPawns;
+          if (basicResult.lines.isNotEmpty &&
+              basicResult.lines.first.moves.isNotEmpty) {
+            prevBestMove = basicResult.lines.first.moves.first;
+          }
         } catch (e2) {
           prevEval = 0.0;
         }
       }
 
+      // ── Step 2: Per-move analysis loop ──
       for (int i = 0; i < moves.length; i++) {
         // Check cancellation token
         if (token != _analysisToken) return;
 
         final move = moves[i];
         final isWhiteMove = board.turn == chess.Color.WHITE;
-        final fenBefore = board.fen;
 
-        // Obtain evaluation & bestMove BEFORE applying player move
-        double evalBefore = prevEval;
-        String? bestMoveForPlayer;
-        try {
-          final beforeResult = await _getCachedOrAnalyze(fenBefore, depth: 15, multiPv: 1);
-          evalBefore = beforeResult.eval;
-          if (beforeResult.lines.isNotEmpty && beforeResult.lines.first.moves.isNotEmpty) {
-            bestMoveForPlayer = beforeResult.lines.first.moves.first;
-          }
-        } catch (_) {}
+        // (a) "Before" eval — reuse prevEval from previous iteration.
+        //     No redundant engine call needed.
+        final evalBefore = prevEval;
 
-        // Apply the actual move
+        // (b) bestMove for this position — reuse from previous iteration.
+        final bestMoveForPlayer = prevBestMove;
+
+        // (c) Apply the actual move
         board.move({
           'from': move.from,
           'to': move.to,
           'promotion': move.promotion,
         });
 
-        // Get evaluation & engine lines AFTER move
+        // Evaluate the resulting position ("after" eval)
         double afterEval = evalBefore;
         List<EngineLine> engineLines = [];
+        String? afterBestMove; // bestMove for the NEXT iteration
 
         try {
-          if (!_isAnalyzing) break;
           if (token != _analysisToken) return;
+          if (!_isAnalyzing) break;
 
           final cachedResult = await _getCachedOrAnalyze(
             board.fen,
@@ -482,6 +507,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
           afterEval = cachedResult.eval;
           engineLines = cachedResult.lines;
+          if (cachedResult.lines.isNotEmpty &&
+              cachedResult.lines.first.moves.isNotEmpty) {
+            afterBestMove = cachedResult.lines.first.moves.first;
+          }
         } catch (e) {
           try {
             final basicResult = await BasicEvaluatorService.instance.analyze(
@@ -489,12 +518,20 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             );
             afterEval = basicResult.evalInPawns;
             engineLines = basicResult.lines;
+            if (basicResult.lines.isNotEmpty &&
+                basicResult.lines.first.moves.isNotEmpty) {
+              afterBestMove = basicResult.lines.first.moves.first;
+            }
           } catch (e2) {
             afterEval = evalBefore;
           }
         }
 
-        // Classify the move using player's best move evaluated before
+        // (d) Classify using the consistent (evalBefore, afterEval) pair.
+        //     Previously classifyMove() received a freshly-fetched evalBefore
+        //     while CPL/accuracy used prevEval — the mismatch produced
+        //     artificially small winDiff values (≤1.0), classifying everything
+        //     as "best". Now all three use the same pair.
         final classification = classifyMove(
           evalBefore: evalBefore,
           evalAfter: afterEval,
@@ -503,36 +540,39 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
         );
 
-        // Debug logging
-        if (i < 5) {
-          // Log first 5 moves for debugging
-          debugPrint(
-            '📊 Move ${i + 1}: ${move.san} | '
-            'Before: ${prevEval.toStringAsFixed(2)} | '
-            'After: ${afterEval.toStringAsFixed(2)} | '
-            'Loss: ${isWhiteMove ? (prevEval - afterEval).toStringAsFixed(2) : (afterEval - prevEval).toStringAsFixed(2)} | '
-            'Class: ${classification.name}',
-          );
-        }
-
         final cpl = computeCentipawnLoss(
-          evalBefore: prevEval,
+          evalBefore: evalBefore,
           evalAfter: afterEval,
           isWhiteMove: isWhiteMove,
         );
         final moveAccuracy = computeWinPercentAccuracy(
-          evalBeforePawns: prevEval,
+          evalBeforePawns: evalBefore,
           evalAfterPawns: afterEval,
           isWhiteMove: isWhiteMove,
         );
-        final winBefore = EvalConstants.centipawnsToWinPercent(prevEval * 100);
-        final winAfter = EvalConstants.centipawnsToWinPercent(afterEval * 100);
+        final winBefore =
+            EvalConstants.centipawnsToWinPercent(evalBefore * 100);
+        final winAfter =
+            EvalConstants.centipawnsToWinPercent(afterEval * 100);
+
+        // Debug logging
+        if (i < 5) {
+          debugPrint(
+            '📊 Move ${i + 1}: ${move.san} | '
+            'Before: ${evalBefore.toStringAsFixed(2)} | '
+            'After: ${afterEval.toStringAsFixed(2)} | '
+            'CPL: ${cpl.toStringAsFixed(0)} | '
+            'WinDiff: ${(isWhiteMove ? (EvalConstants.centipawnsToWinPercent(evalBefore * 100) - EvalConstants.centipawnsToWinPercent(afterEval * 100)) : ((100 - EvalConstants.centipawnsToWinPercent(evalBefore * 100)) - (100 - EvalConstants.centipawnsToWinPercent(afterEval * 100)))).toStringAsFixed(1)} | '
+            'Class: ${classification.name}',
+          );
+        }
+
         analyzedMoves.add(
           MoveAnalysis(
             moveIndex: i,
             san: move.san,
             fen: board.fen,
-            evalBefore: prevEval,
+            evalBefore: evalBefore,
             evalAfter: afterEval,
             winPercentBefore: winBefore,
             winPercentAfter: winAfter,
@@ -545,21 +585,24 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           ),
         );
 
+        // (e) Carry forward for next iteration
         prevEval = afterEval;
+        prevBestMove = afterBestMove;
 
-        // Update progress
-        // Batch updates to improve performance (reduce UI rebuilds)
-        // Update every 10 moves (changed from 5) or on the last move to reduce render thread pressure
-        if ((i + 1) % 10 == 0 || i == moves.length - 1) {
+        // Update progress — emit partial fullAnalysis so the Report tab
+        // renders progressively instead of showing a spinner until the end.
+        if ((i + 1) % 5 == 0 || i == moves.length - 1) {
+          final partialMoves = List<MoveAnalysis>.from(analyzedMoves);
           state = state.copyWith(
             analysisProgress: (i + 1) / moves.length,
-            analyzedMoves: List.from(analyzedMoves),
+            analyzedMoves: partialMoves,
+            fullAnalysis: GameAnalysis.fromMoves(partialMoves),
           );
           stateUpdateCount++;
         }
       }
 
-      // Create full analysis result
+      // Final state — mark analysis complete
       final fullAnalysis = GameAnalysis.fromMoves(analyzedMoves);
 
       state = state.copyWith(
@@ -570,6 +613,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       );
     } finally {
       _isAnalyzing = false;
+      // Ensure state.isAnalyzing is always cleared, even on cancellation
+      if (state.isAnalyzing) {
+        state = state.copyWith(isAnalyzing: false);
+      }
     }
   }
 

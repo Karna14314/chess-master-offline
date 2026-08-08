@@ -315,7 +315,11 @@ void main() {
         expect(result, equals(MoveClassification.best));
       });
 
-      test('CPL = 10cp → Excellent', () {
+      // NOTE: classifyMove() uses Lichess Win%-based thresholds, NOT CPL thresholds.
+      // Win% diff thresholds: ≤1.0→best, ≤4.0→excellent, ≤8.0→good,
+      //                       ≤15.0→inaccuracy, ≤25.0→mistake, >25.0→blunder
+
+      test('Win% diff ~0.9% (CPL=10cp, 1.0→0.9) → Best', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: 0.9,
@@ -323,10 +327,11 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        expect(result, equals(MoveClassification.excellent));
+        // winDiff ≈ 0.9% → best (≤1.0)
+        expect(result, equals(MoveClassification.best));
       });
 
-      test('CPL = 30cp → Good', () {
+      test('Win% diff ~2.7% (CPL=30cp, 1.0→0.7) → Excellent', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: 0.7,
@@ -334,10 +339,11 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        expect(result, equals(MoveClassification.good));
+        // winDiff ≈ 2.7% → excellent (≤4.0)
+        expect(result, equals(MoveClassification.excellent));
       });
 
-      test('CPL = 75cp → Inaccuracy', () {
+      test('Win% diff ~6.7% (CPL=75cp, 1.0→0.25) → Good', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: 0.25,
@@ -345,10 +351,11 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        expect(result, equals(MoveClassification.inaccuracy));
+        // winDiff ≈ 6.7% → good (≤8.0)
+        expect(result, equals(MoveClassification.good));
       });
 
-      test('CPL = 150cp → Mistake', () {
+      test('Win% diff ~13.2% (CPL=150cp, 1.0→-0.5) → Inaccuracy', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: -0.5,
@@ -356,10 +363,11 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        expect(result, equals(MoveClassification.mistake));
+        // winDiff ≈ 13.2% → inaccuracy (≤15.0)
+        expect(result, equals(MoveClassification.inaccuracy));
       });
 
-      test('CPL = 300cp → Blunder', () {
+      test('Win% diff ~26% (CPL=300cp, 1.0→-2.0) → Blunder', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: -2.0,
@@ -367,10 +375,11 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
+        // winDiff ≈ 26.3% → blunder (>25.0)
         expect(result, equals(MoveClassification.blunder));
       });
 
-      test('improvement (< -50cp) → Brilliant', () {
+      test('improvement (eval improves) → Best (winDiff clamped to 0)', () {
         final result = classifyMove(
           evalBefore: 0.0,
           evalAfter: 1.0,
@@ -378,10 +387,11 @@ void main() {
           bestMove: null,
           actualMove: 'e2e4',
         );
-        expect(result, equals(MoveClassification.brilliant));
+        // Negative winDiff clamped to 0 → best (≤1.0)
+        expect(result, equals(MoveClassification.best));
       });
 
-      test('black move CPL = 300cp → Blunder', () {
+      test('black move Win% diff ~26% (CPL=300cp) → Blunder', () {
         final result = classifyMove(
           evalBefore: -1.0,
           evalAfter: 2.0,
@@ -389,11 +399,12 @@ void main() {
           bestMove: null,
           actualMove: 'e7e5',
         );
-        // Loss: 2.0 - (-1.0) = 3.0 pawns = 300cp
+        // Black's playerWinBefore ≈ 63.4%, playerWinAfter ≈ 31.6%
+        // winDiff ≈ 31.8% → blunder (>25.0)
         expect(result, equals(MoveClassification.blunder));
       });
 
-      test('black move improvement → Brilliant', () {
+      test('black move improvement → Best (winDiff clamped to 0)', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: -1.0,
@@ -401,7 +412,8 @@ void main() {
           bestMove: null,
           actualMove: 'e7e5',
         );
-        expect(result, equals(MoveClassification.brilliant));
+        // Negative winDiff clamped to 0 → best (≤1.0)
+        expect(result, equals(MoveClassification.best));
       });
     });
 

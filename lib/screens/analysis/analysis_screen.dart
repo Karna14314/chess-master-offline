@@ -78,7 +78,14 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     AnalysisNotifier notifier,
   ) {
     final currentMoveIndex = state.currentMoveIndex;
-    if (currentMoveIndex < 0) return;
+    if (currentMoveIndex < 0 || currentMoveIndex >= state.analyzedMoves.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Analysis for this move is still in progress...'),
+        ),
+      );
+      return;
+    }
 
     final analyzedMove = state.analyzedMoves[currentMoveIndex];
     final classification = analyzedMove.classification;
