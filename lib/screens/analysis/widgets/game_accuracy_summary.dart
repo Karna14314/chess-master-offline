@@ -8,16 +8,23 @@ class GameAccuracySummary extends StatelessWidget {
   final GameAnalysis analysis;
   final String? openingName;
 
+  /// True while the batch analysis is still running. The figure shown is then
+  /// only over the plies analysed so far, so it is labelled as provisional to
+  /// stop users reading a mid-run number as the final score.
+  final bool isInProgress;
+
   const GameAccuracySummary({
     super.key,
     required this.analysis,
     this.openingName,
+    this.isInProgress = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final accuracyStr = analysis.averageAccuracy.toStringAsFixed(1);
-    final isExcellent = analysis.averageAccuracy >= 90;
+    // Don't award the "outstanding" treatment to a partial figure.
+    final isExcellent = !isInProgress && analysis.averageAccuracy >= 90;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -62,11 +69,18 @@ class GameAccuracySummary extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      isExcellent ? 'Outstanding Accuracy' : 'Game Review',
+                      isInProgress
+                          ? 'Accuracy so far — analyzing…'
+                          : (isExcellent
+                              ? 'Outstanding Accuracy'
+                              : 'Game Review'),
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        color:
-                            isExcellent ? Colors.blue : AppTheme.textSecondaryFor(context),
+                        color: isInProgress
+                            ? AppTheme.textHintFor(context)
+                            : (isExcellent
+                                ? Colors.blue
+                                : AppTheme.textSecondaryFor(context)),
                         fontWeight: FontWeight.w600,
                       ),
                     ),

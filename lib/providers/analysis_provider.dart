@@ -454,7 +454,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     try {
       _isAnalyzing = true;
       final moves = state.originalMoves;
-      final analyzedMoves = <MoveAnalysis>[];
+      // Running aggregates. Appending is O(1), so emitting a progress tick
+      // after every ply no longer costs a full re-walk of the analysed list.
+      final accumulator = GameAnalysisAccumulator();
       final board = chess.Chess.fromFEN(state.startingFen);
 
       // Evaluation of the position ACTUALLY reached so far (white-relative
@@ -490,10 +492,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       for (int i = 0; i < moves.length; i++) {
         // Check cancellation token — save partial results before exiting
         if (token != _analysisToken) {
-          if (analyzedMoves.isNotEmpty) {
+          if (accumulator.length > 0) {
             state = state.copyWith(
-              analyzedMoves: List.from(analyzedMoves),
-              fullAnalysis: GameAnalysis.fromMoves(analyzedMoves),
+              analyzedMoves: accumulator.moves,
+              fullAnalysis: accumulator.build(),
             );
           }
           return;
@@ -510,10 +512,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
         try {
           if (token != _analysisToken) {
-            if (analyzedMoves.isNotEmpty) {
+            if (accumulator.length > 0) {
               state = state.copyWith(
-                analyzedMoves: List.from(analyzedMoves),
-                fullAnalysis: GameAnalysis.fromMoves(analyzedMoves),
+                analyzedMoves: accumulator.moves,
+                fullAnalysis: accumulator.build(),
               );
             }
             return;
@@ -686,7 +688,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           'Class: ${classification.name}',
         );
 
-        analyzedMoves.add(
+        accumulator.add(
           MoveAnalysis(
             moveIndex: i,
             san: move.san,
@@ -709,12 +711,17 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
         // Update progress — emit partial fullAnalysis so the Report tab
         // renders progressively instead of showing a spinner until the end.
-        if ((i + 1) % 5 == 0 || i == moves.length - 1) {
-          final partialMoves = List<MoveAnalysis>.from(analyzedMoves);
+        //
+        // Emitting every 5 plies made the displayed accuracy lurch (99.5 -> 82.2
+        // in a single step). Now that the accumulator makes a tick O(1), emit
+        // every ply so the number moves smoothly; very long games fall back to
+        // every 2 plies to keep the rebuild count sensible.
+        final tickEvery = moves.length > 40 ? 2 : 1;
+        if ((i + 1) % tickEvery == 0 || i == moves.length - 1) {
           state = state.copyWith(
             analysisProgress: (i + 1) / moves.length,
-            analyzedMoves: partialMoves,
-            fullAnalysis: GameAnalysis.fromMoves(partialMoves),
+            analyzedMoves: accumulator.moves,
+            fullAnalysis: accumulator.build(),
           );
           stateUpdateCount++;
         }
@@ -723,21 +730,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       // Searches-per-ply instrumentation. Steady state should approach 1.0:
       // every position is searched once as an "after" and then reused as the
       // next ply's "before" instead of being searched a second time.
-      if (analyzedMoves.isNotEmpty) {
+      if (accumulator.length > 0) {
         debugPrint(
-          '⏱️ PERF searches=$engineQueries plies=${analyzedMoves.length} '
-          'searchesPerPly=${(engineQueries / analyzedMoves.length).toStringAsFixed(2)} '
+          '⏱️ PERF searches=$engineQueries plies=${accumulator.length} '
+          'searchesPerPly=${(engineQueries / accumulator.length).toStringAsFixed(2)} '
           'carryForwardHits=$carryForwardHits',
         );
       }
 
       // Final state — mark analysis complete
-      final fullAnalysis = GameAnalysis.fromMoves(analyzedMoves);
+      final fullAnalysis = accumulator.build();
 
       state = state.copyWith(
         isAnalyzing: false,
         analysisProgress: 1.0,
-        analyzedMoves: analyzedMoves,
+        analyzedMoves: accumulator.moves,
         fullAnalysis: fullAnalysis,
       );
     } finally {

@@ -377,6 +377,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                           ),
                         GameAccuracySummary(
                           analysis: state.fullAnalysis!,
+                          isInProgress: state.isAnalyzing,
                           openingName:
                               state.fullAnalysis!.moves.length > 5
                                   ? "Custom Opening"
