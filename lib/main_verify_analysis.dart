@@ -113,11 +113,13 @@ class _VerifyAppState extends State<_VerifyApp> {
   Future<void> _run() async {
     try {
       final engine = StockfishService.instance;
+      final initSw = Stopwatch()..start();
       await engine.initialize();
-      _log('ENGINE ready=${engine.isReady} fallback=${engine.isUsingFallback}');
+      initSw.stop();
+      _log('ENGINE ready=${engine.isReady} fallback=${engine.isUsingFallback} '
+          'initMs=${initSw.elapsedMilliseconds}');
 
       await _analyzeGame('GAME A (quiet Italian)', _gameA);
-      await _analyzeGame('GAME B (queen blunder)', _gameB);
 
       setState(() => _status = 'done — see logcat (VERIFY)');
     } catch (e, st) {
@@ -136,11 +138,51 @@ class _VerifyAppState extends State<_VerifyApp> {
       _log('MOVES ${moves.length}');
       setState(() => _status = 'analyzing $title (${moves.length} plies)…');
 
+      // ── Observe the pipeline WITHOUT modifying it ──
+      // Every state emission is timestamped so we can measure per-ply wall
+      // clock and sample the accuracy number the UI would be rendering.
+      final total = Stopwatch()..start();
+      int lastCount = 0;
+      int lastElapsed = 0;
+
+      final sub = container.listen<AnalysisState>(
+        analysisProvider,
+        (prev, next) {
+          final ms = total.elapsedMilliseconds;
+          final count = next.analyzedMoves.length;
+
+          if (count != lastCount) {
+            final batchMs = ms - lastElapsed;
+            final plies = count - lastCount;
+            _log(
+              'TICK t=${ms}ms progress=${(next.analysisProgress * 100).toStringAsFixed(0)}% '
+              'plies=$count/${moves.length} batchMs=$batchMs '
+              'perPlyMs=${plies > 0 ? (batchMs / plies).toStringAsFixed(0) : "-"} '
+              'DISPLAYED_ACCURACY=${next.fullAnalysis?.averageAccuracy.toStringAsFixed(1) ?? "null"} '
+              'white=${next.fullAnalysis?.whiteAccuracy.toStringAsFixed(1) ?? "null"} '
+              'black=${next.fullAnalysis?.blackAccuracy.toStringAsFixed(1) ?? "null"} '
+              'isAnalyzing=${next.isAnalyzing}',
+            );
+            lastCount = count;
+            lastElapsed = ms;
+          }
+        },
+        fireImmediately: true,
+      );
+
       await notifier.loadGame(moves: moves);
       await notifier.analyzeFullGame();
+      total.stop();
+      sub.close();
 
       final state = container.read(analysisProvider);
       final analyzed = state.analyzedMoves;
+
+      _log('TOTAL_ELAPSED_MS=${total.elapsedMilliseconds} '
+          'plies=${analyzed.length} '
+          'avgPerPlyMs=${analyzed.isEmpty ? 0 : (total.elapsedMilliseconds / analyzed.length).round()} '
+          'searchesPerPly=2 '
+          'totalSearches=${analyzed.length * 2}');
 
       _log('===== $title =====');
       _log(
