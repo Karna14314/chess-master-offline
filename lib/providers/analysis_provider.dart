@@ -454,6 +454,22 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       // follows the real game instead of the counterfactual best line.
       double? actualEvalSoFar;
 
+      // ── Carry-forward of the previous ply's "after" analysis ──
+      // The position reached after ply i is exactly the position to analyse
+      // BEFORE ply i+1, so re-querying it costs a redundant cache hit plus a
+      // full engine search. Hold the result here and reuse it next iteration.
+      // Guarded by FEN so it is only used when the position genuinely matches
+      // (branches, re-runs and jump-to-ply navigation fall back to the cache).
+      ({
+        double eval,
+        List<EngineLine> lines,
+        String fen,
+      })? carriedForward;
+
+      // Instrumentation: proves searches-per-ply drops from ~2.0 to ~1.0.
+      int engineQueries = 0;
+      int carryForwardHits = 0;
+
       // ── Per-move analysis loop ──
       // For each position we do ONE engine analysis that gives us:
       //   1. bestEval: evaluation of the engine's top line (the best move)
@@ -494,11 +510,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             return;
           }
 
-          final positionData = await _getCachedOrAnalyze(
-            board.fen,
-            depth: 15,
-            multiPv: 3,
-          );
+          // Reuse the previous ply's "after" result when it is the very same
+          // position, skipping both the cache lookup and the engine search.
+          final carried = carriedForward;
+          final ({double eval, List<EngineLine> lines}) positionData;
+          if (carried != null && carried.fen == board.fen) {
+            positionData = (eval: carried.eval, lines: carried.lines);
+            carryForwardHits++;
+          } else {
+            positionData = await _getCachedOrAnalyze(
+              board.fen,
+              depth: 15,
+              multiPv: 3,
+            );
+            engineQueries++;
+          }
           bestEval = positionData.eval;
           bestLines = positionData.lines;
           if (positionData.lines.isNotEmpty) {
@@ -565,11 +591,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             depth: 15,
             multiPv: 3,
           );
+          engineQueries++;
           actualEval = actualData.eval;
           if (actualData.lines.isNotEmpty) {
             actualIsMate = actualData.lines.first.isMate;
           }
+          // Hand this result to the next iteration as its "before" data.
+          carriedForward = (
+            eval: actualData.eval,
+            lines: actualData.lines,
+            fen: board.fen,
+          );
         } catch (e) {
+          // The engine failed for this position — drop the carry-forward so
+          // the next ply re-queries rather than inheriting degraded data.
+          carriedForward = null;
           try {
             final basicResult =
                 await BasicEvaluatorService.instance.analyze(board.fen);
@@ -671,6 +707,17 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           );
           stateUpdateCount++;
         }
+      }
+
+      // Searches-per-ply instrumentation. Steady state should approach 1.0:
+      // every position is searched once as an "after" and then reused as the
+      // next ply's "before" instead of being searched a second time.
+      if (analyzedMoves.isNotEmpty) {
+        debugPrint(
+          '⏱️ PERF searches=$engineQueries plies=${analyzedMoves.length} '
+          'searchesPerPly=${(engineQueries / analyzedMoves.length).toStringAsFixed(2)} '
+          'carryForwardHits=$carryForwardHits',
+        );
       }
 
       // Final state — mark analysis complete
