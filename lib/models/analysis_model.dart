@@ -425,6 +425,12 @@ const double brilliantMinSacrificeCp = -100.0;
 
 /// How much worse the engine's second-best line must be for the played move to
 /// count as the only good move (Great).
+///
+/// Note: the full-game batch pass runs at MultiPV 1
+/// (AppConstants.batchAnalysisMultiPv) for speed, so there is no second line
+/// to compare against and `secondBestCentipawnLoss` is null — Great cannot
+/// fire during batch analysis. Raise MultiPV to 2 to re-enable it, at roughly
+/// 2.2x the analysis time (measured: 17.3s -> 38.7s over 24 plies).
 const double greatOnlyMoveMarginCp = 30.0;
 
 /// Minimum player Win% before the move for a Miss to be possible.

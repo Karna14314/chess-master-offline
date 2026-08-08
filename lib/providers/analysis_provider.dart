@@ -531,8 +531,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           } else {
             positionData = await _getCachedOrAnalyze(
               board.fen,
-              depth: 15,
-              multiPv: 3,
+              depth: AppConstants.batchAnalysisDepth,
+              multiPv: AppConstants.batchAnalysisMultiPv,
               isBatchAnalysis: true,
             );
             engineQueries++;
@@ -600,8 +600,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         try {
           final actualData = await _getCachedOrAnalyze(
             board.fen,
-            depth: 15,
-            multiPv: 3,
+            depth: AppConstants.batchAnalysisDepth,
+            multiPv: AppConstants.batchAnalysisMultiPv,
             isBatchAnalysis: true,
           );
           engineQueries++;

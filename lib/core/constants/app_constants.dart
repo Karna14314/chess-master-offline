@@ -124,6 +124,30 @@ class AppConstants {
   // Analysis — depth 12 is ~3x faster than 15 and still accurate for move classification
   static const int analysisDepth = 12;
   static const int topEngineLinesCount = 3;
+
+  /// Search depth for the full-game batch pass.
+  ///
+  /// Measured on-device over a 24-ply game (real engine, one search per ply
+  /// after carry-forward):
+  ///   d15/MPV3  131.8s   (previous default)
+  ///   d15/MPV1   48.1s
+  ///   d12/MPV1   17.3s   <- shipped: 7.6x faster
+  ///   d10/MPV1    6.6s
+  ///
+  /// d10 is not used: the metric that would show how much accuracy it costs is
+  /// itself unreliable while the search result capture is non-deterministic,
+  /// so "d10 is fine" and "d10 is worse but the noise hides it" are currently
+  /// indistinguishable. Revisit once determinism is fixed and the agreement
+  /// sweep can be re-run through the real pipeline.
+  static const int batchAnalysisDepth = 12;
+
+  /// MultiPV for the full-game batch pass.
+  ///
+  /// 1 line is ~2.7x faster than 3. The cost is that "Great" (only-good-move)
+  /// detection needs a second line to compare against, so it cannot fire —
+  /// see classifyMoveCpl's secondBestCentipawnLoss parameter, which is passed
+  /// null when only one line is available.
+  static const int batchAnalysisMultiPv = 1;
 }
 
 /// Represents a difficulty level configuration
