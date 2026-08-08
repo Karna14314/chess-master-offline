@@ -183,6 +183,7 @@ class MockStockfishService implements StockfishService {
     void Function(AnalysisResult)? onUpdate,
     String? startingFen,
     List<String>? moves,
+    bool isBatchAnalysis = false,
   }) async {
     return AnalysisResult(evaluation: 0, lines: [], depth: depth);
   }
@@ -198,6 +199,12 @@ class MockStockfishService implements StockfishService {
 
   @override
   void setMaxStrength() {}
+
+  @override
+  void setAnalysisStrength() {}
+
+  @override
+  void setLivePlayStrength() {}
 
   @override
   void newGame() {}

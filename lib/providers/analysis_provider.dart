@@ -433,8 +433,11 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
     final token = ++_analysisToken; // Capture cancellation token
 
-    // Ensure engine is at maximum strength for full game analysis
+    // Ensure engine is at maximum strength for full game analysis, and give it
+    // more threads/hash than live play for the duration of the batch. Restored
+    // in the finally block below, including on the cancellation path.
     _stockfish!.setMaxStrength();
+    _stockfish!.setAnalysisStrength();
 
     // Flush the transposition table ONCE at the start of the batch so the run
     // does not inherit entries from prior live play. Per-ply flushes are
@@ -739,6 +742,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       );
     } finally {
       _isAnalyzing = false;
+      // Return the engine to its low-footprint live-play configuration. This
+      // runs on every exit path: normal completion, cancellation and errors.
+      _stockfish?.setLivePlayStrength();
       // Ensure state.isAnalyzing is always cleared, even on cancellation
       if (state.isAnalyzing) {
         state = state.copyWith(isAnalyzing: false);

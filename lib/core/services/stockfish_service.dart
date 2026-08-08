@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:stockfish_chess_engine/stockfish_chess_engine.dart';
@@ -246,8 +247,8 @@ class StockfishService {
 
         // --- Step 4: Send engine options ---
         debugPrint('ENGINE INIT: Applying engine options');
-        _sendCommandDirect('setoption name Threads value 1'); // Single thread for stability
-        _sendCommandDirect('setoption name Hash value 32'); // 32MB to reduce memory pressure
+        _sendCommandDirect('setoption name Threads value $livePlayThreads'); // Single thread for stability
+        _sendCommandDirect('setoption name Hash value $livePlayHashMb'); // 32MB to reduce memory pressure
         _sendCommandDirect('setoption name UCI_LimitStrength value true');
 
         // --- Step 5: Send "isready", wait for "readyok" ---
@@ -1137,6 +1138,52 @@ class StockfishService {
   void setMaxStrength() {
     if (_isDisposed || _useFallback) return;
     _sendCommand('setoption name UCI_LimitStrength value false');
+  }
+
+  /// Threads/Hash used for live play. Chosen for stability and low memory
+  /// pressure on the widest range of devices; see initialize().
+  static const int livePlayThreads = 1;
+  static const int livePlayHashMb = 32;
+
+  /// Upper bounds for batch analysis. Deliberately conservative: the engine
+  /// runs in a spawned isolate alongside the UI on phones that may be thermally
+  /// constrained, and higher thread counts have historically been a source of
+  /// native crashes in this integration.
+  static const int maxAnalysisThreads = 3;
+  static const int analysisHashMb = 128;
+
+  /// Threads to use for batch analysis on this device: half the available
+  /// cores (leaving headroom for the UI isolate and the platform), clamped to
+  /// [maxAnalysisThreads] and never below 1.
+  int get _analysisThreads {
+    final cores = Platform.numberOfProcessors;
+    if (cores <= 2) return 1;
+    return (cores ~/ 2).clamp(1, maxAnalysisThreads);
+  }
+
+  /// Raise Threads/Hash for a full-game batch analysis pass.
+  /// Must be paired with [setLivePlayStrength] when the pass finishes or is
+  /// cancelled, so live play returns to its low-footprint configuration.
+  void setAnalysisStrength() {
+    if (_isDisposed || _useFallback) return;
+    final threads = _analysisThreads;
+    _sendCommand('setoption name Threads value $threads');
+    _sendCommand('setoption name Hash value $analysisHashMb');
+    debugPrint(
+      'ENGINE CONFIG: batch analysis Threads=$threads Hash=${analysisHashMb}MB '
+      '(cores=${Platform.numberOfProcessors})',
+    );
+  }
+
+  /// Restore the live-play Threads/Hash configuration.
+  void setLivePlayStrength() {
+    if (_isDisposed || _useFallback) return;
+    _sendCommand('setoption name Threads value $livePlayThreads');
+    _sendCommand('setoption name Hash value $livePlayHashMb');
+    debugPrint(
+      'ENGINE CONFIG: live play Threads=$livePlayThreads '
+      'Hash=${livePlayHashMb}MB',
+    );
   }
 
   /// Stop any ongoing analysis
