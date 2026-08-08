@@ -501,6 +501,24 @@ class StockfishService {
     return scoreCp;
   }
 
+  /// Convert an engine side-to-move "score mate N" into a white-relative mate
+  /// count (positive = white mates, negative = black mates).
+  ///
+  /// For N != 0 this is just [_toWhiteRelative] (Stockfish mate scores are
+  /// relative to the side to move). For N == 0 the side to move is checkmated
+  /// right now and the sign is lost in [_toWhiteRelative] (negating zero is
+  /// zero), so the winner must be derived from the FEN side-to-move: if black
+  /// is to move, black is the mated side and white-relative is positive.
+  @visibleForTesting
+  int mateToWhiteRelative(int rawMate, String fen) {
+    if (rawMate != 0) {
+      return _toWhiteRelative(rawMate, fen);
+    }
+    final turn = fen.trim().split(_fenSpaceRegex);
+    final blackToMove = turn.length >= 2 && turn[1] == 'b';
+    return blackToMove ? 1 : -1;
+  }
+
   /// Test-only accessor for [_isValidFen].
   @visibleForTesting
   bool isValidFenForTesting(String fen) => _isValidFen(fen);
@@ -737,7 +755,10 @@ class StockfishService {
 
           final mateMatch = _scoreMateRegex.firstMatch(trimmedLine);
           if (mateMatch != null) {
-            final rawMate = _toWhiteRelative(int.parse(mateMatch.group(1)!), fen);
+            final rawMate = mateToWhiteRelative(
+              int.parse(mateMatch.group(1)!),
+              fen,
+            );
             mateIn = rawMate;
             // Convert mate to centipawn value for consistent evaluation
             evaluation = rawMate > 0 ? (10000 - rawMate * 10) : (-10000 + rawMate.abs() * 10);
@@ -970,7 +991,10 @@ class StockfishService {
               eval = _toWhiteRelative(int.parse(scoreMatch.group(1)!), fen);
             }
             if (mateMatch != null) {
-              mate = _toWhiteRelative(int.parse(mateMatch.group(1)!), fen);
+              mate = mateToWhiteRelative(
+                int.parse(mateMatch.group(1)!),
+                fen,
+              );
             }
 
             final moves = pvMovesMatch.group(1)!.split(' ');

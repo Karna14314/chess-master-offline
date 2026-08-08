@@ -111,6 +111,9 @@ class MockStockfishService implements StockfishService {
 
   @override
   bool isValidFenForTesting(String fen) => true;
+
+  @override
+  int mateToWhiteRelative(int rawMate, String fen) => rawMate;
 }
 
 void main() {
