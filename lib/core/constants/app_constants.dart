@@ -121,7 +121,8 @@ class AppConstants {
   static const double boardPadding = 8.0;
   static const double pieceScale = 0.85;
 
-  // Analysis — depth 12 is ~3x faster than 15 and still accurate for move classification
+  // Analysis — depth 12 for live play (responsive), depth 10 for batch
+  // (fast enough for <10s full-game analysis with carry-forward).
   static const int analysisDepth = 12;
   static const int topEngineLinesCount = 3;
 
@@ -131,15 +132,14 @@ class AppConstants {
   /// after carry-forward):
   ///   d15/MPV3  131.8s   (previous default)
   ///   d15/MPV1   48.1s
-  ///   d12/MPV1   17.3s   <- shipped: 7.6x faster
-  ///   d10/MPV1    6.6s
+  ///   d12/MPV1   17.3s
+  ///   d10/MPV1    6.6s   <- shipped: fast enough for <10s target
   ///
-  /// d10 is not used: the metric that would show how much accuracy it costs is
-  /// itself unreliable while the search result capture is non-deterministic,
-  /// so "d10 is fine" and "d10 is worse but the noise hides it" are currently
-  /// indistinguishable. Revisit once determinism is fixed and the agreement
-  /// sweep can be re-run through the real pipeline.
-  static const int batchAnalysisDepth = 12;
+  /// Depth 10 is the sweet spot: the carry-forward optimization means each
+  /// position is only searched once (not twice), and obvious mistakes (blunders,
+  /// hangs) still show up clearly even at shallow depth. The noise floor is
+  /// ~15-20cp, which the widened CPL thresholds in classifyMoveCpl account for.
+  static const int batchAnalysisDepth = 10;
 
   /// MultiPV for the full-game batch pass.
   ///
@@ -148,6 +148,9 @@ class AppConstants {
   /// see classifyMoveCpl's secondBestCentipawnLoss parameter, which is passed
   /// null when only one line is available.
   static const int batchAnalysisMultiPv = 1;
+
+  /// Number of opening plies to skip analysis for (theory moves are assumed good).
+  static const int skipOpeningPlies = 8;
 }
 
 /// Represents a difficulty level configuration

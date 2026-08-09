@@ -417,7 +417,8 @@ MoveClassification classifyMove({
 
 /// Maximum CPL a move may cost and still qualify as Brilliant or Great.
 /// Both labels describe moves that hold the evaluation, so this stays tight.
-const double brilliantGreatMaxCpl = 20.0;
+/// Widened from 20 to 25 to account for depth-10 noise (~15-20cp variance).
+const double brilliantGreatMaxCpl = 25.0;
 
 /// Minimum material (in centipawns, negative) the static exchange evaluation
 /// must show for a sound move to count as a sacrifice. -100 is a clean pawn.

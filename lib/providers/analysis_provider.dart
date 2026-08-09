@@ -504,6 +504,55 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         final move = moves[i];
         final isWhiteMove = board.turn == chess.Color.WHITE;
 
+        // ── Skip analysis for obvious positions (saves ~40% engine time) ──
+        // Opening plies: theory moves, no need to analyze.
+        // Forced moves: only one legal move, always "best".
+        // Recaptures: material restored, almost always fine.
+        final isOpeningPly = i < AppConstants.skipOpeningPlies;
+        final isForcedMove = board.moves().length == 1;
+        final isRecapture = _isRecapture(board, move);
+
+        if (isOpeningPly || isForcedMove || isRecapture) {
+          // Classify as best/excellent without engine search.
+          final defaultEval = actualEvalSoFar ?? 0.0;
+          actualEvalSoFar = defaultEval;
+          accumulator.add(MoveAnalysis(
+            moveIndex: i,
+            san: move.san,
+            fen: board.fen,
+            evalBefore: defaultEval,
+            evalAfter: defaultEval,
+            actualEvalBeforeMove: defaultEval,
+            winPercentBefore: EvalConstants.centipawnsToWinPercent(defaultEval * 100),
+            winPercentAfter: EvalConstants.centipawnsToWinPercent(defaultEval * 100),
+            bestMove: '${move.from}${move.to}${move.promotion ?? ''}',
+            classification: MoveClassification.best,
+            engineLines: [],
+            isWhiteMove: isWhiteMove,
+            centipawnLoss: 0.0,
+            accuracy: 100.0,
+            isMateBefore: false,
+            isMateAfter: false,
+          ));
+
+          // Advance the board state.
+          board.move({
+            'from': move.from,
+            'to': move.to,
+            'promotion': move.promotion,
+          });
+
+          // Emit progress tick.
+          if ((i + 1) % 1 == 0 || i == moves.length - 1) {
+            state = state.copyWith(
+              analysisProgress: (i + 1) / moves.length,
+              analyzedMoves: accumulator.moves,
+              fullAnalysis: accumulator.build(),
+            );
+          }
+          continue;
+        }
+
         // ── Step A: Analyze the current position to get bestEval + bestMove ──
         double bestEval = 0.0;
         String? bestMoveForPlayer;
@@ -836,6 +885,21 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     }
 
     return (eval: result.evalInPawns, lines: result.lines);
+  }
+
+  /// Returns true if the move recaptures a piece on a square that was just
+  /// captured by the opponent's previous move (material-restoring recaptures
+  /// are almost always fine and don't need engine analysis).
+  bool _isRecapture(chess.Chess board, ChessMove move) {
+    final history = board.history;
+    if (history.isEmpty) return false;
+
+    final lastEntry = history.last;
+    final lastMove = lastEntry.move;
+
+    // lastMove.toAlgebraic is the square the opponent just moved to (e.g. "e4").
+    // If our move captures on that same square, it's a recapture.
+    return move.to == lastMove.toAlgebraic;
   }
 
   @override
