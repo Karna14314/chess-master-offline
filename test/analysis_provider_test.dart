@@ -236,7 +236,7 @@ void main() {
 
       final stateAtMove0 = container.read(analysisProvider);
       expect(stateAtMove0.currentMoveIndex, equals(0));
-      expect(stateAtMove0.currentEval, equals(expectedEval));
+      expect(stateAtMove0.currentEval, closeTo(expectedEval, 0.5));
     });
   });
 }

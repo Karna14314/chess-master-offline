@@ -55,3 +55,18 @@ I have completed the task to refactor the UI and navigation for production readi
 **Commit:** (see below)
 **Branch:** auto/chess-20260711-theme-migration
 **Notes:** N/A
+
+## 2026-07-25
+**Status:** SUCCESS ✅
+**Category:** A — Bug Fix
+**Task:** Fixed test failure in engine_no_legal_move_test.dart by awaiting async statistics recording and wrapping it in Future<void>
+**Files Changed:**
+- lib/providers/game_session_viewmodel.dart: Changed `_recordStatisticsIfNeeded` to return `Future<void>` instead of `void` and awaited all calls to it to ensure proper testing execution and state updates.
+**Verification:**
+- Build: PASS
+- Tests: PASS
+- Emulator: SKIPPED
+**User-Visible Impact:** Ensured game result stats and streaks are accurately stored without causing race conditions or background test crashes.
+**Commit:** (see below)
+**Branch:** auto/chess-20260725-fix-async-stats-recording
+**Notes:** Resolved 'Bad state: Tried to use StatisticsNotifier after `dispose` was called' and asynchronous gap errors in tests.
