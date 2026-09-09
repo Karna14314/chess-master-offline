@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
+import 'package:chess_master/providers/journey_provider.dart';
 import 'package:chess_master/screens/puzzles/puzzle_screen.dart';
 import 'package:chess_master/screens/puzzles/daily_puzzle_screen.dart';
 import 'package:chess_master/screens/puzzles/puzzle_history_screen.dart';
@@ -14,6 +15,7 @@ enum PuzzleMode {
   random, // Random puzzles
   eloRange, // Specific ELO range
   theme, // By theme
+  journey, // Puzzle Journey progression
 }
 
 /// Puzzle menu screen for selecting puzzle mode
@@ -47,6 +49,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
   @override
   Widget build(BuildContext context) {
     final stats = ref.watch(puzzleStatsProvider);
+    final journey = ref.watch(journeyProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -81,6 +84,13 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Puzzle Journey hero card at the top
+              _JourneyHeroCard(
+                journey: journey,
+                onContinue: () => _startPuzzles(PuzzleMode.journey),
+              ),
+              const SizedBox(height: 24),
+
               // Stats card
               _StatsCard(stats: stats),
               const SizedBox(height: 32),
@@ -120,9 +130,9 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Custom ELO range
+              // Custom training section
               Text(
-                'Custom Range',
+                'Custom Training',
                 style: GoogleFonts.inter(
                   color: AppTheme.textPrimaryFor(context),
                   fontSize: 20,
@@ -130,30 +140,31 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+
+              // Rating range selector
               _EloRangeSelector(
                 minElo: _minElo,
                 maxElo: _maxElo,
-                onMinChanged: (v) => setState(() => _minElo = v),
-                onMaxChanged: (v) => setState(() => _maxElo = v),
+                onMinChanged: (val) => setState(() => _minElo = val),
+                onMaxChanged: (val) => setState(() => _maxElo = val),
                 onStart: () => _startPuzzles(PuzzleMode.eloRange),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
-              // Theme selection
+              // Theme selector
               Text(
-                'By Theme',
+                'Practice by Theme',
                 style: GoogleFonts.inter(
                   color: AppTheme.textPrimaryFor(context),
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _ThemeSelector(
                 themes: _themes,
                 selectedTheme: _selectedTheme,
-                onThemeSelected:
-                    (theme) => setState(() => _selectedTheme = theme),
+                onThemeSelected: (theme) => setState(() => _selectedTheme = theme),
                 onStart: () => _startPuzzles(PuzzleMode.theme),
               ),
             ],
@@ -175,52 +186,36 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
         color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.borderColorFor(context)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-          onTap: onTap,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          title: Text(
-            title,
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimaryFor(context),
+          child: Icon(icon, color: color, size: 24),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.bold,
             fontSize: 16,
+            color: AppTheme.textPrimaryFor(context),
           ),
         ),
         subtitle: Text(
           subtitle,
           style: GoogleFonts.inter(
             color: AppTheme.textSecondaryFor(context),
-              fontSize: 13,
-            ),
+            fontSize: 13,
           ),
-          trailing: Icon(
-            Icons.chevron_right,
-            color: AppTheme.textSecondary.withValues(alpha: 0.5),
-          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: AppTheme.textSecondaryFor(context).withValues(alpha: 0.5),
         ),
       ),
     );
@@ -231,6 +226,9 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
 
     // Configure based on mode
     switch (mode) {
+      case PuzzleMode.journey:
+        notifier.setModeConfig(mode: PuzzleFilterMode.journey);
+        break;
       case PuzzleMode.daily:
         notifier.setModeConfig(mode: PuzzleFilterMode.daily);
         // Navigate to special daily puzzle screen
@@ -265,6 +263,176 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const PuzzleScreen()),
+    );
+  }
+}
+
+/// Puzzle Journey Hero Card at the top of Puzzle menu screen
+class _JourneyHeroCard extends StatelessWidget {
+  final JourneyState journey;
+  final VoidCallback onContinue;
+
+  const _JourneyHeroCard({
+    required this.journey,
+    required this.onContinue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isNotStarted = journey.solvedCount == 0;
+    final buttonText = isNotStarted ? 'Start Journey →' : 'Continue Journey →';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.borderColorFor(context)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Puzzle Journey',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimaryFor(context),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${journey.completionPercent.toStringAsFixed(1)}%',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Level ${journey.currentLevel} / $kTotalJourneyLevels',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimaryFor(context),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceColor(context),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '${journey.solvedCount}',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                      Text(
+                        'Solved',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppTheme.textSecondaryFor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceColor(context),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '${journey.remainingCount}',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimaryFor(context),
+                        ),
+                      ),
+                      Text(
+                        'Remaining',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppTheme.textSecondaryFor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: journey.completionPercent / 100,
+              backgroundColor: AppTheme.borderColorFor(context),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onContinue,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                buttonText,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -543,5 +711,3 @@ class _ThemeSelector extends StatelessWidget {
         .join(' ');
   }
 }
-
-

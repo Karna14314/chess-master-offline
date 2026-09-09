@@ -67,6 +67,27 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
       isUnlocked: false,
     ),
     Achievement(
+      id: 'journey_10',
+      title: 'Journey Pioneer',
+      description: 'Solve 10 Journey Puzzles.',
+      icon: Icons.explore_outlined,
+      isUnlocked: false,
+    ),
+    Achievement(
+      id: 'journey_100',
+      title: 'Puzzle Explorer',
+      description: 'Solve 100 Journey Puzzles.',
+      icon: Icons.stars_outlined,
+      isUnlocked: false,
+    ),
+    Achievement(
+      id: 'journey_1000',
+      title: 'Journey Grandmaster',
+      description: 'Complete all 1000 Journey Puzzles.',
+      icon: Icons.military_tech_outlined,
+      isUnlocked: false,
+    ),
+    Achievement(
       id: 'streak_3',
       title: 'On a Roll',
       description: 'Maintain a 3-day playing streak.',
@@ -147,6 +168,9 @@ class AchievementNotifier extends StateNotifier<List<Achievement>> {
   void checkPuzzlesSolved(int totalSolved) {
     if (totalSolved >= 5) unlock('tactics_5');
     if (totalSolved >= 25) unlock('tactics_25');
+    if (totalSolved >= 10) unlock('journey_10');
+    if (totalSolved >= 100) unlock('journey_100');
+    if (totalSolved >= 1000) unlock('journey_1000');
   }
 
   void checkStreak(int streakCount) {

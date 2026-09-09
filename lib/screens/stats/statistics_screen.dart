@@ -1,3 +1,5 @@
+import 'package:chess_master/providers/streak_provider.dart';
+import 'package:chess_master/providers/journey_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
@@ -80,6 +82,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             const SizedBox(height: 24),
 
             // Puzzles section
+            _buildJourneySection(context),
+            const SizedBox(height: 24),
             _buildPuzzlesSection(context, stats),
             const SizedBox(height: 24),
 
@@ -376,6 +380,81 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+    Widget _buildJourneySection(BuildContext context) {
+    final journey = ref.watch(journeyProvider);
+    final streak = ref.watch(streakProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor(context),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.stars_rounded, color: Colors.amber),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Puzzle Journey',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Text(
+                '${journey.completionPercent.toStringAsFixed(1)}% Done',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _StatItem(
+                label: 'Level',
+                value: '${journey.currentLevel}',
+              ),
+              _StatItem(
+                label: 'Solved',
+                value: '${journey.solvedCount}',
+              ),
+              _StatItem(
+                label: 'Remaining',
+                value: '${journey.remainingCount}',
+              ),
+              _StatItem(
+                label: 'Streak',
+                value: '${streak.streakCount}d',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: journey.completionPercent / 100,
+              backgroundColor: AppTheme.borderColorFor(context),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              minHeight: 6,
             ),
           ),
         ],

@@ -59,7 +59,6 @@ class MockDatabaseService implements DatabaseService {
   Future<List<Map<String, dynamic>>> getPuzzleHistory({int limit = 50}) async =>
       [];
 
-  @override
   Future<List<int>> getPlayedPuzzleIds() async => [];
 
   @override
