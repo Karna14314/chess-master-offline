@@ -1,3 +1,4 @@
+import 'package:chess_master/providers/journey_provider.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -183,6 +184,7 @@ enum PuzzleFilterMode {
   eloRange, // Specific ELO range
   theme, // By theme
   daily, // Daily puzzle
+  journey, // Structured 1000 level journey
 }
 
 /// Puzzle notifier managing puzzle logic
@@ -362,6 +364,11 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
                   .toList();
         }
         break;
+
+      case PuzzleFilterMode.journey:
+        if (_allPuzzles.isEmpty) return null;
+        final journeyState = _ref.read(journeyProvider);
+        return _ref.read(journeyProvider.notifier).getPuzzleForLevel(journeyState.currentLevel, _allPuzzles);
 
       case PuzzleFilterMode.daily:
         // Daily puzzle based on date
@@ -710,6 +717,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
     // Save to puzzle progress tracking history
     await db.savePuzzleProgress(puzzle.id, solved);
+
+    if (solved && _mode == PuzzleFilterMode.journey) {
+      await _ref.read(journeyProvider.notifier).completeCurrentLevel();
+    }
 
     if (!mounted) return;
     final statsNotifier = _ref.read(statisticsProvider.notifier);

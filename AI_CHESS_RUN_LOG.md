@@ -55,3 +55,14 @@ I have completed the task to refactor the UI and navigation for production readi
 **Commit:** (see below)
 **Branch:** auto/chess-20260711-theme-migration
 **Notes:** N/A
+
+
+---
+
+## Task: Puzzle Progression System & Home Screen Redesign
+- Removed duplicate 1500 ELO casual bot game card from Home Screen.
+- Implemented  managing 1000 progression levels mapped to offline puzzles sorted by difficulty rating.
+- Integrated premium  card on Home Screen directly above Game Modes.
+- Added Puzzle Journey hero card at top of .
+- Built lightweight completion dialogs and milestone achievement popups with one-tap continuation.
+- Added Journey statistics tracking to  and registered achievements in .

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/puzzle_model.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
+import 'package:chess_master/providers/journey_provider.dart';
 import 'package:chess_master/screens/puzzles/widgets/puzzle_board_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17,6 +18,8 @@ class PuzzleScreen extends ConsumerStatefulWidget {
 }
 
 class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
+  bool _hasShownJourneyDialog = false;
+
   @override
   void initState() {
     super.initState();
@@ -54,9 +57,201 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     }
   }
 
+  void _checkJourneyCompletionDialog(PuzzleGameState state) {
+    if (state.state == PuzzleState.completed && !_hasShownJourneyDialog) {
+      _hasShownJourneyDialog = true;
+      final journey = ref.read(journeyProvider);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        // Show milestone dialog if a milestone was unlocked, else lightweight completion dialog
+        if (journey.newlyUnlockedMilestone != null) {
+          _showMilestoneUnlockedDialog(journey.newlyUnlockedMilestone!);
+        } else {
+          _showJourneyCompletionDialog(journey);
+        }
+      });
+    } else if (state.state != PuzzleState.completed) {
+      _hasShownJourneyDialog = false;
+    }
+  }
+
+  void _showJourneyCompletionDialog(JourneyState journey) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppTheme.cardColor(context),
+          title: Row(
+            children: [
+              const Icon(Icons.stars_rounded, color: Colors.amber, size: 28),
+              const SizedBox(width: 10),
+              Text(
+                'Puzzle Solved!',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimaryFor(context),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Journey Progress',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textSecondaryFor(context),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${journey.solvedCount} / $kTotalJourneyLevels',
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimaryFor(context),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: journey.completionPercent / 100,
+                  backgroundColor: AppTheme.borderColorFor(context),
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  minHeight: 8,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${journey.completionPercent.toStringAsFixed(1)}% Completed',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.textSecondaryFor(context),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(puzzleProvider.notifier).nextPuzzle();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Continue',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward, size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showMilestoneUnlockedDialog(int milestone) {
+    ref.read(journeyProvider.notifier).clearNewlyUnlockedMilestone();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppTheme.cardColor(context),
+          title: Column(
+            children: [
+              const Icon(Icons.workspace_premium, color: Colors.amber, size: 48),
+              const SizedBox(height: 10),
+              Text(
+                'Achievement Unlocked!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimaryFor(context),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Puzzle Explorer',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Solved $milestone Journey Puzzles',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.textSecondaryFor(context),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(puzzleProvider.notifier).nextPuzzle();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Continue →',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(puzzleProvider);
+    _checkJourneyCompletionDialog(state);
 
     return Scaffold(
       appBar: AppBar(
@@ -84,9 +279,8 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 Text(
                   '${state.currentRating}',
                   style: GoogleFonts.inter(
-                    color: AppTheme.textPrimaryFor(context),
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    color: AppTheme.textPrimaryFor(context),
                   ),
                 ),
               ],
@@ -94,52 +288,57 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
           ),
         ],
       ),
-      body: _buildBody(state),
+      body: SafeArea(
+        child:
+            state.isLoading
+                ? const Center(
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryColor,
+                  ),
+                )
+                : state.errorMessage != null && state.currentPuzzle == null
+                ? _buildErrorWidget(state)
+                : _buildPuzzleContent(state),
+      ),
     );
   }
 
-  Widget _buildBody(PuzzleGameState state) {
-    if (state.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryColor),
-      );
-    }
-
-    if (state.errorMessage != null && state.currentPuzzle == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, color: AppTheme.error, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              state.errorMessage!,
-              style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _initializePuzzles,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+  Widget _buildErrorWidget(PuzzleGameState state) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: AppTheme.error, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            state.errorMessage!,
+            style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _initializePuzzles,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 12,
               ),
-              child: Text(
-                'Retry',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ],
-        ),
-      );
-    }
+            child: Text(
+              'Retry',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildPuzzleContent(PuzzleGameState state) {
     if (state.currentPuzzle == null || state.board == null) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.primaryColor),
@@ -327,6 +526,8 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
 
   Widget _buildPuzzleInfoCard(PuzzleGameState state) {
     final puzzle = state.currentPuzzle!;
+    final journey = ref.watch(journeyProvider);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -351,10 +552,10 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'Rating: ${puzzle.rating}',
+                  'Level ${journey.currentLevel} of $kTotalJourneyLevels • Rating: ${puzzle.rating}',
                   style: GoogleFonts.inter(
-                  color: AppTheme.textSecondaryFor(context),
-                  fontSize: 12,
+                    color: AppTheme.textSecondaryFor(context),
+                    fontSize: 12,
                   ),
                 ),
               ],

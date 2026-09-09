@@ -1,3 +1,6 @@
+import 'package:chess_master/providers/journey_provider.dart';
+import 'package:chess_master/providers/puzzle_provider.dart';
+import 'package:chess_master/screens/puzzles/puzzle_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
@@ -6,7 +9,6 @@ import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/providers/streak_provider.dart';
-import 'package:chess_master/providers/statistics_provider.dart';
 import 'package:chess_master/screens/game/game_screen.dart';
 import 'package:chess_master/screens/game_setup/new_game_setup_screen.dart';
 import 'package:chess_master/screens/history/game_history_screen.dart';
@@ -60,10 +62,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 20),
                     _buildDailyStreakAndPuzzleHero(context),
                     const SizedBox(height: 24),
-                     _buildQuickPlayHero(context),
-                     const SizedBox(height: 16),
-                     _buildAdaptiveDifficultyBanner(context, textPrimary, textSecondary),
-                     const SizedBox(height: 16),
+                    _buildQuickPlayHero(context),
+                    const SizedBox(height: 16),
+                    _buildPuzzleJourneyCard(context, textPrimary, textSecondary, cardColor, borderColor),
+                    const SizedBox(height: 24),
                    ],
                  ),
                ),
@@ -456,85 +458,120 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildAdaptiveDifficultyBanner(
-    BuildContext context, Color textPrimary, Color textSecondary,
+  Widget _buildPuzzleJourneyCard(
+    BuildContext context,
+    Color textPrimary,
+    Color textSecondary,
+    Color cardColor,
+    Color borderColor,
   ) {
-    final stats = ref.watch(statisticsProvider);
-    final suggestion = ref.read(statisticsProvider.notifier).getDifficultySuggestion();
+    final journey = ref.watch(journeyProvider);
+    final isNotStarted = journey.solvedCount == 0;
+    final buttonText = isNotStarted ? 'Start Journey →' : 'Continue Journey →';
 
-    if (suggestion == null && stats.totalGames < 3) return const SizedBox.shrink();
-
-    final recommended = ref.read(statisticsProvider.notifier).getRecommendedDifficulty();
-    final showSuggestion = suggestion != null;
-
-    return GestureDetector(
-      onTap: () {
-        if (!showSuggestion) {
-          _startQuickGame(recommended.level);
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: showSuggestion
-              ? const Color(0xFF00ACC1).withValues(alpha: 0.1)
-              : AppTheme.primaryColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: showSuggestion
-                ? const Color(0xFF00ACC1).withValues(alpha: 0.3)
-                : AppTheme.primaryColor.withValues(alpha: 0.2),
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: showSuggestion
-                    ? const Color(0xFF00ACC1).withValues(alpha: 0.2)
-                    : AppTheme.primaryColor.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'PUZZLE JOURNEY',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryColor,
+                    letterSpacing: 1.0,
+                  ),
+                ),
               ),
-              child: Icon(
-                showSuggestion ? Icons.trending_up_rounded : Icons.emoji_events_rounded,
-                color: showSuggestion ? const Color(0xFF00ACC1) : AppTheme.primaryColor,
-                size: 22,
+              Text(
+                '${journey.completionPercent.toStringAsFixed(1)}%',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Level ${journey.currentLevel} of $kTotalJourneyLevels',
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${journey.solvedCount} puzzles solved',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: textSecondary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: journey.completionPercent / 100,
+              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.12),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                ref.read(puzzleProvider.notifier).setModeConfig(mode: PuzzleFilterMode.journey);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PuzzleScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                buttonText,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    showSuggestion
-                        ? suggestion
-                        : 'Rating: ${stats.currentGameElo} ELO',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    showSuggestion
-                        ? 'Based on your recent performance'
-                        : 'Recommended: ${recommended.name} (${recommended.elo})',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (!showSuggestion)
-              Icon(Icons.chevron_right, color: textSecondary),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
