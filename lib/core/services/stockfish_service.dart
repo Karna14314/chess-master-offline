@@ -1109,7 +1109,7 @@ class StockfishService {
         // transposition table between positions that differ by a single move.
         // Keeping the TT lets the engine reuse that work.
         if (wasStopped && !isBatchAnalysis) {
-          _sendCommandDirect('ucinewgame');
+          _sendCommand('ucinewgame');
         }
 
         // Set MultiPV for multiple lines
@@ -1426,27 +1426,31 @@ class StockfishService {
   void stopAnalysis() {
     if (_isDisposed || _useFallback) return;
     _sendCommand('stop');
+    _sendCommand('isready');
   }
 
   /// Stop current search and wait for it to finish (for intentional search replacement)
   /// The output-stream subscription is guaranteed to be cancelled on every exit
   /// path (bestmove received, timeout) via `finally`.
   Future<void> _stopCurrentSearchAndWait() async {
-    if (!_searchInFlight) return;
+    if (!_searchInFlight && !_isEngineBusy) return;
 
     final completer = Completer<void>();
     final subscription = _outputController.stream.listen((line) {
-      if (line.trim().startsWith('bestmove') && !completer.isCompleted) {
+      final trimmed = line.trim();
+      if ((trimmed.startsWith('bestmove') || trimmed == 'readyok') &&
+          !completer.isCompleted) {
         completer.complete();
       }
     });
 
     _sendCommand('stop');
+    _sendCommand('isready');
 
     try {
       await completer.future.timeout(const Duration(seconds: 2));
     } catch (_) {
-      // bestmove not received in time — proceed anyway.
+      // bestmove or readyok not received in time — proceed anyway.
     } finally {
       await subscription.cancel();
       _searchInFlight = false;

@@ -75,7 +75,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     AnalysisNotifier notifier,
   ) {
     final currentMoveIndex = state.currentMoveIndex;
-    if (currentMoveIndex < 0 || currentMoveIndex >= state.analyzedMoves.length) {
+    if (currentMoveIndex < 0 ||
+        currentMoveIndex >= state.analyzedMoves.length) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Analysis for this move is still in progress...'),
@@ -93,7 +94,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         classification != MoveClassification.miss) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('This move was already good! Practice your mistakes instead.'),
+          content: Text(
+            'This move was already good! Practice your mistakes instead.',
+          ),
         ),
       );
       return;
@@ -110,56 +113,57 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Practice Position'),
-            backgroundColor: Theme.of(context).colorScheme.surface,
-          ),
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.fitness_center_rounded,
-                    size: 64,
-                    color: Color(0xFF00ACC1),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Practice Mode',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Find the best move in this position.\nYour original move was: ${analyzedMove.san} (${classification.name})',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'FEN: $practiceFen',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.analytics_rounded),
-                    label: const Text('Back to Analysis'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
+        builder:
+            (context) => Scaffold(
+              appBar: AppBar(
+                title: const Text('Practice Position'),
+                backgroundColor: Theme.of(context).colorScheme.surface,
+              ),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.fitness_center_rounded,
+                        size: 64,
+                        color: Color(0xFF00ACC1),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Practice Mode',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Find the best move in this position.\nYour original move was: ${analyzedMove.san} (${classification.name})',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 32),
+                      Text(
+                        'FEN: $practiceFen',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.analytics_rounded),
+                        label: const Text('Back to Analysis'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
       ),
     );
   }
@@ -309,7 +313,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                               : null,
                       onPracticeFromHere:
                           state.currentMoveIndex >= 0
-                              ? () => _startPracticeMode(context, state, notifier)
+                              ? () =>
+                                  _startPracticeMode(context, state, notifier)
                               : null,
                     ),
 

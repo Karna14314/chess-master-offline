@@ -22,7 +22,8 @@ List<String> _uciToSan(String startingFen, List<String> uciMoves) {
       final legalMoves = board.generate_moves();
       chess.Move? targetMove;
       for (final m in legalMoves) {
-        if (m.fromAlgebraic == from && m.toAlgebraic == to &&
+        if (m.fromAlgebraic == from &&
+            m.toAlgebraic == to &&
             (promotion == null || m.promotion?.name == promotion)) {
           targetMove = m;
           break;
@@ -131,12 +132,16 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
               child: Center(
                 child: Text(
                   'Analyzing position...',
-                  style: GoogleFonts.inter(color: AppTheme.textHintFor(context)),
+                  style: GoogleFonts.inter(
+                    color: AppTheme.textHintFor(context),
+                  ),
                 ),
               ),
             )
           else
-            ...displayLines.map((line) => _EngineLineRow(line: line, fen: widget.fen)),
+            ...displayLines.map(
+              (line) => _EngineLineRow(line: line, fen: widget.fen),
+            ),
 
           // Expand / Collapse button
           if (widget.lines.length > 1)

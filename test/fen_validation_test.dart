@@ -68,8 +68,10 @@ bool isValidFenDebug(String fen) {
   }
 
   // Kings must not be adjacent
-  if (whiteKingRow != null && blackKingRow != null &&
-      whiteKingCol != null && blackKingCol != null) {
+  if (whiteKingRow != null &&
+      blackKingRow != null &&
+      whiteKingCol != null &&
+      blackKingCol != null) {
     final rowDiff = (whiteKingRow - blackKingRow).abs();
     final colDiff = (whiteKingCol - blackKingCol).abs();
     if (rowDiff <= 1 && colDiff <= 1) {
@@ -115,16 +117,20 @@ bool isValidFenDebug(String fen) {
       print('  FAIL: Duplicate castling flags');
       return false;
     }
-    print('  Castling="$castling", whiteKingRow=$whiteKingRow, blackKingRow=$blackKingRow');
+    print(
+      '  Castling="$castling", whiteKingRow=$whiteKingRow, blackKingRow=$blackKingRow',
+    );
     if (castling.contains('K') && !rows[7].contains('K')) {
       print('  FAIL: K flag but no king on rank 1');
       return false;
     }
-    if ((castling.contains('K') || castling.contains('Q')) && whiteKingRow != 7) {
+    if ((castling.contains('K') || castling.contains('Q')) &&
+        whiteKingRow != 7) {
       print('  FAIL: White castling but king not on row 7');
       return false;
     }
-    if ((castling.contains('k') || castling.contains('q')) && blackKingRow != 0) {
+    if ((castling.contains('k') || castling.contains('q')) &&
+        blackKingRow != 0) {
       print('  FAIL: Black castling but king not on row 0');
       return false;
     }

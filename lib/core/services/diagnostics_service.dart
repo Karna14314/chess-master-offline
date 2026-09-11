@@ -39,7 +39,9 @@ class LocalDiagnosticsService {
 
       if (!await _logFile!.exists()) {
         await _logFile!.create(recursive: true);
-        await _logFile!.writeAsString('=== ChessMaster Diagnostic Log Started [${DateTime.now().toIso8601String()}] ===\n');
+        await _logFile!.writeAsString(
+          '=== ChessMaster Diagnostic Log Started [${DateTime.now().toIso8601String()}] ===\n',
+        );
       }
 
       // Capture uncaught Flutter framework errors
@@ -50,7 +52,10 @@ class LocalDiagnosticsService {
         } else {
           FlutterError.presentError(details);
         }
-        logError('FlutterFrameworkError: ${details.exceptionAsString()}', stackTrace: details.stack);
+        logError(
+          'FlutterFrameworkError: ${details.exceptionAsString()}',
+          stackTrace: details.stack,
+        );
       };
 
       // Capture uncaught platform dispatcher errors
@@ -92,7 +97,9 @@ class LocalDiagnosticsService {
           if (length > _maxLogSizeBytes) {
             final content = await _logFile!.readAsString();
             final halfIndex = content.length ~/ 2;
-            await _logFile!.writeAsString('[LOG TRUNCATED FOR SIZE]\n${content.substring(halfIndex)}');
+            await _logFile!.writeAsString(
+              '[LOG TRUNCATED FOR SIZE]\n${content.substring(halfIndex)}',
+            );
           }
         }
 
@@ -120,7 +127,9 @@ class LocalDiagnosticsService {
   Future<void> clearLogs() async {
     try {
       if (_logFile != null && await _logFile!.exists()) {
-        await _logFile!.writeAsString('=== Log Cleared [${DateTime.now().toIso8601String()}] ===\n');
+        await _logFile!.writeAsString(
+          '=== Log Cleared [${DateTime.now().toIso8601String()}] ===\n',
+        );
       }
     } catch (e) {
       debugPrint('Error clearing diagnostic log file: $e');
@@ -132,10 +141,13 @@ class LocalDiagnosticsService {
       if (_logFile == null || !await _logFile!.exists()) {
         return false;
       }
-      final result = await Share.shareXFiles(
-        [XFile(_logFile!.path, mimeType: 'text/plain', name: 'chess_diagnostics.log')],
-        subject: 'ChessMaster Offline Diagnostic Log',
-      );
+      final result = await Share.shareXFiles([
+        XFile(
+          _logFile!.path,
+          mimeType: 'text/plain',
+          name: 'chess_diagnostics.log',
+        ),
+      ], subject: 'ChessMaster Offline Diagnostic Log');
       return result.status != ShareResultStatus.dismissed;
     } catch (e) {
       debugPrint('Error sharing diagnostic log file: $e');

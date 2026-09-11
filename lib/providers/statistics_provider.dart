@@ -86,8 +86,14 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     required bool isLoss,
     required bool isDraw,
   }) async {
-    final expectedScore = 1.0 / (1.0 + math.pow(10, (botElo - state.currentGameElo) / 400));
-    final actualScore = isWin ? 1.0 : isDraw ? 0.5 : 0.0;
+    final expectedScore =
+        1.0 / (1.0 + math.pow(10, (botElo - state.currentGameElo) / 400));
+    final actualScore =
+        isWin
+            ? 1.0
+            : isDraw
+            ? 0.5
+            : 0.0;
 
     final eloChange = (state.kFactor * (actualScore - expectedScore)).round();
     final newElo = (state.currentGameElo + eloChange).clamp(100, 3200);
@@ -95,12 +101,13 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     final newConsecutiveWins = isWin ? state.consecutiveWins + 1 : 0;
     final newConsecutiveLosses = isLoss ? state.consecutiveLosses + 1 : 0;
 
-    final newHistory = List<EloSnapshot>.from(state.eloHistory)
-      ..add(EloSnapshot(
+    final newHistory = List<EloSnapshot>.from(state.eloHistory)..add(
+      EloSnapshot(
         elo: newElo,
         gameNumber: state.totalGames + 1,
         timestamp: DateTime.now(),
-      ));
+      ),
+    );
 
     state = state.copyWith(
       currentGameElo: newElo,
@@ -163,8 +170,13 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
   /// Get the recommended difficulty level based on player ELO.
   /// Returns the closest difficulty level to the player's current ELO.
   DifficultyLevel getRecommendedDifficulty() {
-    return AppConstants.difficultyLevels.reduce((a, b) =>
-      (a.elo - state.currentGameElo).abs() < (b.elo - state.currentGameElo).abs() ? a : b);
+    return AppConstants.difficultyLevels.reduce(
+      (a, b) =>
+          (a.elo - state.currentGameElo).abs() <
+                  (b.elo - state.currentGameElo).abs()
+              ? a
+              : b,
+    );
   }
 
   /// Get a suggestion message based on recent performance.

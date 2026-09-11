@@ -76,11 +76,12 @@ class GameAccuracySummary extends StatelessWidget {
                               : 'Game Review'),
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: isInProgress
-                            ? AppTheme.textHintFor(context)
-                            : (isExcellent
-                                ? Colors.blue
-                                : AppTheme.textSecondaryFor(context)),
+                        color:
+                            isInProgress
+                                ? AppTheme.textHintFor(context)
+                                : (isExcellent
+                                    ? Colors.blue
+                                    : AppTheme.textSecondaryFor(context)),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -110,11 +111,18 @@ class GameAccuracySummary extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.book_rounded, color: AppTheme.textHintFor(context), size: 16),
+                Icon(
+                  Icons.book_rounded,
+                  color: AppTheme.textHintFor(context),
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   openingName!,
-                  style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondaryFor(context)),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppTheme.textSecondaryFor(context),
+                  ),
                 ),
               ],
             ),
@@ -128,30 +136,69 @@ class GameAccuracySummary extends StatelessWidget {
             runSpacing: 6,
             children: [
               if (analysis.brilliantMoves > 0)
-                _CompactChip(label: 'Brilliant', value: analysis.brilliantMoves, color: Color(MoveClassification.brilliant.color)),
+                _CompactChip(
+                  label: 'Brilliant',
+                  value: analysis.brilliantMoves,
+                  color: Color(MoveClassification.brilliant.color),
+                ),
               if (analysis.greatMoves > 0)
-                _CompactChip(label: 'Great', value: analysis.greatMoves, color: Color(MoveClassification.great.color)),
+                _CompactChip(
+                  label: 'Great',
+                  value: analysis.greatMoves,
+                  color: Color(MoveClassification.great.color),
+                ),
               if (analysis.bestMoves > 0)
-                _CompactChip(label: 'Best', value: analysis.bestMoves, color: Color(MoveClassification.best.color)),
+                _CompactChip(
+                  label: 'Best',
+                  value: analysis.bestMoves,
+                  color: Color(MoveClassification.best.color),
+                ),
               if (analysis.excellentMoves > 0)
-                _CompactChip(label: 'Excellent', value: analysis.excellentMoves, color: Color(MoveClassification.excellent.color)),
+                _CompactChip(
+                  label: 'Excellent',
+                  value: analysis.excellentMoves,
+                  color: Color(MoveClassification.excellent.color),
+                ),
               if (analysis.goodMoves > 0)
-                _CompactChip(label: 'Good', value: analysis.goodMoves, color: Color(MoveClassification.good.color)),
+                _CompactChip(
+                  label: 'Good',
+                  value: analysis.goodMoves,
+                  color: Color(MoveClassification.good.color),
+                ),
               if (analysis.inaccuracies > 0)
-                _CompactChip(label: 'Inaccuracy', value: analysis.inaccuracies, color: Color(MoveClassification.inaccuracy.color)),
+                _CompactChip(
+                  label: 'Inaccuracy',
+                  value: analysis.inaccuracies,
+                  color: Color(MoveClassification.inaccuracy.color),
+                ),
               if (analysis.mistakes > 0)
-                _CompactChip(label: 'Mistake', value: analysis.mistakes, color: Color(MoveClassification.mistake.color)),
+                _CompactChip(
+                  label: 'Mistake',
+                  value: analysis.mistakes,
+                  color: Color(MoveClassification.mistake.color),
+                ),
               if (analysis.misses > 0)
-                _CompactChip(label: 'Miss', value: analysis.misses, color: Color(MoveClassification.miss.color)),
+                _CompactChip(
+                  label: 'Miss',
+                  value: analysis.misses,
+                  color: Color(MoveClassification.miss.color),
+                ),
               if (analysis.blunders > 0)
-                _CompactChip(label: 'Blunder', value: analysis.blunders, color: Color(MoveClassification.blunder.color)),
+                _CompactChip(
+                  label: 'Blunder',
+                  value: analysis.blunders,
+                  color: Color(MoveClassification.blunder.color),
+                ),
             ],
           ),
 
           const SizedBox(height: 8),
           Text(
             'Avg CPL: ${analysis.averageCpl.toInt()}',
-            style: GoogleFonts.inter(color: AppTheme.textHintFor(context), fontSize: 12),
+            style: GoogleFonts.inter(
+              color: AppTheme.textHintFor(context),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -225,5 +272,3 @@ class _CompactChip extends StatelessWidget {
     );
   }
 }
-
-

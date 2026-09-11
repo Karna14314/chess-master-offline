@@ -35,10 +35,7 @@ void main() {
   String mateFen(List<String> uci) {
     final board = chess.Chess.fromFEN(startFen);
     for (final m in uci) {
-      board.move({
-        'from': m.substring(0, 2),
-        'to': m.substring(2, 4),
-      });
+      board.move({'from': m.substring(0, 2), 'to': m.substring(2, 4)});
     }
     expect(board.in_checkmate, isTrue, reason: uci.join(' '));
     return board.fen;
@@ -54,9 +51,15 @@ void main() {
     });
 
     test('mate 0 with black to move (black just got mated) → positive', () {
-      final fen = mateFen(
-        ['e2e4', 'e7e5', 'd1h5', 'b8c6', 'f1c4', 'g8f6', 'h5f7'],
-      ); // Scholar's mate
+      final fen = mateFen([
+        'e2e4',
+        'e7e5',
+        'd1h5',
+        'b8c6',
+        'f1c4',
+        'g8f6',
+        'h5f7',
+      ]); // Scholar's mate
       expect(fen.split(' ')[1], 'b');
       expect(service.mateToWhiteRelative(0, fen), equals(1));
     });
@@ -66,9 +69,15 @@ void main() {
       expect(service.mateToWhiteRelative(3, startFen), equals(3));
 
       // Black to move, "mate 3" → black mates in 3 → white-relative negative.
-      final blackToMove = mateFen(
-        ['e2e4', 'e7e5', 'd1h5', 'b8c6', 'f1c4', 'g8f6', 'h5f7'],
-      );
+      final blackToMove = mateFen([
+        'e2e4',
+        'e7e5',
+        'd1h5',
+        'b8c6',
+        'f1c4',
+        'g8f6',
+        'h5f7',
+      ]);
       expect(blackToMove.split(' ')[1], 'b');
       expect(service.mateToWhiteRelative(3, blackToMove), equals(-3));
     });
@@ -92,11 +101,16 @@ void main() {
       expect(result.evaluation, closeTo(-9990, 10));
     });
 
-    test('black is mated (Scholar is mate) → eval strongly positive',
-        () async {
-      final fen = mateFen(
-        ['e2e4', 'e7e5', 'd1h5', 'b8c6', 'f1c4', 'g8f6', 'h5f7'],
-      );
+    test('black is mated (Scholar is mate) → eval strongly positive', () async {
+      final fen = mateFen([
+        'e2e4',
+        'e7e5',
+        'd1h5',
+        'b8c6',
+        'f1c4',
+        'g8f6',
+        'h5f7',
+      ]);
 
       final future = service.analyzePosition(fen: fen, depth: 5);
       await waitForListener();
@@ -113,36 +127,46 @@ void main() {
   });
 
   group('parse "score mate 0" through getBestMove', () {
-    test('white is mated → BestMoveResult carries negative mate/eval',
-        () async {
-      final fen = mateFen(['f2f3', 'e7e5', 'g2g4', 'd8h4']);
+    test(
+      'white is mated → BestMoveResult carries negative mate/eval',
+      () async {
+        final fen = mateFen(['f2f3', 'e7e5', 'g2g4', 'd8h4']);
 
-      final future = service.getBestMove(fen: fen, depth: 3);
-      await waitForListener();
-      service.emitEngineLineForTesting('info depth 3 score mate 0');
-      service.emitEngineLineForTesting('bestmove (none)');
+        final future = service.getBestMove(fen: fen, depth: 3);
+        await waitForListener();
+        service.emitEngineLineForTesting('info depth 3 score mate 0');
+        service.emitEngineLineForTesting('bestmove (none)');
 
-      final result = await future.timeout(const Duration(seconds: 5));
-      expect(result.mateIn, isNegative);
-      // mate -1 → -10000 + 1*10 = -9990 centipawns.
-      expect(result.evaluation, equals(-9990));
-    });
+        final result = await future.timeout(const Duration(seconds: 5));
+        expect(result.mateIn, isNegative);
+        // mate -1 → -10000 + 1*10 = -9990 centipawns.
+        expect(result.evaluation, equals(-9990));
+      },
+    );
 
-    test('black is mated → BestMoveResult carries positive mate/eval',
-        () async {
-      final fen = mateFen(
-        ['e2e4', 'e7e5', 'd1h5', 'b8c6', 'f1c4', 'g8f6', 'h5f7'],
-      );
+    test(
+      'black is mated → BestMoveResult carries positive mate/eval',
+      () async {
+        final fen = mateFen([
+          'e2e4',
+          'e7e5',
+          'd1h5',
+          'b8c6',
+          'f1c4',
+          'g8f6',
+          'h5f7',
+        ]);
 
-      final future = service.getBestMove(fen: fen, depth: 3);
-      await waitForListener();
-      service.emitEngineLineForTesting('info depth 3 score mate 0');
-      service.emitEngineLineForTesting('bestmove (none)');
+        final future = service.getBestMove(fen: fen, depth: 3);
+        await waitForListener();
+        service.emitEngineLineForTesting('info depth 3 score mate 0');
+        service.emitEngineLineForTesting('bestmove (none)');
 
-      final result = await future.timeout(const Duration(seconds: 5));
-      expect(result.mateIn, isPositive);
-      // mate +1 → 10000 - 1*10 = 9990 centipawns.
-      expect(result.evaluation, equals(9990));
-    });
+        final result = await future.timeout(const Duration(seconds: 5));
+        expect(result.mateIn, isPositive);
+        // mate +1 → 10000 - 1*10 = 9990 centipawns.
+        expect(result.evaluation, equals(9990));
+      },
+    );
   });
 }

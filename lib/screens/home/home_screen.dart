@@ -44,8 +44,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardLight;
     final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderLight;
-    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
-    final textSecondary = isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
+    final textPrimary =
+        isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
+    final textSecondary =
+        isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
 
     return Scaffold(
       body: SafeArea(
@@ -53,40 +55,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           physics: const BouncingScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
               sliver: SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildHeader(context, textPrimary, textSecondary),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     _buildDailyStreakAndPuzzleHero(context),
-                    const SizedBox(height: 24),
-                    _buildQuickPlayHero(context),
                     const SizedBox(height: 16),
-                    _buildPuzzleJourneyCard(context, textPrimary, textSecondary, cardColor, borderColor),
-                    const SizedBox(height: 24),
-                   ],
-                 ),
-               ),
-             ),
-
-             // Game Modes Grid
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverToBoxAdapter(
-                child: _buildSectionTitle(context, 'Game Modes', textPrimary),
+                    _buildSectionTitle(context, 'Game Modes', textPrimary),
+                  ],
+                ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+            // Game Modes Grid — Positioned in the first viewport
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.1,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.2,
                 ),
                 delegate: SliverChildListDelegate([
                   _buildGameModeCard(
@@ -155,13 +147,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            // Continue Playing Carousel
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverToBoxAdapter(
-                child: _buildContinueSection(context, cardColor, borderColor, textPrimary, textSecondary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildQuickPlayHero(context),
+                    const SizedBox(height: 14),
+                    _buildPuzzleJourneyCard(
+                      context,
+                      textPrimary,
+                      textSecondary,
+                      cardColor,
+                      borderColor,
+                    ),
+                    const SizedBox(height: 20),
+                    _buildContinueSection(
+                      context,
+                      cardColor,
+                      borderColor,
+                      textPrimary,
+                      textSecondary,
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -174,7 +186,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, Color textPrimary, Color textSecondary) {
+  Widget _buildHeader(
+    BuildContext context,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
     final streakState = ref.watch(streakProvider);
     final streakCount = streakState.streakCount;
     final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -189,10 +205,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Text(
               'Welcome Back,',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: textSecondary,
-              ),
+              style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
             ),
             const SizedBox(height: 4),
             Text(
@@ -209,24 +222,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: isActivityToday
-                ? const Color(0xFFFF6D00).withValues(alpha: 0.18)
-                : Colors.orange.withValues(alpha: 0.1),
+            color:
+                isActivityToday
+                    ? const Color(0xFFFF6D00).withValues(alpha: 0.18)
+                    : Colors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isActivityToday
-                  ? const Color(0xFFFF6D00).withValues(alpha: 0.6)
-                  : Colors.orange.withValues(alpha: 0.3),
+              color:
+                  isActivityToday
+                      ? const Color(0xFFFF6D00).withValues(alpha: 0.6)
+                      : Colors.orange.withValues(alpha: 0.3),
             ),
-            boxShadow: isActivityToday
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFFFF6D00).withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
+            boxShadow:
+                isActivityToday
+                    ? [
+                      BoxShadow(
+                        color: const Color(0xFFFF6D00).withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                    : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -241,7 +257,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isActivityToday ? const Color(0xFFFF6D00) : Colors.orange,
+                  color:
+                      isActivityToday ? const Color(0xFFFF6D00) : Colors.orange,
                 ),
               ),
             ],
@@ -253,23 +270,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildDailyStreakAndPuzzleHero(BuildContext context) {
     final streakState = ref.watch(streakProvider);
-    final isSolved = streakState.isPuzzleSolvedToday;
+    final isSolved = streakState.isDailyPuzzleSolvedToday;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isSolved
-              ? [const Color(0xFF1E5128), const Color(0xFF2E7D32)]
-              : [const Color(0xFFD84315), const Color(0xFFFF6D00)],
+          colors:
+              isSolved
+                  ? [const Color(0xFF1E5128), const Color(0xFF2E7D32)]
+                  : [const Color(0xFFD84315), const Color(0xFFFF6D00)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: (isSolved ? Colors.green : Colors.orange).withValues(alpha: 0.3),
+            color: (isSolved ? Colors.green : Colors.orange).withValues(
+              alpha: 0.3,
+            ),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -282,13 +302,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  isSolved ? 'DAILY PUZZLE COMPLETED ✅' : 'TODAY\'S DAILY PUZZLE 🧩',
+                  isSolved
+                      ? 'DAILY PUZZLE COMPLETED ✅'
+                      : 'TODAY\'S DAILY PUZZLE 🧩',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -342,7 +367,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
-                foregroundColor: isSolved ? Colors.green.shade900 : Colors.orange.shade900,
+                foregroundColor:
+                    isSolved ? Colors.green.shade900 : Colors.orange.shade900,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -375,10 +401,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF1E3C72),
-              Color(0xFF2A5298),
-            ],
+            colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -389,9 +412,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               offset: const Offset(0, 8),
             ),
           ],
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
         child: Stack(
           children: [
@@ -490,7 +511,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -527,10 +551,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 4),
           Text(
             '${journey.solvedCount} puzzles solved',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: textSecondary,
-            ),
+            style: GoogleFonts.inter(fontSize: 13, color: textSecondary),
           ),
           const SizedBox(height: 14),
           ClipRRect(
@@ -538,7 +559,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: LinearProgressIndicator(
               value: journey.completionPercent / 100,
               backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.12),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppTheme.primaryColor,
+              ),
               minHeight: 8,
             ),
           ),
@@ -547,7 +570,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                ref.read(puzzleProvider.notifier).setModeConfig(mode: PuzzleFilterMode.journey);
+                ref
+                    .read(puzzleProvider.notifier)
+                    .setModeConfig(mode: PuzzleFilterMode.journey);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const PuzzleScreen()),
@@ -576,7 +601,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title, Color textPrimary) {
+  Widget _buildSectionTitle(
+    BuildContext context,
+    String title,
+    Color textPrimary,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -638,10 +667,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: textSecondary,
-                ),
+                style: GoogleFonts.inter(fontSize: 11, color: textSecondary),
               ),
             ],
           ),
@@ -658,7 +684,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Color textSecondary,
   ) {
     return FutureBuilder<List<GameSession>>(
-      future: GameSessionRepository(DatabaseService.instance).getUnfinishedGames(limit: 5),
+      future: GameSessionRepository(
+        DatabaseService.instance,
+      ).getUnfinishedGames(limit: 5),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
@@ -854,7 +882,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const NewGameSetupScreen(initialMode: GameMode.bot),
+        builder:
+            (context) => const NewGameSetupScreen(initialMode: GameMode.bot),
       ),
     );
   }
@@ -863,7 +892,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const NewGameSetupScreen(initialMode: GameMode.localMultiplayer),
+        builder:
+            (context) => const NewGameSetupScreen(
+              initialMode: GameMode.localMultiplayer,
+            ),
       ),
     );
   }

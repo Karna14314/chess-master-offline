@@ -65,7 +65,10 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.history, color: AppTheme.textSecondaryFor(context)),
+            icon: Icon(
+              Icons.history,
+              color: AppTheme.textSecondaryFor(context),
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -164,7 +167,8 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               _ThemeSelector(
                 themes: _themes,
                 selectedTheme: _selectedTheme,
-                onThemeSelected: (theme) => setState(() => _selectedTheme = theme),
+                onThemeSelected:
+                    (theme) => setState(() => _selectedTheme = theme),
                 onStart: () => _startPuzzles(PuzzleMode.theme),
               ),
             ],
@@ -272,10 +276,7 @@ class _JourneyHeroCard extends StatelessWidget {
   final JourneyState journey;
   final VoidCallback onContinue;
 
-  const _JourneyHeroCard({
-    required this.journey,
-    required this.onContinue,
-  });
+  const _JourneyHeroCard({required this.journey, required this.onContinue});
 
   @override
   Widget build(BuildContext context) {
@@ -311,7 +312,10 @@ class _JourneyHeroCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -341,7 +345,10 @@ class _JourneyHeroCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.surfaceColor(context),
                     borderRadius: BorderRadius.circular(12),
@@ -370,7 +377,10 @@ class _JourneyHeroCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.surfaceColor(context),
                     borderRadius: BorderRadius.circular(12),
@@ -404,7 +414,9 @@ class _JourneyHeroCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: journey.completionPercent / 100,
               backgroundColor: AppTheme.borderColorFor(context),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppTheme.primaryColor,
+              ),
               minHeight: 8,
             ),
           ),
@@ -469,7 +481,11 @@ class _StatsCard extends StatelessWidget {
             label: 'Rating',
             color: Colors.amber,
           ),
-          Container(width: 1, height: 40, color: AppTheme.borderColorFor(context)),
+          Container(
+            width: 1,
+            height: 40,
+            color: AppTheme.borderColorFor(context),
+          ),
           _buildStatItem(
             context,
             icon: Icons.check_circle_outline,
@@ -477,7 +493,11 @@ class _StatsCard extends StatelessWidget {
             label: 'Solved',
             color: Colors.green,
           ),
-          Container(width: 1, height: 40, color: AppTheme.borderColorFor(context)),
+          Container(
+            width: 1,
+            height: 40,
+            color: AppTheme.borderColorFor(context),
+          ),
           _buildStatItem(
             context,
             icon: Icons.analytics_outlined,
@@ -652,7 +672,9 @@ class _ThemeSelector extends StatelessWidget {
                       disabledColor: AppTheme.cardColor(context),
                       labelStyle: GoogleFonts.inter(
                         color:
-                            isSelected ? Colors.white : AppTheme.textSecondaryFor(context),
+                            isSelected
+                                ? Colors.white
+                                : AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.normal,

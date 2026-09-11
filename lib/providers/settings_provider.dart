@@ -120,7 +120,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
 
-    final dailyPuzzleNotif = prefs.getBool('dailyPuzzleNotificationEnabled') ?? true;
+    final dailyPuzzleNotif =
+        prefs.getBool('dailyPuzzleNotificationEnabled') ?? true;
     final streakNotif = prefs.getBool('streakNotificationEnabled') ?? true;
 
     state = AppSettings(
@@ -169,9 +170,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await prefs.setInt('lastDifficultyLevel', s.lastDifficultyLevel);
     await prefs.setInt('lastTimeControlIndex', s.lastTimeControlIndex);
     await prefs.setBool(
-        'dailyPuzzleNotificationEnabled', s.dailyPuzzleNotificationEnabled);
+      'dailyPuzzleNotificationEnabled',
+      s.dailyPuzzleNotificationEnabled,
+    );
     await prefs.setBool(
-        'streakNotificationEnabled', s.streakNotificationEnabled);
+      'streakNotificationEnabled',
+      s.streakNotificationEnabled,
+    );
     await prefs.setBool('showWinPercent', s.showWinPercent);
     await prefs.setBool('autoAnalyzeAfterGame', s.autoAnalyzeAfterGame);
   }

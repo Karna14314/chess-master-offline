@@ -22,7 +22,8 @@ class JourneyState {
   double get completionPercent =>
       ((solvedCount / kTotalJourneyLevels) * 100).clamp(0.0, 100.0);
 
-  int get remainingCount => (kTotalJourneyLevels - solvedCount).clamp(0, kTotalJourneyLevels);
+  int get remainingCount =>
+      (kTotalJourneyLevels - solvedCount).clamp(0, kTotalJourneyLevels);
 
   JourneyState copyWith({
     int? currentLevel,
@@ -35,9 +36,10 @@ class JourneyState {
       currentLevel: currentLevel ?? this.currentLevel,
       solvedCount: solvedCount ?? this.solvedCount,
       unlockedMilestones: unlockedMilestones ?? this.unlockedMilestones,
-      newlyUnlockedMilestone: clearNewMilestone
-          ? null
-          : (newlyUnlockedMilestone ?? this.newlyUnlockedMilestone),
+      newlyUnlockedMilestone:
+          clearNewMilestone
+              ? null
+              : (newlyUnlockedMilestone ?? this.newlyUnlockedMilestone),
     );
   }
 }
@@ -58,10 +60,8 @@ class JourneyNotifier extends StateNotifier<JourneyState> {
     final solvedCount = prefs.getInt('journey_solved_count') ?? 0;
     final milestonesRaw =
         prefs.getStringList('journey_unlocked_milestones') ?? [];
-    final unlockedMilestones = milestonesRaw
-        .map((e) => int.tryParse(e))
-        .whereType<int>()
-        .toSet();
+    final unlockedMilestones =
+        milestonesRaw.map((e) => int.tryParse(e)).whereType<int>().toSet();
 
     if (!_isDisposed) {
       state = JourneyState(
@@ -75,14 +75,18 @@ class JourneyNotifier extends StateNotifier<JourneyState> {
   /// Complete current journey level and return newly unlocked milestone if any
   Future<int?> completeCurrentLevel() async {
     final prefs = await SharedPreferences.getInstance();
-    final newSolvedCount = (state.solvedCount + 1).clamp(0, kTotalJourneyLevels);
+    final newSolvedCount = (state.solvedCount + 1).clamp(
+      0,
+      kTotalJourneyLevels,
+    );
     final nextLevel = (state.currentLevel + 1).clamp(1, kTotalJourneyLevels);
 
     int? unlockedMilestone;
     final updatedMilestones = Set<int>.from(state.unlockedMilestones);
 
     for (final milestone in kJourneyMilestones) {
-      if (newSolvedCount >= milestone && !updatedMilestones.contains(milestone)) {
+      if (newSolvedCount >= milestone &&
+          !updatedMilestones.contains(milestone)) {
         updatedMilestones.add(milestone);
         unlockedMilestone = milestone;
       }
@@ -125,7 +129,10 @@ class JourneyNotifier extends StateNotifier<JourneyState> {
 
     final levelIndex = (level - 1).clamp(0, kTotalJourneyLevels - 1);
     final step = (sorted.length / kTotalJourneyLevels).floor();
-    final targetIndex = (levelIndex * (step > 0 ? step : 1)).clamp(0, sorted.length - 1);
+    final targetIndex = (levelIndex * (step > 0 ? step : 1)).clamp(
+      0,
+      sorted.length - 1,
+    );
 
     return sorted[targetIndex];
   }
@@ -137,7 +144,8 @@ class JourneyNotifier extends StateNotifier<JourneyState> {
   }
 }
 
-final journeyProvider =
-    StateNotifierProvider<JourneyNotifier, JourneyState>((ref) {
+final journeyProvider = StateNotifierProvider<JourneyNotifier, JourneyState>((
+  ref,
+) {
   return JourneyNotifier(ref);
 });

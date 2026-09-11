@@ -83,7 +83,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           backgroundColor: AppTheme.cardColor(context),
           title: Row(
             children: [
@@ -125,7 +127,9 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 child: LinearProgressIndicator(
                   value: journey.completionPercent / 100,
                   backgroundColor: AppTheme.borderColorFor(context),
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryColor,
+                  ),
                   minHeight: 8,
                 ),
               ),
@@ -160,7 +164,10 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                   children: [
                     Text(
                       'Continue',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     const Icon(Icons.arrow_forward, size: 20),
@@ -182,11 +189,17 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           backgroundColor: AppTheme.cardColor(context),
           title: Column(
             children: [
-              const Icon(Icons.workspace_premium, color: Colors.amber, size: 48),
+              const Icon(
+                Icons.workspace_premium,
+                color: Colors.amber,
+                size: 48,
+              ),
               const SizedBox(height: 10),
               Text(
                 'Achievement Unlocked!',
@@ -238,7 +251,10 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 ),
                 child: Text(
                   'Continue →',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -320,10 +336,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             onPressed: _initializePuzzles,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -452,7 +465,45 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     final isFailed = state.state == PuzzleState.incorrect;
     final isCompleted = state.state == PuzzleState.completed;
 
+    final isJourney = state.mode == PuzzleFilterMode.journey;
+
     if (isFailed || isCompleted) {
+      if (isJourney) {
+        if (isCompleted) {
+          return SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => notifier.nextPuzzle(),
+              icon: const Icon(Icons.arrow_forward),
+              label: const Text('Next Level →'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          );
+        } else {
+          return SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => notifier.retryPuzzle(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry Level'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.textPrimaryFor(context),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          );
+        }
+      }
+
       return Row(
         children: [
           Expanded(
@@ -486,6 +537,24 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             ),
           ),
         ],
+      );
+    }
+
+    if (isJourney) {
+      return SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => notifier.showHint(),
+          icon: const Icon(Icons.lightbulb_outline),
+          label: const Text('Get Hint'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.textPrimaryFor(context),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
       );
     }
 

@@ -22,18 +22,30 @@ void main() {
 const _budgets = <int>[50000];
 
 const _game = <String>[
-  'e2e4', 'e7e5',
-  'g1f3', 'b8c6',
-  'f1c4', 'g8f6',
-  'd2d3', 'f8c5',
-  'e1g1', 'd7d6',
-  'c2c3', 'c8g4',
-  'h2h3', 'g4h5',
-  'g2g4', 'h5g6',
-  'g4g5', 'f6d7',
-  'd3d4', 'e5d4',
-  'c3d4', 'c5b6',
-  'd4d5', 'c6e7',
+  'e2e4',
+  'e7e5',
+  'g1f3',
+  'b8c6',
+  'f1c4',
+  'g8f6',
+  'd2d3',
+  'f8c5',
+  'e1g1',
+  'd7d6',
+  'c2c3',
+  'c8g4',
+  'h2h3',
+  'g4h5',
+  'g2g4',
+  'h5g6',
+  'g4g5',
+  'f6d7',
+  'd3d4',
+  'e5d4',
+  'c3d4',
+  'c5b6',
+  'd4d5',
+  'c6e7',
 ];
 
 /// Every position of the game: start plus the position after each ply.
@@ -41,10 +53,7 @@ List<String> _positions() {
   final board = chess.Chess();
   final fens = <String>[board.fen];
   for (final uci in _game) {
-    board.move({
-      'from': uci.substring(0, 2),
-      'to': uci.substring(2, 4),
-    });
+    board.move({'from': uci.substring(0, 2), 'to': uci.substring(2, 4)});
     fens.add(board.fen);
   }
   return fens;
@@ -114,8 +123,10 @@ class _AppState extends State<_App> {
         refMs.add(sw.elapsedMilliseconds);
       }
       refTotal.stop();
-      _log('REFERENCE totalMs=${refTotal.elapsedMilliseconds} '
-          'avgMs=${(refTotal.elapsedMilliseconds / fens.length).round()}');
+      _log(
+        'REFERENCE totalMs=${refTotal.elapsedMilliseconds} '
+        'avgMs=${(refTotal.elapsedMilliseconds / fens.length).round()}',
+      );
 
       // ── Cheap passes at each node budget ──
       final cheapEval = <int, List<double>>{};
@@ -138,9 +149,11 @@ class _AppState extends State<_App> {
 
         final avg = total.elapsedMilliseconds / fens.length;
         // Projected full-game cost: 1 new position per ply (carry-forward).
-        _log('CHEAP nodes=$budget totalMs=${total.elapsedMilliseconds} '
-            'avgMsPerPos=${avg.round()} '
-            'projected24PlyMs=${(avg * (fens.length)).round()}');
+        _log(
+          'CHEAP nodes=$budget totalMs=${total.elapsedMilliseconds} '
+          'avgMsPerPos=${avg.round()} '
+          'projected24PlyMs=${(avg * (fens.length)).round()}',
+        );
       }
 
       // ── Determinism: repeat the middle budget ──
@@ -164,7 +177,9 @@ class _AppState extends State<_App> {
           _log('DETERMINISM_MISMATCH pos=$i a=${first[i]} b=${second[i]}');
         }
       }
-      _log('DETERMINISM nodes=$detBudget mismatches=$mismatches/${first.length}');
+      _log(
+        'DETERMINISM nodes=$detBudget mismatches=$mismatches/${first.length}',
+      );
 
       // ── Per-position comparison table ──
       for (final budget in _budgets) {
@@ -177,13 +192,17 @@ class _AppState extends State<_App> {
           final diffCp = (evals[i] - refEval[i]).abs() * 100;
           sumAbs += diffCp;
           if (diffCp > worst) worst = diffCp;
-          _log('${i.toString().padLeft(3)} | '
-              '${refEval[i].toStringAsFixed(2).padLeft(8)} | '
-              '${evals[i].toStringAsFixed(2).padLeft(8)} | '
-              '${diffCp.toStringAsFixed(0).padLeft(8)}');
+          _log(
+            '${i.toString().padLeft(3)} | '
+            '${refEval[i].toStringAsFixed(2).padLeft(8)} | '
+            '${evals[i].toStringAsFixed(2).padLeft(8)} | '
+            '${diffCp.toStringAsFixed(0).padLeft(8)}',
+          );
         }
-        _log('BUDGET $budget meanAbsDiffCp=${(sumAbs / evals.length).toStringAsFixed(1)} '
-            'worstAbsDiffCp=${worst.toStringAsFixed(0)}');
+        _log(
+          'BUDGET $budget meanAbsDiffCp=${(sumAbs / evals.length).toStringAsFixed(1)} '
+          'worstAbsDiffCp=${worst.toStringAsFixed(0)}',
+        );
       }
 
       // ── CPL agreement: does the cheap pass pick the same verdict? ──
@@ -197,9 +216,7 @@ class _AppState extends State<_App> {
         for (int ply = 0; ply < _game.length; ply++) {
           final isWhite = ply.isEven;
           double cpl(List<double> e) {
-            final d = isWhite
-                ? (e[ply] - e[ply + 1])
-                : (e[ply + 1] - e[ply]);
+            final d = isWhite ? (e[ply] - e[ply + 1]) : (e[ply + 1] - e[ply]);
             return (d * 100).abs();
           }
 
@@ -219,15 +236,19 @@ class _AppState extends State<_App> {
             agree++;
           } else {
             wrongSide++;
-            _log('CONFIDENT_BUT_WRONG budget=$budget ply=$ply '
-                'cheapCpl=${cheapCpl.toStringAsFixed(0)} '
-                'refCpl=${refCpl.toStringAsFixed(0)}');
+            _log(
+              'CONFIDENT_BUT_WRONG budget=$budget ply=$ply '
+              'cheapCpl=${cheapCpl.toStringAsFixed(0)} '
+              'refCpl=${refCpl.toStringAsFixed(0)}',
+            );
           }
         }
-        _log('TRIAGE budget=$budget plies=${_game.length} '
-            'confidentCorrect=$agree confidentWrong=$wrongSide '
-            'grayZoneNeedsEscalation=$grayZone '
-            'escalationRate=${(grayZone / _game.length * 100).toStringAsFixed(0)}%');
+        _log(
+          'TRIAGE budget=$budget plies=${_game.length} '
+          'confidentCorrect=$agree confidentWrong=$wrongSide '
+          'grayZoneNeedsEscalation=$grayZone '
+          'escalationRate=${(grayZone / _game.length * 100).toStringAsFixed(0)}%',
+        );
       }
 
       engine.setLivePlayStrength();
@@ -241,7 +262,6 @@ class _AppState extends State<_App> {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        home: Scaffold(body: Center(child: Text(_status))),
-      );
+  Widget build(BuildContext context) =>
+      MaterialApp(home: Scaffold(body: Center(child: Text(_status))));
 }

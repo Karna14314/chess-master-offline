@@ -57,6 +57,7 @@ class PuzzleGameState {
   final bool isLoading;
   final Set<String> highlightedSquares;
   final bool isRetry;
+  final PuzzleFilterMode mode;
 
   const PuzzleGameState({
     this.state = PuzzleState.loading,
@@ -80,6 +81,7 @@ class PuzzleGameState {
     this.isLoading = false,
     this.highlightedSquares = const {},
     this.isRetry = false,
+    this.mode = PuzzleFilterMode.adaptive,
   });
 
   PuzzleGameState copyWith({
@@ -104,6 +106,7 @@ class PuzzleGameState {
     bool? isLoading,
     Set<String>? highlightedSquares,
     bool? isRetry,
+    PuzzleFilterMode? mode,
     bool clearSelection = false,
     bool clearError = false,
     bool clearHint = false,
@@ -132,6 +135,7 @@ class PuzzleGameState {
       isLoading: isLoading ?? this.isLoading,
       highlightedSquares: highlightedSquares ?? this.highlightedSquares,
       isRetry: isRetry ?? this.isRetry,
+      mode: mode ?? this.mode,
     );
   }
 
@@ -214,7 +218,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     _minRating = minRating ?? 400;
     _maxRating = maxRating ?? 2500;
     _themeFilter = theme ?? 'all';
-    state = state.copyWith(currentPuzzle: null);
+    state = state.copyWith(currentPuzzle: null, mode: mode);
     startNewPuzzle();
   }
 
@@ -368,7 +372,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       case PuzzleFilterMode.journey:
         if (_allPuzzles.isEmpty) return null;
         final journeyState = _ref.read(journeyProvider);
-        return _ref.read(journeyProvider.notifier).getPuzzleForLevel(journeyState.currentLevel, _allPuzzles);
+        return _ref
+            .read(journeyProvider.notifier)
+            .getPuzzleForLevel(journeyState.currentLevel, _allPuzzles);
 
       case PuzzleFilterMode.daily:
         // Daily puzzle based on date
@@ -712,7 +718,11 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     final db = _ref.read(databaseServiceProvider);
 
     if (solved) {
-      _ref.read(streakProvider.notifier).markPuzzleSolvedToday();
+      if (_mode == PuzzleFilterMode.daily) {
+        await _ref.read(streakProvider.notifier).markDailyPuzzleSolvedToday();
+      } else {
+        await _ref.read(streakProvider.notifier).markPuzzleSolvedToday();
+      }
     }
 
     // Save to puzzle progress tracking history
@@ -766,6 +776,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
   /// Show complete solution for the puzzle
   Future<void> showSolution() async {
+    // Solution reveal is strictly disabled in Journey mode
+    if (_mode == PuzzleFilterMode.journey ||
+        state.mode == PuzzleFilterMode.journey)
+      return;
     if (state.currentPuzzle == null) return;
 
     state = state.copyWith(
@@ -845,6 +859,10 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
   /// Skip current puzzle
   Future<void> skipPuzzle() async {
+    // Skipping is strictly disabled in Journey mode — player must solve current level
+    if (_mode == PuzzleFilterMode.journey ||
+        state.mode == PuzzleFilterMode.journey)
+      return;
     _stopSolutionPlayback();
     await _onPuzzleCompleted(false);
     // Load next puzzle after a short delay

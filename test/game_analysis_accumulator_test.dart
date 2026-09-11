@@ -5,8 +5,14 @@ import 'package:chess_master/models/analysis_model.dart';
 /// The incremental accumulator must be numerically identical to the full
 /// recomputation — the perf pass may change speed, never displayed numbers.
 void main() {
-  MoveAnalysis move(int i, MoveClassification c, bool white, double acc,
-      double cpl, double winAfter) {
+  MoveAnalysis move(
+    int i,
+    MoveClassification c,
+    bool white,
+    double acc,
+    double cpl,
+    double winAfter,
+  ) {
     return MoveAnalysis(
       moveIndex: i,
       san: 'm$i',
@@ -52,8 +58,11 @@ void main() {
     expect(a.whiteAccuracy, closeTo(b.whiteAccuracy, 1e-9), reason: reason);
     expect(a.blackAccuracy, closeTo(b.blackAccuracy, 1e-9), reason: reason);
     expect(a.openingAccuracy, closeTo(b.openingAccuracy, 1e-9), reason: reason);
-    expect(a.middlegameAccuracy, closeTo(b.middlegameAccuracy, 1e-9),
-        reason: reason);
+    expect(
+      a.middlegameAccuracy,
+      closeTo(b.middlegameAccuracy, 1e-9),
+      reason: reason,
+    );
     expect(a.endgameAccuracy, closeTo(b.endgameAccuracy, 1e-9), reason: reason);
     expect(a.finalEval, closeTo(b.finalEval, 1e-9), reason: reason);
     expect(a.blunders, b.blunders, reason: reason);
@@ -81,7 +90,11 @@ void main() {
     for (int i = 0; i < game.length; i++) {
       acc.add(game[i]);
       final prefix = game.sublist(0, i + 1);
-      expectSame(acc.build(), GameAnalysis.fromMoves(prefix), 'prefix ${i + 1}');
+      expectSame(
+        acc.build(),
+        GameAnalysis.fromMoves(prefix),
+        'prefix ${i + 1}',
+      );
     }
   });
 
@@ -104,8 +117,9 @@ void main() {
   });
 
   test('single white ply leaves black accuracy at zero', () {
-    final acc = GameAnalysisAccumulator()
-      ..add(move(0, MoveClassification.best, true, 90, 0, 55));
+    final acc =
+        GameAnalysisAccumulator()
+          ..add(move(0, MoveClassification.best, true, 90, 0, 55));
     final built = acc.build();
     expectSame(built, GameAnalysis.fromMoves(acc.moves), 'single ply');
     expect(built.blackAccuracy, 0.0);

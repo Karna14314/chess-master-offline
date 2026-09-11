@@ -441,8 +441,9 @@ class EngineNotifier extends StateNotifier<EngineState> {
   /// Set bot strength dynamically based on a target ELO.
   /// Finds the closest difficulty level and applies it.
   void setBotStrengthForElo(int targetElo) {
-    final closest = AppConstants.difficultyLevels.reduce((a, b) =>
-      (a.elo - targetElo).abs() < (b.elo - targetElo).abs() ? a : b);
+    final closest = AppConstants.difficultyLevels.reduce(
+      (a, b) => (a.elo - targetElo).abs() < (b.elo - targetElo).abs() ? a : b,
+    );
     _currentDifficulty = closest;
     _service.setSkillLevel(closest.elo);
   }

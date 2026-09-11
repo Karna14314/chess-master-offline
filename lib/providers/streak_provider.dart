@@ -2,29 +2,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
-final streakProvider = StateNotifierProvider<StreakNotifier, StreakState>((ref) {
+final streakProvider = StateNotifierProvider<StreakNotifier, StreakState>((
+  ref,
+) {
   return StreakNotifier();
 });
 
 class StreakState {
   final int streakCount;
   final bool isPuzzleSolvedToday;
+  final bool isDailyPuzzleSolvedToday;
   final String lastActivityDate;
 
   const StreakState({
     this.streakCount = 0,
     this.isPuzzleSolvedToday = false,
+    this.isDailyPuzzleSolvedToday = false,
     this.lastActivityDate = '',
   });
 
   StreakState copyWith({
     int? streakCount,
     bool? isPuzzleSolvedToday,
+    bool? isDailyPuzzleSolvedToday,
     String? lastActivityDate,
   }) {
     return StreakState(
       streakCount: streakCount ?? this.streakCount,
       isPuzzleSolvedToday: isPuzzleSolvedToday ?? this.isPuzzleSolvedToday,
+      isDailyPuzzleSolvedToday:
+          isDailyPuzzleSolvedToday ?? this.isDailyPuzzleSolvedToday,
       lastActivityDate: lastActivityDate ?? this.lastActivityDate,
     );
   }
@@ -40,11 +47,12 @@ class StreakNotifier extends StateNotifier<StreakState> {
   }
 
   String _yesterdayDateString() {
-    return DateFormat('yyyy-MM-dd')
-        .format(DateTime.now().subtract(const Duration(days: 1)));
+    return DateFormat(
+      'yyyy-MM-dd',
+    ).format(DateTime.now().subtract(const Duration(days: 1)));
   }
 
-   Future<void> loadStreak() async {
+  Future<void> loadStreak() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
@@ -56,7 +64,9 @@ class StreakNotifier extends StateNotifier<StreakState> {
       final lastPuzzleDate = prefs.getString('streak_last_puzzle_date') ?? '';
 
       // If last activity was before yesterday, streak broke -> reset to 0
-      if (lastDate.isNotEmpty && lastDate != todayStr && lastDate != yesterdayStr) {
+      if (lastDate.isNotEmpty &&
+          lastDate != todayStr &&
+          lastDate != yesterdayStr) {
         streak = 0;
         await prefs.setInt('streak_current_count', 0);
       } else if (lastDate == todayStr || lastDate == yesterdayStr) {
@@ -67,22 +77,20 @@ class StreakNotifier extends StateNotifier<StreakState> {
       }
 
       final isSolvedToday = (lastPuzzleDate == todayStr);
-
-      // Fix: Explicitly reset isPuzzleSolvedToday on calendar day change.
-      // If the last puzzle was solved on a previous day, isSolvedToday will
-      // already be false above, but the explicit check prevents stale state
-      // when loadStreak is called after a date rollover.
-      final isPuzzleSolvedTodayFinal = isSolvedToday;
+      final lastDailyPuzzleDate =
+          prefs.getString('daily_puzzle_last_solved_date') ?? '';
+      final isDailySolvedToday = (lastDailyPuzzleDate == todayStr);
 
       state = StreakState(
         streakCount: streak,
-        isPuzzleSolvedToday: isPuzzleSolvedTodayFinal,
+        isPuzzleSolvedToday: isSolvedToday,
+        isDailyPuzzleSolvedToday: isDailySolvedToday,
         lastActivityDate: lastDate,
       );
     } catch (_) {}
   }
 
-   Future<void> recordActivity() async {
+  Future<void> recordActivity() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final todayStr = _todayDateString();
@@ -104,7 +112,8 @@ class StreakNotifier extends StateNotifier<StreakState> {
           streakCount: currentStreak,
           lastActivityDate: todayStr,
           // Reset puzzle solved status if date rolled over from yesterday
-          isPuzzleSolvedToday: isDateChanged ? false : state.isPuzzleSolvedToday,
+          isPuzzleSolvedToday:
+              isDateChanged ? false : state.isPuzzleSolvedToday,
         );
         return;
       } else if (lastDate == yesterdayStr) {
@@ -140,6 +149,23 @@ class StreakNotifier extends StateNotifier<StreakState> {
 
       if (!mounted) return;
       state = state.copyWith(isPuzzleSolvedToday: true);
+    } catch (_) {}
+  }
+
+  Future<void> markDailyPuzzleSolvedToday() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final todayStr = _todayDateString();
+      await prefs.setString('daily_puzzle_last_solved_date', todayStr);
+      await prefs.setString('streak_last_puzzle_date', todayStr);
+
+      await recordActivity();
+
+      if (!mounted) return;
+      state = state.copyWith(
+        isPuzzleSolvedToday: true,
+        isDailyPuzzleSolvedToday: true,
+      );
     } catch (_) {}
   }
 }

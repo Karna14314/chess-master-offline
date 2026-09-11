@@ -13,91 +13,153 @@ void main() {
 
   group('Theme-Aware Color Helpers', () {
     testWidgets('cardColor returns cardLight in light mode', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.lightTheme,
-        themeMode: ThemeMode.light,
-        home: Builder(builder: (context) {
-          expect(AppTheme.cardColor(context), equals(AppTheme.cardLight));
-          return const SizedBox();
-        }),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          themeMode: ThemeMode.light,
+          home: Builder(
+            builder: (context) {
+              expect(AppTheme.cardColor(context), equals(AppTheme.cardLight));
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
     testWidgets('cardColor returns cardDark in dark mode', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.dark,
-        home: Builder(builder: (context) {
-          expect(AppTheme.cardColor(context), equals(AppTheme.cardDark));
-          return const SizedBox();
-        }),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.dark,
+          home: Builder(
+            builder: (context) {
+              expect(AppTheme.cardColor(context), equals(AppTheme.cardDark));
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
-    testWidgets('borderColorFor returns borderLight in light mode', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.lightTheme,
-        themeMode: ThemeMode.light,
-        home: Builder(builder: (context) {
-          expect(AppTheme.borderColorFor(context), equals(AppTheme.borderLight));
-          return const SizedBox();
-        }),
-      ));
+    testWidgets('borderColorFor returns borderLight in light mode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          themeMode: ThemeMode.light,
+          home: Builder(
+            builder: (context) {
+              expect(
+                AppTheme.borderColorFor(context),
+                equals(AppTheme.borderLight),
+              );
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
-    testWidgets('borderColorFor returns borderColor in dark mode', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.dark,
-        home: Builder(builder: (context) {
-          expect(AppTheme.borderColorFor(context), equals(AppTheme.borderColor));
-          return const SizedBox();
-        }),
-      ));
+    testWidgets('borderColorFor returns borderColor in dark mode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.dark,
+          home: Builder(
+            builder: (context) {
+              expect(
+                AppTheme.borderColorFor(context),
+                equals(AppTheme.borderColor),
+              );
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
-    testWidgets('textPrimaryFor returns textPrimaryLight in light mode', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.lightTheme,
-        themeMode: ThemeMode.light,
-        home: Builder(builder: (context) {
-          expect(AppTheme.textPrimaryFor(context), equals(AppTheme.textPrimaryLight));
-          return const SizedBox();
-        }),
-      ));
+    testWidgets('textPrimaryFor returns textPrimaryLight in light mode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          themeMode: ThemeMode.light,
+          home: Builder(
+            builder: (context) {
+              expect(
+                AppTheme.textPrimaryFor(context),
+                equals(AppTheme.textPrimaryLight),
+              );
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
-    testWidgets('textPrimaryFor returns textPrimary in dark mode', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.dark,
-        home: Builder(builder: (context) {
-          expect(AppTheme.textPrimaryFor(context), equals(AppTheme.textPrimary));
-          return const SizedBox();
-        }),
-      ));
+    testWidgets('textPrimaryFor returns textPrimary in dark mode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.dark,
+          home: Builder(
+            builder: (context) {
+              expect(
+                AppTheme.textPrimaryFor(context),
+                equals(AppTheme.textPrimary),
+              );
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
-    testWidgets('surfaceColor returns surfaceLight in light mode', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.lightTheme,
-        themeMode: ThemeMode.light,
-        home: Builder(builder: (context) {
-          expect(AppTheme.surfaceColor(context), equals(AppTheme.surfaceLight));
-          return const SizedBox();
-        }),
-      ));
+    testWidgets('surfaceColor returns surfaceLight in light mode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          themeMode: ThemeMode.light,
+          home: Builder(
+            builder: (context) {
+              expect(
+                AppTheme.surfaceColor(context),
+                equals(AppTheme.surfaceLight),
+              );
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
-    testWidgets('surfaceColor returns surfaceDark in dark mode', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.dark,
-        home: Builder(builder: (context) {
-          expect(AppTheme.surfaceColor(context), equals(AppTheme.surfaceDark));
-          return const SizedBox();
-        }),
-      ));
+    testWidgets('surfaceColor returns surfaceDark in dark mode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.dark,
+          home: Builder(
+            builder: (context) {
+              expect(
+                AppTheme.surfaceColor(context),
+                equals(AppTheme.surfaceDark),
+              );
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
   });
 
@@ -135,9 +197,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            settingsProvider.overrideWith(
-              (ref) => SettingsNotifier(),
-            ),
+            settingsProvider.overrideWith((ref) => SettingsNotifier()),
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,

@@ -45,9 +45,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
-    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
-    final textSecondary = isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
+    final backgroundColor =
+        isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
+    final textPrimary =
+        isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
+    final textSecondary =
+        isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
     final cardColor = isDark ? AppTheme.cardDark : AppTheme.cardLight;
     final borderColor = isDark ? AppTheme.borderColor : AppTheme.borderLight;
 
@@ -72,9 +75,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         width: _currentPage == index ? 24 : 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? AppTheme.primaryColor
-                              : textSecondary.withValues(alpha: 0.3),
+                          color:
+                              _currentPage == index
+                                  ? AppTheme.primaryColor
+                                  : textSecondary.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -108,8 +112,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 },
                 children: [
                   _buildWelcomePage(context, textPrimary, textSecondary),
-                  _buildSkillLevelPage(context, textPrimary, textSecondary, cardColor, borderColor),
-                  _buildFeaturesPage(context, textPrimary, textSecondary, cardColor, borderColor),
+                  _buildSkillLevelPage(
+                    context,
+                    textPrimary,
+                    textSecondary,
+                    cardColor,
+                    borderColor,
+                  ),
+                  _buildFeaturesPage(
+                    context,
+                    textPrimary,
+                    textSecondary,
+                    cardColor,
+                    borderColor,
+                  ),
                 ],
               ),
             ),
@@ -155,7 +171,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildWelcomePage(BuildContext context, Color textPrimary, Color textSecondary) {
+  Widget _buildWelcomePage(
+    BuildContext context,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -222,10 +242,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 8),
           Text(
             'We\'ll set your initial Stockfish AI difficulty so games feel just right.',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: textSecondary,
-            ),
+            style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
           ),
           const SizedBox(height: 24),
 
@@ -285,9 +302,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     required Color textSecondary,
   }) {
     return Material(
-      color: isSelected
-          ? AppTheme.primaryColor.withValues(alpha: 0.15)
-          : cardColor,
+      color:
+          isSelected
+              ? AppTheme.primaryColor.withValues(alpha: 0.15)
+              : cardColor,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -338,7 +356,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               Icon(
                 isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                color: isSelected ? AppTheme.primaryColor : textSecondary.withValues(alpha: 0.5),
+                color:
+                    isSelected
+                        ? AppTheme.primaryColor
+                        : textSecondary.withValues(alpha: 0.5),
                 size: 24,
               ),
             ],
@@ -372,10 +393,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 8),
           Text(
             'Improve your tactics, analyze your games, and maintain your daily streak.',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: textSecondary,
-            ),
+            style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
           ),
           const SizedBox(height: 28),
 
@@ -383,7 +401,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             icon: Icons.extension_outlined,
             color: Colors.amber,
             title: 'Daily Puzzles & Streaks',
-            subtitle: 'Solve daily tactics puzzles and protect your playing streak.',
+            subtitle:
+                'Solve daily tactics puzzles and protect your playing streak.',
             textPrimary: textPrimary,
             textSecondary: textSecondary,
           ),
@@ -392,7 +411,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             icon: Icons.smart_toy_outlined,
             color: AppTheme.primaryColor,
             title: 'Stockfish AI',
-            subtitle: 'Train against 8 distinct difficulty levels for all player ratings.',
+            subtitle:
+                'Train against 8 distinct difficulty levels for all player ratings.',
             textPrimary: textPrimary,
             textSecondary: textSecondary,
           ),
@@ -444,10 +464,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: textSecondary,
-                ),
+                style: GoogleFonts.inter(fontSize: 13, color: textSecondary),
               ),
             ],
           ),

@@ -80,7 +80,9 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+    final cardColor =
+        Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
     final iconColor = Theme.of(context).colorScheme.onSurface;
 
     return Row(
@@ -92,7 +94,8 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Theme.of(context).dividerTheme.color ?? AppTheme.borderColor,
+              color:
+                  Theme.of(context).dividerTheme.color ?? AppTheme.borderColor,
             ),
           ),
           child: Center(
@@ -106,19 +109,18 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             children: [
               Text(
                 'Settings & More',
-                style: Theme.of(
-                  context,
-                ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 'Customize your experience & explore games',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
                           ? AppTheme.textSecondary
                           : AppTheme.textSecondaryLight,
-                    ),
+                ),
               ),
             ],
           ),
@@ -132,9 +134,10 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
     final puzzleStats = ref.watch(puzzleStatsProvider);
 
     final gamesCount = gameStats.totalGames;
-    final winRate = gameStats.totalGames > 0
-        ? '${gameStats.winRate.toStringAsFixed(0)}%'
-        : '0%';
+    final winRate =
+        gameStats.totalGames > 0
+            ? '${gameStats.winRate.toStringAsFixed(0)}%'
+            : '0%';
     final puzzlesCount = puzzleStats.puzzlesSolved;
 
     return Container(
@@ -210,8 +213,11 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
   }
 
   Widget _buildMenuSection(BuildContext context, WidgetRef ref) {
-    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
-    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+    final cardColor =
+        Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
+    final borderColor =
+        Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
 
     return Material(
       color: cardColor,
@@ -263,10 +269,13 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
               subtitle: 'Share error logs via native OS share sheet',
               color: Colors.teal,
               onTap: () async {
-                final success = await LocalDiagnosticsService.instance.exportLogFile();
+                final success =
+                    await LocalDiagnosticsService.instance.exportLogFile();
                 if (!success && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('No diagnostic log available to export')),
+                    const SnackBar(
+                      content: Text('No diagnostic log available to export'),
+                    ),
                   );
                 }
               },
@@ -278,8 +287,11 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
   }
 
   Widget _buildOurGamesSection(BuildContext context) {
-    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
-    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+    final cardColor =
+        Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
+    final borderColor =
+        Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,8 +362,8 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
                   title: Text(
                     'More Ad-Free Games',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   subtitle: Text(
                     'Browse all games on Google Play',
@@ -362,10 +374,11 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
                     size: 18,
                     color: AppTheme.primaryColor,
                   ),
-                  onTap: () => _launchUrl(
-                    context,
-                    'https://play.google.com/store/apps/developer?id=Karna+Digital',
-                  ),
+                  onTap:
+                      () => _launchUrl(
+                        context,
+                        'https://play.google.com/store/apps/developer?id=Karna+Digital',
+                      ),
                 ),
               ],
             ),
@@ -395,9 +408,9 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
       ),
       title: Text(
         title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
       trailing: OutlinedButton(
@@ -406,12 +419,13 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
           minimumSize: const Size(60, 32),
           side: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.5)),
         ),
-        onPressed: () => _launchUrl(
-          context,
-          'market://details?id=$packageName',
-          fallbackWebUrl:
-              'https://play.google.com/store/apps/details?id=$packageName',
-        ),
+        onPressed:
+            () => _launchUrl(
+              context,
+              'market://details?id=$packageName',
+              fallbackWebUrl:
+                  'https://play.google.com/store/apps/details?id=$packageName',
+            ),
         child: const Text('Get', style: TextStyle(fontSize: 12)),
       ),
     );
@@ -422,8 +436,11 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
     WidgetRef ref,
     AppSettings settings,
   ) {
-    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
-    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+    final cardColor =
+        Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
+    final borderColor =
+        Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -544,8 +561,11 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
   }
 
   Widget _buildAboutSection(BuildContext context) {
-    final cardColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
-    final borderColor = Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
+    final cardColor =
+        Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
+    final borderColor =
+        Theme.of(context).dividerTheme.color ?? AppTheme.borderColor;
 
     return Material(
       color: cardColor,
@@ -671,15 +691,15 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
         }
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open link')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Could not open link')));
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open link')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Could not open link')));
       }
     }
   }
@@ -708,10 +728,7 @@ class _StatItem extends StatelessWidget {
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }

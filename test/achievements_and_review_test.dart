@@ -37,36 +37,47 @@ void main() {
       await notifier.unlock('ai_level_5');
 
       final updatedList = container.read(achievementProvider);
-      expect(updatedList.firstWhere((a) => a.id == 'first_win').isUnlocked, isTrue);
-      expect(updatedList.firstWhere((a) => a.id == 'ai_level_5').isUnlocked, isTrue);
-    });
-
-    testWidgets('StatisticsScreen renders Achievements & Trophies section in light and dark themes', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseServiceProvider.overrideWithValue(MockDatabaseService()),
-            stockfishServiceProvider.overrideWithValue(MockStockfishService()),
-          ],
-          child: MaterialApp(
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.dark,
-            home: const StatisticsScreen(),
-          ),
-        ),
+      expect(
+        updatedList.firstWhere((a) => a.id == 'first_win').isUnlocked,
+        isTrue,
       );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-
-      expect(find.text('Achievements & Trophies'), findsOneWidget);
-      expect(find.text('First Victory'), findsOneWidget);
-      expect(find.text('Tactics Scholar'), findsOneWidget);
-      expect(find.text('Grandmaster Slayer'), findsOneWidget);
+      expect(
+        updatedList.firstWhere((a) => a.id == 'ai_level_5').isUnlocked,
+        isTrue,
+      );
     });
+
+    testWidgets(
+      'StatisticsScreen renders Achievements & Trophies section in light and dark themes',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              databaseServiceProvider.overrideWithValue(MockDatabaseService()),
+              stockfishServiceProvider.overrideWithValue(
+                MockStockfishService(),
+              ),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: ThemeMode.dark,
+              home: const StatisticsScreen(),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+
+        expect(find.text('Achievements & Trophies'), findsOneWidget);
+        expect(find.text('First Victory'), findsOneWidget);
+        expect(find.text('Tactics Scholar'), findsOneWidget);
+        expect(find.text('Grandmaster Slayer'), findsOneWidget);
+      },
+    );
   });
 }

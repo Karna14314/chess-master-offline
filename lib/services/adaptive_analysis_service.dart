@@ -46,11 +46,14 @@ class _OpeningBook {
     // After 1.e4 e5 2.Nf3 Nc6 3.Bb5 - black responses
     'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3': 'a7a6',
     // After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4
-    'r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4': 'c2c3',
+    'r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4':
+        'c2c3',
     // After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O
-    'r1bqkb1r/1ppp1ppp/p1n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 1 5': 'e1g1',
+    'r1bqkb1r/1ppp1ppp/p1n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 1 5':
+        'e1g1',
     // After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7
-    'r1bqkb1r/ppp1bppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 5': 'f1c4',
+    'r1bqkb1r/ppp1bppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 5':
+        'f1c4',
     // After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1
     'r1bqkb1r/ppp1bppp/2n2n2/1B2p3/4P3/5N2/PPP2PPP/RNBQ1RK1 b - - 3 5': 'b7b5',
     // After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5
@@ -78,7 +81,7 @@ class AdaptiveAnalysisService {
   bool _isCancelled = false;
 
   AdaptiveAnalysisService(this._engine, [DatabaseService? db])
-      : _db = db ?? DatabaseService.instance;
+    : _db = db ?? DatabaseService.instance;
 
   /// Starts analyzing a full game asynchronously.
   ///
@@ -177,8 +180,12 @@ class AdaptiveAnalysisService {
           evalBefore: defaultEval,
           evalAfter: defaultEval,
           actualEvalBeforeMove: defaultEval,
-          winPercentBefore: EvalConstants.centipawnsToWinPercent(defaultEval * 100),
-          winPercentAfter: EvalConstants.centipawnsToWinPercent(defaultEval * 100),
+          winPercentBefore: EvalConstants.centipawnsToWinPercent(
+            defaultEval * 100,
+          ),
+          winPercentAfter: EvalConstants.centipawnsToWinPercent(
+            defaultEval * 100,
+          ),
           bestMove: bookMove ?? '${move.from}${move.to}${move.promotion ?? ''}',
           classification: MoveClassification.book,
           engineLines: [],
@@ -223,7 +230,9 @@ class AdaptiveAnalysisService {
         probeResult = (eval: cached.eval, lines: cached.lines);
       } catch (e) {
         // Fallback to basic evaluator
-        final basicResult = await BasicEvaluatorService.instance.analyze(board.fen);
+        final basicResult = await BasicEvaluatorService.instance.analyze(
+          board.fen,
+        );
         probeResult = (eval: basicResult.evalInPawns, lines: basicResult.lines);
       }
 
@@ -251,12 +260,14 @@ class AdaptiveAnalysisService {
       double bestEval = probeResult.eval;
       String bestMoveForPlayer = '';
       List<EngineLine> bestLines = probeResult.lines;
-      bool bestIsMate = probeResult.lines.isNotEmpty && probeResult.lines.first.isMate;
+      bool bestIsMate =
+          probeResult.lines.isNotEmpty && probeResult.lines.first.isMate;
 
       try {
-        if (probeResult.lines.isNotEmpty && probeResult.lines.first.moves.isNotEmpty) {
+        if (probeResult.lines.isNotEmpty &&
+            probeResult.lines.first.moves.isNotEmpty) {
           bestMoveForPlayer = probeResult.lines.first.moves.first;
-        }        // If we need deeper analysis and probe depth differs, run full analysis
+        } // If we need deeper analysis and probe depth differs, run full analysis
         if (actualDepth != probeDepth || actualMultiPv != probeMultiPv) {
           final fullResult = await _getCachedOrAnalyze(
             board.fen,
@@ -313,18 +324,22 @@ class AdaptiveAnalysisService {
 
         // ── Step B: Compute centipawn loss and classify ──
         actualEvalSoFar ??= bestEval;
-        final double centipawnLossVal = isWhiteMove
-            ? (bestEval - actualEvalAfter) * 100.0
-            : (actualEvalAfter - bestEval) * 100.0;
+        final double centipawnLossVal =
+            isWhiteMove
+                ? (bestEval - actualEvalAfter) * 100.0
+                : (actualEvalAfter - bestEval) * 100.0;
         final double cplAbs = centipawnLossVal.abs();
 
-        final actualEvalBeforeMove = actualEvalSoFar ?? bestEval; // ignore: dead_null_aware_expression
+        final actualEvalBeforeMove =
+            actualEvalSoFar ?? bestEval; // ignore: dead_null_aware_expression
         actualEvalSoFar = actualEvalAfter;
 
         final winBest = EvalConstants.centipawnsToWinPercent(
           actualEvalBeforeMove * 100,
         );
-        final winActual = EvalConstants.centipawnsToWinPercent(actualEval * 100);
+        final winActual = EvalConstants.centipawnsToWinPercent(
+          actualEval * 100,
+        );
         final winBefore = isWhiteMove ? winBest : (100.0 - winBest);
         final winAfter = isWhiteMove ? winActual : (100.0 - winActual);
         final rawWinDiff = winBefore - winAfter;
@@ -333,12 +348,13 @@ class AdaptiveAnalysisService {
         // Static exchange evaluation
         double? seeCentipawns;
         try {
-          seeCentipawns = StaticExchangeEvaluator.evaluate(
-            board,
-            move.from,
-            move.to,
-            promotion: move.promotion,
-          ).toDouble();
+          seeCentipawns =
+              StaticExchangeEvaluator.evaluate(
+                board,
+                move.from,
+                move.to,
+                promotion: move.promotion,
+              ).toDouble();
         } catch (_) {
           seeCentipawns = null;
         }
@@ -348,9 +364,8 @@ class AdaptiveAnalysisService {
         if (bestLines.length >= 2) {
           final firstEval = bestLines[0].evaluation;
           final secondEval = bestLines[1].evaluation;
-          final margin = isWhiteMove
-              ? (firstEval - secondEval)
-              : (secondEval - firstEval);
+          final margin =
+              isWhiteMove ? (firstEval - secondEval) : (secondEval - firstEval);
           secondBestCpl = (margin * 100.0).abs();
         }
 
@@ -409,7 +424,9 @@ class AdaptiveAnalysisService {
           evalBefore: bestEval,
           evalAfter: bestEval,
           actualEvalBeforeMove: actualEvalSoFar ?? bestEval,
-          winPercentBefore: EvalConstants.centipawnsToWinPercent(bestEval * 100),
+          winPercentBefore: EvalConstants.centipawnsToWinPercent(
+            bestEval * 100,
+          ),
           winPercentAfter: EvalConstants.centipawnsToWinPercent(bestEval * 100),
           bestMove: bestMoveForPlayer,
           classification: MoveClassification.good,
@@ -434,26 +451,27 @@ class AdaptiveAnalysisService {
     // Emit final complete result
     yield AnalysisResult(
       moveIndex: moves.length - 1,
-      analysis: accumulator.moves.isNotEmpty
-          ? accumulator.moves.last
-          : MoveAnalysis(
-              moveIndex: 0,
-              san: '',
-              fen: '',
-              evalBefore: 0.0,
-              evalAfter: 0.0,
-              actualEvalBeforeMove: 0.0,
-              winPercentBefore: 50.0,
-              winPercentAfter: 50.0,
-              bestMove: '',
-              classification: MoveClassification.best,
-              engineLines: [],
-              isWhiteMove: true,
-              centipawnLoss: 0.0,
-              accuracy: 100.0,
-              isMateBefore: false,
-              isMateAfter: false,
-            ),
+      analysis:
+          accumulator.moves.isNotEmpty
+              ? accumulator.moves.last
+              : MoveAnalysis(
+                moveIndex: 0,
+                san: '',
+                fen: '',
+                evalBefore: 0.0,
+                evalAfter: 0.0,
+                actualEvalBeforeMove: 0.0,
+                winPercentBefore: 50.0,
+                winPercentAfter: 50.0,
+                bestMove: '',
+                classification: MoveClassification.best,
+                engineLines: [],
+                isWhiteMove: true,
+                centipawnLoss: 0.0,
+                accuracy: 100.0,
+                isMateBefore: false,
+                isMateAfter: false,
+              ),
       progress: 1.0,
       fullAnalysis: accumulator.build(),
       complete: true,
@@ -479,14 +497,19 @@ class AdaptiveAnalysisService {
       );
       if (cached != null) {
         final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-        final lines = linesJson.map((l) => EngineLine(
-          rank: l['rank'] as int,
-          evaluation: (l['evaluation'] as num).toDouble(),
-          depth: l['depth'] as int,
-          moves: List<String>.from(l['moves']),
-          isMate: (l['isMate'] as bool?) ?? false,
-          mateIn: l['mateIn'] as int?,
-        )).toList();
+        final lines =
+            linesJson
+                .map(
+                  (l) => EngineLine(
+                    rank: l['rank'] as int,
+                    evaluation: (l['evaluation'] as num).toDouble(),
+                    depth: l['depth'] as int,
+                    moves: List<String>.from(l['moves']),
+                    isMate: (l['isMate'] as bool?) ?? false,
+                    mateIn: l['mateIn'] as int?,
+                  ),
+                )
+                .toList();
         return (eval: (cached['evaluation'] as num).toDouble(), lines: lines);
       }
     } catch (e) {
@@ -507,16 +530,25 @@ class AdaptiveAnalysisService {
             requiredMultiPv: multiPv,
           );
           if (softCached != null) {
-            final linesJson = jsonDecode(softCached['engine_lines'] as String) as List;
-            final lines = linesJson.map((l) => EngineLine(
-              rank: l['rank'] as int,
-              evaluation: (l['evaluation'] as num).toDouble(),
-              depth: l['depth'] as int,
-              moves: List<String>.from(l['moves']),
-              isMate: (l['isMate'] as bool?) ?? false,
-              mateIn: l['mateIn'] as int?,
-            )).toList();
-            return (eval: (softCached['evaluation'] as num).toDouble(), lines: lines);
+            final linesJson =
+                jsonDecode(softCached['engine_lines'] as String) as List;
+            final lines =
+                linesJson
+                    .map(
+                      (l) => EngineLine(
+                        rank: l['rank'] as int,
+                        evaluation: (l['evaluation'] as num).toDouble(),
+                        depth: l['depth'] as int,
+                        moves: List<String>.from(l['moves']),
+                        isMate: (l['isMate'] as bool?) ?? false,
+                        mateIn: l['mateIn'] as int?,
+                      ),
+                    )
+                    .toList();
+            return (
+              eval: (softCached['evaluation'] as num).toDouble(),
+              lines: lines,
+            );
           }
         }
       } catch (e) {
@@ -534,14 +566,19 @@ class AdaptiveAnalysisService {
 
     // Cache the result
     try {
-      final linesJson = result.lines.map((l) => ({
-        'rank': l.rank,
-        'evaluation': l.evaluation,
-        'depth': l.depth,
-        'moves': l.moves,
-        'isMate': l.isMate,
-        'mateIn': l.mateIn,
-      })).toList();
+      final linesJson =
+          result.lines
+              .map(
+                (l) => ({
+                  'rank': l.rank,
+                  'evaluation': l.evaluation,
+                  'depth': l.depth,
+                  'moves': l.moves,
+                  'isMate': l.isMate,
+                  'mateIn': l.mateIn,
+                }),
+              )
+              .toList();
 
       await _db.cacheEvaluation(
         fen: fen,

@@ -164,7 +164,9 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: AppTheme.primaryColor,
-            inactiveTrackColor: AppTheme.borderColorFor(context).withValues(alpha: 0.3),
+            inactiveTrackColor: AppTheme.borderColorFor(
+              context,
+            ).withValues(alpha: 0.3),
             thumbColor: Theme.of(context).colorScheme.onSurface,
             overlayColor: AppTheme.primaryColor.withValues(alpha: 0.2),
             valueIndicatorColor: AppTheme.primaryColor,
@@ -229,14 +231,22 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                       : AppTheme.cardColor(context).withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppTheme.primaryColor : AppTheme.borderColorFor(context).withValues(alpha: 0.3),
+                color:
+                    isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.borderColorFor(
+                          context,
+                        ).withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
             child: Text(
               timer.displayString,
               style: GoogleFonts.spaceGrotesk(
-                color: isSelected ? AppTheme.textPrimaryFor(context) : AppTheme.textSecondaryFor(context),
+                color:
+                    isSelected
+                        ? AppTheme.textPrimaryFor(context)
+                        : AppTheme.textSecondaryFor(context),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
             ),
@@ -249,9 +259,10 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   void _startGame() {
     final diffLevel =
         AppConstants.difficultyLevels[_difficultyLevel.toInt() - 1];
-    final timerControl = _selectedMode == GameMode.bot
-        ? AppConstants.timeControls[0]
-        : AppConstants.timeControls[_selectedTimerIndex];
+    final timerControl =
+        _selectedMode == GameMode.bot
+            ? AppConstants.timeControls[0]
+            : AppConstants.timeControls[_selectedTimerIndex];
 
     ref
         .read(gameSessionProvider.notifier)
@@ -310,7 +321,10 @@ class _ColorCircle extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : AppTheme.borderColorFor(context).withValues(alpha: 0.3),
+            color:
+                isSelected
+                    ? AppTheme.primaryColor
+                    : AppTheme.borderColorFor(context).withValues(alpha: 0.3),
             width: isSelected ? 3 : 1,
           ),
           boxShadow:

@@ -145,12 +145,16 @@ class _MoveChip extends StatelessWidget {
     final classification = analysis?.classification;
     final cColor = classification != null ? Color(classification.color) : null;
 
-    Color textColor = isSelected
-        ? Colors.white
-        : (cColor ?? AppTheme.textPrimaryFor(context));
-    Color bgColor = isSelected
-        ? AppTheme.primaryColor
-        : (cColor != null ? cColor.withValues(alpha: 0.1) : Colors.transparent);
+    Color textColor =
+        isSelected
+            ? Colors.white
+            : (cColor ?? AppTheme.textPrimaryFor(context));
+    Color bgColor =
+        isSelected
+            ? AppTheme.primaryColor
+            : (cColor != null
+                ? cColor.withValues(alpha: 0.1)
+                : Colors.transparent);
 
     final symbol = _getSymbol(classification);
 
@@ -162,11 +166,12 @@ class _MoveChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(6),
-          border: isSelected
-              ? Border.all(color: AppTheme.primaryColor)
-              : (cColor != null
-                  ? Border.all(color: cColor.withValues(alpha: 0.3))
-                  : null),
+          border:
+              isSelected
+                  ? Border.all(color: AppTheme.primaryColor)
+                  : (cColor != null
+                      ? Border.all(color: cColor.withValues(alpha: 0.3))
+                      : null),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -184,9 +189,10 @@ class _MoveChip extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.white.withValues(alpha: 0.3)
-                      : (cColor ?? Colors.grey).withValues(alpha: 0.2),
+                  color:
+                      isSelected
+                          ? Colors.white.withValues(alpha: 0.3)
+                          : (cColor ?? Colors.grey).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
