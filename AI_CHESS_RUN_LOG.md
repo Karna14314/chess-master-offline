@@ -66,3 +66,18 @@ I have completed the task to refactor the UI and navigation for production readi
 - Added Puzzle Journey hero card at top of .
 - Built lightweight completion dialogs and milestone achievement popups with one-tap continuation.
 - Added Journey statistics tracking to  and registered achievements in .
+
+
+---
+
+## Task: ChessMaster Full Stability, Crash, Journey & Home UX Remediation
+- Documented live audit and technical findings in docs/chessmaster_stability_and_ux_audit.md.
+- Fixed Stockfish native SIGSEGV crash in Position::is_draw() by serializing ucinewgame commands via _commandQueue and enhancing _stopCurrentSearchAndWait() with isready/readyok thread synchronization.
+- Enforced business logic in PuzzleNotifier blocking skipPuzzle() and showSolution() for Journey mode while retaining hints and ensuring level progress persistence.
+- Reordered HomeScreen information hierarchy to display core Game Modes in the upper viewport.
+- Decoupled Daily Puzzle completion tracking using daily_puzzle_last_solved_date and isDailyPuzzleSolvedToday.
+- Added regression test suite in test/remediation_audit_test.dart and verified all tests pass clean.
+**Verification:**
+- Analyze: PASS
+- Format: PASS
+- Tests: PASS
