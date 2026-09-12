@@ -27,21 +27,22 @@ void main() {
   Future<void> waitForListener() =>
       Future<void>.delayed(const Duration(milliseconds: 50));
 
-  test('bestmove (none) parsed through the service pipeline is flagged no-move',
-      () async {
-    final future = service.getBestMove(fen: startPos, depth: 3);
-    await waitForListener();
-    service.emitEngineLineForTesting('bestmove (none)');
-
-    final result = await future.timeout(const Duration(seconds: 5));
-    expect(result.isNoMove, isTrue);
-    expect(result.isValid, isFalse);
-    expect(result.bestMove, '(none)');
-    expect(result.parsedMove, ('', '', null));
-  });
-
   test(
-      'overlapping getBestMove calls do not cross-contaminate '
+    'bestmove (none) parsed through the service pipeline is flagged no-move',
+    () async {
+      final future = service.getBestMove(fen: startPos, depth: 3);
+      await waitForListener();
+      service.emitEngineLineForTesting('bestmove (none)');
+
+      final result = await future.timeout(const Duration(seconds: 5));
+      expect(result.isNoMove, isTrue);
+      expect(result.isValid, isFalse);
+      expect(result.bestMove, '(none)');
+      expect(result.parsedMove, ('', '', null));
+    },
+  );
+
+  test('overlapping getBestMove calls do not cross-contaminate '
       '(second call returns fallback, first keeps its own move)', () async {
     final first = service.getBestMove(fen: startPos, depth: 3);
     final second = service.getBestMove(fen: startPos, depth: 3);

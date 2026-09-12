@@ -154,7 +154,10 @@ class _NavButton extends StatelessWidget {
           child: Icon(
             icon,
             size: isLarge ? 28 : 22,
-            color: onPressed == null ? AppTheme.textHintFor(context) : AppTheme.textPrimaryFor(context),
+            color:
+                onPressed == null
+                    ? AppTheme.textHintFor(context)
+                    : AppTheme.textPrimaryFor(context),
           ),
         ),
       ),

@@ -172,11 +172,16 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     final isProvisional = stats.isProvisional;
 
     Color eloColor;
-    if (elo >= 2000) eloColor = const Color(0xFF7B1FA2);
-    else if (elo >= 1800) eloColor = const Color(0xFF1E88E5);
-    else if (elo >= 1600) eloColor = const Color(0xFF43A047);
-    else if (elo >= 1400) eloColor = const Color(0xFFFB8C00);
-    else eloColor = const Color(0xFFE53935);
+    if (elo >= 2000)
+      eloColor = const Color(0xFF7B1FA2);
+    else if (elo >= 1800)
+      eloColor = const Color(0xFF1E88E5);
+    else if (elo >= 1600)
+      eloColor = const Color(0xFF43A047);
+    else if (elo >= 1400)
+      eloColor = const Color(0xFFFB8C00);
+    else
+      eloColor = const Color(0xFFE53935);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -214,7 +219,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                     const SizedBox(width: 8),
                     if (isProvisional)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.amber.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
@@ -243,7 +251,9 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                     if (trend != 0) ...[
                       const SizedBox(width: 8),
                       Icon(
-                        trend > 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                        trend > 0
+                            ? Icons.arrow_upward_rounded
+                            : Icons.arrow_downward_rounded,
                         size: 14,
                         color: trend > 0 ? Colors.green : Colors.red,
                       ),
@@ -387,7 +397,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     );
   }
 
-    Widget _buildJourneySection(BuildContext context) {
+  Widget _buildJourneySection(BuildContext context) {
     final journey = ref.watch(journeyProvider);
     final streak = ref.watch(streakProvider);
 
@@ -409,9 +419,9 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Puzzle Journey',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -429,22 +439,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _StatItem(
-                label: 'Level',
-                value: '${journey.currentLevel}',
-              ),
-              _StatItem(
-                label: 'Solved',
-                value: '${journey.solvedCount}',
-              ),
-              _StatItem(
-                label: 'Remaining',
-                value: '${journey.remainingCount}',
-              ),
-              _StatItem(
-                label: 'Streak',
-                value: '${streak.streakCount}d',
-              ),
+              _StatItem(label: 'Level', value: '${journey.currentLevel}'),
+              _StatItem(label: 'Solved', value: '${journey.solvedCount}'),
+              _StatItem(label: 'Remaining', value: '${journey.remainingCount}'),
+              _StatItem(label: 'Streak', value: '${streak.streakCount}d'),
             ],
           ),
           const SizedBox(height: 12),
@@ -453,7 +451,9 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             child: LinearProgressIndicator(
               value: journey.completionPercent / 100,
               backgroundColor: AppTheme.borderColorFor(context),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppTheme.primaryColor,
+              ),
               minHeight: 6,
             ),
           ),
@@ -711,9 +711,16 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.bar_chart, size: 48, color: AppTheme.textHintFor(context)),
+            Icon(
+              Icons.bar_chart,
+              size: 48,
+              color: AppTheme.textHintFor(context),
+            ),
             const SizedBox(height: 12),
-            Text(message, style: TextStyle(color: AppTheme.textHintFor(context))),
+            Text(
+              message,
+              style: TextStyle(color: AppTheme.textHintFor(context)),
+            ),
           ],
         ),
       ),
@@ -740,9 +747,14 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? AppTheme.cardColor(context) : AppTheme.cardLight;
-    final borderColor = isDark ? AppTheme.borderColorFor(context) : AppTheme.borderLight;
-    final textPrimary = isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
-    final textSecondary = isDark ? AppTheme.textSecondaryFor(context) : AppTheme.textSecondaryLight;
+    final borderColor =
+        isDark ? AppTheme.borderColorFor(context) : AppTheme.borderLight;
+    final textPrimary =
+        isDark ? AppTheme.textPrimary : AppTheme.textPrimaryLight;
+    final textSecondary =
+        isDark
+            ? AppTheme.textSecondaryFor(context)
+            : AppTheme.textSecondaryLight;
 
     final unlockedCount = achievements.where((a) => a.isUnlocked).length;
 
@@ -755,7 +767,9 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: Text(
                 'Achievements & Trophies',
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -788,21 +802,26 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: achievements.length,
-            separatorBuilder: (context, index) => Divider(color: borderColor, height: 1),
+            separatorBuilder:
+                (context, index) => Divider(color: borderColor, height: 1),
             itemBuilder: (context, index) {
               final ach = achievements[index];
               return ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: ach.isUnlocked
-                        ? Colors.amber.withValues(alpha: 0.15)
-                        : textSecondary.withValues(alpha: 0.1),
+                    color:
+                        ach.isUnlocked
+                            ? Colors.amber.withValues(alpha: 0.15)
+                            : textSecondary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     ach.icon,
-                    color: ach.isUnlocked ? Colors.amber : textSecondary.withValues(alpha: 0.4),
+                    color:
+                        ach.isUnlocked
+                            ? Colors.amber
+                            : textSecondary.withValues(alpha: 0.4),
                     size: 24,
                   ),
                 ),
@@ -815,14 +834,20 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                 ),
                 subtitle: Text(
                   ach.description,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: textSecondary,
-                  ),
+                  style: GoogleFonts.inter(fontSize: 12, color: textSecondary),
                 ),
-                trailing: ach.isUnlocked
-                    ? const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 20)
-                    : Icon(Icons.lock_outline, color: textSecondary.withValues(alpha: 0.4), size: 20),
+                trailing:
+                    ach.isUnlocked
+                        ? const Icon(
+                          Icons.check_circle,
+                          color: AppTheme.primaryColor,
+                          size: 20,
+                        )
+                        : Icon(
+                          Icons.lock_outline,
+                          color: textSecondary.withValues(alpha: 0.4),
+                          size: 20,
+                        ),
               );
             },
           ),
@@ -944,9 +969,9 @@ class _DetailRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondaryFor(context)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.textSecondaryFor(context),
+            ),
           ),
           Text(
             value,

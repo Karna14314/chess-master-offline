@@ -75,10 +75,14 @@ class MockDatabaseService implements DatabaseService {
     required int botElo,
   }) async {}
 
-
-
   @override
-  Future<void> saveAnalysis(String gameId, String fen, String moves, String analysisJson, int depth) async {}
+  Future<void> saveAnalysis(
+    String gameId,
+    String fen,
+    String moves,
+    String analysisJson,
+    int depth,
+  ) async {}
 
   @override
   Future<void> saveGame(Map<String, dynamic> gameData) async {}
@@ -121,7 +125,6 @@ class MockDatabaseService implements DatabaseService {
 
   @override
   Future<void> clearEvaluationCache() async {}
-
 }
 
 void main() {

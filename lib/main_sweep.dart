@@ -35,18 +35,30 @@ const _configs = <Cfg>[
 ];
 
 const _game = <String>[
-  'e2e4', 'e7e5',
-  'g1f3', 'b8c6',
-  'f1c4', 'g8f6',
-  'd2d3', 'f8c5',
-  'e1g1', 'd7d6',
-  'c2c3', 'c8g4',
-  'h2h3', 'g4h5',
-  'g2g4', 'h5g6',
-  'g4g5', 'f6d7',
-  'd3d4', 'e5d4',
-  'c3d4', 'c5b6',
-  'd4d5', 'c6e7',
+  'e2e4',
+  'e7e5',
+  'g1f3',
+  'b8c6',
+  'f1c4',
+  'g8f6',
+  'd2d3',
+  'f8c5',
+  'e1g1',
+  'd7d6',
+  'c2c3',
+  'c8g4',
+  'h2h3',
+  'g4h5',
+  'g2g4',
+  'h5g6',
+  'g4g5',
+  'f6d7',
+  'd3d4',
+  'e5d4',
+  'c3d4',
+  'c5b6',
+  'd4d5',
+  'c6e7',
 ];
 
 List<String> _positions() {
@@ -131,16 +143,19 @@ class _S extends State<_App> {
         final labels = <MoveClassification>[];
         for (var ply = 0; ply < _game.length; ply++) {
           final isWhite = ply.isEven;
-          final cpl = ((isWhite
-                      ? evals[ply] - evals[ply + 1]
-                      : evals[ply + 1] - evals[ply]) *
-                  100)
-              .abs();
-          labels.add(classifyMoveCpl(
-            centipawnLoss: cpl,
-            bestMove: null,
-            actualMove: 'x',
-          ));
+          final cpl =
+              ((isWhite
+                          ? evals[ply] - evals[ply + 1]
+                          : evals[ply + 1] - evals[ply]) *
+                      100)
+                  .abs();
+          labels.add(
+            classifyMoveCpl(
+              centipawnLoss: cpl,
+              bestMove: null,
+              actualMove: 'x',
+            ),
+          );
         }
 
         refLabels ??= labels;
@@ -150,12 +165,14 @@ class _S extends State<_App> {
         }
 
         final total = sw.elapsedMilliseconds;
-        _log('RESULT ${cfg.name} '
-            'totalMs=$total '
-            'perPosMs=${(total / fens.length).round()} '
-            'gameSec=${(total / 1000).toStringAsFixed(1)} '
-            'labelAgreement=$agree/${labels.length} '
-            '(${(agree / labels.length * 100).toStringAsFixed(0)}%)');
+        _log(
+          'RESULT ${cfg.name} '
+          'totalMs=$total '
+          'perPosMs=${(total / fens.length).round()} '
+          'gameSec=${(total / 1000).toStringAsFixed(1)} '
+          'labelAgreement=$agree/${labels.length} '
+          '(${(agree / labels.length * 100).toStringAsFixed(0)}%)',
+        );
       }
 
       engine.setLivePlayStrength();

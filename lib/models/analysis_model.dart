@@ -202,9 +202,8 @@ class GameAnalysis {
       totalCpl += move.centipawnLoss;
       moveAccuracies.add(move.accuracy);
 
-      final playerWinPercent = move.isWhiteMove
-          ? move.winPercentAfter
-          : 100 - move.winPercentAfter;
+      final playerWinPercent =
+          move.isWhiteMove ? move.winPercentAfter : 100 - move.winPercentAfter;
       winPercents.add(playerWinPercent);
 
       switch (move.classification) {
@@ -244,7 +243,10 @@ class GameAnalysis {
     }
 
     final count = moves.length;
-    final winBasedAccuracy = EvalConstants.gameAccuracy(moveAccuracies, winPercents);
+    final winBasedAccuracy = EvalConstants.gameAccuracy(
+      moveAccuracies,
+      winPercents,
+    );
 
     // Per-side accuracy uses the same model, restricted to that side's plies.
     double sideAccuracy(bool white) {
@@ -297,12 +299,21 @@ class GameAnalysis {
       finalEval: moves.isNotEmpty ? moves.last.evalAfter : 0.0,
       whiteAccuracy: sideAccuracy(true),
       blackAccuracy: sideAccuracy(false),
-      openingAccuracy: openingMoves.isEmpty ? 0.0 :
-        openingMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / openingMoves.length,
-      middlegameAccuracy: middleMoves.isEmpty ? 0.0 :
-        middleMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / middleMoves.length,
-      endgameAccuracy: endMoves.isEmpty ? 0.0 :
-        endMoves.map((m) => m.accuracy).reduce((a, b) => a + b) / endMoves.length,
+      openingAccuracy:
+          openingMoves.isEmpty
+              ? 0.0
+              : openingMoves.map((m) => m.accuracy).reduce((a, b) => a + b) /
+                  openingMoves.length,
+      middlegameAccuracy:
+          middleMoves.isEmpty
+              ? 0.0
+              : middleMoves.map((m) => m.accuracy).reduce((a, b) => a + b) /
+                  middleMoves.length,
+      endgameAccuracy:
+          endMoves.isEmpty
+              ? 0.0
+              : endMoves.map((m) => m.accuracy).reduce((a, b) => a + b) /
+                  endMoves.length,
     );
   }
 
@@ -371,8 +382,10 @@ MoveClassification classifyMove({
       return MoveClassification.best;
     }
 
-    final hadMate = isMateBefore && (isWhiteMove ? evalBefore > 0 : evalBefore < 0);
-    final lostMate = isMateAfter && (isWhiteMove ? evalAfter < 0 : evalAfter > 0);
+    final hadMate =
+        isMateBefore && (isWhiteMove ? evalBefore > 0 : evalBefore < 0);
+    final lostMate =
+        isMateAfter && (isWhiteMove ? evalAfter < 0 : evalAfter > 0);
 
     if (hadMate && lostMate) {
       return MoveClassification.miss;
@@ -385,8 +398,8 @@ MoveClassification classifyMove({
   }
 
   // ── Best move match ──
-  final isBestMoveMatch = bestMove != null &&
-      actualMove.toLowerCase() == bestMove.toLowerCase();
+  final isBestMoveMatch =
+      bestMove != null && actualMove.toLowerCase() == bestMove.toLowerCase();
 
   if (isBestMoveMatch) {
     return MoveClassification.best;
@@ -604,9 +617,8 @@ class GameAnalysisAccumulator {
     _totalCpl += move.centipawnLoss;
     _accuracies.add(move.accuracy);
 
-    final playerWinPercent = move.isWhiteMove
-        ? move.winPercentAfter
-        : 100 - move.winPercentAfter;
+    final playerWinPercent =
+        move.isWhiteMove ? move.winPercentAfter : 100 - move.winPercentAfter;
     _winPercents.add(playerWinPercent);
 
     if (move.isWhiteMove) {
@@ -685,12 +697,14 @@ class GameAnalysisAccumulator {
       bestMoves: _bestMoves,
       bookMoves: _bookMoves,
       finalEval: _moves.last.evalAfter,
-      whiteAccuracy: _whiteAccuracies.isEmpty
-          ? 0.0
-          : EvalConstants.gameAccuracy(_whiteAccuracies, _whiteWinPercents),
-      blackAccuracy: _blackAccuracies.isEmpty
-          ? 0.0
-          : EvalConstants.gameAccuracy(_blackAccuracies, _blackWinPercents),
+      whiteAccuracy:
+          _whiteAccuracies.isEmpty
+              ? 0.0
+              : EvalConstants.gameAccuracy(_whiteAccuracies, _whiteWinPercents),
+      blackAccuracy:
+          _blackAccuracies.isEmpty
+              ? 0.0
+              : EvalConstants.gameAccuracy(_blackAccuracies, _blackWinPercents),
       openingAccuracy: phaseAccuracy(GamePhase.opening),
       middlegameAccuracy: phaseAccuracy(GamePhase.middlegame),
       endgameAccuracy: phaseAccuracy(GamePhase.endgame),

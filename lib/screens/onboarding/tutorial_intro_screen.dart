@@ -93,9 +93,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: _buildContent(),
-      ),
+      body: SafeArea(child: _buildContent()),
     );
   }
 
@@ -219,7 +217,8 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
           _buildStep(
             step: '1',
             title: 'Tap a piece',
-            description: 'Tap the pawn on d7 (the piece with a crown-like symbol when promoted).',
+            description:
+                'Tap the pawn on d7 (the piece with a crown-like symbol when promoted).',
           ),
           const SizedBox(height: 16),
           _buildStep(
@@ -231,7 +230,8 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
           _buildStep(
             step: '3',
             title: 'Get checkmate!',
-            description: 'Your move will be checkmate — the enemy king can\'t escape!',
+            description:
+                'Your move will be checkmate — the enemy king can\'t escape!',
           ),
           const SizedBox(height: 32),
           SizedBox(
@@ -414,7 +414,9 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => const HomeScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const HomeScreen(),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(

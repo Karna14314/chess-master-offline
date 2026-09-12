@@ -11,10 +11,7 @@ void main() {
     test('free capture of an undefended pawn wins material', () {
       // White rook on a1, black pawn on a7, nothing defends it.
       final board = chess.Chess.fromFEN('4k3/p7/8/8/8/8/8/R3K3 w - - 0 1');
-      expect(
-        StaticExchangeEvaluator.evaluate(board, 'a1', 'a7'),
-        equals(100),
-      );
+      expect(StaticExchangeEvaluator.evaluate(board, 'a1', 'a7'), equals(100));
     });
 
     test('capturing a defended pawn with a rook loses material', () {
@@ -29,18 +26,12 @@ void main() {
     test('quiet move into an attacked square is a sacrifice', () {
       // White rook steps to a7 where the black king can take it for free.
       final board = chess.Chess.fromFEN('1k6/8/8/8/8/8/8/R3K3 w - - 0 1');
-      expect(
-        StaticExchangeEvaluator.evaluate(board, 'a1', 'a7'),
-        equals(-500),
-      );
+      expect(StaticExchangeEvaluator.evaluate(board, 'a1', 'a7'), equals(-500));
     });
 
     test('quiet safe move is materially neutral', () {
       final board = chess.Chess.fromFEN('4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
-      expect(
-        StaticExchangeEvaluator.evaluate(board, 'a1', 'a5'),
-        equals(0),
-      );
+      expect(StaticExchangeEvaluator.evaluate(board, 'a1', 'a5'), equals(0));
     });
 
     test('board is left unmodified', () {
@@ -62,16 +53,18 @@ void main() {
       expect(c, equals(MoveClassification.brilliant));
     });
 
-    test('unsound sacrifice (material lost, eval collapses) is not Brilliant',
-        () {
-      final c = classifyMoveCpl(
-        centipawnLoss: 450,
-        bestMove: 'a1a8',
-        actualMove: 'c4f7',
-        seeCentipawns: -330,
-      );
-      expect(c, equals(MoveClassification.blunder));
-    });
+    test(
+      'unsound sacrifice (material lost, eval collapses) is not Brilliant',
+      () {
+        final c = classifyMoveCpl(
+          centipawnLoss: 450,
+          bestMove: 'a1a8',
+          actualMove: 'c4f7',
+          seeCentipawns: -330,
+        );
+        expect(c, equals(MoveClassification.blunder));
+      },
+    );
 
     test('good move that risks no material is not Brilliant', () {
       final c = classifyMoveCpl(
@@ -166,10 +159,10 @@ void main() {
   group('classifyMoveCpl — existing behaviour is preserved', () {
     test('thresholds without the optional signals are unchanged', () {
       MoveClassification classify(double cpl) => classifyMoveCpl(
-            centipawnLoss: cpl,
-            bestMove: 'a1a8',
-            actualMove: 'h2h3',
-          );
+        centipawnLoss: cpl,
+        bestMove: 'a1a8',
+        actualMove: 'h2h3',
+      );
 
       expect(classify(0), equals(MoveClassification.best));
       expect(classify(10), equals(MoveClassification.best));

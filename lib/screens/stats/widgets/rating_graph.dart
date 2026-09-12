@@ -31,8 +31,11 @@ class RatingGraph extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.show_chart_rounded,
-                  size: 48, color: AppTheme.textHintFor(context)),
+              Icon(
+                Icons.show_chart_rounded,
+                size: 48,
+                color: AppTheme.textHintFor(context),
+              ),
               const SizedBox(height: 12),
               Text(
                 'Play games to see your rating graph',
@@ -52,14 +55,20 @@ class RatingGraph extends StatelessWidget {
       spots.add(FlSpot(i.toDouble(), eloHistory[i].elo.toDouble()));
     }
 
-    final minElo = math.min(
-      currentElo - 100,
-      eloHistory.map((e) => e.elo).reduce(math.min),
-    ).toDouble();
-    final maxElo = math.max(
-      currentElo + 100,
-      eloHistory.map((e) => e.elo).reduce(math.max),
-    ).toDouble();
+    final minElo =
+        math
+            .min(
+              currentElo - 100,
+              eloHistory.map((e) => e.elo).reduce(math.min),
+            )
+            .toDouble();
+    final maxElo =
+        math
+            .max(
+              currentElo + 100,
+              eloHistory.map((e) => e.elo).reduce(math.max),
+            )
+            .toDouble();
 
     return Container(
       height: 220,
@@ -85,7 +94,10 @@ class RatingGraph extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: _getRatingColor(currentElo).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -109,10 +121,13 @@ class RatingGraph extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: 50,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: AppTheme.borderColorFor(context).withValues(alpha: 0.3),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine:
+                      (value) => FlLine(
+                        color: AppTheme.borderColorFor(
+                          context,
+                        ).withValues(alpha: 0.3),
+                        strokeWidth: 1,
+                      ),
                 ),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
@@ -120,13 +135,14 @@ class RatingGraph extends StatelessWidget {
                       showTitles: true,
                       reservedSize: 40,
                       interval: 100,
-                      getTitlesWidget: (value, meta) => Text(
-                        value.toInt().toString(),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: AppTheme.textHintFor(context),
-                        ),
-                      ),
+                      getTitlesWidget:
+                          (value, meta) => Text(
+                            value.toInt().toString(),
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              color: AppTheme.textHintFor(context),
+                            ),
+                          ),
                     ),
                   ),
                   bottomTitles: AxisTitles(
@@ -152,13 +168,13 @@ class RatingGraph extends StatelessWidget {
                     isStrokeCapRound: true,
                     dotData: FlDotData(
                       show: spots.length <= 20,
-                      getDotPainter: (spot, percent, barData, index) =>
-                          FlDotCirclePainter(
-                        radius: 4,
-                        color: _getRatingColor(currentElo),
-                        strokeWidth: 2,
-                        strokeColor: Colors.white,
-                      ),
+                      getDotPainter:
+                          (spot, percent, barData, index) => FlDotCirclePainter(
+                            radius: 4,
+                            color: _getRatingColor(currentElo),
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          ),
                     ),
                     belowBarData: BarAreaData(
                       show: true,

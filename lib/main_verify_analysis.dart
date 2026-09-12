@@ -17,33 +17,55 @@ void main() {
 
 /// Game A: quiet Italian — inaccuracies and mistakes, no outright blunder.
 const _gameA = <String>[
-  'e2e4', 'e7e5',
-  'g1f3', 'b8c6',
-  'f1c4', 'g8f6',
-  'd2d3', 'f8c5',
-  'e1g1', 'd7d6',
-  'c2c3', 'c8g4',
-  'h2h3', 'g4h5',
-  'g2g4', 'h5g6',
-  'g4g5', 'f6d7',
-  'd3d4', 'e5d4',
-  'c3d4', 'c5b6',
-  'd4d5', 'c6e7',
+  'e2e4',
+  'e7e5',
+  'g1f3',
+  'b8c6',
+  'f1c4',
+  'g8f6',
+  'd2d3',
+  'f8c5',
+  'e1g1',
+  'd7d6',
+  'c2c3',
+  'c8g4',
+  'h2h3',
+  'g4h5',
+  'g2g4',
+  'h5g6',
+  'g4g5',
+  'f6d7',
+  'd3d4',
+  'e5d4',
+  'c3d4',
+  'c5b6',
+  'd4d5',
+  'c6e7',
 ];
 
 /// Game B: contains a clear blunder — Black hangs the queen with 6...Qxg2,
 /// and White has a knight sacrifice on f7 earlier for the Brilliant path.
 const _gameB = <String>[
-  'e2e4', 'e7e5',
-  'g1f3', 'b8c6',
-  'f1c4', 'f8c5',
-  'b2b4', 'c5b4',
-  'c2c3', 'b4a5',
-  'd2d4', 'd8g5',
-  'd4e5', 'g5g2',
-  'h1g1', 'g2h3',
-  'c4f7', 'e8e7',
-  'f7g8', 'h8g8',
+  'e2e4',
+  'e7e5',
+  'g1f3',
+  'b8c6',
+  'f1c4',
+  'f8c5',
+  'b2b4',
+  'c5b4',
+  'c2c3',
+  'b4a5',
+  'd2d4',
+  'd8g5',
+  'd4e5',
+  'g5g2',
+  'h1g1',
+  'g2h3',
+  'c4f7',
+  'e8e7',
+  'f7g8',
+  'h8g8',
 ];
 
 List<ChessMove> _buildMoves(List<String> uciMoves) {
@@ -116,8 +138,10 @@ class _VerifyAppState extends State<_VerifyApp> {
       final initSw = Stopwatch()..start();
       await engine.initialize();
       initSw.stop();
-      _log('ENGINE ready=${engine.isReady} fallback=${engine.isUsingFallback} '
-          'initMs=${initSw.elapsedMilliseconds}');
+      _log(
+        'ENGINE ready=${engine.isReady} fallback=${engine.isUsingFallback} '
+        'initMs=${initSw.elapsedMilliseconds}',
+      );
 
       await _analyzeGame('GAME A (quiet Italian)', _gameA);
 
@@ -145,30 +169,29 @@ class _VerifyAppState extends State<_VerifyApp> {
       int lastCount = 0;
       int lastElapsed = 0;
 
-      final sub = container.listen<AnalysisState>(
-        analysisProvider,
-        (prev, next) {
-          final ms = total.elapsedMilliseconds;
-          final count = next.analyzedMoves.length;
+      final sub = container.listen<AnalysisState>(analysisProvider, (
+        prev,
+        next,
+      ) {
+        final ms = total.elapsedMilliseconds;
+        final count = next.analyzedMoves.length;
 
-          if (count != lastCount) {
-            final batchMs = ms - lastElapsed;
-            final plies = count - lastCount;
-            _log(
-              'TICK t=${ms}ms progress=${(next.analysisProgress * 100).toStringAsFixed(0)}% '
-              'plies=$count/${moves.length} batchMs=$batchMs '
-              'perPlyMs=${plies > 0 ? (batchMs / plies).toStringAsFixed(0) : "-"} '
-              'DISPLAYED_ACCURACY=${next.fullAnalysis?.averageAccuracy.toStringAsFixed(1) ?? "null"} '
-              'white=${next.fullAnalysis?.whiteAccuracy.toStringAsFixed(1) ?? "null"} '
-              'black=${next.fullAnalysis?.blackAccuracy.toStringAsFixed(1) ?? "null"} '
-              'isAnalyzing=${next.isAnalyzing}',
-            );
-            lastCount = count;
-            lastElapsed = ms;
-          }
-        },
-        fireImmediately: true,
-      );
+        if (count != lastCount) {
+          final batchMs = ms - lastElapsed;
+          final plies = count - lastCount;
+          _log(
+            'TICK t=${ms}ms progress=${(next.analysisProgress * 100).toStringAsFixed(0)}% '
+            'plies=$count/${moves.length} batchMs=$batchMs '
+            'perPlyMs=${plies > 0 ? (batchMs / plies).toStringAsFixed(0) : "-"} '
+            'DISPLAYED_ACCURACY=${next.fullAnalysis?.averageAccuracy.toStringAsFixed(1) ?? "null"} '
+            'white=${next.fullAnalysis?.whiteAccuracy.toStringAsFixed(1) ?? "null"} '
+            'black=${next.fullAnalysis?.blackAccuracy.toStringAsFixed(1) ?? "null"} '
+            'isAnalyzing=${next.isAnalyzing}',
+          );
+          lastCount = count;
+          lastElapsed = ms;
+        }
+      }, fireImmediately: true);
 
       await notifier.loadGame(moves: moves);
       await notifier.analyzeFullGame();
@@ -178,11 +201,13 @@ class _VerifyAppState extends State<_VerifyApp> {
       final state = container.read(analysisProvider);
       final analyzed = state.analyzedMoves;
 
-      _log('TOTAL_ELAPSED_MS=${total.elapsedMilliseconds} '
-          'plies=${analyzed.length} '
-          'avgPerPlyMs=${analyzed.isEmpty ? 0 : (total.elapsedMilliseconds / analyzed.length).round()} '
-          'searchesPerPly=2 '
-          'totalSearches=${analyzed.length * 2}');
+      _log(
+        'TOTAL_ELAPSED_MS=${total.elapsedMilliseconds} '
+        'plies=${analyzed.length} '
+        'avgPerPlyMs=${analyzed.isEmpty ? 0 : (total.elapsedMilliseconds / analyzed.length).round()} '
+        'searchesPerPly=2 '
+        'totalSearches=${analyzed.length * 2}',
+      );
 
       _log('===== $title =====');
       _log(

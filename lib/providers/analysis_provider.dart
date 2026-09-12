@@ -328,14 +328,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
       if (cached != null) {
         final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-        final lines = linesJson.map((l) => EngineLine(
-          rank: l['rank'] as int,
-          evaluation: (l['evaluation'] as num).toDouble(),
-          depth: l['depth'] as int,
-          moves: List<String>.from(l['moves']),
-          isMate: (l['isMate'] as bool?) ?? false,
-          mateIn: l['mateIn'] as int?,
-        )).toList();
+        final lines =
+            linesJson
+                .map(
+                  (l) => EngineLine(
+                    rank: l['rank'] as int,
+                    evaluation: (l['evaluation'] as num).toDouble(),
+                    depth: l['depth'] as int,
+                    moves: List<String>.from(l['moves']),
+                    isMate: (l['isMate'] as bool?) ?? false,
+                    mateIn: l['mateIn'] as int?,
+                  ),
+                )
+                .toList();
 
         state = state.copyWith(
           currentEval: (cached['evaluation'] as num).toDouble(),
@@ -366,14 +371,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         },
       );
 
-      final linesJson = result.lines.map((l) => ({
-        'rank': l.rank,
-        'evaluation': l.evaluation,
-        'depth': l.depth,
-        'moves': l.moves,
-        'isMate': l.isMate,
-        'mateIn': l.mateIn,
-      })).toList();
+      final linesJson =
+          result.lines
+              .map(
+                (l) => ({
+                  'rank': l.rank,
+                  'evaluation': l.evaluation,
+                  'depth': l.depth,
+                  'moves': l.moves,
+                  'isMate': l.isMate,
+                  'mateIn': l.mateIn,
+                }),
+              )
+              .toList();
 
       await _db.cacheEvaluation(
         fen: fen,
@@ -471,11 +481,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       // full engine search. Hold the result here and reuse it next iteration.
       // Guarded by FEN so it is only used when the position genuinely matches
       // (branches, re-runs and jump-to-ply navigation fall back to the cache).
-      ({
-        double eval,
-        List<EngineLine> lines,
-        String fen,
-      })? carriedForward;
+      ({double eval, List<EngineLine> lines, String fen})? carriedForward;
 
       // Instrumentation: proves searches-per-ply drops from ~2.0 to ~1.0.
       int engineQueries = 0;
@@ -516,24 +522,30 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           // Classify as best/excellent without engine search.
           final defaultEval = actualEvalSoFar ?? 0.0;
           actualEvalSoFar = defaultEval;
-          accumulator.add(MoveAnalysis(
-            moveIndex: i,
-            san: move.san,
-            fen: board.fen,
-            evalBefore: defaultEval,
-            evalAfter: defaultEval,
-            actualEvalBeforeMove: defaultEval,
-            winPercentBefore: EvalConstants.centipawnsToWinPercent(defaultEval * 100),
-            winPercentAfter: EvalConstants.centipawnsToWinPercent(defaultEval * 100),
-            bestMove: '${move.from}${move.to}${move.promotion ?? ''}',
-            classification: MoveClassification.best,
-            engineLines: [],
-            isWhiteMove: isWhiteMove,
-            centipawnLoss: 0.0,
-            accuracy: 100.0,
-            isMateBefore: false,
-            isMateAfter: false,
-          ));
+          accumulator.add(
+            MoveAnalysis(
+              moveIndex: i,
+              san: move.san,
+              fen: board.fen,
+              evalBefore: defaultEval,
+              evalAfter: defaultEval,
+              actualEvalBeforeMove: defaultEval,
+              winPercentBefore: EvalConstants.centipawnsToWinPercent(
+                defaultEval * 100,
+              ),
+              winPercentAfter: EvalConstants.centipawnsToWinPercent(
+                defaultEval * 100,
+              ),
+              bestMove: '${move.from}${move.to}${move.promotion ?? ''}',
+              classification: MoveClassification.best,
+              engineLines: [],
+              isWhiteMove: isWhiteMove,
+              centipawnLoss: 0.0,
+              accuracy: 100.0,
+              isMateBefore: false,
+              isMateAfter: false,
+            ),
+          );
 
           // Advance the board state.
           board.move({
@@ -618,8 +630,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           }
         } catch (e) {
           try {
-            final basicResult =
-                await BasicEvaluatorService.instance.analyze(board.fen);
+            final basicResult = await BasicEvaluatorService.instance.analyze(
+              board.fen,
+            );
             bestEval = basicResult.evalInPawns;
             bestLines = basicResult.lines;
             if (basicResult.lines.isNotEmpty &&
@@ -639,9 +652,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         if (bestLines.length >= 2) {
           final firstEval = bestLines[0].evaluation;
           final secondEval = bestLines[1].evaluation;
-          final margin = isWhiteMove
-              ? (firstEval - secondEval)
-              : (secondEval - firstEval);
+          final margin =
+              isWhiteMove ? (firstEval - secondEval) : (secondEval - firstEval);
           secondBestCpl = (margin * 100.0).abs();
         }
 
@@ -649,12 +661,13 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         // position BEFORE the move. Negative = material was given up.
         double? seeCentipawns;
         try {
-          seeCentipawns = StaticExchangeEvaluator.evaluate(
-            board,
-            move.from,
-            move.to,
-            promotion: move.promotion,
-          ).toDouble();
+          seeCentipawns =
+              StaticExchangeEvaluator.evaluate(
+                board,
+                move.from,
+                move.to,
+                promotion: move.promotion,
+              ).toDouble();
         } catch (_) {
           seeCentipawns = null;
         }
@@ -718,8 +731,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         } catch (e) {
           carriedForward = null;
           try {
-            final basicResult =
-                await BasicEvaluatorService.instance.analyze(board.fen);
+            final basicResult = await BasicEvaluatorService.instance.analyze(
+              board.fen,
+            );
             actualEval = basicResult.evalInPawns;
           } catch (e2) {
             actualEval = bestEval;
@@ -727,9 +741,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         }
 
         // ── Compute CPL at depth 8 for early cutoff decision ──
-        final double cplDepth8 = isWhiteMove
-            ? (bestEval - actualEval) * 100.0
-            : (actualEval - bestEval) * 100.0;
+        final double cplDepth8 =
+            isWhiteMove
+                ? (bestEval - actualEval) * 100.0
+                : (actualEval - bestEval) * 100.0;
         final double cplAbsDepth8 = cplDepth8.abs();
 
         // Phase 2: Early cutoff classification based on depth-8 CPL
@@ -797,9 +812,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         // Multiply the pawn delta by 100: classifyMoveCpl()'s thresholds
         // (10/20/50/100/200) are expressed in CENTIPAWNS, not pawns. Without the
         // conversion every non-tactical move landed at "Best Move".
-        final double centipawnLoss = isWhiteMove
-            ? (bestEval - actualEval) * 100.0
-            : (actualEval - bestEval) * 100.0;
+        final double centipawnLoss =
+            isWhiteMove
+                ? (bestEval - actualEval) * 100.0
+                : (actualEval - bestEval) * 100.0;
         final double cplAbs = centipawnLoss.abs();
 
         // The position actually reached before this ply. For the first ply
@@ -812,7 +828,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         final winBest = EvalConstants.centipawnsToWinPercent(
           actualEvalBeforeMove * 100,
         );
-        final winActual = EvalConstants.centipawnsToWinPercent(actualEval * 100);
+        final winActual = EvalConstants.centipawnsToWinPercent(
+          actualEval * 100,
+        );
         final winBefore = isWhiteMove ? winBest : (100.0 - winBest);
         final winAfter = isWhiteMove ? winActual : (100.0 - winActual);
         final rawWinDiff = winBefore - winAfter;
@@ -953,14 +971,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
       if (cached != null) {
         final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-        final lines = linesJson.map((l) => EngineLine(
-          rank: l['rank'] as int,
-          evaluation: (l['evaluation'] as num).toDouble(),
-          depth: l['depth'] as int,
-          moves: List<String>.from(l['moves']),
-          isMate: (l['isMate'] as bool?) ?? false,
-          mateIn: l['mateIn'] as int?,
-        )).toList();
+        final lines =
+            linesJson
+                .map(
+                  (l) => EngineLine(
+                    rank: l['rank'] as int,
+                    evaluation: (l['evaluation'] as num).toDouble(),
+                    depth: l['depth'] as int,
+                    moves: List<String>.from(l['moves']),
+                    isMate: (l['isMate'] as bool?) ?? false,
+                    mateIn: l['mateIn'] as int?,
+                  ),
+                )
+                .toList();
         return (eval: (cached['evaluation'] as num).toDouble(), lines: lines);
       }
     } catch (e) {
@@ -977,14 +1000,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
     // Cache the result
     try {
-      final linesJson = result.lines.map((l) => ({
-        'rank': l.rank,
-        'evaluation': l.evaluation,
-        'depth': l.depth,
-        'moves': l.moves,
-        'isMate': l.isMate,
-        'mateIn': l.mateIn,
-      })).toList();
+      final linesJson =
+          result.lines
+              .map(
+                (l) => ({
+                  'rank': l.rank,
+                  'evaluation': l.evaluation,
+                  'depth': l.depth,
+                  'moves': l.moves,
+                  'isMate': l.isMate,
+                  'mateIn': l.mateIn,
+                }),
+              )
+              .toList();
 
       await _db.cacheEvaluation(
         fen: fen,
@@ -1041,14 +1069,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       // If it's a mate position, the classification is always stable
       if (isMate) {
         final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-        final lines = linesJson.map((l) => EngineLine(
-          rank: l['rank'] as int,
-          evaluation: (l['evaluation'] as num).toDouble(),
-          depth: l['depth'] as int,
-          moves: List<String>.from(l['moves']),
-          isMate: (l['isMate'] as bool?) ?? false,
-          mateIn: l['mateIn'] as int?,
-        )).toList();
+        final lines =
+            linesJson
+                .map(
+                  (l) => EngineLine(
+                    rank: l['rank'] as int,
+                    evaluation: (l['evaluation'] as num).toDouble(),
+                    depth: l['depth'] as int,
+                    moves: List<String>.from(l['moves']),
+                    isMate: (l['isMate'] as bool?) ?? false,
+                    mateIn: l['mateIn'] as int?,
+                  ),
+                )
+                .toList();
         return (eval: cachedEval, lines: lines);
       }
 
@@ -1063,14 +1096,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       if (evalAbs > 5.0) {
         // Extreme position - classification is stable
         final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-        final lines = linesJson.map((l) => EngineLine(
-          rank: l['rank'] as int,
-          evaluation: (l['evaluation'] as num).toDouble(),
-          depth: l['depth'] as int,
-          moves: List<String>.from(l['moves']),
-          isMate: (l['isMate'] as bool?) ?? false,
-          mateIn: l['mateIn'] as int?,
-        )).toList();
+        final lines =
+            linesJson
+                .map(
+                  (l) => EngineLine(
+                    rank: l['rank'] as int,
+                    evaluation: (l['evaluation'] as num).toDouble(),
+                    depth: l['depth'] as int,
+                    moves: List<String>.from(l['moves']),
+                    isMate: (l['isMate'] as bool?) ?? false,
+                    mateIn: l['mateIn'] as int?,
+                  ),
+                )
+                .toList();
         return (eval: cachedEval, lines: lines);
       }
 
@@ -1078,14 +1116,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       // before/after pair, so let the caller handle the cutoff decision.
       // Return the cached result and let the caller decide.
       final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-      final lines = linesJson.map((l) => EngineLine(
-        rank: l['rank'] as int,
-        evaluation: (l['evaluation'] as num).toDouble(),
-        depth: l['depth'] as int,
-        moves: List<String>.from(l['moves']),
-        isMate: (l['isMate'] as bool?) ?? false,
-        mateIn: l['mateIn'] as int?,
-      )).toList();
+      final lines =
+          linesJson
+              .map(
+                (l) => EngineLine(
+                  rank: l['rank'] as int,
+                  evaluation: (l['evaluation'] as num).toDouble(),
+                  depth: l['depth'] as int,
+                  moves: List<String>.from(l['moves']),
+                  isMate: (l['isMate'] as bool?) ?? false,
+                  mateIn: l['mateIn'] as int?,
+                ),
+              )
+              .toList();
       return (eval: cachedEval, lines: lines);
     } catch (e) {
       debugPrint('Soft cache lookup failed: $e');

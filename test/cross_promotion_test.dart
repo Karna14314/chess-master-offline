@@ -55,50 +55,58 @@ void main() {
   });
 
   group('Cross-Promotion & MoreScreen Tests', () {
-    testWidgets('MainScreen navigation contains More tab and loads MoreScreen', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseServiceProvider.overrideWithValue(MockDatabaseService()),
-            stockfishServiceProvider.overrideWithValue(MockStockfishService()),
-          ],
-          child: const MaterialApp(home: MainScreen()),
-        ),
-      );
-      await tester.pump();
-
-      // Verify 'More' tab is present in BottomNavigationBar
-      expect(find.text('More'), findsOneWidget);
-
-      // Tap on 'More' tab (index 4)
-      await tester.tap(find.text('More'));
-      await tester.pump();
-
-      // Verify MoreScreen is rendered
-      expect(find.byType(MoreScreen), findsOneWidget);
-    });
-
-    testWidgets('MoreScreen displays Explore Karna Digital Games cross-promotion section', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseServiceProvider.overrideWithValue(MockDatabaseService()),
-            stockfishServiceProvider.overrideWithValue(MockStockfishService()),
-          ],
-          child: const MaterialApp(
-            home: Scaffold(body: MoreScreen()),
+    testWidgets(
+      'MainScreen navigation contains More tab and loads MoreScreen',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              databaseServiceProvider.overrideWithValue(MockDatabaseService()),
+              stockfishServiceProvider.overrideWithValue(
+                MockStockfishService(),
+              ),
+            ],
+            child: const MaterialApp(home: MainScreen()),
           ),
-        ),
-      );
-      await tester.pump();
+        );
+        await tester.pump();
 
-      // Verify cross-promotion section header
-      expect(find.text('Explore Karna Digital Games'), findsOneWidget);
+        // Verify 'More' tab is present in BottomNavigationBar
+        expect(find.text('More'), findsOneWidget);
 
-      // Verify individual game tiles currently shown in the section
-      expect(find.text('Block Puzzle Master'), findsOneWidget);
-      expect(find.text('Sudoku Master Offline'), findsOneWidget);
-      expect(find.text('More Ad-Free Games'), findsOneWidget);
-    });
+        // Tap on 'More' tab (index 4)
+        await tester.tap(find.text('More'));
+        await tester.pump();
+
+        // Verify MoreScreen is rendered
+        expect(find.byType(MoreScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'MoreScreen displays Explore Karna Digital Games cross-promotion section',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              databaseServiceProvider.overrideWithValue(MockDatabaseService()),
+              stockfishServiceProvider.overrideWithValue(
+                MockStockfishService(),
+              ),
+            ],
+            child: const MaterialApp(home: Scaffold(body: MoreScreen())),
+          ),
+        );
+        await tester.pump();
+
+        // Verify cross-promotion section header
+        expect(find.text('Explore Karna Digital Games'), findsOneWidget);
+
+        // Verify individual game tiles currently shown in the section
+        expect(find.text('Block Puzzle Master'), findsOneWidget);
+        expect(find.text('Sudoku Master Offline'), findsOneWidget);
+        expect(find.text('More Ad-Free Games'), findsOneWidget);
+      },
+    );
   });
 }

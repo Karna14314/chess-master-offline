@@ -12,15 +12,15 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('dexterous.com/flutter/local_notifications'),
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'initialize') return true;
-        if (methodCall.method == 'periodicallyShow') return null;
-        if (methodCall.method == 'cancel') return null;
-        if (methodCall.method == 'cancelAll') return null;
-        return null;
-      },
-    );
+          const MethodChannel('dexterous.com/flutter/local_notifications'),
+          (MethodCall methodCall) async {
+            if (methodCall.method == 'initialize') return true;
+            if (methodCall.method == 'periodicallyShow') return null;
+            if (methodCall.method == 'cancel') return null;
+            if (methodCall.method == 'cancelAll') return null;
+            return null;
+          },
+        );
   });
 
   group('NotificationService & Settings Integration Tests', () {
@@ -31,20 +31,17 @@ void main() {
       expect(service.isInitialized, isTrue);
     });
 
-    test('Scheduling daily puzzle and streak reminders completes without error', () async {
-      final service = NotificationService.instance;
-      await service.initialize();
+    test(
+      'Scheduling daily puzzle and streak reminders completes without error',
+      () async {
+        final service = NotificationService.instance;
+        await service.initialize();
 
-      await expectLater(
-        service.scheduleDailyPuzzleReminder(),
-        completes,
-      );
+        await expectLater(service.scheduleDailyPuzzleReminder(), completes);
 
-      await expectLater(
-        service.scheduleStreakReminder(),
-        completes,
-      );
-    });
+        await expectLater(service.scheduleStreakReminder(), completes);
+      },
+    );
 
     test('Cancelling reminders completes without error', () async {
       final service = NotificationService.instance;
@@ -55,24 +52,27 @@ void main() {
       await expectLater(service.cancelAllNotifications(), completes);
     });
 
-    test('SettingsNotifier toggling updates AppSettings notification state', () async {
-      final container = ProviderContainer();
+    test(
+      'SettingsNotifier toggling updates AppSettings notification state',
+      () async {
+        final container = ProviderContainer();
 
-      final initialSettings = container.read(settingsProvider);
-      expect(initialSettings.dailyPuzzleNotificationEnabled, isTrue);
-      expect(initialSettings.streakNotificationEnabled, isTrue);
+        final initialSettings = container.read(settingsProvider);
+        expect(initialSettings.dailyPuzzleNotificationEnabled, isTrue);
+        expect(initialSettings.streakNotificationEnabled, isTrue);
 
-      final notifier = container.read(settingsProvider.notifier);
-      notifier.toggleDailyPuzzleNotification();
+        final notifier = container.read(settingsProvider.notifier);
+        notifier.toggleDailyPuzzleNotification();
 
-      final updatedSettings = container.read(settingsProvider);
-      expect(updatedSettings.dailyPuzzleNotificationEnabled, isFalse);
+        final updatedSettings = container.read(settingsProvider);
+        expect(updatedSettings.dailyPuzzleNotificationEnabled, isFalse);
 
-      notifier.toggleStreakNotification();
-      final finalSettings = container.read(settingsProvider);
-      expect(finalSettings.streakNotificationEnabled, isFalse);
+        notifier.toggleStreakNotification();
+        final finalSettings = container.read(settingsProvider);
+        expect(finalSettings.streakNotificationEnabled, isFalse);
 
-      container.dispose();
-    });
+        container.dispose();
+      },
+    );
   });
 }

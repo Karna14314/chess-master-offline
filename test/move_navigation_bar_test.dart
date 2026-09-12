@@ -3,8 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:chess_master/screens/analysis/widgets/move_navigation_bar.dart';
 
 void main() {
-  testWidgets('MoveNavigationBar renders without overflow on 360dp width',
-      (WidgetTester tester) async {
+  testWidgets('MoveNavigationBar renders without overflow on 360dp width', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -38,8 +39,9 @@ void main() {
     expect(find.text('Practice'), findsOneWidget);
   });
 
-  testWidgets('MoveNavigationBar renders without overflow on 412dp width',
-      (WidgetTester tester) async {
+  testWidgets('MoveNavigationBar renders without overflow on 412dp width', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(412, 915);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
