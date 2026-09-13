@@ -82,17 +82,19 @@ I have completed the task to refactor the UI and navigation for production readi
 - Format: PASS
 - Tests: PASS
 
-## 2026-09-12
+## 2026-09-13
 **Status:** SUCCESS ✅
-**Category:** C — UI Enhancement
-**Task:** Implemented native platform screen transition animations.
+**Category:** A — Bug Fix, C — UI Enhancement
+**Task:** Fixed Journey Mode progression saving bug and implemented native platform screen transition animations.
 **Files Changed:**
 - lib/core/theme/app_theme.dart: Added PageTransitionsTheme with platform-specific transition builders to both light and dark themes.
+- lib/providers/journey_provider.dart: Fixed race condition in completeCurrentLevel by reading current stats directly from SharedPreferences.
+- lib/screens/home/home_screen.dart: Added ref.read(journeyProvider.notifier).loadJourneyState() in initState to ensure state is initialized upon startup.
 **Verification:**
 - Build: PASS
 - Tests: PASS
 - Emulator: SKIPPED
-**User-Visible Impact:** Page transitions across the app (like opening a game or accessing settings) now use smooth, native-feeling animations (like FadeUpwards on Android and Cupertino slide on iOS) instead of default abrupt transitions.
+**User-Visible Impact:** Journey Mode progression now correctly tracks and saves after a level is solved instead of being stuck at 0%. Page transitions across the app (like opening a game or accessing settings) now use smooth, native-feeling animations (like FadeUpwards on Android and Cupertino slide on iOS) instead of default abrupt transitions.
 **Commit:** (see below)
-**Branch:** auto/chess-20260912-page-transitions
+**Branch:** auto/chess-20260913-journey-progress-fix
 **Notes:** N/A
