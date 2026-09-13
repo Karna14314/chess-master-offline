@@ -35,6 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(stockfishServiceProvider).initialize();
       ref.read(streakProvider.notifier).loadStreak();
+      ref.read(journeyProvider.notifier).loadJourneyState();
     });
   }
 

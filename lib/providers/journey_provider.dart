@@ -75,11 +75,16 @@ class JourneyNotifier extends StateNotifier<JourneyState> {
   /// Complete current journey level and return newly unlocked milestone if any
   Future<int?> completeCurrentLevel() async {
     final prefs = await SharedPreferences.getInstance();
-    final newSolvedCount = (state.solvedCount + 1).clamp(
+
+    // Read directly from prefs to prevent race conditions if state is out of sync
+    final currentSolved = prefs.getInt('journey_solved_count') ?? state.solvedCount;
+    final currentLevel = prefs.getInt('journey_current_level') ?? state.currentLevel;
+
+    final newSolvedCount = (currentSolved + 1).clamp(
       0,
       kTotalJourneyLevels,
     );
-    final nextLevel = (state.currentLevel + 1).clamp(1, kTotalJourneyLevels);
+    final nextLevel = (currentLevel + 1).clamp(1, kTotalJourneyLevels);
 
     int? unlockedMilestone;
     final updatedMilestones = Set<int>.from(state.unlockedMilestones);
