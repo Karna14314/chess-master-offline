@@ -1493,6 +1493,10 @@ class StockfishService {
   /// If the engine fails to acknowledge 'stop' within 3.0 seconds, the isolate is killed
   /// and cleanly restarted to prevent sending commands to an active C++ search thread (which causes SIGSEGV).
   Future<void> _stopCurrentSearchAndWait() async {
+    if (_skipReadyOkForTesting) {
+      _searchInFlight = false;
+      return;
+    }
     if (!_searchInFlight && !_isEngineBusy) return;
 
     final completer = Completer<void>();

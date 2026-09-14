@@ -62,11 +62,11 @@ void main() {
       expect(StatisticsModel.defaultGameElo, equals(400));
     });
 
-    test('K-factor decays with games played (40 / 28 / 16)', () {
-      expect(const StatisticsModel(totalGames: 0).kFactor, equals(40));
-      expect(const StatisticsModel(totalGames: 9).kFactor, equals(40));
-      expect(const StatisticsModel(totalGames: 10).kFactor, equals(28));
-      expect(const StatisticsModel(totalGames: 29).kFactor, equals(28));
+    test('K-factor decays with games played (24 / 20 / 16)', () {
+      expect(const StatisticsModel(totalGames: 0).kFactor, equals(24));
+      expect(const StatisticsModel(totalGames: 9).kFactor, equals(24));
+      expect(const StatisticsModel(totalGames: 10).kFactor, equals(20));
+      expect(const StatisticsModel(totalGames: 29).kFactor, equals(20));
       expect(const StatisticsModel(totalGames: 30).kFactor, equals(16));
       expect(const StatisticsModel(totalGames: 200).kFactor, equals(16));
     });
