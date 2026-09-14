@@ -652,7 +652,7 @@ class _ThemePresetSelector extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 88,
+          height: 96,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,

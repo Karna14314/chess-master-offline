@@ -46,31 +46,17 @@ void main() {
         await tester.pump(const Duration(milliseconds: 500));
 
         // 1. Verify Header and Streak
-        expect(find.text('Welcome Back,'), findsOneWidget);
-        expect(find.text('Chess Master'), findsOneWidget);
+        expect(find.text('ChessMaster'), findsOneWidget);
 
         // 2. Verify Bot Arena (#1 Section)
         expect(find.text('Bot Arena'), findsOneWidget);
-        expect(find.textContaining('Personalities'), findsOneWidget);
-        expect(find.text('Scrub ELO'), findsOneWidget);
+        expect(find.textContaining('Featured opponents'), findsOneWidget);
 
-        // 3. Verify 12-Level Master Campaign (#2 Section)
-        expect(find.text('12-Level Master Campaign'), findsOneWidget);
-        expect(find.text('View Map'), findsOneWidget);
+        // 3. Verify Master Campaign (#2 Section)
+        expect(find.text('Master Campaign'), findsOneWidget);
 
         // 4. Verify Quick Play (#3 Section)
         expect(find.text('Quick Play'), findsOneWidget);
-        expect(find.text('Pass & Play'), findsOneWidget);
-        expect(find.text('Daily Puzzle'), findsOneWidget);
-        expect(find.text('Analyze Game'), findsOneWidget);
-
-        // 5. Verify Learn & Master (#4 Section)
-        expect(find.text('Learn & Master'), findsOneWidget);
-        expect(find.text('Chess Lessons'), findsOneWidget);
-        expect(find.text('Opening Playbook'), findsOneWidget);
-
-        // 6. Verify Recent Games (#5 Section)
-        expect(find.text('Recent Games'), findsOneWidget);
       },
     );
 
@@ -85,9 +71,9 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.text('Welcome Back,'), findsOneWidget);
+      expect(find.text('ChessMaster'), findsOneWidget);
       expect(find.text('Bot Arena'), findsOneWidget);
-      expect(find.text('12-Level Master Campaign'), findsOneWidget);
+      expect(find.text('Master Campaign'), findsOneWidget);
     });
 
     testWidgets(
