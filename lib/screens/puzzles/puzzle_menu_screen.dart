@@ -6,6 +6,12 @@ import 'package:chess_master/providers/journey_provider.dart';
 import 'package:chess_master/screens/puzzles/puzzle_screen.dart';
 import 'package:chess_master/screens/puzzles/daily_puzzle_screen.dart';
 import 'package:chess_master/screens/puzzles/puzzle_history_screen.dart';
+import 'package:chess_master/providers/streak_provider.dart';
+import 'package:chess_master/screens/lessons/lessons_screen.dart';
+import 'package:chess_master/screens/openings/opening_playbook_screen.dart';
+import 'package:chess_master/widgets/shared/app_card.dart';
+import 'package:chess_master/widgets/shared/app_badge.dart';
+import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Puzzle mode selection
@@ -87,7 +93,13 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Puzzle Journey hero card at the top
+              // Daily Puzzle Hero Card at top
+              _DailyPuzzleHeroCard(
+                onStart: () => _startPuzzles(PuzzleMode.daily),
+              ),
+              const SizedBox(height: 16),
+
+              // Puzzle Journey hero card
               _JourneyHeroCard(
                 journey: journey,
                 onContinue: () => _startPuzzles(PuzzleMode.journey),
@@ -96,6 +108,127 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
 
               // Stats card
               _StatsCard(stats: stats),
+              const SizedBox(height: 28),
+
+              // Curriculum & Strategy Section (Unified Learn Hub)
+              Text(
+                'Curriculum & Openings',
+                style: GoogleFonts.inter(
+                  color: AppTheme.textPrimaryFor(context),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 14),
+              AppCard(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LessonsScreen()),
+                  );
+                },
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.school_rounded, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Chess Lessons',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppTheme.textPrimaryFor(context),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              AppBadge.status(label: '40+ TOPICS', color: const Color(0xFFD97706)),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Tactics, Checkmates, Endgames & Strategy',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppTheme.textSecondaryFor(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, color: Color(0xFFD97706), size: 24),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              AppCard(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const OpeningPlaybookScreen()),
+                  );
+                },
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Opening Playbook',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppTheme.textPrimaryFor(context),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              AppBadge.status(label: '80 OPENINGS', color: const Color(0xFF8B5CF6)),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Explore Sicilian, Italian, French, Queen\'s Gambit',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppTheme.textSecondaryFor(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, color: Color(0xFF8B5CF6), size: 24),
+                  ],
+                ),
+              ),
               const SizedBox(height: 32),
 
               // Quick play section
@@ -185,14 +318,10 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColorFor(context)),
-      ),
+    return AppCard(
+      onTap: onTap,
+      padding: EdgeInsets.zero,
       child: ListTile(
-        onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(10),
@@ -263,10 +392,29 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
         break;
     }
 
-    // Navigate to regular puzzle screen for non-daily modes
+    // Navigate to regular puzzle screen for non-daily modes.
+    // Pass the mode explicitly: PuzzleScreen re-applies it in initState
+    // because puzzleProvider is autoDispose and may reset during navigation.
+    final filterMode = switch (mode) {
+      PuzzleMode.journey => PuzzleFilterMode.journey,
+      PuzzleMode.adaptive => PuzzleFilterMode.adaptive,
+      PuzzleMode.random => PuzzleFilterMode.random,
+      PuzzleMode.eloRange => PuzzleFilterMode.eloRange,
+      PuzzleMode.theme => PuzzleFilterMode.theme,
+      PuzzleMode.daily => PuzzleFilterMode.daily,
+    };
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const PuzzleScreen()),
+      MaterialPageRoute(
+        builder:
+            (context) => PuzzleScreen(
+              initialMode: filterMode,
+              initialMinRating: mode == PuzzleMode.eloRange ? _minElo : null,
+              initialMaxRating: mode == PuzzleMode.eloRange ? _maxElo : null,
+              initialTheme:
+                  mode == PuzzleMode.theme ? _selectedTheme : null,
+            ),
+      ),
     );
   }
 }
@@ -733,3 +881,160 @@ class _ThemeSelector extends StatelessWidget {
         .join(' ');
   }
 }
+
+/// Daily Puzzle Hero Card with streak badge and today's challenge
+class _DailyPuzzleHeroCard extends ConsumerWidget {
+  final VoidCallback onStart;
+
+  const _DailyPuzzleHeroCard({required this.onStart});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final streakState = ref.watch(streakProvider);
+    final todayFormatted = DateFormat('EEEE, MMMM d').format(DateTime.now());
+    final isDailySolved = streakState.isDailyPuzzleSolvedToday;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.18),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.extension_rounded,
+                      color: Colors.amber,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Daily Puzzle',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimaryFor(context),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6D00).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🔥', style: TextStyle(fontSize: 12)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${streakState.streakCount} Day Streak',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFFF6D00),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            todayFormatted,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.textSecondaryFor(context),
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (isDailySolved)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.green.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Solved — tap Review to replay',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onStart,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDailySolved
+                    ? AppTheme.cardColor(context)
+                    : Colors.amber[700] ?? Colors.amber,
+                foregroundColor:
+                    isDailySolved
+                        ? AppTheme.textPrimaryFor(context)
+                        : Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                isDailySolved ? 'Review Today\'s Puzzle →' : 'Solve Today\'s Puzzle →',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

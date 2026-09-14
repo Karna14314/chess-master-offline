@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// App-wide theme configuration using Material 3
@@ -74,6 +75,53 @@ class AppTheme {
   static const Color evalNegative = Color(0xFFE53935);
   static const Color evalNeutral = Color(0xFF757575);
 
+  // Grandmaster Design System: Spatial Grid Tokens (8-pt with 4-pt half-step)
+  static const double space4 = 4.0;
+  static const double space8 = 8.0;
+  static const double space10 = 10.0;
+  static const double space12 = 12.0;
+  static const double space14 = 14.0;
+  static const double space16 = 16.0;
+  static const double space20 = 20.0;
+  static const double space24 = 24.0;
+  static const double space32 = 32.0;
+  static const double space48 = 48.0;
+
+  // Grandmaster Design System: Corner Radii Tokens
+  static const double radiusSm = 8.0;
+  static const double radiusMd = 12.0;
+  static const double radiusLg = 16.0;
+  static const double radiusXl = 24.0;
+  static const double radiusPill = 999.0;
+
+  // Grandmaster Design System: Accent & Semantic Palette
+  static const Color emeraldGreen = Color(0xFF10B981);
+  static const Color amberGold = Color(0xFFF59E0B);
+  static const Color crimsonRed = Color(0xFFEF4444);
+  static const Color royalBlue = Color(0xFF3B82F6);
+  static const Color amethystPurple = Color(0xFF8B5CF6);
+  static const Color cyanDiamond = Color(0xFF00E5FF);
+
+  // Grandmaster Design System: Achievement & Trophy Rarity System
+  static const Color rarityCommon = Color(0xFF9E9E9E);
+  static const Color rarityRare = Color(0xFF3B82F6);
+  static const Color rarityEpic = Color(0xFF8B5CF6);
+  static const Color rarityLegendary = Color(0xFFF59E0B);
+  static const Color rarityMaster = Color(0xFFEC4899);
+
+  // Grandmaster Design System: Layered Surfaces
+  static const Color surface0Dark = Color(0xFF0D0F12); // Obsidian base
+  static const Color surface1Dark = Color(0xFF161A20); // Card surface
+  static const Color surface2Dark = Color(0xFF1F252E); // Elevated / selected
+  static const Color surface3Dark = Color(0xFF2A323D); // Modal / sheet
+  static const Color borderStrokeDark = Color(0xFF262D37);
+
+  static const Color surface0Light = Color(0xFFF8F9FA); // Pure paper base
+  static const Color surface1Light = Color(0xFFFFFFFF); // Card surface
+  static const Color surface2Light = Color(0xFFF1F3F5); // Elevated
+  static const Color surface3Light = Color(0xFFE9ECEF); // Modal / sheet
+  static const Color borderStrokeLight = Color(0xFFE5E7EB);
+
   // Theme-aware helpers
   static Color cardColor(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? cardDark : cardLight;
@@ -97,6 +145,28 @@ class AppTheme {
       Theme.of(context).brightness == Brightness.dark
           ? textHint
           : textHintLight;
+
+  // Layered Surface Level Helpers
+  static Color surfaceLevel0(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? surface0Dark
+          : surface0Light;
+  static Color surfaceLevel1(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? surface1Dark
+          : surface1Light;
+  static Color surfaceLevel2(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? surface2Dark
+          : surface2Light;
+  static Color surfaceLevel3(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? surface3Dark
+          : surface3Light;
+  static Color borderStroke(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? borderStrokeDark
+          : borderStrokeLight;
 
   /// Light theme configuration
   static ThemeData get lightTheme {

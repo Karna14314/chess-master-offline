@@ -21,7 +21,7 @@ class ChessTimerWidget extends ConsumerWidget {
     final timerState = ref.watch(timerProvider);
 
     if (!timerState.hasTimer) {
-      return _buildNoTimer(context);
+      return const SizedBox.shrink();
     }
 
     final time = isWhite ? timerState.whiteTime : timerState.blackTime;
@@ -81,29 +81,7 @@ class ChessTimerWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildNoTimer(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 8 : 12,
-        vertical: compact ? 4 : 6,
-      ),
-      decoration: BoxDecoration(
-        color: isActive ? AppTheme.primaryColor : AppTheme.cardColor(context),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        '--:--',
-        style: TextStyle(
-          fontFamily: 'monospace',
-          fontSize: compact ? 14 : 18,
-          color:
-              isActive
-                  ? AppTheme.textPrimaryFor(context)
-                  : AppTheme.textSecondaryFor(context),
-        ),
-      ),
-    );
-  }
+
 
   Color _getBackgroundColor(
     BuildContext context,

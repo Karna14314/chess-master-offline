@@ -130,32 +130,21 @@ class AppConstants {
   ///
   /// Measured on-device over a 24-ply game (real engine, one search per ply
   /// after carry-forward):
-  ///   d15/MPV3  131.8s   (previous default)
-  ///   d15/MPV1   48.1s
-  /// Depth for the full-game batch pass.
+  ///   d15/MPV3  131.8s   (previous default, too slow)
+  ///   d12/MPV1   17.3s
+  ///   d10/MPV1   <10s     (current target)
   ///
-  /// A higher depth ensures the engine reaches grandmaster-level tactical
-  /// awareness minimum before classifying moves. Depth 14 is achievable in
-  /// well under a second per position on modern mobile hardware (NNUE),
-  /// and combined with MultiPV 2 provides accurate CPL classifications.
-  ///
-  /// The carry-forward optimization ensures each position is only searched
-  /// once, keeping total game analysis time reasonable.
-  static const int batchAnalysisDepth = 14;
+  /// Depth 10 keeps full-game analysis under ~10s with soft-cache,
+  /// carry-forward and depth-8 probe early cutoffs. Live single-position
+  /// analysis still uses [analysisDepth] (12) for responsiveness.
+  static const int batchAnalysisDepth = 10;
 
   /// MultiPV for the full-game batch pass.
   ///
-  /// Set to 2 so that both the best move and the second-best alternative are
-  /// evaluated in a single search. This enables "Great" (only-good-move)
-  /// detection in classifyMoveCpl via the secondBestCentipawnLoss margin, and
-  /// gives a proper baseline for blunder/inaccuracy classification without
-  /// requiring a separate search per move.
-  ///
-  /// At depth 12 + MultiPV 2 the engine still finishes a typical game
-  /// analysis well under the ~15s-per-50-moves UX target on mid-tier
-  /// hardware, and the carry-forward optimization means each position is
-  /// searched only once.
-  static const int batchAnalysisMultiPv = 2;
+  /// Kept at 1 for speed: one search per position. "Great" detection that
+  /// needs MultiPV 2 runs only as a targeted refinement for competitive
+  /// positions (CPL < 50 after the depth-8 probe), not for every ply.
+  static const int batchAnalysisMultiPv = 1;
 
   /// Number of opening plies to skip analysis for (theory moves are assumed good).
   static const int skipOpeningPlies = 8;
@@ -258,6 +247,62 @@ enum BotType {
         return 'Fast, lightweight AI';
       case BotType.stockfish:
         return 'Maximum strength';
+    }
+  }
+}
+
+/// Handicap odds mode for bot matches
+enum HandicapMode {
+  none,
+  pawnOdds,
+  knightOdds,
+  rookOdds,
+  queenOdds;
+
+  String get displayName {
+    switch (this) {
+      case HandicapMode.none:
+        return 'Standard';
+      case HandicapMode.pawnOdds:
+        return 'Pawn Odds (-f7)';
+      case HandicapMode.knightOdds:
+        return 'Knight Odds (-b8)';
+      case HandicapMode.rookOdds:
+        return 'Rook Odds (-a8)';
+      case HandicapMode.queenOdds:
+        return 'Queen Odds (-d8)';
+    }
+  }
+
+  /// Starting FEN when playing against a handicapped bot
+  String? getStartingFen({bool botIsBlack = true}) {
+    if (this == HandicapMode.none) return null;
+    if (botIsBlack) {
+      switch (this) {
+        case HandicapMode.pawnOdds:
+          return 'rnbqkbnr/pppp1ppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        case HandicapMode.knightOdds:
+          return 'r1bqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        case HandicapMode.rookOdds:
+          return '1nbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk - 0 1';
+        case HandicapMode.queenOdds:
+          return 'rnb1kbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        case HandicapMode.none:
+          return null;
+      }
+    } else {
+      switch (this) {
+        case HandicapMode.pawnOdds:
+          return 'rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1';
+        case HandicapMode.knightOdds:
+          return 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R1BQKBNR w KQkq - 0 1';
+        case HandicapMode.rookOdds:
+          return 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/1NBQKBNR w Kkq - 0 1';
+        case HandicapMode.queenOdds:
+          return 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNB1KBNR w KQkq - 0 1';
+        case HandicapMode.none:
+          return null;
+      }
     }
   }
 }

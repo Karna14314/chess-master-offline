@@ -1,4 +1,5 @@
 import 'package:chess_master/providers/journey_provider.dart';
+import 'package:chess_master/providers/achievement_provider.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -58,6 +59,7 @@ class PuzzleGameState {
   final Set<String> highlightedSquares;
   final bool isRetry;
   final PuzzleFilterMode mode;
+  final int? lastRatingDelta;
 
   const PuzzleGameState({
     this.state = PuzzleState.loading,
@@ -82,6 +84,7 @@ class PuzzleGameState {
     this.highlightedSquares = const {},
     this.isRetry = false,
     this.mode = PuzzleFilterMode.adaptive,
+    this.lastRatingDelta,
   });
 
   PuzzleGameState copyWith({
@@ -107,6 +110,8 @@ class PuzzleGameState {
     Set<String>? highlightedSquares,
     bool? isRetry,
     PuzzleFilterMode? mode,
+    int? lastRatingDelta,
+    bool clearRatingDelta = false,
     bool clearSelection = false,
     bool clearError = false,
     bool clearHint = false,
@@ -136,6 +141,8 @@ class PuzzleGameState {
       highlightedSquares: highlightedSquares ?? this.highlightedSquares,
       isRetry: isRetry ?? this.isRetry,
       mode: mode ?? this.mode,
+      lastRatingDelta:
+          clearRatingDelta ? null : (lastRatingDelta ?? this.lastRatingDelta),
     );
   }
 
@@ -199,6 +206,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   final Set<int> _recentlySolvedIds = {}; // Track recently solved puzzles
   static const int _maxRecentPuzzles = 50; // Keep last 50 puzzles in memory
   Timer? _solutionTimer;
+  Timer? _errorTimer;
 
   // Puzzle mode configuration
   PuzzleFilterMode _mode = PuzzleFilterMode.adaptive;
@@ -290,6 +298,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       }
     }
 
+    if (!mounted) return;
     final rating = targetRating ?? state.currentRating;
     debugPrint('🧩 Target rating: $rating');
 
@@ -479,6 +488,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
         state: PuzzleState.playing,
         clearSelection: true,
         clearError: true,
+        clearRatingDelta: true,
         highlightedSquares: {},
         isRetry: false, // Default not retry, will override in retry function
       );
@@ -594,7 +604,8 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       _onPuzzleCompleted(false);
 
       // Show error state after short delay for piece animation
-      Future.delayed(const Duration(milliseconds: 400), () {
+      _errorTimer?.cancel();
+      _errorTimer = Timer(const Duration(milliseconds: 400), () {
         if (!mounted) return;
         state = state.copyWith(
           state: PuzzleState.incorrect,
@@ -686,8 +697,16 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     final puzzle = state.currentPuzzle;
     if (puzzle == null) return;
 
+    final isJourney = _mode == PuzzleFilterMode.journey || state.mode == PuzzleFilterMode.journey;
+
     if (state.isRetry) {
-      // Don't modify stats or ELO for retries. Just track the state change.
+      // In Journey mode, successfully solving on retry MUST advance to the next level
+      if (solved && isJourney) {
+        final jLevel = _ref.read(journeyProvider).currentLevel;
+        await _ref
+            .read(journeyProvider.notifier)
+            .completeCurrentLevel(level: jLevel, puzzleId: puzzle.id);
+      }
       state = state.copyWith(
         state: solved ? PuzzleState.completed : PuzzleState.incorrect,
         isPlayerTurn: false,
@@ -695,11 +714,21 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       return;
     }
 
-    // Add to recently solved puzzles to avoid duplicates
-    _recentlySolvedIds.add(puzzle.id);
-    // Keep only the last N puzzles
-    if (_recentlySolvedIds.length > _maxRecentPuzzles) {
-      _recentlySolvedIds.remove(_recentlySolvedIds.first);
+    // In Journey mode, complete level BEFORE setting state to completed so UI reads updated progress
+    if (solved && isJourney) {
+      final jLevel = _ref.read(journeyProvider).currentLevel;
+      await _ref
+          .read(journeyProvider.notifier)
+          .completeCurrentLevel(level: jLevel, puzzleId: puzzle.id);
+    }
+
+    // Journey uses its own separate solved-level index; do not pollute the
+    // generic recent list or it looks stuck on replay.
+    if (!isJourney) {
+      _recentlySolvedIds.add(puzzle.id);
+      if (_recentlySolvedIds.length > _maxRecentPuzzles) {
+        _recentlySolvedIds.remove(_recentlySolvedIds.first);
+      }
     }
 
     // Play completion sound
@@ -728,22 +757,45 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     // Save to puzzle progress tracking history
     await db.savePuzzleProgress(puzzle.id, solved);
 
-    if (solved && _mode == PuzzleFilterMode.journey) {
-      await _ref.read(journeyProvider.notifier).completeCurrentLevel();
-    }
-
     if (!mounted) return;
+    final totalPlayerMoves = puzzle.solutionLength;
+    final correctPlayerMoves =
+        solved ? totalPlayerMoves : (state.currentMoveIndex ~/ 2);
+
     final statsNotifier = _ref.read(statisticsProvider.notifier);
+    final prevRating = _ref.read(statisticsProvider).currentPuzzleRating;
+
     await statsNotifier.recordPuzzleAttempt(
       solved: solved,
       puzzleRating: puzzleRating,
       hintsUsed: state.hintsUsed,
+      currentStreak: newStreak,
+      totalPlayerMoves: totalPlayerMoves,
+      correctPlayerMoves: correctPlayerMoves,
     );
 
     // Sync rating back from statistics provider
     final updatedStats = _ref.read(statisticsProvider);
     if (!mounted) return;
-    state = state.copyWith(currentRating: updatedStats.currentPuzzleRating);
+    final ratingDelta = updatedStats.currentPuzzleRating - prevRating;
+    state = state.copyWith(
+      currentRating: updatedStats.currentPuzzleRating,
+      lastRatingDelta: ratingDelta,
+    );
+
+    // Achievement unlocks: puzzle totals + solve streak + peak + journey.
+    try {
+      final journeySolved = _ref.read(journeyProvider).solvedCount;
+      _ref.read(achievementProvider.notifier).checkPuzzleProgress(
+        totalSolved: updatedStats.puzzlesSolved,
+        currentStreak: newStreak,
+        peakRating: updatedStats.highestPuzzleRating,
+        journeySolved: journeySolved,
+      );
+      _ref
+          .read(achievementProvider.notifier)
+          .checkStreak(_ref.read(streakProvider).streakCount);
+    } catch (_) {}
   }
 
   /// Show hint for current position - shows full move with arrow
@@ -871,16 +923,73 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     await startNewPuzzle();
   }
 
-  /// Retry current puzzle
+  /// Retry current puzzle.
+  /// If the player made a mistake on move 2, 3, etc. (currentMoveIndex > 1),
+  /// continues from the position prior to the mistake rather than restarting from scratch.
   Future<void> retryPuzzle() async {
+    if (!mounted) return;
+    _errorTimer?.cancel();
     _stopSolutionPlayback();
     final puzzle = state.currentPuzzle;
-    if (puzzle != null) {
-      final success = await _loadPuzzle(puzzle);
-      if (!mounted) return;
-      if (success) {
-        state = state.copyWith(isRetry: true);
+    if (puzzle == null) return;
+
+    final targetMoveIndex = state.currentMoveIndex;
+
+    // If mistake happened after move 1 (e.g. index 3, 5, etc.), reconstruct up to that move!
+    if (targetMoveIndex > 1 && puzzle.moves.isNotEmpty) {
+      try {
+        final board = chess.Chess.fromFEN(puzzle.fen);
+        String? lastFrom;
+        String? lastTo;
+        bool replaySuccess = true;
+
+        for (int i = 0; i < targetMoveIndex && i < puzzle.moves.length; i++) {
+          final uci = puzzle.moves[i];
+          final from = uci.substring(0, 2);
+          final to = uci.substring(2, 4);
+          final promotion = uci.length > 4 ? uci.substring(4, 5) : null;
+          final ok = board.move({
+            'from': from,
+            'to': to,
+            if (promotion != null) 'promotion': promotion,
+          });
+          if (!ok) {
+            replaySuccess = false;
+            break;
+          }
+          lastFrom = from;
+          lastTo = to;
+        }
+
+        if (replaySuccess) {
+          state = state.copyWith(
+            board: board,
+            currentMoveIndex: targetMoveIndex,
+            selectedSquare: null,
+            legalMoves: [],
+            lastMoveFrom: lastFrom,
+            lastMoveTo: lastTo,
+            showingHint: false,
+            errorMessage: null,
+            isPlayerTurn: true,
+            state: PuzzleState.playing,
+            clearSelection: true,
+            clearError: true,
+            clearHint: true,
+            highlightedSquares: {},
+            isRetry: true,
+          );
+          return;
+        }
+      } catch (e) {
+        debugPrint('Continuation retry failed, falling back to full reset: $e');
       }
+    }
+
+    final success = await _loadPuzzle(puzzle);
+    if (!mounted) return;
+    if (success) {
+      state = state.copyWith(isRetry: true);
     }
   }
 
@@ -948,6 +1057,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
 
   @override
   void dispose() {
+    _errorTimer?.cancel();
     _stopSolutionPlayback();
     super.dispose();
   }

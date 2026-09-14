@@ -30,7 +30,7 @@ class DatabaseService {
 
       return await openDatabase(
         path,
-        version: 10,
+        version: 12,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -106,7 +106,9 @@ class DatabaseService {
         isFlipped INTEGER DEFAULT 0,
         isRecorded INTEGER DEFAULT 0,
         whiteAccuracy REAL,
-        blackAccuracy REAL
+        blackAccuracy REAL,
+        botId TEXT,
+        campaignLevel INTEGER
       )
     ''');
     await db.execute(
@@ -142,10 +144,18 @@ class DatabaseService {
         total_game_time_seconds INTEGER DEFAULT 0,
         hints_used INTEGER DEFAULT 0,
         last_updated INTEGER,
-        current_game_elo INTEGER DEFAULT 1500,
+        current_game_elo INTEGER DEFAULT 400,
         consecutive_wins INTEGER DEFAULT 0,
         consecutive_losses INTEGER DEFAULT 0,
-        elo_history TEXT
+        elo_history TEXT,
+        highest_puzzle_rating INTEGER DEFAULT 1200,
+        strongest_bot_elo_beaten INTEGER DEFAULT 0,
+        games_analysed INTEGER DEFAULT 0,
+        max_win_streak INTEGER DEFAULT 0,
+        best_elo_date INTEGER DEFAULT 0,
+        wins_as_white INTEGER DEFAULT 0,
+        wins_as_black INTEGER DEFAULT 0,
+        max_puzzle_streak INTEGER DEFAULT 0
       )
     ''');
 
@@ -345,6 +355,44 @@ class DatabaseService {
         );
         await db.execute('ALTER TABLE statistics ADD COLUMN elo_history TEXT');
         debugPrint('Added game ELO columns to statistics table');
+        break;
+      case 11:
+        await db.execute('ALTER TABLE saved_games ADD COLUMN botId TEXT');
+        await db.execute(
+          'ALTER TABLE saved_games ADD COLUMN campaignLevel INTEGER',
+        );
+        debugPrint('Added botId/campaignLevel to saved_games table');
+        break;
+      case 12:
+        // Persisted-stats repair: these columns were written by the app but
+        // never existed in upgraded databases, so every save silently failed
+        // and ratings reset every restart. ADD COLUMN is idempotent-guarded
+        // because DBs created fresh on v12 already have them.
+        for (final column in [
+          'highest_puzzle_rating INTEGER DEFAULT 1200',
+          'strongest_bot_elo_beaten INTEGER DEFAULT 0',
+          'games_analysed INTEGER DEFAULT 0',
+          'max_win_streak INTEGER DEFAULT 0',
+          'best_elo_date INTEGER DEFAULT 0',
+          'wins_as_white INTEGER DEFAULT 0',
+          'wins_as_black INTEGER DEFAULT 0',
+          'max_puzzle_streak INTEGER DEFAULT 0',
+        ]) {
+          try {
+            await db.execute('ALTER TABLE statistics ADD COLUMN $column');
+          } catch (_) {
+            // Column already exists — safe to ignore.
+          }
+        }
+        // Normalize never-played ratings to the 400 starting baseline.
+        try {
+          await db.execute(
+            'UPDATE statistics SET current_game_elo = 400 '
+            'WHERE total_games = 0 AND '
+            '(current_game_elo IS NULL OR current_game_elo IN (0, 1000, 1500))',
+          );
+        } catch (_) {}
+        debugPrint('Repaired statistics columns + 400 baseline');
         break;
     }
   }

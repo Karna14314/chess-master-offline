@@ -1,10 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/providers/timer_provider.dart';
-import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/game_session.dart';
-import 'package:chess_master/models/game_model.dart';
 
 void main() {
   group('Timer System Tests', () {
@@ -19,17 +17,7 @@ void main() {
         playerColor: PlayerColor.white,
       );
 
-      final container = ProviderContainer(
-        overrides: [
-          gameSessionProvider.overrideWith(
-            (ref) => GameSessionViewModel(
-              // Mock repository is not needed just to test TimerNotifier initialization
-              throw UnimplementedError('Repository not used for this test'),
-              ref,
-            )..setSession(session),
-          ),
-        ],
-      );
+      final container = ProviderContainer();
 
       final timerNotifier = container.read(timerProvider.notifier);
       timerNotifier.initialize(timeControl);
@@ -92,6 +80,26 @@ void main() {
       timerState = container.read(timerProvider);
       expect(timerState.timeControl, timeControl2);
       expect(timerState.whiteTime, const Duration(minutes: 5));
+    });
+
+    test('Custom TimeControl operates with correct minutes and increment', () {
+      final customTc = TimeControl(
+        name: 'Custom 7+3',
+        minutes: 7,
+        increment: 3,
+      );
+      expect(customTc.hasTimer, true);
+      expect(customTc.initialDuration, const Duration(minutes: 7));
+      expect(customTc.incrementDuration, const Duration(seconds: 3));
+
+      final container = ProviderContainer();
+      final timerNotifier = container.read(timerProvider.notifier);
+      timerNotifier.initialize(customTc);
+
+      final timerState = container.read(timerProvider);
+      expect(timerState.hasTimer, true);
+      expect(timerState.whiteTime, const Duration(minutes: 7));
+      expect(timerState.blackTime, const Duration(minutes: 7));
     });
   });
 }

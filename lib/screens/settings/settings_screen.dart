@@ -6,11 +6,12 @@ import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_piece.dart';
+import 'package:chess_master/screens/history/game_history_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:chess_master/core/services/diagnostics_service.dart';
 import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
+import 'package:chess_master/providers/statistics_provider.dart';
 
 /// Settings screen for app customization
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -90,6 +91,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 const SizedBox(height: 12),
                 _buildSettingsCard(context, [
+                  _ThemePresetSelector(
+                    currentPreset: settings.themePreset,
+                    onChanged: (preset) => settingsNotifier.setThemePreset(preset),
+                  ),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _BoardThemeSelector(
                     currentTheme: settings.boardTheme,
                     onChanged: (theme) => settingsNotifier.setBoardTheme(theme),
@@ -112,23 +118,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _buildSettingsCard(context, [
                   _SwitchSetting(
                     title: 'Show Coordinates',
-                    subtitle: 'Display a-h and 1-8 labels',
+                    subtitle: 'Display a-h and 1-8 board labels',
                     value: settings.showCoordinates,
                     onChanged: (_) => settingsNotifier.toggleCoordinates(),
                   ),
                   Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Show Legal Moves',
-                    subtitle: 'Highlight available moves',
+                    subtitle: 'Highlight available moves on board',
                     value: settings.showLegalMoves,
                     onChanged: (_) => settingsNotifier.toggleLegalMoves(),
                   ),
                   Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Show Last Move',
-                    subtitle: 'Highlight the last played move',
+                    subtitle: 'Highlight origin and target squares',
                     value: settings.showLastMove,
                     onChanged: (_) => settingsNotifier.toggleLastMove(),
+                  ),
+                  Divider(color: AppTheme.borderColorFor(context)),
+                  _SwitchSetting(
+                    title: 'Auto-flip for Black',
+                    subtitle: 'Automatically invert perspective when playing black',
+                    value: settings.autoFlipBoard,
+                    onChanged: (_) => settingsNotifier.toggleAutoFlipBoard(),
                   ),
                 ]),
                 const SizedBox(height: 24),
@@ -149,45 +162,76 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Sound Effects',
-                    subtitle: 'Play sounds for moves',
+                    subtitle: 'Audio cues for moves, captures, and checks',
                     value: settings.soundEnabled,
                     onChanged: (_) => settingsNotifier.toggleSound(),
                   ),
                   Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Vibration',
-                    subtitle: 'Haptic feedback on moves',
+                    subtitle: 'Haptic feedback on move interactions',
                     value: settings.vibrationEnabled,
                     onChanged: (_) => settingsNotifier.toggleVibration(),
                   ),
                 ]),
                 const SizedBox(height: 24),
 
-                // Analysis Section
+                // Game History & Analysis Section
                 _buildSectionHeader(
                   context,
-                  'Analysis',
+                  'Games & Analysis',
                   Icons.analytics_outlined,
                 ),
                 const SizedBox(height: 12),
                 _buildSettingsCard(context, [
+                  ListTile(
+                    title: Text(
+                      'Game History & PGN Archive',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimaryFor(context),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Browse past matches, replay moves, and export PGN',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondaryFor(context),
+                        fontSize: 12,
+                      ),
+                    ),
+                    leading: const Icon(
+                      Icons.history_edu_rounded,
+                      color: AppTheme.primaryColor,
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: AppTheme.textSecondaryFor(context),
+                    ),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const GameHistoryScreen(),
+                      ),
+                    ),
+                  ),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Show Win Probability',
-                    subtitle: 'Display Win% instead of centipawns',
+                    subtitle: 'Display win% estimates instead of raw centipawns',
                     value: settings.showWinPercent,
                     onChanged: (_) => settingsNotifier.toggleShowWinPercent(),
                   ),
                   Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Auto-analyze After Game',
-                    subtitle: 'Open analysis when game ends',
+                    subtitle: 'Automatically open deep review when match ends',
                     value: settings.autoAnalyzeAfterGame,
                     onChanged: (_) => settingsNotifier.toggleAutoAnalyze(),
                   ),
                 ]),
                 const SizedBox(height: 24),
 
-                // Notifications & Reminders Section
+                // Notifications Section
                 _buildSectionHeader(
                   context,
                   'Local Notifications',
@@ -197,18 +241,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _buildSettingsCard(context, [
                   _SwitchSetting(
                     title: 'Daily Puzzle Reminders',
-                    subtitle: 'Local reminder when today\'s puzzle is ready',
+                    subtitle: 'Local notification when today\'s challenge arrives',
                     value: settings.dailyPuzzleNotificationEnabled,
                     onChanged:
-                        (_) => settingsNotifier.toggleDailyPuzzleNotification(),
+                        (_) => _toggleNotification(
+                          context,
+                          settings.dailyPuzzleNotificationEnabled,
+                          () => settingsNotifier
+                              .toggleDailyPuzzleNotification(),
+                        ),
                   ),
                   Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Streak Protection Nudges',
-                    subtitle: 'Local warning before your daily streak resets',
+                    subtitle: 'Gentle warning before your streak resets at midnight',
                     value: settings.streakNotificationEnabled,
                     onChanged:
-                        (_) => settingsNotifier.toggleStreakNotification(),
+                        (_) => _toggleNotification(
+                          context,
+                          settings.streakNotificationEnabled,
+                          () =>
+                              settingsNotifier.toggleStreakNotification(),
+                        ),
+                  ),
+                ]),
+                const SizedBox(height: 24),
+
+                // Data & Statistics Management
+                _buildSectionHeader(context, 'Data & Profile', Icons.analytics_outlined),
+                const SizedBox(height: 12),
+                _buildSettingsCard(context, [
+                  ListTile(
+                    title: Text(
+                      'Reset Rating & Match Statistics',
+                      style: GoogleFonts.inter(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Reset game rating to baseline (400 Novice) and clear match history',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondaryFor(context),
+                        fontSize: 12,
+                      ),
+                    ),
+                    leading: const Icon(
+                      Icons.restore_rounded,
+                      color: Colors.redAccent,
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: AppTheme.textSecondaryFor(context),
+                    ),
+                    onTap: () => _confirmResetStats(context),
                   ),
                 ]),
                 const SizedBox(height: 24),
@@ -297,31 +383,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                       );
                     },
-                  ),
-                  Divider(color: AppTheme.borderColorFor(context)),
-                  ListTile(
-                    title: Text(
-                      'Export Diagnostic Log',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textPrimaryFor(context),
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Share local crash log via native share sheet',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textSecondaryFor(context),
-                        fontSize: 12,
-                      ),
-                    ),
-                    leading: const Icon(
-                      Icons.bug_report_outlined,
-                      color: AppTheme.primaryColor,
-                    ),
-                    trailing: Icon(
-                      Icons.share_outlined,
-                      color: AppTheme.textSecondaryFor(context),
-                    ),
-                    onTap: () => _exportDiagnosticLog(context),
                   ),
                   Divider(color: AppTheme.borderColorFor(context)),
                   ListTile(
@@ -474,16 +535,219 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (_) {}
   }
 
-  void _exportDiagnosticLog(BuildContext context) async {
-    final success = await LocalDiagnosticsService.instance.exportLogFile();
-    if (!success && context.mounted) {
+  // Helper for notification reminders
+  Future<void> _toggleNotification(
+    BuildContext context,
+    bool wasEnabled,
+    Future<bool> Function() toggle,
+  ) async {
+    final enabled = await toggle();
+    // Tried to enable but still OFF => OS permission denied.
+    if (!wasEnabled && !enabled && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No diagnostic log available to export'),
-          duration: Duration(seconds: 2),
+          content: Text(
+            'Notification permission denied — enable it in system settings to use reminders',
+          ),
+          duration: Duration(seconds: 3),
         ),
       );
     }
+  }
+
+  void _confirmResetStats(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.surfaceLevel2(dialogContext),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        ),
+        title: Text(
+          'Reset Rating & Stats?',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'This will reset your Game ELO to baseline (400 Novice) and clear match history, allowing you to climb sequentially with the balanced rating system.\n\nPuzzle ratings and achievements are preserved.',
+          style: GoogleFonts.inter(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await ref.read(statisticsProvider.notifier).resetStatistics();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Rating and stats reset to baseline (400 ELO).'),
+                    backgroundColor: AppTheme.emeraldGreen,
+                  ),
+                );
+              }
+            },
+            child: const Text('Reset to Baseline'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Theme preset selector with cohesive accent and board swatches
+class _ThemePresetSelector extends StatelessWidget {
+  final ThemePreset currentPreset;
+  final ValueChanged<ThemePreset> onChanged;
+
+  const _ThemePresetSelector({
+    required this.currentPreset,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: Row(
+            children: [
+              Text(
+                'Theme Preset',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimaryFor(context),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                currentPreset.displayName,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: currentPreset.accentColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Changes app colors, board aesthetics, and piece styles',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppTheme.textSecondaryFor(context),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 88,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: ThemePreset.values.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final preset = ThemePreset.values[index];
+              final isSelected = currentPreset == preset;
+              final boardTheme = BoardTheme.fromType(preset.defaultBoardTheme);
+
+              return GestureDetector(
+                onTap: () => onChanged(preset),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 124,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? preset.accentColor.withValues(alpha: 0.12)
+                        : AppTheme.surfaceColor(context),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? preset.accentColor
+                          : AppTheme.borderColorFor(context),
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  boardTheme.lightSquare,
+                                  boardTheme.darkSquare,
+                                ],
+                                stops: const [0.5, 0.5],
+                              ),
+                              border: Border.all(
+                                color: preset.accentColor,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          if (isSelected)
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 16,
+                              color: preset.accentColor,
+                            ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            preset.displayName,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? preset.accentColor
+                                  : AppTheme.textPrimaryFor(context),
+                            ),
+                          ),
+                          Text(
+                            boardTheme.name,
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              color: AppTheme.textSecondaryFor(context),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
   }
 }
 

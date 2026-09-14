@@ -52,3 +52,8 @@ keysbackup/
 
 # Gemini Agent
 .gemini/tmp/
+
+# Backups and screenshots
+assets/lessons/backup/
+*.png
+!assets/**/*.png

@@ -9,6 +9,7 @@ import 'package:chess_master/core/services/stockfish_service.dart' as stockfish;
 import 'package:chess_master/core/services/basic_evaluator_service.dart';
 import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/core/services/static_exchange_evaluator.dart';
+import 'package:chess_master/core/services/opening_service.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 
 /// Provider for analysis state
@@ -171,6 +172,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   @visibleForTesting
   int stateUpdateCount = 0;
 
+  /// Fired once per successful full-game analysis (UI wires this to
+  /// statistics so "Games Analysed" stays accurate without a Ref here).
+  VoidCallback? onAnalysisComplete;
+
   AnalysisNotifier([this._stockfish]) : super(const AnalysisState());
 
   /// Initialize engine for analysis
@@ -231,11 +236,6 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   /// Navigate to a specific move index
   Future<void> goToMove(int moveIndex) async {
     if (moveIndex < -1 || moveIndex >= state.originalMoves.length) return;
-
-    // Cancel any running analysis
-    _analysisToken++;
-    // Give the engine loop a chance to exit before starting new analysis
-    await Future.delayed(Duration.zero);
 
     // Rebuild board from start
     final board = chess.Chess.fromFEN(state.startingFen);
@@ -469,6 +469,20 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       final accumulator = GameAnalysisAccumulator();
       final board = chess.Chess.fromFEN(state.startingFen);
 
+      // Identify game opening and ECO code using Master Opening Book
+      final allMovesSan = moves.map((m) => m.san).toList();
+      final identifiedOpening =
+          OpeningService.instance.identifyOpening(allMovesSan);
+      if (identifiedOpening != null) {
+        accumulator.setOpening(
+          name: identifiedOpening.name,
+          eco: identifiedOpening.eco,
+        );
+      }
+
+      // Track SAN moves as we advance through the game
+      final List<String> playedSanMoves = [];
+
       // Evaluation of the position ACTUALLY reached so far (white-relative
       // pawns). Seeded with the first position's best eval and then carried
       // forward as each ply's actualEval, so the graph/before-display series
@@ -493,8 +507,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       //   2. bestMove: the engine's top move in UCI format
       //   3. engineLines: top MultiPV lines for display
       // Then we play the ACTUAL move and evaluate that position.
-      // Centipawn loss = bestEval - actualEval (from player's perspective).
-      // This matches how Lichess/Chess.com classify moves.
+      // Move classification follows Lichess Win-Probability Loss standards.
       for (int i = 0; i < moves.length; i++) {
         // Check cancellation token — save partial results before exiting
         if (token != _analysisToken) {
@@ -510,18 +523,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         final move = moves[i];
         final isWhiteMove = board.turn == chess.Color.WHITE;
 
-        // ── Skip analysis for obvious positions (saves ~40% engine time) ──
-        // Opening plies: theory moves, no need to analyze.
-        // Forced moves: only one legal move, always "best".
-        // Recaptures: material restored, almost always fine.
-        final isOpeningPly = i < AppConstants.skipOpeningPlies;
+        // Check if this move continues recognized master opening theory
+        final isBook =
+            OpeningService.instance.isBookMove(playedSanMoves, move.san);
         final isForcedMove = board.moves().length == 1;
         final isRecapture = _isRecapture(board, move);
 
-        if (isOpeningPly || isForcedMove || isRecapture) {
-          // Classify as best/excellent without engine search.
+        if (isBook || isForcedMove || isRecapture) {
+          // Classify without heavy engine search:
+          // Book moves receive dedicated Book classification, 0 CPL, 100% accuracy.
           final defaultEval = actualEvalSoFar ?? 0.0;
           actualEvalSoFar = defaultEval;
+          final classification =
+              isBook ? MoveClassification.book : MoveClassification.best;
           accumulator.add(
             MoveAnalysis(
               moveIndex: i,
@@ -537,17 +551,19 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
                 defaultEval * 100,
               ),
               bestMove: '${move.from}${move.to}${move.promotion ?? ''}',
-              classification: MoveClassification.best,
+              classification: classification,
               engineLines: [],
               isWhiteMove: isWhiteMove,
               centipawnLoss: 0.0,
               accuracy: 100.0,
               isMateBefore: false,
               isMateAfter: false,
+              isBookMove: isBook,
             ),
           );
 
-          // Advance the board state.
+          // Advance the board state and played SAN history.
+          playedSanMoves.add(move.san);
           board.move({
             'from': move.from,
             'to': move.to,
@@ -673,105 +689,94 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         }
 
         // ── Step B: Play the actual move and evaluate at depth 8 ──
+        playedSanMoves.add(move.san);
         board.move({
           'from': move.from,
           'to': move.to,
           'promotion': move.promotion,
         });
 
+        final isDeliveredCheckmate = board.in_checkmate;
         double actualEval = bestEval;
         bool actualIsMate = false;
 
-        // Evaluate the position AFTER the move at depth 8
-        try {
-          if (token != _analysisToken) {
-            if (accumulator.length > 0) {
-              state = state.copyWith(
-                analyzedMoves: accumulator.moves,
-                fullAnalysis: accumulator.build(),
+        if (isDeliveredCheckmate) {
+          actualEval = isWhiteMove ? 100.0 : -100.0;
+          actualIsMate = true;
+          carriedForward = null;
+        } else {
+          // Evaluate the position AFTER the move at depth 8
+          try {
+            if (token != _analysisToken) {
+              if (accumulator.length > 0) {
+                state = state.copyWith(
+                  analyzedMoves: accumulator.moves,
+                  fullAnalysis: accumulator.build(),
+                );
+              }
+              return;
+            }
+
+            // Try soft cache for the after position
+            final afterCacheResult = await _getSoftCachedEvaluation(
+              board.fen,
+              softCacheThreshold: 10,
+            );
+
+            if (afterCacheResult != null) {
+              actualEval = afterCacheResult.eval;
+              if (afterCacheResult.lines.isNotEmpty) {
+                actualIsMate = afterCacheResult.lines.first.isMate;
+              }
+              carriedForward = (
+                eval: afterCacheResult.eval,
+                lines: afterCacheResult.lines,
+                fen: board.fen,
+              );
+            } else {
+              final actualData = await _getCachedOrAnalyze(
+                board.fen,
+                depth: 8,
+                multiPv: 1,
+                isBatchAnalysis: true,
+              );
+              engineQueries++;
+              actualEval = actualData.eval;
+              if (actualData.lines.isNotEmpty) {
+                actualIsMate = actualData.lines.first.isMate;
+              }
+              carriedForward = (
+                eval: actualData.eval,
+                lines: actualData.lines,
+                fen: board.fen,
               );
             }
-            return;
-          }
-
-          // Try soft cache for the after position
-          final afterCacheResult = await _getSoftCachedEvaluation(
-            board.fen,
-            softCacheThreshold: 10,
-          );
-
-          if (afterCacheResult != null) {
-            actualEval = afterCacheResult.eval;
-            if (afterCacheResult.lines.isNotEmpty) {
-              actualIsMate = afterCacheResult.lines.first.isMate;
+          } catch (e) {
+            carriedForward = null;
+            try {
+              final basicResult = await BasicEvaluatorService.instance.analyze(
+                board.fen,
+              );
+              actualEval = basicResult.evalInPawns;
+            } catch (e2) {
+              actualEval = bestEval;
             }
-            carriedForward = (
-              eval: afterCacheResult.eval,
-              lines: afterCacheResult.lines,
-              fen: board.fen,
-            );
-          } else {
-            final actualData = await _getCachedOrAnalyze(
-              board.fen,
-              depth: 8,
-              multiPv: 1,
-              isBatchAnalysis: true,
-            );
-            engineQueries++;
-            actualEval = actualData.eval;
-            if (actualData.lines.isNotEmpty) {
-              actualIsMate = actualData.lines.first.isMate;
-            }
-            carriedForward = (
-              eval: actualData.eval,
-              lines: actualData.lines,
-              fen: board.fen,
-            );
-          }
-        } catch (e) {
-          carriedForward = null;
-          try {
-            final basicResult = await BasicEvaluatorService.instance.analyze(
-              board.fen,
-            );
-            actualEval = basicResult.evalInPawns;
-          } catch (e2) {
-            actualEval = bestEval;
           }
         }
 
-        // ── Compute CPL at depth 8 for early cutoff decision ──
-        final double cplDepth8 =
-            isWhiteMove
-                ? (bestEval - actualEval) * 100.0
-                : (actualEval - bestEval) * 100.0;
-        final double cplAbsDepth8 = cplDepth8.abs();
+        final playedUci =
+            '${move.from}${move.to}${move.promotion ?? ''}'.toLowerCase();
+        final isPlayedBestMove = bestMoveForPlayer != null &&
+            playedUci == bestMoveForPlayer.toLowerCase();
 
-        // Phase 2: Early cutoff classification based on depth-8 CPL
-        // Classification thresholds: 10/20/50/100/200
-        // At depth 8, tactical sequences may not be fully visible, so we use
-        // a conservative buffer: only cut off when CPL is clearly above the
-        // threshold, allowing borderline positions to get the depth-14 refinement.
-        //
-        // If CPL > 200 → Blunder (definitely worse) - cutoff at >200
-        // If CPL > 100 → Mistake  (clearly suboptimal) - cutoff at >100
-        // If CPL > 50  → Inaccuracy (slightly worse) - cutoff at >50
-        // If CPL <= 50 → Competitive/ambiguous → do depth 14 follow-up
-        if (cplAbsDepth8 > 50.0) {
+        // Progressive deepening: If the played move matches the engine's best move
+        // or delivered checkmate, we can safely accept the evaluation and save search time.
+        // If the move deviates, we MUST refine at depth 14 so that tactical combinations
+        // and sacrifices are verified before deciding on blunder or mistake tags.
+        if (isPlayedBestMove || isDeliveredCheckmate) {
           depth8Sufficient = true;
-          depth8Cpl = cplAbsDepth8;
-        }
-
-        // Phase 2: If early cutoff applies, use depth-8 results directly
-        if (depth8Sufficient) {
-          // Use depth-8 evals for classification (early cutoff)
-          // This skips the expensive depth 14 analysis
         } else {
-          // Phase 2: CPL < 50, do a fine-grained depth 14 analysis
-          // Re-analyze BOTH positions at depth 14 for accurate classification
-          // The position after the move (actualEval) needs refinement for the graph
-
-          // Re-analyze the after position at depth 14 (if not already cached at that depth)
+          // Re-analyze after position at depth 14
           try {
             if (token != _analysisToken) {
               if (accumulator.length > 0) {
@@ -807,24 +812,20 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
         // ── Step C: Compute centipawn loss from player's perspective ──
         // bestEval and actualEval are white-relative PAWNS (evalInPawns).
-        // For white: CPL = bestEval - actualEval (positive = player did worse)
-        // For black: CPL = actualEval - bestEval (positive = player did worse)
-        // Multiply the pawn delta by 100: classifyMoveCpl()'s thresholds
-        // (10/20/50/100/200) are expressed in CENTIPAWNS, not pawns. Without the
-        // conversion every non-tactical move landed at "Best Move".
-        final double centipawnLoss =
+        // For white: loss = bestEval - actualEval (positive = player lost ground)
+        // For black: loss = actualEval - bestEval (positive = player lost ground)
+        // If negative, player found a better move or improved position (0 loss).
+        final double rawLoss =
             isWhiteMove
                 ? (bestEval - actualEval) * 100.0
                 : (actualEval - bestEval) * 100.0;
-        final double cplAbs = centipawnLoss.abs();
+        final double centipawnLoss = isDeliveredCheckmate ? 0.0 : (rawLoss < 0.0 ? 0.0 : rawLoss);
 
-        // The position actually reached before this ply. For the first ply
-        // there is no previous ply, so it is the current position's eval.
+        // The position actually reached before this ply.
         final double actualEvalBeforeMove = actualEvalSoFar ?? bestEval;
         actualEvalSoFar = actualEval;
 
-        // Win% for display — "before" uses the ACTUAL prior position so the
-        // displayed before/after pair matches the real game continuity.
+        // Win% for display — uses the ACTUAL prior position for continuity
         final winBest = EvalConstants.centipawnsToWinPercent(
           actualEvalBeforeMove * 100,
         );
@@ -834,37 +835,38 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         final winBefore = isWhiteMove ? winBest : (100.0 - winBest);
         final winAfter = isWhiteMove ? winActual : (100.0 - winActual);
         final rawWinDiff = winBefore - winAfter;
-        final winDiff = rawWinDiff < 0 ? 0.0 : rawWinDiff;
-        // Accuracy is derived from the same before/after pair that is
-        // displayed, so the badge and the win% delta never disagree.
-        final moveAccuracy = computeWinPercentAccuracy(
-          evalBeforePawns: actualEvalBeforeMove,
-          evalAfterPawns: actualEval,
-          isWhiteMove: isWhiteMove,
-        );
+        final winDiff = isDeliveredCheckmate ? 0.0 : (rawWinDiff < 0 ? 0.0 : rawWinDiff);
 
-        // ── Step D: Classify using CPL thresholds ──
-        // SEE and the MultiPV second-line margin promote a sound move to
-        // Brilliant/Great; the Win% pair enables the non-mate Miss case.
+        // Win%-based accuracy ensures badge and win% delta never disagree
+        final moveAccuracy = isDeliveredCheckmate
+            ? 100.0
+            : computeWinPercentAccuracy(
+                evalBeforePawns: actualEvalBeforeMove,
+                evalAfterPawns: actualEval,
+                isWhiteMove: isWhiteMove,
+              );
+
+        // ── Step D: Classify using Win% Model (Lichess standards) ──
         final classification = classifyMoveCpl(
-          centipawnLoss: cplAbs,
+          centipawnLoss: centipawnLoss,
           bestMove: bestMoveForPlayer,
-          actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
+          actualMove: playedUci,
+          isBookMove: isBook,
           isMateBefore: bestIsMate,
           isMateAfter: actualIsMate,
           seeCentipawns: seeCentipawns,
           secondBestCentipawnLoss: secondBestCpl,
           playerWinPercentBefore: winBefore,
           winPercentDiff: winDiff,
+          isCheckmate: isDeliveredCheckmate,
         );
 
-        // Debug logging — now shows CPL-based classification with depth-8 probe info
+        // Debug logging
         debugPrint(
           '📊 Move ${i + 1}: ${move.san} | '
           'Best: ${bestEval.toStringAsFixed(2)} | '
           'Actual: ${actualEval.toStringAsFixed(2)} | '
-          'CPL: ${cplAbs.toStringAsFixed(0)} | '
-          'D8CPL: ${depth8Cpl.toStringAsFixed(0)} | '
+          'CPL: ${centipawnLoss.toStringAsFixed(0)} | '
           'EarlyCutoff: $depth8Sufficient | '
           'WinDiff: ${winDiff.toStringAsFixed(1)} | '
           'Class: ${classification.name}',
@@ -884,26 +886,26 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             classification: classification,
             engineLines: bestLines,
             isWhiteMove: isWhiteMove,
-            centipawnLoss: cplAbs,
+            centipawnLoss: centipawnLoss,
             accuracy: moveAccuracy,
             isMateBefore: bestIsMate,
             isMateAfter: actualIsMate,
+            isBookMove: isBook,
           ),
         );
 
         // Update progress — emit partial fullAnalysis so the Report tab
         // renders progressively instead of showing a spinner until the end.
-        //
-        // Emitting every 5 plies made the displayed accuracy lurch (99.5 -> 82.2
-        // in a single step). Now that the accumulator makes a tick O(1), emit
-        // every ply so the number moves smoothly; very long games fall back to
-        // every 2 plies to keep the rebuild count sensible.
         final tickEvery = moves.length > 40 ? 2 : 1;
         if ((i + 1) % tickEvery == 0 || i == moves.length - 1) {
+          final isCurrentPly = state.currentMoveIndex == i;
           state = state.copyWith(
             analysisProgress: (i + 1) / moves.length,
             analyzedMoves: accumulator.moves,
             fullAnalysis: accumulator.build(),
+            currentEval: isCurrentPly ? actualEval : null,
+            currentEngineLines: isCurrentPly ? bestLines : null,
+            bestMove: isCurrentPly ? bestMoveForPlayer : null,
           );
           stateUpdateCount++;
         }
@@ -929,6 +931,11 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         analyzedMoves: accumulator.moves,
         fullAnalysis: fullAnalysis,
       );
+      if (accumulator.length > 0) {
+        try {
+          onAnalysisComplete?.call();
+        } catch (_) {}
+      }
     } finally {
       _isAnalyzing = false;
       // Return the engine to its low-footprint live-play configuration. This

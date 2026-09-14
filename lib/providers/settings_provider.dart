@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/services/notification_service.dart';
+import 'package:chess_master/core/services/audio_service.dart';
 
 /// Provider for user settings
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
@@ -26,6 +27,7 @@ enum AnimationSpeed {
 
 /// User app settings
 class AppSettings {
+  final ThemePreset themePreset;
   final BoardThemeType boardTheme;
   final PieceSetType pieceSet;
   final bool showCoordinates;
@@ -44,7 +46,8 @@ class AppSettings {
   final bool autoAnalyzeAfterGame;
 
   const AppSettings({
-    this.boardTheme = BoardThemeType.classicWood,
+    this.themePreset = ThemePreset.emerald,
+    this.boardTheme = BoardThemeType.forestGreen,
     this.pieceSet = PieceSetType.traditional,
     this.showCoordinates = true,
     this.showLegalMoves = true,
@@ -70,6 +73,7 @@ class AppSettings {
       AppConstants.timeControls[lastTimeControlIndex];
 
   AppSettings copyWith({
+    ThemePreset? themePreset,
     BoardThemeType? boardTheme,
     PieceSetType? pieceSet,
     bool? showCoordinates,
@@ -88,6 +92,7 @@ class AppSettings {
     bool? autoAnalyzeAfterGame,
   }) {
     return AppSettings(
+      themePreset: themePreset ?? this.themePreset,
       boardTheme: boardTheme ?? this.boardTheme,
       pieceSet: pieceSet ?? this.pieceSet,
       showCoordinates: showCoordinates ?? this.showCoordinates,
@@ -124,14 +129,24 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         prefs.getBool('dailyPuzzleNotificationEnabled') ?? true;
     final streakNotif = prefs.getBool('streakNotificationEnabled') ?? true;
 
+    final savedPresetIdx = prefs.getInt('themePreset') ?? ThemePreset.emerald.index;
+    final themePreset = ThemePreset.values[savedPresetIdx.clamp(0, ThemePreset.values.length - 1)];
+
+    final savedBoardThemeIdx = prefs.getInt('boardTheme') ?? themePreset.defaultBoardTheme.index;
+    final boardTheme = BoardThemeType.values[savedBoardThemeIdx.clamp(0, BoardThemeType.values.length - 1)];
+
+    final savedPieceSetIdx = prefs.getInt('pieceSet') ?? themePreset.defaultPieceSet.index;
+    final pieceSet = PieceSetType.values[savedPieceSetIdx.clamp(0, PieceSetType.values.length - 1)];
+
     state = AppSettings(
-      boardTheme: BoardThemeType.values[prefs.getInt('boardTheme') ?? 0],
-      pieceSet: PieceSetType.values[prefs.getInt('pieceSet') ?? 0],
+      themePreset: themePreset,
+      boardTheme: boardTheme,
+      pieceSet: pieceSet,
       showCoordinates: prefs.getBool('showCoordinates') ?? true,
       showLegalMoves: prefs.getBool('showLegalMoves') ?? true,
       showLastMove: prefs.getBool('showLastMove') ?? true,
       animationSpeed:
-          AnimationSpeed.values[prefs.getInt('animationSpeed') ?? 2],
+          AnimationSpeed.values[(prefs.getInt('animationSpeed') ?? 2).clamp(0, AnimationSpeed.values.length - 1)],
       soundEnabled: prefs.getBool('soundEnabled') ?? true,
       vibrationEnabled: prefs.getBool('vibrationEnabled') ?? true,
       boardFlipped: prefs.getBool('boardFlipped') ?? false,
@@ -143,6 +158,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       showWinPercent: prefs.getBool('showWinPercent') ?? true,
       autoAnalyzeAfterGame: prefs.getBool('autoAnalyzeAfterGame') ?? false,
     );
+
+    // Sync sound setting with AudioService
+    AudioService.instance.setEnabled(state.soundEnabled);
 
     // Sync notification schedules
     if (dailyPuzzleNotif) {
@@ -157,6 +175,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     final s = state;
     final prefs = await SharedPreferences.getInstance();
 
+    await prefs.setInt('themePreset', s.themePreset.index);
     await prefs.setInt('boardTheme', s.boardTheme.index);
     await prefs.setInt('pieceSet', s.pieceSet.index);
     await prefs.setBool('showCoordinates', s.showCoordinates);
@@ -181,26 +200,65 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await prefs.setBool('autoAnalyzeAfterGame', s.autoAnalyzeAfterGame);
   }
 
-  void toggleDailyPuzzleNotification() {
-    final newValue = !state.dailyPuzzleNotificationEnabled;
-    state = state.copyWith(dailyPuzzleNotificationEnabled: newValue);
+  void setThemePreset(ThemePreset preset) {
+    state = state.copyWith(
+      themePreset: preset,
+      boardTheme: preset.defaultBoardTheme,
+      pieceSet: preset.defaultPieceSet,
+    );
     _saveSettings();
-    if (newValue) {
-      NotificationService.instance.scheduleDailyPuzzleReminder();
-    } else {
-      NotificationService.instance.cancelDailyPuzzleReminder();
-    }
   }
 
-  void toggleStreakNotification() {
-    final newValue = !state.streakNotificationEnabled;
-    state = state.copyWith(streakNotificationEnabled: newValue);
-    _saveSettings();
+  /// Enabling a reminder first requests OS permission (Android 13+).
+  /// Returns true when the reminder is ON afterwards.
+  Future<bool> toggleDailyPuzzleNotification() async {
+    final newValue = !state.dailyPuzzleNotificationEnabled;
     if (newValue) {
-      NotificationService.instance.scheduleStreakReminder();
-    } else {
-      NotificationService.instance.cancelStreakReminder();
+      final granted =
+          await NotificationService.instance.requestPermissions();
+      if (!granted) return false;
+      state = state.copyWith(dailyPuzzleNotificationEnabled: true);
+      _saveSettings();
+      NotificationService.instance.scheduleDailyPuzzleReminder();
+      return true;
     }
+    state = state.copyWith(dailyPuzzleNotificationEnabled: false);
+    _saveSettings();
+    NotificationService.instance.cancelDailyPuzzleReminder();
+    return false;
+  }
+
+  /// Enabling a reminder first requests OS permission (Android 13+).
+  /// Returns true when the reminder is ON afterwards.
+  Future<bool> toggleStreakNotification() async {
+    final newValue = !state.streakNotificationEnabled;
+    if (newValue) {
+      final granted =
+          await NotificationService.instance.requestPermissions();
+      if (!granted) return false;
+      state = state.copyWith(streakNotificationEnabled: true);
+      _saveSettings();
+      NotificationService.instance.scheduleStreakReminder();
+      return true;
+    }
+    state = state.copyWith(streakNotificationEnabled: false);
+    _saveSettings();
+    NotificationService.instance.cancelStreakReminder();
+    return false;
+  }
+
+  /// Fire immediate test notifications (debug menu). Returns true if shown.
+  Future<bool> testNotificationsNow() async {
+    return NotificationService.instance.showTestNotifications();
+  }
+
+  /// Sync both reminder toggles (used by the onboarding opt-in).
+  void setNotificationsEnabled(bool enabled) {
+    state = state.copyWith(
+      dailyPuzzleNotificationEnabled: enabled,
+      streakNotificationEnabled: enabled,
+    );
+    _saveSettings();
   }
 
   void toggleAutoFlipBoard() {
@@ -245,6 +303,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   void toggleSound() {
     state = state.copyWith(soundEnabled: !state.soundEnabled);
+    AudioService.instance.setEnabled(state.soundEnabled);
+    _saveSettings();
+  }
+
+  void setSoundEnabled(bool enabled) {
+    state = state.copyWith(soundEnabled: enabled);
+    AudioService.instance.setEnabled(enabled);
     _saveSettings();
   }
 

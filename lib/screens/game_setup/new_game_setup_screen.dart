@@ -20,6 +20,9 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   double _difficultyLevel = 3.0;
   PlayerColor _selectedColor = PlayerColor.random;
   int _selectedTimerIndex = 0; // Default to 'No Timer'
+  bool _isCustomTimer = false;
+  int _customMinutes = 10;
+  int _customIncrement = 5;
 
   @override
   void initState() {
@@ -214,14 +217,17 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   }
 
   Widget _buildTimerSelection() {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: List.generate(AppConstants.timeControls.length, (index) {
-        final timer = AppConstants.timeControls[index];
-        final isSelected = _selectedTimerIndex == index;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedTimerIndex = index),
+    final children = <Widget>[];
+
+    for (int index = 0; index < AppConstants.timeControls.length; index++) {
+      final timer = AppConstants.timeControls[index];
+      final isSelected = !_isCustomTimer && _selectedTimerIndex == index;
+      children.add(
+        GestureDetector(
+          onTap: () => setState(() {
+            _isCustomTimer = false;
+            _selectedTimerIndex = index;
+          }),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -251,8 +257,366 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
               ),
             ),
           ),
+        ),
+      );
+    }
+
+    // Custom Timer Option Chip
+    children.add(
+      GestureDetector(
+        onTap: () => _showCustomTimerSheet(),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color:
+                _isCustomTimer
+                    ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                    : AppTheme.cardColor(context).withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color:
+                  _isCustomTimer
+                      ? AppTheme.primaryColor
+                      : AppTheme.borderColorFor(
+                        context,
+                      ).withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _isCustomTimer ? Icons.tune_rounded : Icons.add_rounded,
+                size: 16,
+                color:
+                    _isCustomTimer
+                        ? AppTheme.primaryColor
+                        : AppTheme.textSecondaryFor(context),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _isCustomTimer
+                    ? 'Custom $_customMinutes+$_customIncrement'
+                    : 'Custom...',
+                style: GoogleFonts.spaceGrotesk(
+                  color:
+                      _isCustomTimer
+                          ? AppTheme.textPrimaryFor(context)
+                          : AppTheme.textSecondaryFor(context),
+                  fontWeight:
+                      _isCustomTimer ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: children,
+    );
+  }
+
+  void _showCustomTimerSheet() {
+    int tempMinutes = _customMinutes;
+    int tempIncrement = _customIncrement;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final textPrimary = AppTheme.textPrimaryFor(context);
+            final textSecondary = AppTheme.textSecondaryFor(context);
+
+            return Container(
+              decoration: BoxDecoration(
+                color: AppTheme.cardColor(context),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                border: Border.all(
+                  color: AppTheme.borderColorFor(context),
+                  width: 1,
+                ),
+              ),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.borderColorFor(context),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.tune_rounded,
+                            color: AppTheme.primaryColor,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Custom Time Control',
+                            style: GoogleFonts.spaceGrotesk(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Text(
+                          '$tempMinutes min + ${tempIncrement}s',
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Minutes Slider & Stepper
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Time per Player',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimary,
+                        ),
+                      ),
+                      Text(
+                        '$tempMinutes minutes',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: AppTheme.primaryColor,
+                      inactiveTrackColor: AppTheme.borderColorFor(
+                        context,
+                      ).withValues(alpha: 0.3),
+                      thumbColor: AppTheme.primaryColor,
+                    ),
+                    child: Slider(
+                      value: tempMinutes.toDouble(),
+                      min: 1,
+                      max: 180,
+                      divisions: 179,
+                      onChanged: (val) {
+                        setSheetState(() => tempMinutes = val.round());
+                      },
+                    ),
+                  ),
+                  // Quick Minute Presets
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children:
+                          [1, 3, 5, 7, 10, 15, 20, 30, 45, 60, 90].map((m) {
+                            final isCur = tempMinutes == m;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: ChoiceChip(
+                                label: Text('${m}m'),
+                                selected: isCur,
+                                onSelected:
+                                    (_) =>
+                                        setSheetState(() => tempMinutes = m),
+                                selectedColor: AppTheme.primaryColor,
+                                labelStyle: GoogleFonts.inter(
+                                  color: isCur ? Colors.white : textPrimary,
+                                  fontSize: 12,
+                                  fontWeight:
+                                      isCur
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Increment Slider & Stepper
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Increment per Move',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimary,
+                        ),
+                      ),
+                      Text(
+                        '$tempIncrement seconds',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: AppTheme.primaryColor,
+                      inactiveTrackColor: AppTheme.borderColorFor(
+                        context,
+                      ).withValues(alpha: 0.3),
+                      thumbColor: AppTheme.primaryColor,
+                    ),
+                    child: Slider(
+                      value: tempIncrement.toDouble(),
+                      min: 0,
+                      max: 60,
+                      divisions: 60,
+                      onChanged: (val) {
+                        setSheetState(() => tempIncrement = val.round());
+                      },
+                    ),
+                  ),
+                  // Quick Increment Presets
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children:
+                          [0, 1, 2, 3, 5, 10, 15, 20, 30].map((inc) {
+                            final isCur = tempIncrement == inc;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: ChoiceChip(
+                                label: Text('+${inc}s'),
+                                selected: isCur,
+                                onSelected:
+                                    (_) => setSheetState(
+                                      () => tempIncrement = inc,
+                                    ),
+                                selectedColor: AppTheme.primaryColor,
+                                labelStyle: GoogleFonts.inter(
+                                  color: isCur ? Colors.white : textPrimary,
+                                  fontSize: 12,
+                                  fontWeight:
+                                      isCur
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: BorderSide(
+                              color: AppTheme.borderColorFor(context),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: GoogleFonts.inter(
+                              color: textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _customMinutes = tempMinutes;
+                              _customIncrement = tempIncrement;
+                              _isCustomTimer = true;
+                            });
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Apply Time',
+                            style: GoogleFonts.spaceGrotesk(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
         );
-      }),
+      },
     );
   }
 
@@ -262,6 +626,12 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
     final timerControl =
         _selectedMode == GameMode.bot
             ? AppConstants.timeControls[0]
+            : _isCustomTimer
+            ? TimeControl(
+              name: 'Custom $_customMinutes+$_customIncrement',
+              minutes: _customMinutes,
+              increment: _customIncrement,
+            )
             : AppConstants.timeControls[_selectedTimerIndex];
 
     ref

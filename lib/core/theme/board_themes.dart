@@ -1,7 +1,101 @@
 import 'package:flutter/material.dart';
 
 /// Chess board visual themes
-enum BoardThemeType { classicWood, modernBlue, forestGreen }
+enum BoardThemeType {
+  classicWood,
+  modernBlue,
+  forestGreen,
+  midnightDark,
+  royalNavy,
+  slateGray,
+  marble,
+}
+
+/// Cohesive app theme presets that synchronize ColorScheme, board theme, and accents
+enum ThemePreset {
+  classic,
+  midnight,
+  emerald,
+  royal;
+
+  String get displayName {
+    switch (this) {
+      case ThemePreset.classic:
+        return 'Classic';
+      case ThemePreset.midnight:
+        return 'Midnight';
+      case ThemePreset.emerald:
+        return 'Emerald';
+      case ThemePreset.royal:
+        return 'Royal';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case ThemePreset.classic:
+        return 'Warm tournament wood with amber gold accents';
+      case ThemePreset.midnight:
+        return 'Dark OLED tournament with diamond cyan accents';
+      case ThemePreset.emerald:
+        return 'Deep tournament green with crisp contrast';
+      case ThemePreset.royal:
+        return 'Deep navy, ivory squares and restrained gold';
+    }
+  }
+
+  BoardThemeType get defaultBoardTheme {
+    switch (this) {
+      case ThemePreset.classic:
+        return BoardThemeType.classicWood;
+      case ThemePreset.midnight:
+        return BoardThemeType.midnightDark;
+      case ThemePreset.emerald:
+        return BoardThemeType.forestGreen;
+      case ThemePreset.royal:
+        return BoardThemeType.royalNavy;
+    }
+  }
+
+  Color get accentColor {
+    switch (this) {
+      case ThemePreset.classic:
+        return const Color(0xFFD4A373);
+      case ThemePreset.midnight:
+        return const Color(0xFF00E5FF);
+      case ThemePreset.emerald:
+        return const Color(0xFF10B981);
+      case ThemePreset.royal:
+        return const Color(0xFFF59E0B);
+    }
+  }
+
+  Color get primaryColor {
+    switch (this) {
+      case ThemePreset.classic:
+        return const Color(0xFF8D6E63);
+      case ThemePreset.midnight:
+        return const Color(0xFF0284C7);
+      case ThemePreset.emerald:
+        return const Color(0xFF10B981);
+      case ThemePreset.royal:
+        return const Color(0xFF3B82F6);
+    }
+  }
+
+  PieceSetType get defaultPieceSet {
+    switch (this) {
+      case ThemePreset.classic:
+        return PieceSetType.traditional;
+      case ThemePreset.midnight:
+        return PieceSetType.modern;
+      case ThemePreset.emerald:
+        return PieceSetType.traditional;
+      case ThemePreset.royal:
+        return PieceSetType.modern;
+    }
+  }
+}
 
 /// Configuration for a chess board theme
 class BoardTheme {
@@ -86,6 +180,74 @@ class BoardTheme {
     coordinateDark: Color(0xFFE8E8D5),
   );
 
+  /// Midnight Dark theme (High contrast OLED)
+  static const BoardTheme midnightDark = BoardTheme(
+    name: 'Midnight Dark',
+    lightSquare: Color(0xFF3A3F47),
+    darkSquare: Color(0xFF20242B),
+    lightSquareHighlight: Color(0xFF4F8A8B),
+    darkSquareHighlight: Color(0xFF2F6668),
+    lastMoveLightSquare: Color(0xFF4F8A8B),
+    lastMoveDarkSquare: Color(0xFF2F6668),
+    legalMoveDot: Color(0x6000E5FF),
+    legalMoveCapture: Color(0x8000E5FF),
+    checkHighlight: Color(0xFFFF5252),
+    selectedSquare: Color(0x8000E5FF),
+    coordinateLight: Color(0xFF8C9BAE),
+    coordinateDark: Color(0xFF5A6678),
+  );
+
+  /// Royal Navy theme
+  static const BoardTheme royalNavy = BoardTheme(
+    name: 'Royal Navy',
+    lightSquare: Color(0xFFDEE3E6),
+    darkSquare: Color(0xFF4A607A),
+    lightSquareHighlight: Color(0xFFF59E0B),
+    darkSquareHighlight: Color(0xFFD97706),
+    lastMoveLightSquare: Color(0x80F59E0B),
+    lastMoveDarkSquare: Color(0x80D97706),
+    legalMoveDot: Color(0x40000000),
+    legalMoveCapture: Color(0x50F59E0B),
+    checkHighlight: Color(0xFFFF5252),
+    selectedSquare: Color(0x80F59E0B),
+    coordinateLight: Color(0xFF4A607A),
+    coordinateDark: Color(0xFFDEE3E6),
+  );
+
+  /// Slate Gray theme
+  static const BoardTheme slateGray = BoardTheme(
+    name: 'Slate Gray',
+    lightSquare: Color(0xFFD8D8D8),
+    darkSquare: Color(0xFF707880),
+    lightSquareHighlight: Color(0xFF90A4AE),
+    darkSquareHighlight: Color(0xFF607D8B),
+    lastMoveLightSquare: Color(0xFF90A4AE),
+    lastMoveDarkSquare: Color(0xFF607D8B),
+    legalMoveDot: Color(0x40000000),
+    legalMoveCapture: Color(0x40000000),
+    checkHighlight: Color(0xFFFF5252),
+    selectedSquare: Color(0x8090A4AE),
+    coordinateLight: Color(0xFF707880),
+    coordinateDark: Color(0xFFD8D8D8),
+  );
+
+  /// Marble theme
+  static const BoardTheme marble = BoardTheme(
+    name: 'Marble',
+    lightSquare: Color(0xFFE9E4DC),
+    darkSquare: Color(0xFF9B9184),
+    lightSquareHighlight: Color(0xFFC2B8A3),
+    darkSquareHighlight: Color(0xFFA69A84),
+    lastMoveLightSquare: Color(0xFFC2B8A3),
+    lastMoveDarkSquare: Color(0xFFA69A84),
+    legalMoveDot: Color(0x40000000),
+    legalMoveCapture: Color(0x40000000),
+    checkHighlight: Color(0xFFFF5252),
+    selectedSquare: Color(0x80D4A373),
+    coordinateLight: Color(0xFF9B9184),
+    coordinateDark: Color(0xFFE9E4DC),
+  );
+
   /// Get theme by type
   static BoardTheme fromType(BoardThemeType type) {
     switch (type) {
@@ -95,14 +257,26 @@ class BoardTheme {
         return modernBlue;
       case BoardThemeType.forestGreen:
         return forestGreen;
+      case BoardThemeType.midnightDark:
+        return midnightDark;
+      case BoardThemeType.royalNavy:
+        return royalNavy;
+      case BoardThemeType.slateGray:
+        return slateGray;
+      case BoardThemeType.marble:
+        return marble;
     }
   }
 
   /// Get all available themes
   static List<BoardTheme> get allThemes => [
     classicWood,
-    modernBlue,
     forestGreen,
+    modernBlue,
+    midnightDark,
+    royalNavy,
+    slateGray,
+    marble,
   ];
 }
 

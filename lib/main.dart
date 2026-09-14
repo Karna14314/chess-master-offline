@@ -6,6 +6,8 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/services/audio_service.dart';
 import 'package:chess_master/core/services/diagnostics_service.dart';
 import 'package:chess_master/core/services/notification_service.dart';
+import 'package:chess_master/core/services/opening_service.dart';
+import 'package:chess_master/core/services/lesson_service.dart';
 import 'package:chess_master/screens/main_screen.dart';
 import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
 
@@ -33,12 +35,23 @@ void main() async {
     debugPrint('Audio initialization failed: $e');
   }
 
-  // Set preferred orientations
+  // Initialize Opening Playbook & Lesson Services (loads extracted Lichess assets)
+  try {
+    await OpeningService.instance.initialize();
+  } catch (e) {
+    debugPrint('OpeningService initialization failed: $e');
+  }
+
+  try {
+    await LessonService.instance.initialize();
+  } catch (e) {
+    debugPrint('LessonService initialization failed: $e');
+  }
+
+  // Set preferred orientations (portrait only)
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
   ]);
 
   // Configure system UI overlay style

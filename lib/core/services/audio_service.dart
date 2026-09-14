@@ -3,17 +3,20 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Service for playing chess game sounds without blocking the UI thread.
+/// Service for playing chess game sounds using lowLatency (SoundPool)
+/// to eliminate MediaPlayer main-thread Binder polling and ANRs.
 class AudioService {
   static AudioService? _instance;
-  final AudioPlayer _movePlayer = AudioPlayer();
-  final AudioPlayer _capturePlayer = AudioPlayer();
-  final AudioPlayer _checkPlayer = AudioPlayer();
-  final AudioPlayer _gameEndPlayer = AudioPlayer();
+  final AudioPlayer _movePlayer = AudioPlayer(playerId: 'chess_move');
+  final AudioPlayer _capturePlayer = AudioPlayer(playerId: 'chess_capture');
+  final AudioPlayer _checkPlayer = AudioPlayer(playerId: 'chess_check');
+  final AudioPlayer _gameEndPlayer = AudioPlayer(playerId: 'chess_game_end');
 
   bool _enabled = true;
   bool _initialized = false;
   bool _isInitializing = false;
+  DateTime _lastSoundTime = DateTime.fromMillisecondsSinceEpoch(0);
+  String _lastSoundPath = '';
 
   static AudioService get instance {
     _instance ??= AudioService._();
@@ -24,29 +27,30 @@ class AudioService {
     _configureAudioContext();
   }
 
-  /// Set up audio context for low latency playback
+  static final AudioContext _ambientContext = AudioContext(
+    android: const AudioContextAndroid(
+      isSpeakerphoneOn: false,
+      stayAwake: false,
+      contentType: AndroidContentType.sonification,
+      usageType: AndroidUsageType.game,
+      audioFocus: AndroidAudioFocus.none,
+    ),
+    iOS: AudioContextIOS(
+      category: AVAudioSessionCategory.ambient,
+      options: const {AVAudioSessionOptions.mixWithOthers},
+    ),
+  );
+
+  /// Set up audio context for low latency playback and background music mixing
   void _configureAudioContext() {
     try {
-      AudioPlayer.global.setAudioContext(
-        AudioContext(
-          android: const AudioContextAndroid(
-            stayAwake: false,
-            contentType: AndroidContentType.sonification,
-            usageType: AndroidUsageType.game,
-            audioFocus: AndroidAudioFocus.none,
-          ),
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.ambient,
-            options: const {AVAudioSessionOptions.mixWithOthers},
-          ),
-        ),
-      );
+      AudioPlayer.global.setAudioContext(_ambientContext);
     } catch (e) {
       debugPrint('AudioService: Failed to configure AudioContext: $e');
     }
   }
 
-  /// Non-blocking, lazy audio player initialization
+  /// Non-blocking, lazy audio player initialization using SoundPool (lowLatency)
   Future<void> initialize() async {
     if (_initialized || _isInitializing) return;
     _isInitializing = true;
@@ -56,16 +60,34 @@ class AudioService {
       runZonedGuarded(
         () async {
           try {
-            await _movePlayer.setReleaseMode(ReleaseMode.stop);
-            await _capturePlayer.setReleaseMode(ReleaseMode.stop);
-            await _checkPlayer.setReleaseMode(ReleaseMode.stop);
-            await _gameEndPlayer.setReleaseMode(ReleaseMode.stop);
+            await Future.wait([
+              _movePlayer.setAudioContext(_ambientContext),
+              _capturePlayer.setAudioContext(_ambientContext),
+              _checkPlayer.setAudioContext(_ambientContext),
+              _gameEndPlayer.setAudioContext(_ambientContext),
+            ]);
+
+            await Future.wait([
+              _movePlayer.setPlayerMode(PlayerMode.lowLatency),
+              _capturePlayer.setPlayerMode(PlayerMode.lowLatency),
+              _checkPlayer.setPlayerMode(PlayerMode.lowLatency),
+              _gameEndPlayer.setPlayerMode(PlayerMode.lowLatency),
+            ]);
+
+            await Future.wait([
+              _movePlayer.setReleaseMode(ReleaseMode.stop),
+              _capturePlayer.setReleaseMode(ReleaseMode.stop),
+              _checkPlayer.setReleaseMode(ReleaseMode.stop),
+              _gameEndPlayer.setReleaseMode(ReleaseMode.stop),
+            ]);
 
             // Preload sources
-            await _movePlayer.setSource(AssetSource('sounds/move.mp3'));
-            await _capturePlayer.setSource(AssetSource('sounds/capture.mp3'));
-            await _checkPlayer.setSource(AssetSource('sounds/check.mp3'));
-            await _gameEndPlayer.setSource(AssetSource('sounds/game_end.mp3'));
+            await Future.wait([
+              _movePlayer.setSource(AssetSource('sounds/move.mp3')),
+              _capturePlayer.setSource(AssetSource('sounds/capture.mp3')),
+              _checkPlayer.setSource(AssetSource('sounds/check.mp3')),
+              _gameEndPlayer.setSource(AssetSource('sounds/game_end.mp3')),
+            ]);
 
             _initialized = true;
           } catch (e) {
@@ -87,20 +109,24 @@ class AudioService {
     _enabled = enabled;
   }
 
-  /// Safely play audio on a player without blocking main UI thread or throwing
+  /// Safely play audio on a player without blocking main UI thread or throwing.
+  /// Uses PlayerMode.lowLatency (SoundPool) with a 40ms throttle guard.
   void _playSound(AudioPlayer player, AssetSource source) {
     if (!_enabled) return;
+
+    final now = DateTime.now();
+    if (_lastSoundPath == source.path &&
+        now.difference(_lastSoundTime).inMilliseconds < 40) {
+      return; // Drop rapid duplicate audio triggers to prevent buffer queue saturation
+    }
+    _lastSoundTime = now;
+    _lastSoundPath = source.path;
+
     unawaited(
       runZonedGuarded(
         () async {
           try {
-            if (_initialized) {
-              await player.seek(Duration.zero);
-              await player.resume();
-            } else {
-              await player.stop();
-              await player.play(source);
-            }
+            await player.play(source, mode: PlayerMode.lowLatency);
           } catch (e) {
             debugPrint('Error playing sound ${source.path}: $e');
           }

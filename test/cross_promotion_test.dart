@@ -56,7 +56,7 @@ void main() {
 
   group('Cross-Promotion & MoreScreen Tests', () {
     testWidgets(
-      'MainScreen navigation contains More tab and loads MoreScreen',
+      'MainScreen navigation has 4 main tabs and excludes More tab',
       (WidgetTester tester) async {
         await tester.pumpWidget(
           ProviderScope(
@@ -71,15 +71,14 @@ void main() {
         );
         await tester.pump();
 
-        // Verify 'More' tab is present in BottomNavigationBar
-        expect(find.text('More'), findsOneWidget);
+        // Verify standard 4 tabs are present
+        expect(find.text('Play'), findsOneWidget);
+        expect(find.text('Learn'), findsOneWidget);
+        expect(find.text('Review'), findsOneWidget);
+        expect(find.text('Profile'), findsOneWidget);
 
-        // Tap on 'More' tab (index 4)
-        await tester.tap(find.text('More'));
-        await tester.pump();
-
-        // Verify MoreScreen is rendered
-        expect(find.byType(MoreScreen), findsOneWidget);
+        // Verify 'More' tab is NOT present
+        expect(find.text('More'), findsNothing);
       },
     );
 

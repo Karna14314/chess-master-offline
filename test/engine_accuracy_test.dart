@@ -343,7 +343,7 @@ void main() {
         expect(result, equals(MoveClassification.excellent));
       });
 
-      test('Win% diff ~6.7% (CPL=75cp, 1.0→0.25) → Good', () {
+      test('Win% diff ~6.7% (CPL=75cp, 1.0→0.25) → Inaccuracy', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: 0.25,
@@ -351,11 +351,11 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        // winDiff ≈ 6.7% → good (≤10.0)
-        expect(result, equals(MoveClassification.good));
+        // winDiff ≈ 6.7% → inaccuracy (≤12.0)
+        expect(result, equals(MoveClassification.inaccuracy));
       });
 
-      test('Win% diff ~13.2% (CPL=150cp, 1.0→-0.5) → Inaccuracy', () {
+      test('Win% diff ~13.2% (CPL=150cp, 1.0→-0.5) → Mistake', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: -0.5,
@@ -363,11 +363,11 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        // winDiff ≈ 13.2% → inaccuracy (≤20.0)
-        expect(result, equals(MoveClassification.inaccuracy));
+        // winDiff ≈ 13.2% → mistake (≤20.0)
+        expect(result, equals(MoveClassification.mistake));
       });
 
-      test('Win% diff ~26% (CPL=300cp, 1.0→-2.0) → Mistake', () {
+      test('Win% diff ~26% (CPL=300cp, 1.0→-2.0) → Blunder', () {
         final result = classifyMove(
           evalBefore: 1.0,
           evalAfter: -2.0,
@@ -375,8 +375,8 @@ void main() {
           bestMove: null,
           actualMove: 'd2d4',
         );
-        // winDiff ≈ 26.3% → mistake (≤40.0)
-        expect(result, equals(MoveClassification.mistake));
+        // winDiff ≈ 26.3% → blunder (>20.0)
+        expect(result, equals(MoveClassification.blunder));
       });
 
       test('improvement (eval improves) → Best (winDiff clamped to 0)', () {
@@ -391,7 +391,7 @@ void main() {
         expect(result, equals(MoveClassification.best));
       });
 
-      test('black move Win% diff ~26% (CPL=300cp) → Mistake', () {
+      test('black move Win% diff ~26% (CPL=300cp) → Blunder', () {
         final result = classifyMove(
           evalBefore: -1.0,
           evalAfter: 2.0,
@@ -400,8 +400,8 @@ void main() {
           actualMove: 'e7e5',
         );
         // Black's playerWinBefore ≈ 63.4%, playerWinAfter ≈ 31.6%
-        // winDiff ≈ 31.8% → mistake (≤40.0)
-        expect(result, equals(MoveClassification.mistake));
+        // winDiff ≈ 31.8% → blunder (>20.0)
+        expect(result, equals(MoveClassification.blunder));
       });
 
       test('black move improvement → Best (winDiff clamped to 0)', () {

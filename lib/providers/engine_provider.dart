@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:chess/chess.dart' as chess;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/models/chess_models.dart';
 import 'package:chess_master/core/services/stockfish_service.dart';
 import 'package:chess_master/core/services/simple_bot_service.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
+import 'package:chess_master/models/bot_profile.dart';
 
 /// Provider for the Stockfish engine service
 final stockfishServiceProvider = Provider<StockfishService>((ref) {
@@ -102,7 +104,8 @@ class EngineNotifier extends StateNotifier<EngineState> {
   Future<BestMoveResult?> getBotMove({
     required String fen,
     required DifficultyLevel difficulty,
-    BotType botType = BotType.stockfish, // Added param to match usage
+    BotType botType = BotType.stockfish,
+    BotProfile? botProfile,
     String? startingFen,
     List<String>? moves,
   }) async {
@@ -112,11 +115,19 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
     state = state.copyWith(isThinking: true, currentFen: fen);
 
+    final effectiveBotType = botProfile?.engineType ?? botType;
+    final effectiveElo = botProfile?.elo ?? difficulty.elo;
+
     try {
-      if (botType == BotType.simple) {
+      if (effectiveBotType == BotType.simple) {
         final fallbackResult = await SimpleBotService.instance.getBestMove(
           fen: fen,
-          depth: difficulty.fallbackDepth,
+          depth: botProfile?.searchDepth ?? difficulty.fallbackDepth,
+          blunderRate: botProfile?.blunderRate ?? 0.0,
+          useOpeningBook: botProfile?.openingStyle != 'Random',
+          positionHistory: _fenHistory(startingFen, moves, fen),
+          openingStyle: botProfile?.openingStyle,
+          elo: effectiveElo,
         );
 
         if (currentSearchId != _searchId) return null;
@@ -148,7 +159,11 @@ class EngineNotifier extends StateNotifier<EngineState> {
       if (!_service.isReady) {
         final fallbackResult = await SimpleBotService.instance.getBestMove(
           fen: fen,
-          depth: difficulty.fallbackDepth,
+          depth: botProfile?.searchDepth ?? difficulty.fallbackDepth,
+          blunderRate: botProfile?.blunderRate ?? 0.0,
+          positionHistory: _fenHistory(startingFen, moves, fen),
+          openingStyle: botProfile?.openingStyle,
+          elo: effectiveElo,
         );
 
         if (currentSearchId != _searchId) return null;
@@ -164,7 +179,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
         );
       }
 
-      _service.setSkillLevel(difficulty.elo);
+      _service.setSkillLevel(effectiveElo);
 
       // Minimum think time: a fixed floor (not additive) to prevent
       // instant replies that feel robotic. If the engine finishes faster
@@ -192,8 +207,11 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
       // Apply minimum think time floor (not additive — only waits if
       // the search completed faster than the minimum threshold).
+      // Skipped in endgames (10 or fewer pieces): instant replies feel
+      // right when the board is nearly empty, snappy everywhere else.
+      final pieceCount = RegExp(r'[pnbrqkPNBRQK]').allMatches(fen).length;
       final elapsed = DateTime.now().difference(searchStartTime);
-      if (elapsed < minThinkTime) {
+      if (pieceCount > 10 && elapsed < minThinkTime) {
         await Future.delayed(minThinkTime - elapsed);
       }
 
@@ -215,7 +233,11 @@ class EngineNotifier extends StateNotifier<EngineState> {
       try {
         final fallbackResult = await SimpleBotService.instance.getBestMove(
           fen: fen,
-          depth: difficulty.fallbackDepth,
+          depth: botProfile?.searchDepth ?? difficulty.fallbackDepth,
+          blunderRate: botProfile?.blunderRate ?? 0.0,
+          positionHistory: _fenHistory(startingFen, moves, fen),
+          openingStyle: botProfile?.openingStyle,
+          elo: effectiveElo,
         );
 
         if (currentSearchId != _searchId) return null;
@@ -452,6 +474,36 @@ class EngineNotifier extends StateNotifier<EngineState> {
   void dispose() {
     _searchId++;
     super.dispose();
+  }
+
+  /// Rebuild FEN-key history (first 4 fields) from start + UCI moves.
+  /// Falls back to [currentFen] only when replay fails.
+  List<String> _fenHistory(String? startingFen, List<String>? moves, String currentFen) {
+    String key(String fen) {
+      final parts = fen.trim().split(RegExp(r'\s+'));
+      if (parts.length < 4) return fen.trim();
+      return parts.take(4).join(' ');
+    }
+
+    if (startingFen == null || moves == null || moves.isEmpty) {
+      return [key(currentFen)];
+    }
+    try {
+      final board = chess.Chess.fromFEN(startingFen);
+      final keys = <String>[key(startingFen)];
+      for (final uci in moves) {
+        if (uci.length < 4) continue;
+        board.move({
+          'from': uci.substring(0, 2),
+          'to': uci.substring(2, 4),
+          if (uci.length > 4) 'promotion': uci.substring(4, 5),
+        });
+        keys.add(key(board.fen));
+      }
+      return keys;
+    } catch (_) {
+      return [key(currentFen)];
+    }
   }
 }
 

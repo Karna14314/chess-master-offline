@@ -1,0 +1,1659 @@
+{
+  "cm_queen_1": {
+    "id": "cm_queen_1",
+    "categoryId": "piece_checkmates_1",
+    "title": "Queen Kiss of Death",
+    "fen": "k7/8/1K6/8/8/8/8/7Q w - - 0 1",
+    "instruction": "White to move. Deliver checkmate with the Queen right next to the enemy King.",
+    "solutionMoves": [
+      "h1a8"
+    ],
+    "shapes": [
+      "h1a8"
+    ],
+    "hints": [
+      "Look for a square directly adjacent to the black king where the queen is protected by White's king."
+    ],
+    "explanation": "The 'Kiss of Death' is the most common mating net: the queen steps right in front of the king, supported by her own king, leaving zero escape squares."
+  },
+  "cm_queen_2": {
+    "id": "cm_queen_2",
+    "categoryId": "piece_checkmates_1",
+    "title": "Queen Corridor Checkmate",
+    "fen": "8/8/8/8/8/4k3/8/R3K2Q w - - 0 1",
+    "instruction": "White to move. Checkmate the King along the open file.",
+    "solutionMoves": [
+      "h1e4"
+    ],
+    "shapes": [
+      "h1e4"
+    ],
+    "hints": [
+      "Cut off the King completely by controlling the fourth rank."
+    ],
+    "explanation": "Restricting the king to the edge with coordinated major pieces guarantees swift checkmate."
+  },
+  "cm_two_rooks_1": {
+    "id": "cm_two_rooks_1",
+    "categoryId": "piece_checkmates_1",
+    "title": "The Lawn Mower",
+    "fen": "8/8/8/3k4/8/8/R7/1R2K3 w - - 0 1",
+    "instruction": "White to move. Begin the rolling lawnmower maneuver to restrict Black to the 8th rank.",
+    "solutionMoves": [
+      "a2a5",
+      "d5d6",
+      "b1b6",
+      "d6d7",
+      "a5a7",
+      "d7d8",
+      "b6b8"
+    ],
+    "shapes": [
+      "a2a5"
+    ],
+    "hints": [
+      "Alternate rooks rank by rank. Each rook cuts off one line while the other steps forward."
+    ],
+    "explanation": "The lawnmower mate rolls the two rooks forward rank by rank, never giving the king a chance to step forward."
+  },
+  "cm_rook_1": {
+    "id": "cm_rook_1",
+    "categoryId": "piece_checkmates_1",
+    "title": "Single Rook Box Mate",
+    "fen": "4k3/4R3/4K3/8/8/8/8/8 b - - 0 1",
+    "instruction": "Black king must move to the back rank. Find the move that forces Black into the corner.",
+    "solutionMoves": [
+      "e8f8",
+      "e7a7",
+      "f8g8",
+      "e6f6",
+      "g8h8",
+      "f6g6",
+      "h8g8",
+      "a7a8"
+    ],
+    "shapes": [
+      "e7a7"
+    ],
+    "hints": [
+      "Waste a tempo with the rook along the 7th rank so Black has to step into opposition!"
+    ],
+    "explanation": "With King and Rook, you use the king to take the opposition, forcing the defending king to retreat or yield the file."
+  },
+  "cm_rook_2": {
+    "id": "cm_rook_2",
+    "categoryId": "piece_checkmates_1",
+    "title": "Rook Delivering Final Blow",
+    "fen": "k7/2K5/8/8/8/8/8/R7 w - - 0 1",
+    "instruction": "White to move. Checkmate Black trapped on the edge.",
+    "solutionMoves": [
+      "a1a8"
+    ],
+    "shapes": [
+      "a1a8"
+    ],
+    "hints": [
+      "Slide the rook all the way to the 8th rank."
+    ],
+    "explanation": "When the enemy king is locked on the board edge and blocked by the opposition king, any rook check along the edge is mate."
+  },
+  "cm_backrank_1": {
+    "id": "cm_backrank_1",
+    "categoryId": "checkmate_patterns_1",
+    "title": "Classic Back-Rank Mate",
+    "fen": "6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1",
+    "instruction": "White to move. Exploit Black's un-castled pawn wall.",
+    "solutionMoves": [
+      "e1e8"
+    ],
+    "shapes": [
+      "e1e8"
+    ],
+    "hints": [
+      "Black's f7, g7, and h7 pawns trap their own king!"
+    ],
+    "explanation": "The back-rank mate occurs when a king is trapped behind its own shield of pawns and attacked on the first or eighth rank with no retreat."
+  },
+  "cm_backrank_2": {
+    "id": "cm_backrank_2",
+    "categoryId": "checkmate_patterns_1",
+    "title": "Back-Rank Deflection",
+    "fen": "2r3k1/5ppp/8/8/8/1Q6/5PPP/6K1 w - - 0 1",
+    "instruction": "White to move. Infiltrate the back rank.",
+    "solutionMoves": [
+      "b3b7",
+      "c8c1",
+      "b7b1",
+      "c1b1"
+    ],
+    "shapes": [
+      "b3b7"
+    ],
+    "hints": [
+      "Target both the rook and the 8th rank simultaneously."
+    ],
+    "explanation": "Attacking defending pieces while threatening the back rank forces material concessions."
+  },
+  "cm_backrank_3": {
+    "id": "cm_backrank_3",
+    "categoryId": "checkmate_patterns_1",
+    "title": "Defending Queen Back-Rank Strike",
+    "fen": "3r2k1/p4ppp/1p6/8/8/5Q2/PP3PPP/6K1 w - - 0 1",
+    "instruction": "White to move. Find the dominating queen centralization that suffocates Black's back rank.",
+    "solutionMoves": [
+      "f3c6"
+    ],
+    "shapes": [
+      "f3c6"
+    ],
+    "hints": [
+      "Pin down the 8th rank invasion while paralyzing the d8 rook."
+    ],
+    "explanation": "Controlling open files with queen dominance creates unstoppable back-rank checkmate threats."
+  },
+  "cm_opera_1": {
+    "id": "cm_opera_1",
+    "categoryId": "checkmate_patterns_1",
+    "title": "Morphy's Opera Mate",
+    "fen": "4kb1r/p2n1ppp/4p3/3p4/1B6/8/5PPP/1R4K1 w k - 0 1",
+    "instruction": "White to move. Checkmate using Bishop and Rook coordination.",
+    "solutionMoves": [
+      "b4f8",
+      "h8f8",
+      "b1b8"
+    ],
+    "shapes": [
+      "b4f8",
+      "b1b8"
+    ],
+    "hints": [
+      "Eliminate the defending bishop on f8 to clear the back rank for the rook."
+    ],
+    "explanation": "Paul Morphy's Opera Box mate uses a bishop to pin and cover escape squares while a rook delivers the coup de gr\u00e2ce."
+  },
+  "cm_anastasia_1": {
+    "id": "cm_anastasia_1",
+    "categoryId": "checkmate_patterns_2",
+    "title": "Anastasia's Mate",
+    "fen": "5rk1/1p3ppp/pN6/8/8/8/5PPP/2R3K1 w - - 0 1",
+    "instruction": "White's knight controls e7 and g7. Open the file to execute the mate.",
+    "solutionMoves": [
+      "c1c8",
+      "f8c8",
+      "b6c8"
+    ],
+    "shapes": [
+      "b6d7"
+    ],
+    "hints": [
+      "The knight locks the escape squares while a rook or queen finishes the job."
+    ],
+    "explanation": "In Anastasia's mate, a knight seals the escape squares (e7 and g7) while a major piece delivers mate along the file against the edge."
+  },
+  "cm_anastasia_2": {
+    "id": "cm_anastasia_2",
+    "categoryId": "checkmate_patterns_2",
+    "title": "Queen Sacrifice for Anastasia's Mate",
+    "fen": "r4rk1/1pp2ppp/4N3/p7/8/8/1P3PPP/R2Q2K1 w - - 0 1",
+    "instruction": "White to move. Win Black's king defense.",
+    "solutionMoves": [
+      "e6f8",
+      "a8f8"
+    ],
+    "shapes": [
+      "e6f8"
+    ],
+    "hints": [
+      "Dismantle the defensive rook first."
+    ],
+    "explanation": "Removing defenders paves the way for knight-and-rook mating networks."
+  },
+  "cm_arabian_1": {
+    "id": "cm_arabian_1",
+    "categoryId": "checkmate_patterns_2",
+    "title": "The Arabian Mate",
+    "fen": "7k/7p/5N2/8/8/8/8/R6K w - - 0 1",
+    "instruction": "White to move. Knight on f6 and Rook on the 1st rank. Deliver checkmate in 2 moves.",
+    "solutionMoves": [
+      "a1a7",
+      "h7h6",
+      "a7h7"
+    ],
+    "shapes": [
+      "a1a7"
+    ],
+    "hints": [
+      "Bring the rook to the 7th rank threatening Rh7#. Black's only move is to push the h-pawn!"
+    ],
+    "explanation": "The Arabian Mate is one of the oldest recorded mating patterns: the knight on f6 protects the rook on h7 while covering the g8 exit square."
+  },
+  "cm_arabian_2": {
+    "id": "cm_arabian_2",
+    "categoryId": "checkmate_patterns_2",
+    "title": "Arabian Infiltration",
+    "fen": "6k1/5p1p/5Np1/8/8/8/8/R6K w - - 0 1",
+    "instruction": "White to move. Drive the king into the corner trap.",
+    "solutionMoves": [
+      "a1a8",
+      "g8g7",
+      "f6e8",
+      "g7h6"
+    ],
+    "shapes": [
+      "a1a8"
+    ],
+    "hints": [
+      "Invade with the rook with check."
+    ],
+    "explanation": "Coordinating knight jumps with long-range rook checks drives the king onto the fatal square."
+  },
+  "cm_smothered_1": {
+    "id": "cm_smothered_1",
+    "categoryId": "checkmate_patterns_3",
+    "title": "Philidor's Legacy (Smothered Mate)",
+    "fen": "6k1/6pp/8/5N2/8/8/1Q4PP/6K1 w - - 0 1",
+    "instruction": "White to move. Exploit the vulnerable g7 square.",
+    "solutionMoves": [
+      "b2g7"
+    ],
+    "shapes": [
+      "b2g7"
+    ],
+    "hints": [
+      "Target g7 directly with queen and knight tandem."
+    ],
+    "explanation": "Smothered mate occurs when a knight checks a king completely boxed in by its own friendly pieces."
+  },
+  "cm_smothered_2": {
+    "id": "cm_smothered_2",
+    "categoryId": "checkmate_patterns_3",
+    "title": "The Classic Queen Sacrifice Smother",
+    "fen": "r5rk/5Npp/8/8/8/8/8/7K w - - 0 1",
+    "instruction": "White to move. Checkmate the King surrounded by his own army!",
+    "solutionMoves": [
+      "f7h6"
+    ],
+    "shapes": [
+      "f7h6"
+    ],
+    "hints": [
+      "The knight has nowhere to hide, but it can jump with double check!"
+    ],
+    "explanation": "Double check forces the king into the corner, allowing Qg8+ Rxg8, followed by Nf7# smothered mate."
+  },
+  "cm_smothered_3": {
+    "id": "cm_smothered_3",
+    "categoryId": "checkmate_patterns_3",
+    "title": "Corner Smothered Finish",
+    "fen": "6rk/6pp/7N/8/8/8/8/7K w - - 0 1",
+    "instruction": "White to move. Find the checkmate in 1 move.",
+    "solutionMoves": [
+      "h6f7"
+    ],
+    "shapes": [
+      "h6f7"
+    ],
+    "hints": [
+      "Jump the knight to f7!"
+    ],
+    "explanation": "Because Black's own rook and pawns prevent the king from moving, Nf7# is instant checkmate."
+  },
+  "cm_boden_1": {
+    "id": "cm_boden_1",
+    "categoryId": "checkmate_patterns_4",
+    "title": "Boden's Mate",
+    "fen": "2kr4/pppn1ppp/8/8/1B6/8/PPP2PPP/3B2K1 w - - 0 1",
+    "instruction": "White to move. The criss-crossing bishop pair controls the board. Find the winning check.",
+    "solutionMoves": [
+      "d1g4"
+    ],
+    "shapes": [
+      "d1g4"
+    ],
+    "hints": [
+      "Pin Black's d7 knight before delivering the criss-cross blow."
+    ],
+    "explanation": "Boden's Mate occurs when two criss-crossing bishops slice through intersecting diagonals against a castled queenside king."
+  },
+  "cm_boden_2": {
+    "id": "cm_boden_2",
+    "categoryId": "checkmate_patterns_4",
+    "title": "Boden's Bishop Strike",
+    "fen": "2kr1b1r/pppn1ppp/8/8/8/8/PPP2PPP/R1B1KB1R w KQ - 0 1",
+    "instruction": "White to move. Develop with maximum tactical pressure against Black's king.",
+    "solutionMoves": [
+      "c1e3"
+    ],
+    "shapes": [
+      "c1e3"
+    ],
+    "hints": [
+      "Activate the bishop pair quickly."
+    ],
+    "explanation": "Developing bishops with active diagonals puts immense pressure on king safety."
+  },
+  "cm_double_bishop_1": {
+    "id": "cm_double_bishop_1",
+    "categoryId": "checkmate_patterns_4",
+    "title": "Double Bishop Laser",
+    "fen": "k7/8/1K6/8/8/2B5/8/3B4 w - - 0 1",
+    "instruction": "White to move. Checkmate in 2 moves with the Bishop pair.",
+    "solutionMoves": [
+      "c3e5",
+      "a8b8",
+      "d1f3"
+    ],
+    "shapes": [
+      "c3e5",
+      "d1f3"
+    ],
+    "hints": [
+      "Control the escape squares with the first bishop, then strike with the second."
+    ],
+    "explanation": "Two bishops on adjacent diagonals act like lasers, controlling every exit square."
+  },
+  "cm_two_bishops_1": {
+    "id": "cm_two_bishops_1",
+    "categoryId": "piece_checkmates_2",
+    "title": "Two Bishops Corner Drive",
+    "fen": "8/8/8/8/4k3/8/8/4KBB1 w - - 0 1",
+    "instruction": "White to move. Begin netting the Black King into the corner.",
+    "solutionMoves": [
+      "f1g2",
+      "e4e5",
+      "g1h2"
+    ],
+    "shapes": [
+      "f1g2"
+    ],
+    "hints": [
+      "Form a wall of diagonals that cuts off half the board."
+    ],
+    "explanation": "With two bishops, place them side-by-side on adjacent diagonals to build an impenetrable barrier that pushes the enemy king to the rim."
+  },
+  "cm_two_bishops_2": {
+    "id": "cm_two_bishops_2",
+    "categoryId": "piece_checkmates_2",
+    "title": "Delivering Two Bishops Mate",
+    "fen": "k7/8/1K6/8/8/8/5B2/6B1 w - - 0 1",
+    "instruction": "White to move. Deliver checkmate with the two bishops.",
+    "solutionMoves": [
+      "f2g3",
+      "a8b8",
+      "g1f2",
+      "b8c8",
+      "f2e3",
+      "c8d8",
+      "g3h4"
+    ],
+    "shapes": [
+      "f2g3"
+    ],
+    "hints": [
+      "Cut off the king's exit step by step."
+    ],
+    "explanation": "Step-by-step diagonal control leaves the lone king with nowhere to flee."
+  },
+  "cm_kb_1": {
+    "id": "cm_kb_1",
+    "categoryId": "knight_bishop_mate",
+    "title": "Driving King to the Right Corner",
+    "fen": "7k/8/5N2/5B2/8/8/8/4K3 w - - 0 1",
+    "instruction": "White has a light-squared bishop. To mate Black, Black's king must be driven to a light-squared corner (h1 or a8). Find the restricting move.",
+    "solutionMoves": [
+      "f5e4",
+      "h8g7",
+      "f6d5"
+    ],
+    "shapes": [
+      "f5e4"
+    ],
+    "hints": [
+      "Place the bishop on the long diagonal to cut off escape toward the center."
+    ],
+    "explanation": "In Knight and Bishop checkmate, you can ONLY checkmate in the corner of the same color as your bishop. Use the W-maneuver to herd the king there."
+  },
+  "cm_kb_2": {
+    "id": "cm_kb_2",
+    "categoryId": "knight_bishop_mate",
+    "title": "Knight & Bishop Finishing Net",
+    "fen": "k7/8/1K6/5N2/8/8/8/3B4 w - - 0 1",
+    "instruction": "White to move. Deliver checkmate in 2 moves in the light-squared corner.",
+    "solutionMoves": [
+      "d1f3",
+      "a8b8",
+      "f5d6",
+      "b8a8",
+      "f3e4"
+    ],
+    "shapes": [
+      "d1f3"
+    ],
+    "hints": [
+      "Check on the diagonal first to force the king into the corner."
+    ],
+    "explanation": "The bishop and knight coordinate: the knight covers dark squares while the bishop covers light squares."
+  },
+  "tac_pin_1": {
+    "id": "tac_pin_1",
+    "categoryId": "the_pin",
+    "title": "The Absolute Pin",
+    "fen": "r1b1k2r/pp3ppp/2n1pn2/q2p4/1b1P4/1PN1P3/P2B1PPP/R2QKBNR w KQkq - 3 9",
+    "instruction": "White to move. Pin Black's queen to the king or exploit Black's pinned pieces.",
+    "solutionMoves": [
+      "a2a3",
+      "b4c3",
+      "b3b4"
+    ],
+    "shapes": [
+      "a2a3"
+    ],
+    "hints": [
+      "Kick the pinning bishop on b4."
+    ],
+    "explanation": "An absolute pin occurs when a piece cannot legally move because it exposes the king to check."
+  },
+  "tac_pin_2": {
+    "id": "tac_pin_2",
+    "categoryId": "the_pin",
+    "title": "Pinning the Queen",
+    "fen": "4k3/4q3/8/8/8/8/8/4R1K1 w - - 0 1",
+    "instruction": "White to move. Win Black's Queen with an absolute pin.",
+    "solutionMoves": [
+      "e1e7",
+      "e8e7"
+    ],
+    "shapes": [
+      "e1e7"
+    ],
+    "hints": [
+      "Capture the pinned queen on e7!"
+    ],
+    "explanation": "A pinned piece cannot run away. Here the queen is pinned to the king along the e-file."
+  },
+  "tac_pin_3": {
+    "id": "tac_pin_3",
+    "categoryId": "the_pin",
+    "title": "Relative Pin on the Knight",
+    "fen": "r1bqk2r/ppp2ppp/2n5/3np3/1b6/2NP1N2/PPPBBPPP/R2QK2R w KQkq - 0 8",
+    "instruction": "White to move. Relieve tension by challenging Black's pinned pieces.",
+    "solutionMoves": [
+      "c3d5",
+      "d8d5",
+      "d2b4",
+      "c6b4"
+    ],
+    "shapes": [
+      "c3d5"
+    ],
+    "hints": [
+      "Liquidate the central knight before Black can exploit the pin."
+    ],
+    "explanation": "In a relative pin, moving the piece is legal but loses higher material (like a queen or rook)."
+  },
+  "tac_pin_4": {
+    "id": "tac_pin_4",
+    "categoryId": "the_pin",
+    "title": "Cross-Pin Winning Material",
+    "fen": "r4rk1/pp1b1ppp/4p3/3p4/8/1P1B4/P4PPP/2R1R1K1 w - - 0 1",
+    "instruction": "White to move. Invade the open c-file to pin down Black's pieces.",
+    "solutionMoves": [
+      "c1c7",
+      "d7c6",
+      "e1c1"
+    ],
+    "shapes": [
+      "c1c7"
+    ],
+    "hints": [
+      "Attack the d7 bishop from the 7th rank."
+    ],
+    "explanation": "Piling pressure on pinned pieces paralyzes the enemy position."
+  },
+  "tac_skewer_1": {
+    "id": "tac_skewer_1",
+    "categoryId": "the_skewer",
+    "title": "The Classical Skewer",
+    "fen": "8/8/8/8/8/4k3/4q3/4R1K1 w - - 0 1",
+    "instruction": "White to move. Skewer the enemy king and queen.",
+    "solutionMoves": [
+      "e1e2",
+      "e3e2"
+    ],
+    "shapes": [
+      "e1e2"
+    ],
+    "hints": [
+      "The king and queen are aligned on the same file."
+    ],
+    "explanation": "A skewer is an attack on two pieces in a line where the more valuable piece is in front and must move, exposing the piece behind it."
+  },
+  "tac_skewer_2": {
+    "id": "tac_skewer_2",
+    "categoryId": "the_skewer",
+    "title": "Bishop Diagonal Skewer",
+    "fen": "8/8/2k5/8/8/5r2/8/B5K1 w - - 0 1",
+    "instruction": "White to move. Skewer the enemy King to win the Rook on f3.",
+    "solutionMoves": [
+      "a1e5",
+      "c6d5",
+      "e5f4"
+    ],
+    "shapes": [
+      "a1e5"
+    ],
+    "hints": [
+      "Find a diagonal that lines up Black's King and Rook."
+    ],
+    "explanation": "Bishops are deadly skewer weapons across long, open diagonals."
+  },
+  "tac_skewer_3": {
+    "id": "tac_skewer_3",
+    "categoryId": "the_skewer",
+    "title": "Rook Endgame Skewer",
+    "fen": "8/8/8/1k6/8/8/1r6/R5K1 w - - 0 1",
+    "instruction": "White to move. Secure the open rank advantage.",
+    "solutionMoves": [
+      "a1a8",
+      "b5c6",
+      "a8c8",
+      "c6d7"
+    ],
+    "shapes": [
+      "a1a8"
+    ],
+    "hints": [
+      "Swing the rook to the 8th rank to prepare a rear skewer."
+    ],
+    "explanation": "Rooks can skewer defending kings along back ranks and open files."
+  },
+  "tac_fork_1": {
+    "id": "tac_fork_1",
+    "categoryId": "the_fork",
+    "title": "Knight Royal Fork",
+    "fen": "4k3/8/8/8/3N4/8/8/2q1K2r w - - 0 1",
+    "instruction": "White to move. Fork Black's King, Queen, and Rook with one devastating leap!",
+    "solutionMoves": [
+      "d4e6",
+      "e8f7",
+      "e6c1"
+    ],
+    "shapes": [
+      "d4e6"
+    ],
+    "hints": [
+      "Look for the knight jump that checks the king while simultaneously attacking the queen."
+    ],
+    "explanation": "A knight fork attacks two or more pieces simultaneously. Because knights jump over pieces, they cannot be blocked."
+  },
+  "tac_fork_2": {
+    "id": "tac_fork_2",
+    "categoryId": "the_fork",
+    "title": "Pawn Fork",
+    "fen": "r1bqk2r/pppp1ppp/2n5/4p3/1b2n3/2NP1N2/PPP1BPPP/R1BQK2R w KQkq - 0 6",
+    "instruction": "White to move. Strike the center with a pawn fork.",
+    "solutionMoves": [
+      "d3e4",
+      "b4c3",
+      "b2c3"
+    ],
+    "shapes": [
+      "d3e4"
+    ],
+    "hints": [
+      "Eliminate the knight on e4, opening the d-file."
+    ],
+    "explanation": "Pawns are the cheapest pieces, making pawn forks nearly impossible to neutralize without material loss."
+  },
+  "tac_fork_3": {
+    "id": "tac_fork_3",
+    "categoryId": "the_fork",
+    "title": "Queen Double Attack",
+    "fen": "r1b1k2r/pp3ppp/2n1pn2/3p4/8/1N1BP3/PqP2PPP/R2QK2R b KQkq - 1 10",
+    "instruction": "Black to move. Attack two unprotected pieces simultaneously.",
+    "solutionMoves": [
+      "b2c3",
+      "b1d2",
+      "c3b3"
+    ],
+    "shapes": [
+      "b2c3"
+    ],
+    "hints": [
+      "Check White's king while targeting the knight."
+    ],
+    "explanation": "The queen's multidirectional movement makes it the ultimate double-attack piece."
+  },
+  "tac_fork_4": {
+    "id": "tac_fork_4",
+    "categoryId": "the_fork",
+    "title": "Central Outpost Fork",
+    "fen": "r2q1rk1/pp1nbppp/2p1pn2/3p4/2PP4/2N1PN2/PPQ2PPP/R1B2RK1 w - - 4 10",
+    "instruction": "White to move. Seize the center with a tactical pawn advance.",
+    "solutionMoves": [
+      "e3e4",
+      "d5e4",
+      "c3e4"
+    ],
+    "shapes": [
+      "e3e4"
+    ],
+    "hints": [
+      "Break open the center with e4."
+    ],
+    "explanation": "Central pawn advances create multi-piece attacking opportunities."
+  },
+  "tac_disc_1": {
+    "id": "tac_disc_1",
+    "categoryId": "discovered_attacks",
+    "title": "Discovered Check Winning the Queen",
+    "fen": "r1b1k2r/pppp1ppp/8/8/1B1q4/8/PPP2PPP/R2QKBNR w KQkq - 0 1",
+    "instruction": "White to move. Discover a check on Black's King while snatching the Queen!",
+    "solutionMoves": [
+      "d1e2",
+      "e8d8",
+      "e2e7"
+    ],
+    "shapes": [
+      "d1e2"
+    ],
+    "hints": [
+      "Move the queen to create a battery along the e-file."
+    ],
+    "explanation": "A discovered attack happens when moving one piece reveals an attack from another piece hiding behind it."
+  },
+  "tac_disc_2": {
+    "id": "tac_disc_2",
+    "categoryId": "discovered_attacks",
+    "title": "Knight Leap Discovery",
+    "fen": "r1bqk2r/pp3ppp/2n1p3/3n4/1b1P4/2NB1N2/PP3PPP/R1BQK2R w KQkq - 2 9",
+    "instruction": "White to move. Unleash a tactical breakthrough.",
+    "solutionMoves": [
+      "d3h7",
+      "g8h7",
+      "f3g5",
+      "h7g8"
+    ],
+    "shapes": [
+      "d3h7"
+    ],
+    "hints": [
+      "Sacrifice the bishop on h7 to expose Black's king."
+    ],
+    "explanation": "Sacrifices that uncover lines for other attackers shatter enemy king safety."
+  },
+  "tac_disc_3": {
+    "id": "tac_disc_3",
+    "categoryId": "discovered_attacks",
+    "title": "Rook Battery Discovery",
+    "fen": "3r2k1/pp3ppp/8/8/8/8/PP3PPP/1R1R2K1 w - - 0 1",
+    "instruction": "White to move. Exploit Black's loose rook on d8.",
+    "solutionMoves": [
+      "d1d8"
+    ],
+    "shapes": [
+      "d1d8"
+    ],
+    "hints": [
+      "Cash in immediately on the unprotected back rank."
+    ],
+    "explanation": "Controlling the open file allows devastating exchanges that leave no response."
+  },
+  "tac_dcheck_1": {
+    "id": "tac_dcheck_1",
+    "categoryId": "double_check",
+    "title": "Unstoppable Double Check",
+    "fen": "r1b2rk1/pp3ppp/8/3N4/8/8/PP3PPP/R1B1R1K1 w - - 0 1",
+    "instruction": "White to move. Invade with a forcing check.",
+    "solutionMoves": [
+      "d5e7",
+      "g8h8"
+    ],
+    "shapes": [
+      "d5e7"
+    ],
+    "hints": [
+      "The knight leap lands with decisive tempo."
+    ],
+    "explanation": "Double check is the most lethal tactic in chess because neither checking piece can be captured, and the check cannot be blocked\u2014the king MUST move."
+  },
+  "tac_dcheck_2": {
+    "id": "tac_dcheck_2",
+    "categoryId": "double_check",
+    "title": "King Hunt via Double Check",
+    "fen": "r1b1k2r/pppp1ppp/8/4N3/1B1q4/8/PPP2PPP/R3KB1R w KQkq - 0 1",
+    "instruction": "White to move. Double check the King into submission.",
+    "solutionMoves": [
+      "e5c6",
+      "d4e4",
+      "f1e2"
+    ],
+    "shapes": [
+      "e5c6"
+    ],
+    "hints": [
+      "Unmask the bishop check while jumping the knight."
+    ],
+    "explanation": "Double checks allow attackers to leap freely into the line of fire since the king cannot capture both attackers."
+  },
+  "tac_overload_1": {
+    "id": "tac_overload_1",
+    "categoryId": "overloaded_pieces",
+    "title": "The Overworked Defender",
+    "fen": "4r1k1/5ppp/8/8/8/5Q2/5PPP/4R1K1 w - - 0 1",
+    "instruction": "White to move. Black's e8 rook is overworked defending against back-rank mate and the file.",
+    "solutionMoves": [
+      "f3f7",
+      "g8f7",
+      "e1e8",
+      "f7e8"
+    ],
+    "shapes": [
+      "f3f7"
+    ],
+    "hints": [
+      "Distract the king with a sacrifice on f7."
+    ],
+    "explanation": "An overloaded piece is tasked with defending two different squares or pieces. Attack one, and the defense of the other collapses."
+  },
+  "tac_overload_2": {
+    "id": "tac_overload_2",
+    "categoryId": "overloaded_pieces",
+    "title": "Queen Overload Strike",
+    "fen": "2r3k1/pp3ppp/4p3/3p4/8/1Q6/PP3PPP/2R3K1 w - - 0 1",
+    "instruction": "White to move. Win the c-file exchange.",
+    "solutionMoves": [
+      "c1c8"
+    ],
+    "shapes": [
+      "c1c8"
+    ],
+    "hints": [
+      "Deliver the back-rank blow immediately."
+    ],
+    "explanation": "When an overworked piece cannot cover both duties, simplify directly into a winning endgame."
+  },
+  "tac_zwischen_1": {
+    "id": "tac_zwischen_1",
+    "categoryId": "zwischenzug",
+    "title": "The Intermediate Check",
+    "fen": "r1b1k2r/pp3ppp/2n1p3/3n4/1b1P4/2NB1N2/PP3PPP/R1BQK2R w KQkq - 2 9",
+    "instruction": "White to move. Instead of recapturing, throw in an in-between check with the bishop.",
+    "solutionMoves": [
+      "d3h7",
+      "g8h7",
+      "f3g5",
+      "h7g8"
+    ],
+    "shapes": [
+      "d3h7"
+    ],
+    "hints": [
+      "Disrupt Black's expected move order with a surprise check."
+    ],
+    "explanation": "A Zwischenzug (in-between move) completely flips an expected sequence of trades by inserting a tempo-gaining threat."
+  },
+  "tac_zwischen_2": {
+    "id": "tac_zwischen_2",
+    "categoryId": "zwischenzug",
+    "title": "Intermediate Counter-Threat",
+    "fen": "r4rk1/pp1b1ppp/4p3/3p4/8/1P1B4/P4PPP/2R1R1K1 w - - 0 1",
+    "instruction": "White to move. Seize the 7th rank with intermediate force.",
+    "solutionMoves": [
+      "c1c7",
+      "d7c6",
+      "e1c1"
+    ],
+    "shapes": [
+      "c1c7"
+    ],
+    "hints": [
+      "Attack before playing passive consolidation."
+    ],
+    "explanation": "Interjecting active threats keeps the initiative on your side."
+  },
+  "tac_xray_1": {
+    "id": "tac_xray_1",
+    "categoryId": "x_ray",
+    "title": "X-Ray Defense through Enemy Rook",
+    "fen": "4r1k1/5ppp/8/8/8/8/5PPP/1R1R2K1 w - - 0 1",
+    "instruction": "White to move. Centralize rooks with x-ray power.",
+    "solutionMoves": [
+      "d1d7"
+    ],
+    "shapes": [
+      "d1d7"
+    ],
+    "hints": [
+      "Land on the 7th rank where your rook attacks through Black's defenders."
+    ],
+    "explanation": "X-Ray attacks protect or attack squares through an intervening enemy piece along a file, rank, or diagonal."
+  },
+  "tac_xray_2": {
+    "id": "tac_xray_2",
+    "categoryId": "x_ray",
+    "title": "Bishop X-Ray Snatch",
+    "fen": "2r3k1/pp3ppp/8/8/8/2B5/PP3PPP/6K1 w - - 0 1",
+    "instruction": "White to move. Maintain diagonal mastery.",
+    "solutionMoves": [
+      "c3d2"
+    ],
+    "shapes": [
+      "c3d2"
+    ],
+    "hints": [
+      "Shield the 1st rank while keeping sight of Black's queenside."
+    ],
+    "explanation": "Long-range pieces dominate by exerting pressure through lines of tension."
+  },
+  "adv_zug_1": {
+    "id": "adv_zug_1",
+    "categoryId": "zugzwang",
+    "title": "Pawn Endgame Zugzwang",
+    "fen": "8/8/8/4k3/4p3/4K3/8/8 w - - 0 1",
+    "instruction": "White to move. Find the waiting move that puts Black in Zugzwang.",
+    "solutionMoves": [
+      "e3e2",
+      "e5d4",
+      "e2d2",
+      "e4e3",
+      "d2e2",
+      "d4e4",
+      "e2e1"
+    ],
+    "shapes": [
+      "e3e2"
+    ],
+    "hints": [
+      "Step back directly in front of the pawn to retain opposition."
+    ],
+    "explanation": "Zugzwang means 'compulsion to move'. In chess, you cannot pass your turn\u2014when every move loses, Zugzwang decides the game."
+  },
+  "adv_zug_2": {
+    "id": "adv_zug_2",
+    "categoryId": "zugzwang",
+    "title": "Minor Piece Zugzwang",
+    "fen": "8/8/8/3k4/8/2B5/3K4/8 w - - 0 1",
+    "instruction": "White to move. Waste a tempo to force Black's king backward.",
+    "solutionMoves": [
+      "c3b2",
+      "d5c4",
+      "d2c2"
+    ],
+    "shapes": [
+      "c3b2"
+    ],
+    "hints": [
+      "Slide the bishop along the diagonal without changing its control."
+    ],
+    "explanation": "Triangulation and tempo moves force the defender into unfavorable positions."
+  },
+  "adv_interfere_1": {
+    "id": "adv_interfere_1",
+    "categoryId": "interference",
+    "title": "Cutting Off Queen Defense",
+    "fen": "3r2k1/5ppp/8/8/8/8/1B3PPP/3R2K1 w - - 0 1",
+    "instruction": "White to move. Execute the back-rank liquidation.",
+    "solutionMoves": [
+      "d1d8"
+    ],
+    "shapes": [
+      "d1d8"
+    ],
+    "hints": [
+      "Capture the trapped rook with check!"
+    ],
+    "explanation": "Interference cuts the line of communication between two defending enemy pieces, leaving one or both defenseless."
+  },
+  "adv_interfere_2": {
+    "id": "adv_interfere_2",
+    "categoryId": "interference",
+    "title": "Knight Wedge Interference",
+    "fen": "r4rk1/pp1b1ppp/4p3/3p4/8/1PNB4/P4PPP/2R1R1K1 w - - 0 1",
+    "instruction": "White to move. Post a knight on the central outpost.",
+    "solutionMoves": [
+      "c3b5",
+      "d7b5",
+      "d3b5"
+    ],
+    "shapes": [
+      "c3b5"
+    ],
+    "hints": [
+      "Block Black's rook on the a-file while challenging the light-squared bishop."
+    ],
+    "explanation": "Planting a piece on the intersection of two enemy defensive lines causes instant tactical collapse."
+  },
+  "adv_greekgift_1": {
+    "id": "adv_greekgift_1",
+    "categoryId": "greek_gift",
+    "title": "The Classical Bxh7+ Sacrifice",
+    "fen": "r1bq1rk1/pp1n1ppp/2p1pn2/3p4/2PP4/2NBPN2/PP3PPP/R1BQK2R w KQ - 0 8",
+    "instruction": "White to move. Black has castled and lacks a defensive knight on f6. Strike at h7!",
+    "solutionMoves": [
+      "d3h7",
+      "g8h7",
+      "f3g5",
+      "h7g8",
+      "d1h5"
+    ],
+    "shapes": [
+      "d3h7",
+      "f3g5",
+      "d1h5"
+    ],
+    "hints": [
+      "Sacrifice the bishop on h7 with check, follow up with Ng5+ and Qh5."
+    ],
+    "explanation": "The Greek Gift sacrifice (Bxh7+) rips open the enemy king's shelter when there is no defending knight on f6 to guard h7 and g5."
+  },
+  "adv_greekgift_2": {
+    "id": "adv_greekgift_2",
+    "categoryId": "greek_gift",
+    "title": "Greek Gift King Chase",
+    "fen": "r1bq1rk1/ppp2ppp/2n1pn2/8/3P4/2NB1N2/PPP2PPP/R1BQK2R w KQ - 0 8",
+    "instruction": "White to move. Launch the kingside assault.",
+    "solutionMoves": [
+      "d3h7",
+      "f6h7",
+      "c1g5"
+    ],
+    "shapes": [
+      "d3h7"
+    ],
+    "hints": [
+      "Shatter the kingside pawn structure."
+    ],
+    "explanation": "Once the h-pawn falls, White's queen and knight quickly swarm the exposed enemy king."
+  },
+  "adv_deflect_1": {
+    "id": "adv_deflect_1",
+    "categoryId": "deflection",
+    "title": "Deflecting the Back-Rank Guard",
+    "fen": "2r3k1/5ppp/8/8/8/1Q6/5PPP/6K1 w - - 0 1",
+    "instruction": "White to move. Attack the c8 rook while threatening mate.",
+    "solutionMoves": [
+      "b3b7",
+      "c8c1",
+      "b7b1",
+      "c1b1"
+    ],
+    "shapes": [
+      "b3b7"
+    ],
+    "hints": [
+      "Deflect the rook away from the c-file."
+    ],
+    "explanation": "Deflection lures or forces an enemy piece away from an essential defensive duty."
+  },
+  "adv_deflect_2": {
+    "id": "adv_deflect_2",
+    "categoryId": "deflection",
+    "title": "Deflection Bishop Sacrifice",
+    "fen": "r1b2rk1/pp3ppp/8/8/1B6/8/PP3PPP/R3R1K1 w - - 0 1",
+    "instruction": "White to move. Snatch the exchange on f8.",
+    "solutionMoves": [
+      "b4f8",
+      "g8f8",
+      "a1d1"
+    ],
+    "shapes": [
+      "b4f8"
+    ],
+    "hints": [
+      "Trade off Black's key defender."
+    ],
+    "explanation": "Removing defenders by force leaves remaining enemy pieces disorganized."
+  },
+  "adv_deflect_3": {
+    "id": "adv_deflect_3",
+    "categoryId": "deflection",
+    "title": "Queen Deflection Strike",
+    "fen": "3r2k1/p4ppp/1p6/8/8/5Q2/PP3PPP/6K1 w - - 0 1",
+    "instruction": "White to move. Centralize with decisive pressure.",
+    "solutionMoves": [
+      "f3c6"
+    ],
+    "shapes": [
+      "f3c6"
+    ],
+    "hints": [
+      "Deflect Black's attention to their vulnerable back rank."
+    ],
+    "explanation": "Threatening immediate mate paralyzes counterplay."
+  },
+  "adv_attract_1": {
+    "id": "adv_attract_1",
+    "categoryId": "attraction",
+    "title": "King Decoy Sacrifice",
+    "fen": "r4rk1/5ppp/8/8/8/5Q2/5PPP/R5K1 w - - 0 1",
+    "instruction": "White to move. Decoy Black's rook into a fatal pin.",
+    "solutionMoves": [
+      "a1a8",
+      "f8a8",
+      "f3a8"
+    ],
+    "shapes": [
+      "a1a8"
+    ],
+    "hints": [
+      "Trade rooks on the back rank."
+    ],
+    "explanation": "Attraction lures an enemy piece (especially the king or queen) onto a fatal square where a fork, pin, or checkmate awaits."
+  },
+  "adv_attract_2": {
+    "id": "adv_attract_2",
+    "categoryId": "attraction",
+    "title": "Attracting the King to a Fork",
+    "fen": "5rk1/5ppp/8/8/8/5N2/5PPP/R5K1 w - - 0 1",
+    "instruction": "White to move. Infiltrate the open file.",
+    "solutionMoves": [
+      "a1a7"
+    ],
+    "shapes": [
+      "a1a7"
+    ],
+    "hints": [
+      "Invade the 7th rank."
+    ],
+    "explanation": "Placing pieces on the 7th rank restricts the king's movement."
+  },
+  "adv_underprom_1": {
+    "id": "adv_underprom_1",
+    "categoryId": "underpromotion",
+    "title": "Underpromotion to Knight with Check",
+    "fen": "8/5P1k/8/8/8/8/8/6K1 w - - 0 1",
+    "instruction": "White to move. Promote the pawn, but promoting to a queen might allow stalemate or miss a fork. Promote to Knight!",
+    "solutionMoves": [
+      "f7f8n",
+      "h7g7",
+      "f8e6",
+      "g7f6"
+    ],
+    "shapes": [
+      "f7f8n"
+    ],
+    "hints": [
+      "Underpromote to Knight to give check and fork!"
+    ],
+    "explanation": "Underpromotion to a Knight gives an unexpected check or fork, while promoting to a Rook or Bishop avoids accidental stalemate."
+  },
+  "adv_underprom_2": {
+    "id": "adv_underprom_2",
+    "categoryId": "underpromotion",
+    "title": "Avoiding Stalemate with Rook Underpromotion",
+    "fen": "7k/5P2/6K1/8/8/8/8/8 w - - 0 1",
+    "instruction": "White to move. If White promotes to Queen, it's instant STALEMATE! Promote to Rook instead!",
+    "solutionMoves": [
+      "f7f8r"
+    ],
+    "shapes": [
+      "f7f8r"
+    ],
+    "hints": [
+      "Promote to Rook to deliver checkmate without stalemate."
+    ],
+    "explanation": "A queen would control too many squares, causing a draw. A rook delivers clean checkmate."
+  },
+  "adv_desperado_1": {
+    "id": "adv_desperado_1",
+    "categoryId": "desperado",
+    "title": "The Doomed Knight",
+    "fen": "r1bqk2r/pp3ppp/2n1pn2/3p4/1b1P4/1PN1PN2/P2B1PPP/R2QKB1R w KQkq - 3 9",
+    "instruction": "White to move. Play aggressively before conceding pieces.",
+    "solutionMoves": [
+      "a2a3",
+      "b4c3",
+      "d2c3"
+    ],
+    "shapes": [
+      "a2a3"
+    ],
+    "hints": [
+      "Force the exchange on your terms."
+    ],
+    "explanation": "A desperado piece is already doomed or captured; before dying, it takes as much enemy material with it as possible."
+  },
+  "adv_desperado_2": {
+    "id": "adv_desperado_2",
+    "categoryId": "desperado",
+    "title": "Desperado Pawn Strike",
+    "fen": "2r3k1/pp3ppp/8/3p4/8/1P6/P4PPP/2R3K1 w - - 0 1",
+    "instruction": "White to move. Trade off into a won endgame.",
+    "solutionMoves": [
+      "c1c8"
+    ],
+    "shapes": [
+      "c1c8"
+    ],
+    "hints": [
+      "Cash in the rook on the back rank."
+    ],
+    "explanation": "Trading doomed pieces preserves your structural advantage."
+  },
+  "adv_ccheck_1": {
+    "id": "adv_ccheck_1",
+    "categoryId": "counter_check",
+    "title": "Parrying with Check",
+    "fen": "4k3/4r3/8/8/8/8/4R3/4K3 w - - 0 1",
+    "instruction": "White to move. Pin Black's rook along the e-file.",
+    "solutionMoves": [
+      "e2e7",
+      "e8e7"
+    ],
+    "shapes": [
+      "e2e7"
+    ],
+    "hints": [
+      "Trade rooks directly to nullify Black's threats."
+    ],
+    "explanation": "A counter-check responds to a check by interposing a piece that delivers check to the opponent's king at the exact same moment!"
+  },
+  "adv_ccheck_2": {
+    "id": "adv_ccheck_2",
+    "categoryId": "counter_check",
+    "title": "Cross-Pin Counter Check",
+    "fen": "r3k2r/ppp2ppp/2n5/3q4/1b1P4/5N2/PP2BPPP/R1BQK2R w KQkq - 0 10",
+    "instruction": "White to move. Black just played Bb4+ check! Block the check and attack Black's bishop!",
+    "solutionMoves": [
+      "c1d2",
+      "b4d2",
+      "d1d2"
+    ],
+    "shapes": [
+      "c1d2"
+    ],
+    "hints": [
+      "Interpose the bishop on d2."
+    ],
+    "explanation": "Blocking checks with active developing pieces turns defense into attack."
+  },
+  "adv_undermine_1": {
+    "id": "adv_undermine_1",
+    "categoryId": "undermining",
+    "title": "Destroying the Central Pawn Anchor",
+    "fen": "r1bq1rk1/pp1n1ppp/2p1pn2/3p4/2PP4/2N1PN2/PP3PPP/R1BQKB1R w KQ - 0 7",
+    "instruction": "White to move. Strike Black's d5 anchor with the c-pawn lever.",
+    "solutionMoves": [
+      "c4d5",
+      "c6d5",
+      "f1d3"
+    ],
+    "shapes": [
+      "c4d5"
+    ],
+    "hints": [
+      "Exchange on d5 to undermine Black's pawn chain."
+    ],
+    "explanation": "Undermining attacks the root of an enemy pawn chain or defensive formation to bring down the whole structure."
+  },
+  "adv_undermine_2": {
+    "id": "adv_undermine_2",
+    "categoryId": "undermining",
+    "title": "Removing the Guardian",
+    "fen": "r1bqk2r/ppp2ppp/2n5/3np3/1b6/2NP1N2/PPPBBPPP/R2QK2R w KQkq - 0 8",
+    "instruction": "White to move. Eliminate the d5 knight defending Black's center.",
+    "solutionMoves": [
+      "c3d5",
+      "d8d5",
+      "d2b4",
+      "c6b4"
+    ],
+    "shapes": [
+      "c3d5"
+    ],
+    "hints": [
+      "Capture on d5."
+    ],
+    "explanation": "Removing the key defender leaves the adjacent pieces undefended."
+  },
+  "adv_clear_1": {
+    "id": "adv_clear_1",
+    "categoryId": "clearance",
+    "title": "Diagonal Clearance",
+    "fen": "r1bq1rk1/pp1n1ppp/4p3/3p4/1b1P4/1PNBPN2/P4PPP/R1BQK2R w KQ - 1 9",
+    "instruction": "White to move. Prepare kingside development.",
+    "solutionMoves": [
+      "c1d2",
+      "b4c3",
+      "d2c3"
+    ],
+    "shapes": [
+      "c1d2"
+    ],
+    "hints": [
+      "Develop the bishop to unpin the c3 knight."
+    ],
+    "explanation": "A clearance sacrifice vacates a critical square, file, or diagonal for a more decisive attacking piece to use."
+  },
+  "adv_clear_2": {
+    "id": "adv_clear_2",
+    "categoryId": "clearance",
+    "title": "Clearance for the Queen",
+    "fen": "r4rk1/pp3ppp/8/3p4/8/1P1B4/P4PPP/R2Q1RK1 w - - 0 1",
+    "instruction": "White to move. Lift the queen into the attack.",
+    "solutionMoves": [
+      "d1h5",
+      "g7g6",
+      "h5d5"
+    ],
+    "shapes": [
+      "d1h5"
+    ],
+    "hints": [
+      "Step the queen out to h5 threatening mate on h7."
+    ],
+    "explanation": "Clearing the path for queen entry creates lethal double threats."
+  },
+  "end_key_1": {
+    "id": "end_key_1",
+    "categoryId": "key_squares",
+    "title": "King in Front of Pawn",
+    "fen": "8/8/8/4k3/8/4K3/4P3/8 w - - 0 1",
+    "instruction": "White to move. Maintain king position in front of your pawn.",
+    "solutionMoves": [
+      "e3d3",
+      "e5d5",
+      "e2e4",
+      "d5e5",
+      "d3e3"
+    ],
+    "shapes": [
+      "e3d3"
+    ],
+    "hints": [
+      "Do not push the pawn immediately! Place the king first."
+    ],
+    "explanation": "In King and Pawn endings, the king must march ahead of the pawn to secure key squares and escort the pawn to queen."
+  },
+  "end_key_2": {
+    "id": "end_key_2",
+    "categoryId": "key_squares",
+    "title": "Seizing the Critical Square",
+    "fen": "8/8/8/3k4/8/3P4/3K4/8 w - - 0 1",
+    "instruction": "White to move. Step forward to claim key squares.",
+    "solutionMoves": [
+      "d2e3",
+      "d5e5",
+      "d3d4",
+      "e5d5",
+      "e3d3"
+    ],
+    "shapes": [
+      "d2e3"
+    ],
+    "hints": [
+      "Keep the king ahead of the d3 pawn."
+    ],
+    "explanation": "If your king controls the key squares in front of your pawn, promotion is mathematically guaranteed."
+  },
+  "end_key_3": {
+    "id": "end_key_3",
+    "categoryId": "key_squares",
+    "title": "Escorting the Queen",
+    "fen": "8/4P3/4K3/8/8/8/8/4k3 w - - 0 1",
+    "instruction": "White to move. Promote to Queen!",
+    "solutionMoves": [
+      "e7e8q"
+    ],
+    "shapes": [
+      "e7e8q"
+    ],
+    "hints": [
+      "Push the pawn to the 8th rank."
+    ],
+    "explanation": "With the defending king out of range, the pawn promotes effortlessly."
+  },
+  "end_opp_1": {
+    "id": "end_opp_1",
+    "categoryId": "the_opposition",
+    "title": "Direct Vertical Opposition",
+    "fen": "8/8/8/4k3/8/4K3/8/8 w - - 0 1",
+    "instruction": "White to move. Step into direct opposition.",
+    "solutionMoves": [
+      "e3f3",
+      "e5f5",
+      "f3g3",
+      "f5g5"
+    ],
+    "shapes": [
+      "e3f3"
+    ],
+    "hints": [
+      "Move such that an odd number of squares separates the kings."
+    ],
+    "explanation": "Having the opposition means your opponent must step aside and allow your king to infiltrate."
+  },
+  "end_opp_2": {
+    "id": "end_opp_2",
+    "categoryId": "the_opposition",
+    "title": "Shouldering the Opponent",
+    "fen": "8/8/8/3k4/8/4K3/8/8 w - - 0 1",
+    "instruction": "White to move. Shoulder Black's king away from the center.",
+    "solutionMoves": [
+      "e3d3",
+      "d5e5",
+      "d3c4"
+    ],
+    "shapes": [
+      "e3d3"
+    ],
+    "hints": [
+      "Take the direct opposition on d3."
+    ],
+    "explanation": "Shouldering uses your king's body to block the enemy king from reaching defensive squares."
+  },
+  "end_pawn7_1": {
+    "id": "end_pawn7_1",
+    "categoryId": "pawn_7th_rank",
+    "title": "Queen vs 7th-Rank Rook Pawn Draw",
+    "fen": "8/7P/8/8/8/8/8/Q3K2k w - - 0 1",
+    "instruction": "White to move. Promote the pawn and finish the game.",
+    "solutionMoves": [
+      "h7h8q",
+      "h1g2",
+      "h8g7",
+      "g2f1",
+      "a1a2"
+    ],
+    "shapes": [
+      "h7h8q"
+    ],
+    "hints": [
+      "Promote to Queen on h8!"
+    ],
+    "explanation": "A rook pawn or bishop pawn on the 7th rank can draw against a queen because the defending king hides in the corner with stalemate threats."
+  },
+  "end_pawn7_2": {
+    "id": "end_pawn7_2",
+    "categoryId": "pawn_7th_rank",
+    "title": "Driving Defending King In Front",
+    "fen": "8/8/8/8/8/8/p7/k6K w - - 0 1",
+    "instruction": "White to move. King is safe on h1.",
+    "solutionMoves": [
+      "h1h2",
+      "a1b1"
+    ],
+    "shapes": [
+      "h1h2"
+    ],
+    "hints": [
+      "Wait on h2."
+    ],
+    "explanation": "When defending against a 7th rank pawn, forcing the king in front of its own pawn gains vital tempos."
+  },
+  "end_lucena_1": {
+    "id": "end_lucena_1",
+    "categoryId": "basic_rook_endgames",
+    "title": "The Lucena Position (Building a Bridge)",
+    "fen": "1K1k4/1P1r4/8/8/8/8/8/2R5 w - - 0 1",
+    "instruction": "White to move. The cornerstone winning technique in rook endgames! Cut off Black's king.",
+    "solutionMoves": [
+      "c1c4",
+      "d7d2",
+      "b8a7",
+      "d2a2",
+      "a7b6",
+      "a2b2",
+      "c4b4"
+    ],
+    "shapes": [
+      "c1c4",
+      "c4b4"
+    ],
+    "hints": [
+      "Lift the rook to the 4th rank (Rc4). This builds the bridge on b4 against Black's checks!"
+    ],
+    "explanation": "The Lucena Position is the most important position in rook endgames: lifting the rook to the 4th rank allows White to block vertical checks and queen the pawn."
+  },
+  "end_philidor_1": {
+    "id": "end_philidor_1",
+    "categoryId": "basic_rook_endgames",
+    "title": "The Philidor Defense (3rd Rank Cut)",
+    "fen": "4k3/8/8/4P3/8/2r5/8/4K2R w - - 0 1",
+    "instruction": "White to move. Keep Black's king cut off.",
+    "solutionMoves": [
+      "h1h7",
+      "c3c5",
+      "e5e6",
+      "c5e5"
+    ],
+    "shapes": [
+      "h1h7"
+    ],
+    "hints": [
+      "Anchor the rook on the 7th rank to paralyze the enemy king."
+    ],
+    "explanation": "The Philidor position is the fundamental drawing method in rook endgames: keep your rook on the 3rd rank until the pawn pushes, then swing to the back rank for rear checks."
+  },
+  "end_rook_cut_1": {
+    "id": "end_rook_cut_1",
+    "categoryId": "intermediate_rook_endings",
+    "title": "Cutting the King Along the File",
+    "fen": "8/8/8/3k4/1R6/8/8/4K3 w - - 0 1",
+    "instruction": "White to move. Cut Black's king off from the kingside.",
+    "solutionMoves": [
+      "b4h4",
+      "d5e5",
+      "e1e2"
+    ],
+    "shapes": [
+      "b4h4"
+    ],
+    "hints": [
+      "Slide the rook to h4 to keep the king isolated on the queenside."
+    ],
+    "explanation": "Cutting the enemy king off along a file renders it useless for stopping your advancing pawns."
+  },
+  "end_rook_active_1": {
+    "id": "end_rook_active_1",
+    "categoryId": "intermediate_rook_endings",
+    "title": "Active Rook Defense",
+    "fen": "8/8/8/8/2k5/8/1r6/R3K3 w - - 0 1",
+    "instruction": "White to move. An active rook is worth more than a passive pawn.",
+    "solutionMoves": [
+      "a1c1",
+      "c4d3",
+      "c1c8"
+    ],
+    "shapes": [
+      "a1c1"
+    ],
+    "hints": [
+      "Give check and seek the open back rank."
+    ],
+    "explanation": "In rook endings, passive rooks lose. Always seek active positions and rear checks."
+  },
+  "end_tarrasch_rule_1": {
+    "id": "end_tarrasch_rule_1",
+    "categoryId": "practical_rook_endings",
+    "title": "Tarrasch's Rule (Rook Behind the Passed Pawn)",
+    "fen": "8/1P6/8/8/8/8/r7/1R4K1 w - - 0 1",
+    "instruction": "White to move. Protect your passed pawn from behind.",
+    "solutionMoves": [
+      "b1b6",
+      "a2a7",
+      "b7b8q"
+    ],
+    "shapes": [
+      "b1b6"
+    ],
+    "hints": [
+      "Keep the rook behind the pawn so its power expands as the pawn advances."
+    ],
+    "explanation": "Tarrasch's Rule: Rooks belong BEHIND passed pawns\u2014both your own (to support them) and the opponent's (to arrest them)."
+  },
+  "end_passer_race_1": {
+    "id": "end_passer_race_1",
+    "categoryId": "practical_rook_endings",
+    "title": "The Passed Pawn Race",
+    "fen": "8/8/8/8/8/5k2/1p6/1R2K3 w - - 0 1",
+    "instruction": "White to move. Surround the pawn before it can queen.",
+    "solutionMoves": [
+      "e1d2",
+      "f3e4",
+      "d2c2"
+    ],
+    "shapes": [
+      "e1d2"
+    ],
+    "hints": [
+      "Bring the king to c2 to capture the b2 pawn."
+    ],
+    "explanation": "When the enemy rook cannot support its pawn, marching the king directly to the pawn wins it."
+  },
+  "mid_outpost_1": {
+    "id": "mid_outpost_1",
+    "categoryId": "outposts",
+    "title": "The Dominant d5 Outpost",
+    "fen": "r1bq1rk1/pp1n1ppp/2p1pn2/3p4/2PP4/2N1PN2/PP3PPP/R1BQKB1R w KQ - 0 7",
+    "instruction": "White to move. Establish a powerful central presence.",
+    "solutionMoves": [
+      "c4d5",
+      "e6d5",
+      "f1d3"
+    ],
+    "shapes": [
+      "c4d5"
+    ],
+    "hints": [
+      "Open lines for piece expansion."
+    ],
+    "explanation": "An outpost is a central square protected by a pawn that cannot be attacked by enemy pawns. Knights on outposts are monsters."
+  },
+  "mid_outpost_2": {
+    "id": "mid_outpost_2",
+    "categoryId": "outposts",
+    "title": "Octopus Knight on e5",
+    "fen": "r2q1rk1/ppp2ppp/2n1pn2/3p4/3P4/2PBPN2/PP3PPP/R2QK2R w KQ - 0 9",
+    "instruction": "White to move. Leap into the dominant e5 outpost!",
+    "solutionMoves": [
+      "f3e5",
+      "c6e5",
+      "d4e5",
+      "f6d7"
+    ],
+    "shapes": [
+      "f3e5"
+    ],
+    "hints": [
+      "Plant the knight on e5."
+    ],
+    "explanation": "Central outposts radiating power in eight directions are called 'Octopus Knights'."
+  },
+  "mid_files_1": {
+    "id": "mid_files_1",
+    "categoryId": "open_files",
+    "title": "Seizing the Open c-file",
+    "fen": "r4rk1/pp1b1ppp/4p3/3p4/8/1P1B4/P4PPP/R1R3K1 w - - 0 1",
+    "instruction": "White to move. Infiltrate the 7th rank along the open c-file.",
+    "solutionMoves": [
+      "c1c7",
+      "d7c6",
+      "a1c1"
+    ],
+    "shapes": [
+      "c1c7"
+    ],
+    "hints": [
+      "Invade c7!"
+    ],
+    "explanation": "Open files are highways for your rooks. The goal of controlling an open file is to reach the 7th rank ('Pigs on the Seventh')."
+  },
+  "mid_files_2": {
+    "id": "mid_files_2",
+    "categoryId": "open_files",
+    "title": "Doubling Rooks on Open File",
+    "fen": "r4rk1/pp1b1ppp/4p3/3p4/8/1P1B4/P4PPP/2R1R1K1 w - - 0 1",
+    "instruction": "White to move. Double rooks on the c-file for unstoppable invasion.",
+    "solutionMoves": [
+      "c1c7",
+      "d7c6",
+      "e1c1"
+    ],
+    "shapes": [
+      "c1c7",
+      "e1c1"
+    ],
+    "hints": [
+      "Land on c7 and back it up with Rec1."
+    ],
+    "explanation": "Doubled rooks on an open file compound pressure and force material concessions."
+  },
+  "mid_lever_1": {
+    "id": "mid_lever_1",
+    "categoryId": "pawn_levers",
+    "title": "The c4 Pawn Lever",
+    "fen": "rnbqk2r/ppp1bppp/4pn2/3p4/3P4/2N1PN2/PPP2PPP/R1BQKB1R w KQkq - 1 5",
+    "instruction": "White to move. Blast open Black's solid pawn chain with the c4 pawn lever!",
+    "solutionMoves": [
+      "c2c4",
+      "c7c6",
+      "f1d3"
+    ],
+    "shapes": [
+      "c2c4"
+    ],
+    "hints": [
+      "Challenge d5 by pushing c2-c4."
+    ],
+    "explanation": "A pawn lever is a pawn push that comes into contact with an enemy pawn to pry open files and shatter locked centers."
+  },
+  "mid_lever_2": {
+    "id": "mid_lever_2",
+    "categoryId": "pawn_levers",
+    "title": "The e4 Break in Queen's Pawn",
+    "fen": "r1bq1rk1/pp1nbppp/2p1pn2/3p4/2PP4/2N1PN2/PPQ2PPP/R1B1KB1R w KQ - 4 8",
+    "instruction": "White to move. Prepare the central e4 breakthrough.",
+    "solutionMoves": [
+      "f1d3",
+      "d5c4",
+      "d3c4"
+    ],
+    "shapes": [
+      "f1d3"
+    ],
+    "hints": [
+      "Develop the bishop to d3 to support e4."
+    ],
+    "explanation": "Central breaks dictate the tempo of the middlegame."
+  },
+  "mid_kingsafety_1": {
+    "id": "mid_kingsafety_1",
+    "categoryId": "king_safety",
+    "title": "Opposite-Side Castling Storm",
+    "fen": "2kr3r/pppq1ppp/2n1bn2/3p4/3P4/2PB1N2/PP1N1PPP/R2Q1RK1 w - - 0 10",
+    "instruction": "White to move. Advance kingside pawns to pry open Black's castled shelter.",
+    "solutionMoves": [
+      "b2b4",
+      "c8b8",
+      "d2b3"
+    ],
+    "shapes": [
+      "b2b4"
+    ],
+    "hints": [
+      "Launch the queenside pawn storm with b4!"
+    ],
+    "explanation": "In opposite-side castling games, speed is everything. Pawn storms rip open lines to the enemy monarch."
+  },
+  "mid_kingsafety_2": {
+    "id": "mid_kingsafety_2",
+    "categoryId": "king_safety",
+    "title": "Weak Dark Square Infiltration",
+    "fen": "r1bq1rk1/pp1n1pbp/2p1p1p1/3p4/2PP4/2N1PNP1/PP3PBP/R1BQ1RK1 w - - 0 9",
+    "instruction": "White to move. Challenge Black's fianchetto pawn formation.",
+    "solutionMoves": [
+      "c4d5",
+      "e6d5",
+      "c1d2"
+    ],
+    "shapes": [
+      "c4d5"
+    ],
+    "hints": [
+      "Clarify the central pawn structure."
+    ],
+    "explanation": "Targeting holes in the enemy fianchetto setup exposes the king to decisive mating attacks."
+  }
+}

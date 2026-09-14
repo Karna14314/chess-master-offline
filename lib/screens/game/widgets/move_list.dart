@@ -1,178 +1,167 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/models/game_model.dart';
 
-/// Widget to display the move history list
-class MoveList extends ConsumerWidget {
+/// Modern chess move list supporting both a compact horizontal strip
+/// and a full 2-column move table.
+class MoveList extends StatelessWidget {
   final List<ChessMove> moves;
   final int? currentMoveIndex;
   final Function(int)? onMoveTap;
-  final bool compact;
+  final VoidCallback? onExpandTap;
+  final ScrollController? scrollController;
 
   const MoveList({
     super.key,
     required this.moves,
     this.currentMoveIndex,
     this.onMoveTap,
-    this.compact = false,
+    this.onExpandTap,
+    this.scrollController,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (moves.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        height: 38,
+        alignment: Alignment.center,
         child: Text(
-          'No moves yet',
-          style: TextStyle(
-            color: AppTheme.textSecondary,
+          'Game in progress • White to move',
+          style: GoogleFonts.inter(
+            fontSize: 12,
             fontStyle: FontStyle.italic,
+            color: AppTheme.textSecondaryFor(context).withValues(alpha: 0.7),
           ),
         ),
       );
     }
 
-    if (compact) {
-      return _buildCompactList(context);
-    }
+    final effectiveCurrentIndex = currentMoveIndex ?? (moves.length - 1);
+    final textSecondary = AppTheme.textSecondaryFor(context);
 
-    return _buildFullList(context);
-  }
+    return SizedBox(
+      height: 38,
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12),
+              itemCount: (moves.length / 2).ceil(),
+              itemBuilder: (context, turnIndex) {
+                final moveNum = turnIndex + 1;
+                final whiteIdx = turnIndex * 2;
+                final blackIdx = turnIndex * 2 + 1;
+                final whiteMove = moves[whiteIdx];
+                final blackMove = blackIdx < moves.length ? moves[blackIdx] : null;
 
-  Widget _buildCompactList(BuildContext context) {
-    final moveText = _buildMoveString();
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Move number prefix
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        '$moveNum.',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textSecondary.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        reverse: true,
-        child: Text(
-          moveText,
-          style: const TextStyle(
-            fontFamily: 'monospace',
-            fontSize: 14,
-            color: AppTheme.textPrimary,
+                    // White move chip
+                    _buildMoveChip(
+                      context,
+                      san: whiteMove.san,
+                      isCheck: whiteMove.isCheck,
+                      isMate: whiteMove.isCheckmate,
+                      isSelected: effectiveCurrentIndex == whiteIdx,
+                      onTap: onMoveTap != null ? () => onMoveTap!(whiteIdx) : null,
+                    ),
+
+                    // Black move chip (if exists)
+                    if (blackMove != null) ...[
+                      const SizedBox(width: 2),
+                      _buildMoveChip(
+                        context,
+                        san: blackMove.san,
+                        isCheck: blackMove.isCheck,
+                        isMate: blackMove.isCheckmate,
+                        isSelected: effectiveCurrentIndex == blackIdx,
+                        onTap: onMoveTap != null ? () => onMoveTap!(blackIdx) : null,
+                      ),
+                    ],
+                    const SizedBox(width: 6),
+                  ],
+                );
+              },
+            ),
           ),
-        ),
+          if (onExpandTap != null)
+            IconButton(
+              icon: Icon(
+                Icons.format_list_bulleted_rounded,
+                size: 18,
+                color: textSecondary,
+              ),
+              tooltip: 'Move History',
+              onPressed: onExpandTap,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+        ],
       ),
     );
   }
 
-  String _buildMoveString() {
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < moves.length; i++) {
-      if (i % 2 == 0) {
-        buffer.write('${(i ~/ 2) + 1}. ');
-      }
-      buffer.write('${moves[i].san} ');
-    }
-
-    return buffer.toString().trim();
-  }
-
-  Widget _buildFullList(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const ClampingScrollPhysics(),
-      itemCount: (moves.length / 2).ceil(),
-      itemBuilder: (context, index) {
-        final moveNumber = index + 1;
-        final whiteIndex = index * 2;
-        final blackIndex = index * 2 + 1;
-
-        final whiteMove = moves[whiteIndex];
-        final blackMove = blackIndex < moves.length ? moves[blackIndex] : null;
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: index.isEven ? Colors.transparent : AppTheme.surfaceDark,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            children: [
-              // Move number
-              SizedBox(
-                width: 32,
-                child: Text(
-                  '$moveNumber.',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ),
-              // White's move
-              Expanded(
-                child: _buildMoveButton(
-                  whiteMove,
-                  whiteIndex,
-                  isCurrentMove: currentMoveIndex == whiteIndex,
-                ),
-              ),
-              // Black's move
-              Expanded(
-                child:
-                    blackMove != null
-                        ? _buildMoveButton(
-                          blackMove,
-                          blackIndex,
-                          isCurrentMove: currentMoveIndex == blackIndex,
-                        )
-                        : const SizedBox.shrink(),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMoveButton(
-    ChessMove move,
-    int index, {
-    bool isCurrentMove = false,
+  Widget _buildMoveChip(
+    BuildContext context, {
+    required String san,
+    required bool isCheck,
+    required bool isMate,
+    required bool isSelected,
+    VoidCallback? onTap,
   }) {
+    final textPrimary = AppTheme.textPrimaryFor(context);
+
     return InkWell(
-      onTap: onMoveTap != null ? () => onMoveTap!(index) : null,
-      borderRadius: BorderRadius.circular(4),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          color:
-              isCurrentMove
-                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
-                  : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
+          color: isSelected
+              ? AppTheme.primaryColor.withValues(alpha: 0.2)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: isSelected
+              ? Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.5), width: 1)
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              move.san,
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 14,
-                fontWeight: isCurrentMove ? FontWeight.bold : FontWeight.normal,
-                color: AppTheme.textPrimary,
+              san,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryColor : textPrimary,
               ),
             ),
-            if (move.isCheck && !move.isCheckmate)
-              const Icon(
-                Icons.warning_amber_rounded,
-                size: 14,
-                color: AppTheme.warning,
-              ),
-            if (move.isCheckmate)
-              const Icon(Icons.stars, size: 14, color: AppTheme.accentColor),
+            if (isMate) ...[
+              const SizedBox(width: 2),
+              const Icon(Icons.stars_rounded, size: 12, color: AppTheme.amberGold),
+            ] else if (isCheck) ...[
+              const SizedBox(width: 2),
+              const Icon(Icons.warning_amber_rounded, size: 12, color: AppTheme.crimsonRed),
+            ],
           ],
         ),
       ),
@@ -180,45 +169,161 @@ class MoveList extends ConsumerWidget {
   }
 }
 
-/// Small inline move notation display
-class MoveNotation extends StatelessWidget {
-  final String san;
-  final bool isWhite;
-  final int moveNumber;
-  final bool isCheck;
-  final bool isCheckmate;
+/// Full 2-column move table for dialogs or bottom sheets
+class MoveTableSheet extends StatelessWidget {
+  final List<ChessMove> moves;
+  final int? currentMoveIndex;
+  final Function(int)? onMoveTap;
 
-  const MoveNotation({
+  const MoveTableSheet({
     super.key,
-    required this.san,
-    required this.isWhite,
-    required this.moveNumber,
-    this.isCheck = false,
-    this.isCheckmate = false,
+    required this.moves,
+    this.currentMoveIndex,
+    this.onMoveTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return RichText(
-      text: TextSpan(
-        style: const TextStyle(
-          fontFamily: 'monospace',
-          fontSize: 14,
-          color: AppTheme.textPrimary,
-        ),
+    final textPrimary = AppTheme.textPrimaryFor(context);
+    final textSecondary = AppTheme.textSecondaryFor(context);
+
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 450),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isWhite) TextSpan(text: '$moveNumber. '),
-          TextSpan(
-            text: san,
-            style: TextStyle(
-              fontWeight: isCheckmate ? FontWeight.bold : FontWeight.normal,
-              color:
-                  isCheckmate
-                      ? AppTheme.accentColor
-                      : isCheck
-                      ? AppTheme.warning
-                      : AppTheme.textPrimary,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Move History (${moves.length} moves)',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
+          ),
+          const Divider(height: 16),
+          Expanded(
+            child: moves.isEmpty
+                ? Center(
+                    child: Text(
+                      'No moves played yet',
+                      style: GoogleFonts.inter(color: textSecondary),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: (moves.length / 2).ceil(),
+                    itemBuilder: (context, index) {
+                      final moveNum = index + 1;
+                      final whiteIdx = index * 2;
+                      final blackIdx = index * 2 + 1;
+                      final whiteMove = moves[whiteIdx];
+                      final blackMove = blackIdx < moves.length ? moves[blackIdx] : null;
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: index.isEven
+                              ? Colors.transparent
+                              : AppTheme.surfaceLevel1(context),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 36,
+                              child: Text(
+                                '$moveNum.',
+                                style: GoogleFonts.spaceGrotesk(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: textSecondary,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  if (onMoveTap != null) onMoveTap!(whiteIdx);
+                                  Navigator.pop(context);
+                                },
+                                borderRadius: BorderRadius.circular(4),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: currentMoveIndex == whiteIdx
+                                        ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    whiteMove.san,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: currentMoveIndex == whiteIdx
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: currentMoveIndex == whiteIdx
+                                          ? AppTheme.primaryColor
+                                          : textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: blackMove != null
+                                  ? InkWell(
+                                      onTap: () {
+                                        if (onMoveTap != null) onMoveTap!(blackIdx);
+                                        Navigator.pop(context);
+                                      },
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: currentMoveIndex == blackIdx
+                                              ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                                              : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          blackMove.san,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13,
+                                            fontWeight: currentMoveIndex == blackIdx
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            color: currentMoveIndex == blackIdx
+                                                ? AppTheme.primaryColor
+                                                : textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

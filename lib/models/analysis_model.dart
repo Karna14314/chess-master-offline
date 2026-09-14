@@ -83,6 +83,7 @@ class MoveAnalysis {
   final double accuracy; // Per-move accuracy 0.0–100.0 (Win%-based)
   final bool isMateBefore; // True if evalBefore represents a forced mate
   final bool isMateAfter; // True if evalAfter represents a forced mate
+  final bool isBookMove;
 
   const MoveAnalysis({
     required this.moveIndex,
@@ -102,6 +103,7 @@ class MoveAnalysis {
     required this.accuracy,
     this.isMateBefore = false,
     this.isMateAfter = false,
+    this.isBookMove = false,
   }) : actualEvalBeforeMove = actualEvalBeforeMove ?? evalBefore;
 
   /// Calculate evaluation loss (in pawns, positive = bad for player)
@@ -145,6 +147,8 @@ class GameAnalysis {
   final double openingAccuracy;
   final double middlegameAccuracy;
   final double endgameAccuracy;
+  final String? openingName;
+  final String? ecoCode;
 
   const GameAnalysis({
     required this.moves,
@@ -166,6 +170,8 @@ class GameAnalysis {
     this.openingAccuracy = 0.0,
     this.middlegameAccuracy = 0.0,
     this.endgameAccuracy = 0.0,
+    this.openingName,
+    this.ecoCode,
   });
 
   factory GameAnalysis.empty() {
@@ -180,7 +186,11 @@ class GameAnalysis {
   factory GameAnalysis.fromAccumulator(GameAnalysisAccumulator acc) =>
       acc.build();
 
-  factory GameAnalysis.fromMoves(List<MoveAnalysis> moves) {
+  factory GameAnalysis.fromMoves(
+    List<MoveAnalysis> moves, {
+    String? openingName,
+    String? ecoCode,
+  }) {
     if (moves.isEmpty) return GameAnalysis.empty();
 
     int blunders = 0;
@@ -314,6 +324,8 @@ class GameAnalysis {
               ? 0.0
               : endMoves.map((m) => m.accuracy).reduce((a, b) => a + b) /
                   endMoves.length,
+      openingName: openingName,
+      ecoCode: ecoCode,
     );
   }
 
@@ -357,9 +369,25 @@ MoveClassification classifyMove({
   required bool isWhiteMove,
   required String? bestMove,
   required String actualMove,
+  bool isBookMove = false,
   bool isMateBefore = false,
   bool isMateAfter = false,
+  double? seeCentipawns,
+  double? secondBestCentipawnLoss,
+  bool isCheckmate = false,
 }) {
+  if (isBookMove) {
+    return MoveClassification.book;
+  }
+
+  // A move delivering checkmate is definitively the winning move
+  if (isCheckmate) {
+    if (seeCentipawns != null && seeCentipawns <= brilliantMinSacrificeCp) {
+      return MoveClassification.brilliant;
+    }
+    return MoveClassification.best;
+  }
+
   // Convert evaluation pawns to centipawns
   final cpBefore = evalBefore * 100.0;
   final cpAfter = evalAfter * 100.0;
@@ -411,17 +439,17 @@ MoveClassification classifyMove({
   }
 
   // ── Lichess Win-Probability Loss Thresholds ──
-  // Tightened from original (1/4/8/15/25) to produce meaningful distribution.
-  // These match Lichess's classification boundaries.
+  // Calibrated against Lichess standard boundaries:
+  // Inaccuracy >= 6%, Mistake >= 12%, Blunder >= 20%.
   if (winDiff <= 2.0) {
     return MoveClassification.best;
-  } else if (winDiff <= 5.0) {
+  } else if (winDiff <= 4.0) {
     return MoveClassification.excellent;
-  } else if (winDiff <= 10.0) {
+  } else if (winDiff <= 6.0) {
     return MoveClassification.good;
-  } else if (winDiff <= 20.0) {
+  } else if (winDiff <= 12.0) {
     return MoveClassification.inaccuracy;
-  } else if (winDiff <= 40.0) {
+  } else if (winDiff <= 20.0) {
     return MoveClassification.mistake;
   } else {
     return MoveClassification.blunder;
@@ -483,13 +511,27 @@ MoveClassification classifyMoveCpl({
   required double centipawnLoss,
   required String? bestMove,
   required String actualMove,
+  bool isBookMove = false,
   bool isMateBefore = false,
   bool isMateAfter = false,
   double? seeCentipawns,
   double? secondBestCentipawnLoss,
   double? playerWinPercentBefore,
   double? winPercentDiff,
+  bool isCheckmate = false,
 }) {
+  if (isBookMove) {
+    return MoveClassification.book;
+  }
+
+  // A move delivering checkmate is definitively the winning move
+  if (isCheckmate) {
+    if (seeCentipawns != null && seeCentipawns <= brilliantMinSacrificeCp) {
+      return MoveClassification.brilliant;
+    }
+    return MoveClassification.best;
+  }
+
   // ── Mate handling ──
   if (isMateBefore || isMateAfter) {
     if (bestMove != null &&
@@ -498,13 +540,13 @@ MoveClassification classifyMoveCpl({
     }
 
     final hadMate = isMateBefore;
-    final lostMate = isMateAfter;
+    final lostMate = isMateBefore && !isMateAfter;
 
     if (hadMate && lostMate) {
       return MoveClassification.miss;
     }
 
-    if (centipawnLoss >= 200.0) {
+    if (centipawnLoss >= 200.0 || (winPercentDiff != null && winPercentDiff >= 30.0)) {
       return MoveClassification.blunder;
     }
     return MoveClassification.best;
@@ -516,7 +558,9 @@ MoveClassification classifyMoveCpl({
   // ── Brilliant: a sound sacrifice ──
   // Material is given up by static exchange, yet the evaluation barely moves,
   // so the sacrifice is justified by the resulting position.
-  if (centipawnLoss <= brilliantGreatMaxCpl &&
+  final isLossSmall = centipawnLoss <= brilliantGreatMaxCpl ||
+      (winPercentDiff != null && winPercentDiff <= 3.0);
+  if (isLossSmall &&
       seeCentipawns != null &&
       seeCentipawns <= brilliantMinSacrificeCp) {
     return MoveClassification.brilliant;
@@ -525,7 +569,7 @@ MoveClassification classifyMoveCpl({
   // ── Great: effectively the only good move ──
   // The move holds the evaluation while every other engine line is clearly
   // worse, i.e. there was no comparable alternative.
-  if (centipawnLoss <= brilliantGreatMaxCpl &&
+  if (isLossSmall &&
       secondBestCentipawnLoss != null &&
       secondBestCentipawnLoss >= greatOnlyMoveMarginCp) {
     return MoveClassification.great;
@@ -544,7 +588,27 @@ MoveClassification classifyMoveCpl({
     return MoveClassification.miss;
   }
 
-  // ── CPL Thresholds ──
+  // ── Win-Probability Loss Thresholds (Lichess Model) ──
+  // When winPercentDiff is provided, it ALWAYS takes precedence over raw centipawns.
+  // This prevents runaway winning positions (e.g. +8.00 simplifying to +5.50) from being
+  // falsely accused as blunders, matching Lichess's classification boundaries.
+  if (winPercentDiff != null) {
+    if (winPercentDiff <= 2.0) {
+      return MoveClassification.best;
+    } else if (winPercentDiff <= 4.0) {
+      return MoveClassification.excellent;
+    } else if (winPercentDiff <= 6.0) {
+      return MoveClassification.good;
+    } else if (winPercentDiff <= 12.0) {
+      return MoveClassification.inaccuracy;
+    } else if (winPercentDiff <= 20.0) {
+      return MoveClassification.mistake;
+    } else {
+      return MoveClassification.blunder;
+    }
+  }
+
+  // ── Fallback CPL Thresholds (only used when Win% diff is absent) ──
   if (centipawnLoss <= 10.0) {
     return MoveClassification.best;
   } else if (centipawnLoss <= 20.0) {
@@ -603,6 +667,14 @@ class GameAnalysisAccumulator {
   int _brilliantMoves = 0;
   int _bestMoves = 0;
   int _bookMoves = 0;
+  String? _openingName;
+  String? _ecoCode;
+
+  /// Set the identified game opening and ECO code
+  void setOpening({String? name, String? eco}) {
+    _openingName = name;
+    _ecoCode = eco;
+  }
 
   /// Moves appended so far.
   int get length => _moves.length;
@@ -708,6 +780,8 @@ class GameAnalysisAccumulator {
       openingAccuracy: phaseAccuracy(GamePhase.opening),
       middlegameAccuracy: phaseAccuracy(GamePhase.middlegame),
       endgameAccuracy: phaseAccuracy(GamePhase.endgame),
+      openingName: _openingName,
+      ecoCode: _ecoCode,
     );
   }
 }

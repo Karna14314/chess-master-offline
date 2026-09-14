@@ -737,6 +737,24 @@ class StockfishService {
     return true;
   }
 
+  /// Sanitize FEN string to prevent Stockfish C++ parser edge case crashes.
+  /// Clamps halfmove clock (rule50) to 0..100 and fullmove to 1..999.
+  static String sanitizeFen(String fen) {
+    final parts = fen.trim().split(_fenSpaceRegex);
+    if (parts.length < 4) return fen.trim();
+    var halfmove = '0';
+    var fullmove = '1';
+    if (parts.length >= 5) {
+      final hm = int.tryParse(parts[4]) ?? 0;
+      halfmove = hm.clamp(0, 100).toString();
+    }
+    if (parts.length >= 6) {
+      final fm = int.tryParse(parts[5]) ?? 1;
+      fullmove = fm.clamp(1, 999).toString();
+    }
+    return '${parts[0]} ${parts[1]} ${parts[2]} ${parts[3]} $halfmove $fullmove';
+  }
+
   /// Build the UCI "position" command for a given position.
   /// When [startingFen] and [moves] are provided, emits the full move list so
   /// Stockfish can detect repetition draws (threefold, fifty-move rule).
@@ -746,12 +764,13 @@ class StockfishService {
     String? startingFen,
     List<String>? moves,
   }) {
-    if (startingFen == null || startingFen.isEmpty) {
-      return 'position fen $fen';
+    final cleanFen = sanitizeFen(fen);
+    if (startingFen == null || startingFen.isEmpty || moves == null || moves.isEmpty) {
+      return 'position fen $cleanFen';
     }
-    final movesPart =
-        (moves != null && moves.isNotEmpty) ? ' moves ${moves.join(' ')}' : '';
-    return 'position fen $startingFen$movesPart';
+    final cleanStartingFen = sanitizeFen(startingFen);
+    final movesPart = ' moves ${moves.join(' ')}';
+    return 'position fen $cleanStartingFen$movesPart';
   }
 
   /// Get the best move for a given position
@@ -896,18 +915,13 @@ class StockfishService {
           }
         });
 
-        // Position must be set before search.
-        // Strength options (UCI_Elo / UCI_LimitStrength) are configured via setSkillLevel()
-        // before calling getBestMove() and should NOT be set here on every move.
-        // Send the full starting FEN + move list when available so the engine can
-        // detect threefold/fifty-move repetition draws.
-        _sendCommand(
-          buildPositionCommand(
-            fen: fen,
-            startingFen: startingFen,
-            moves: moves,
-          ),
-        );
+        // Set position for bot search.
+        // For live bot play, send clean sanitized current FEN directly.
+        // Dart's chess engine already tracks move history, 3-fold repetition, and 50-move draws.
+        // Sending the current FEN directly creates a single clean root StateInfo in Stockfish C++,
+        // preventing dangling pointer traversal in Position::is_draw.
+        final cleanFen = sanitizeFen(fen);
+        _sendCommand('position fen $cleanFen');
 
         // Wait for engine to confirm position is processed before starting search
         // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
@@ -932,15 +946,18 @@ class StockfishService {
           _sendCommand('go depth $depth');
         }
 
-        // Failsafe timeout for Stockfish response.
+        // Failsafe timeout for Stockfish response: dynamic based on thinkTimeMs
+        final effectiveTimeout = thinkTimeMs != null
+            ? Duration(milliseconds: thinkTimeMs * 2 + 2500)
+            : searchTimeoutForTesting;
         return await completer.future.timeout(
-          searchTimeoutForTesting,
-          onTimeout: () {
+          effectiveTimeout,
+          onTimeout: () async {
             debugPrint(
               'ENGINE RECOVERY → Search timeout for FEN: $fen, using fallback for this move',
             );
             _sendCommand('stop');
-            // Don't kill isolate or enable permanent fallback — engine may recover
+            await _stopCurrentSearchAndWait();
             return _getSimpleBotMove(fen, depth, thinkTimeMs);
           },
         );
@@ -1027,6 +1044,48 @@ class StockfishService {
       debugPrint('Invalid FEN detected for analysis: $fen');
       return BasicEvaluatorService.instance.analyze(fen);
     }
+
+    // Fast-path: If position is already terminal (checkmate/stalemate/draw), return immediately
+    // with correct evaluation rather than running search on a position with no legal moves.
+    try {
+      final chessObj = chess_lib.Chess.fromFEN(fen);
+      if (chessObj.in_checkmate) {
+        final whiteMated = chessObj.turn == chess_lib.Color.WHITE;
+        final mateScoreCp = whiteMated ? -10000 : 10000;
+        final mateScorePawns = whiteMated ? -100.0 : 100.0;
+        final mateIn = whiteMated ? -1 : 1;
+        return AnalysisResult(
+          evaluation: mateScoreCp,
+          mateIn: mateIn,
+          lines: [
+            EngineLine(
+              rank: 1,
+              evaluation: mateScorePawns,
+              depth: 0,
+              moves: const [],
+              isMate: true,
+              mateIn: mateIn,
+            ),
+          ],
+          depth: 0,
+        );
+      }
+      if (chessObj.in_stalemate || chessObj.in_draw) {
+        return AnalysisResult(
+          evaluation: 0,
+          lines: [
+            EngineLine(
+              rank: 1,
+              evaluation: 0.0,
+              depth: 0,
+              moves: const [],
+              isMate: false,
+            ),
+          ],
+          depth: 0,
+        );
+      }
+    } catch (_) {}
 
     // Guard: If disposed, return fallback
     if (_isDisposed) {
@@ -1302,13 +1361,13 @@ class StockfishService {
 
         final searchResult = await completer.future.timeout(
           analysisTimeoutForTesting, // Short timeout for analysis to switch to basic if stuck
-          onTimeout: () {
+          onTimeout: () async {
             debugPrint(
               'ENGINE RECOVERY → Analysis timeout for FEN: $fen, using fallback',
             );
             _sendCommand('stop');
+            await _stopCurrentSearchAndWait();
             _sendCommand('setoption name MultiPV value 1');
-            // Don't kill isolate or enable permanent fallback — engine may recover
             return BasicEvaluatorService.instance.analyze(fen);
           },
         );
@@ -1363,7 +1422,7 @@ class StockfishService {
   /// Threads/Hash used for live play. Chosen for stability and low memory
   /// pressure on the widest range of devices; see initialize().
   static const int livePlayThreads = 1;
-  static const int livePlayHashMb = 32;
+  static const int livePlayHashMb = 16;
 
   /// Upper bound on threads for batch analysis.
   ///
@@ -1379,7 +1438,7 @@ class StockfishService {
   /// the result of a deterministic single-threaded search, it only avoids
   /// re-searching positions already visited.
   static const int maxAnalysisThreads = 1;
-  static const int analysisHashMb = 128;
+  static const int analysisHashMb = 64;
 
   /// Threads to use for batch analysis. See [maxAnalysisThreads] for why this
   /// defaults to 1 regardless of how many cores the device has.
@@ -1429,14 +1488,17 @@ class StockfishService {
     _sendCommand('isready');
   }
 
-  /// Stop current search and wait for it to finish (for intentional search replacement)
-  /// The output-stream subscription is guaranteed to be cancelled on every exit
-  /// path (bestmove received, timeout) via `finally`.
+  /// Stop current search and wait for it to finish (for intentional search replacement).
+  /// Guarantees that Stockfish worker threads are no longer searching before continuing.
+  /// If the engine fails to acknowledge 'stop' within 3.0 seconds, the isolate is killed
+  /// and cleanly restarted to prevent sending commands to an active C++ search thread (which causes SIGSEGV).
   Future<void> _stopCurrentSearchAndWait() async {
     if (!_searchInFlight && !_isEngineBusy) return;
 
     final completer = Completer<void>();
-    final subscription = _outputController.stream.listen((line) {
+    StreamSubscription<String>? subscription;
+
+    subscription = _outputController.stream.listen((line) {
       final trimmed = line.trim();
       if ((trimmed.startsWith('bestmove') || trimmed == 'readyok') &&
           !completer.isCompleted) {
@@ -1448,9 +1510,17 @@ class StockfishService {
     _sendCommand('isready');
 
     try {
-      await completer.future.timeout(const Duration(seconds: 2));
+      await completer.future.timeout(const Duration(milliseconds: 3000));
     } catch (_) {
-      // bestmove or readyok not received in time — proceed anyway.
+      // Hard timeout exceeded: engine is stalled or wedged.
+      // NEVER proceed while search threads might still be active!
+      debugPrint('ENGINE RECOVERY → Engine stalled on stop; respawning isolate');
+      await _killEngineIfRunning();
+      try {
+        await initialize();
+      } catch (e) {
+        _enableFallback('Failed to reinitialize engine after wedged stop: $e');
+      }
     } finally {
       await subscription.cancel();
       _searchInFlight = false;
@@ -1503,7 +1573,7 @@ class StockfishService {
     // Track consecutive isolate crashes for circuit breaker
     _consecutiveCrashes++;
 
-    // Set up a death detection port
+    // Set up a death and exit detection port
     final deathPort = ReceivePort();
     _engineIsolate!.addErrorListener(deathPort.sendPort);
     deathPort.listen((message) {
@@ -1512,8 +1582,22 @@ class StockfishService {
       _isEngineBusy = false;
       _engineCommandPort = null;
       _engineIsolate = null;
-      statusNotifier.value = EngineStatus.failed;
+      _enableFallback('Isolate error: $message');
       deathPort.close();
+    });
+
+    final exitPort = ReceivePort();
+    _engineIsolate!.addOnExitListener(exitPort.sendPort);
+    exitPort.listen((_) {
+      if (!_isDisposed && _engineSessionId == sessionId && !_useFallback) {
+        debugPrint('ENGINE CRASH: Isolate exited unexpectedly');
+        _isReady = false;
+        _isEngineBusy = false;
+        _engineCommandPort = null;
+        _engineIsolate = null;
+        _enableFallback('Isolate exited unexpectedly');
+      }
+      exitPort.close();
     });
 
     // Listen for the command port and stdout from the isolate
@@ -1548,6 +1632,11 @@ class StockfishService {
           // Error reported from the engine isolate
           final msg = message['message'] as String? ?? 'Unknown error';
           debugPrint('ENGINE INIT: Isolate error: $msg');
+          if (msg.contains('StockfishState.error') ||
+              msg.contains('constructor failed') ||
+              msg.contains('Engine reached')) {
+            _enableFallback('Engine isolate reported error: $msg');
+          }
         }
       }
     });

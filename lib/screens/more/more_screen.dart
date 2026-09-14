@@ -6,8 +6,8 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/stats/statistics_screen.dart';
+import 'package:chess_master/screens/history/game_history_screen.dart';
 import 'package:chess_master/screens/settings/settings_screen.dart';
-import 'package:chess_master/core/services/diagnostics_service.dart';
 
 import 'package:chess_master/providers/statistics_provider.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
@@ -248,6 +248,22 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
             Divider(height: 1, color: borderColor),
             _buildMenuItem(
               context,
+              icon: Icons.history_rounded,
+              title: 'Game History',
+              subtitle: 'View finished games and resume in-progress games',
+              color: Colors.green,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GameHistoryScreen(),
+                  ),
+                );
+              },
+            ),
+            Divider(height: 1, color: borderColor),
+            _buildMenuItem(
+              context,
               icon: Icons.settings_rounded,
               title: 'Settings',
               subtitle: 'Board theme, sounds, and preferences',
@@ -259,25 +275,6 @@ class _MoreScreenState extends ConsumerState<MoreScreen> {
                     builder: (context) => const SettingsScreen(),
                   ),
                 );
-              },
-            ),
-            Divider(height: 1, color: borderColor),
-            _buildMenuItem(
-              context,
-              icon: Icons.bug_report_rounded,
-              title: 'Diagnostic Logs',
-              subtitle: 'Share error logs via native OS share sheet',
-              color: Colors.teal,
-              onTap: () async {
-                final success =
-                    await LocalDiagnosticsService.instance.exportLogFile();
-                if (!success && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No diagnostic log available to export'),
-                    ),
-                  );
-                }
               },
             ),
           ],

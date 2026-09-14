@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/timer_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
-import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:chess_master/screens/game/widgets/timer_widget.dart';
+import 'package:chess_master/screens/game/widgets/move_list.dart';
 import 'package:chess_master/core/services/audio_service.dart';
+import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:chess_master/screens/settings/settings_screen.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
 import 'package:chess_master/screens/widgets/engine_status_indicator.dart';
 import 'package:chess_master/models/game_session.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:chess_master/widgets/shared/bot_avatar.dart';
+import 'package:chess_master/widgets/shared/player_bar.dart';
+import 'package:chess_master/widgets/shared/bottom_action_bar.dart';
+import 'package:chess_master/widgets/shared/result_card.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -24,37 +29,46 @@ class GameScreen extends ConsumerStatefulWidget {
 }
 
 class _GameScreenState extends ConsumerState<GameScreen> {
-  bool _isLandscapeLocked = false;
   final ScrollController _moveListController = ScrollController();
   String? _initializedSessionId;
 
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeTimer();
+      _checkAndInitializeSession();
     });
+  }
+
+  Future<void> _checkAndInitializeSession() async {
+    final currentSession = ref.read(gameSessionProvider);
+    if (currentSession == null) {
+      final repo = ref.read(gameSessionRepositoryProvider);
+      final games = await repo.getUnfinishedGames(limit: 1);
+      if (games.isNotEmpty && mounted) {
+        ref.read(gameSessionProvider.notifier).resumeSession(games.first);
+      } else if (mounted) {
+        Navigator.of(context).pop();
+        return;
+      }
+    }
+    _initializeTimer();
   }
 
   @override
   void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     _moveListController.dispose();
-    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     super.dispose();
-  }
-
-  void _toggleOrientationLock() {
-    setState(() {
-      _isLandscapeLocked = !_isLandscapeLocked;
-      if (_isLandscapeLocked) {
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-      } else {
-        SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-      }
-    });
   }
 
   void _initializeTimer() {
@@ -79,7 +93,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (_moveListController.hasClients) {
       _moveListController.animateTo(
         _moveListController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
     }
@@ -126,205 +140,398 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       }
     });
 
-    return Scaffold(
-      body: SafeArea(
-        child: OrientationBuilder(
-          builder: (context, orientation) {
-            final isLandscape = orientation == Orientation.landscape;
-            return Column(
-              children: [
-                _buildCustomAppBar(context, gameState),
-                Expanded(
-                  child:
-                      isLandscape
-                          ? _buildLandscapeLayout(context, gameState)
-                          : _buildPortraitLayout(context, gameState),
-                ),
-              ],
-            );
-          },
+    return PopScope(
+      canPop: true,
+      child: Scaffold(
+        backgroundColor: AppTheme.surfaceLevel0(context),
+        body: SafeArea(
+          child: OrientationBuilder(
+            builder: (context, orientation) {
+              final isLandscape = orientation == Orientation.landscape;
+              return Column(
+                children: [
+                  _buildCustomAppBar(context, gameState),
+                  Expanded(
+                    child: isLandscape
+                        ? _buildLandscapeLayout(context, gameState)
+                        : _buildPortraitLayout(context, gameState),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildCustomAppBar(BuildContext context, GameSession gameState) {
+    final textPrimary = AppTheme.textPrimaryFor(context);
+    final textSecondary = AppTheme.textSecondaryFor(context);
+    final isBot = gameState.gameMode == GameMode.bot;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space8, vertical: AppTheme.space4),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(Icons.arrow_back_rounded, color: textPrimary),
+            tooltip: 'Back',
+          ),
+          const SizedBox(width: AppTheme.space4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        isBot
+                            ? (gameState.botProfile != null
+                                ? gameState.botProfile!.name
+                                : 'Bot (${gameState.difficulty.elo})')
+                            : 'Pass & Play',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isBot && gameState.botProfile != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: gameState.botProfile!.tier.color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                        ),
+                        child: Text(
+                          '${gameState.botProfile!.elo}',
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: gameState.botProfile!.tier.color,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  gameState.timeControl.hasTimer
+                      ? gameState.timeControl.displayString
+                      : 'Casual / No Clock',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const EngineStatusIndicator(),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded, color: textSecondary),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
+            color: AppTheme.surfaceLevel2(context),
+            onSelected: (action) => _handleMenuAction(context, action, gameState),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'flip',
+                child: Row(
+                  children: [
+                    Icon(Icons.swap_vert_rounded, size: 20),
+                    SizedBox(width: 12),
+                    Text('Flip Board'),
+                  ],
+                ),
+              ),
+              if (!gameState.isCompleted) ...[
+                const PopupMenuItem(
+                  value: 'draw',
+                  child: Row(
+                    children: [
+                      Icon(Icons.handshake_outlined, size: 20),
+                      SizedBox(width: 12),
+                      Text('Offer Draw'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'resign',
+                  child: Row(
+                    children: [
+                      Icon(Icons.flag_outlined, size: 20, color: AppTheme.crimsonRed),
+                      SizedBox(width: 12),
+                      Text('Resign Match', style: TextStyle(color: AppTheme.crimsonRed)),
+                    ],
+                  ),
+                ),
+              ],
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('Settings'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleMenuAction(BuildContext context, String action, GameSession gameState) {
+    switch (action) {
+      case 'flip':
+        ref.read(gameSessionProvider.notifier).toggleFlip();
+        break;
+      case 'draw':
+        _showDrawConfirmation(context);
+        break;
+      case 'resign':
+        _showResignConfirmation(context);
+        break;
+      case 'settings':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        );
+        break;
+    }
+  }
+
   Widget _buildPortraitLayout(BuildContext context, GameSession gameState) {
+    final opponentIsWhite = gameState.playerColor == PlayerColor.black;
+    final playerIsWhite = gameState.playerColor == PlayerColor.white;
+
     return Column(
       children: [
+        // Main Board Play Area
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final totalWidth = constraints.maxWidth;
                 final totalHeight = constraints.maxHeight;
-                final boardSize = (totalWidth).clamp(0.0, totalHeight - 160.0);
+                // Reserve space for top and bottom player bars (~56px each + spacing)
+                final availableHeight = (totalHeight - 144.0).clamp(0.0, double.infinity);
+                final maxDimension = totalWidth < availableHeight ? totalWidth : availableHeight;
+                final boardSize = maxDimension.clamp(160.0, 540.0);
 
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildCompactPlayerBar(
-                      context,
-                      isOpponent: true,
-                      name:
-                          gameState.gameMode == GameMode.bot
-                              ? "Bot (${gameState.difficulty.elo})"
-                              : "Friend",
-                      isActive:
-                          !gameState.isPlayerTurn && !gameState.isCompleted,
-                      isWhite: gameState.playerColor == PlayerColor.black,
-                      gameState: gameState,
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 540),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                    // Opponent Bar
+                    PlayerBar(
+                      avatar: (gameState.gameMode == GameMode.bot && gameState.botProfile != null)
+                          ? BotAvatar(bot: gameState.botProfile!, size: 40, showElo: false)
+                          : Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.surfaceLevel2(context),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                gameState.gameMode == GameMode.bot
+                                    ? Icons.smart_toy_rounded
+                                    : Icons.person_rounded,
+                                color: AppTheme.textPrimaryFor(context),
+                                size: 20,
+                              ),
+                            ),
+                      name: gameState.gameMode == GameMode.bot
+                          ? (gameState.botProfile?.name ?? 'Bot (${gameState.difficulty.elo})')
+                          : 'Friend',
+                      elo: gameState.gameMode == GameMode.bot
+                          ? (gameState.botProfile?.elo ?? gameState.difficulty.elo)
+                          : null,
+                      isActive: !gameState.isPlayerTurn && !gameState.isCompleted,
+                      isWhite: opponentIsWhite,
+                      timerWidget: gameState.timeControl.hasTimer
+                          ? ChessTimerWidget(
+                              isWhite: opponentIsWhite,
+                              isActive: !gameState.isPlayerTurn && !gameState.isCompleted,
+                              compact: true,
+                            )
+                          : null,
+                      capturedPieces: _getCapturedPieces(gameState, forOpponent: true),
+                      materialAdvantage: _calculateMaterialAdvantage(gameState, isWhite: opponentIsWhite),
                     ),
-                    const SizedBox(height: 16),
+
+                    const SizedBox(height: AppTheme.space8),
+
+                    // Chess Board Container
                     _buildBoard(boardSize, gameState),
-                    const SizedBox(height: 16),
-                    _buildCompactPlayerBar(
-                      context,
-                      isOpponent: false,
-                      name: "You",
-                      isActive:
-                          gameState.isPlayerTurn && !gameState.isCompleted,
-                      isWhite: gameState.playerColor == PlayerColor.white,
-                      gameState: gameState,
+
+                    const SizedBox(height: AppTheme.space8),
+
+                    // Player Bar
+                    PlayerBar(
+                      avatar: Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          color: AppTheme.primaryColor,
+                          size: 20,
+                        ),
+                      ),
+                      name: 'You',
+                      isActive: gameState.isPlayerTurn && !gameState.isCompleted,
+                      isWhite: playerIsWhite,
+                      timerWidget: gameState.timeControl.hasTimer
+                          ? ChessTimerWidget(
+                              isWhite: playerIsWhite,
+                              isActive: gameState.isPlayerTurn && !gameState.isCompleted,
+                              compact: true,
+                            )
+                          : null,
+                      capturedPieces: _getCapturedPieces(gameState, forOpponent: false),
+                      materialAdvantage: _calculateMaterialAdvantage(gameState, isWhite: playerIsWhite),
                     ),
                   ],
-                );
+                ),
+              ),
+            );
               },
             ),
           ),
         ),
+
+        // Bottom Controls Area
         _buildBottomPanel(gameState),
       ],
     );
   }
 
   Widget _buildLandscapeLayout(BuildContext context, GameSession gameState) {
-    // A 4:1 flex means the side panel gets 20% of the screen width. On phones, this can be ~95px.
-    // Instead of wide rows, we stack the necessary info vertically.
     return Row(
       children: [
-        // 80% Board (Flex 4)
+        // 75% Board
         Expanded(
-          flex: 4,
+          flex: 3,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(AppTheme.space12),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final size =
-                    constraints.maxHeight < constraints.maxWidth
-                        ? constraints.maxHeight
-                        : constraints.maxWidth;
+                final size = constraints.maxHeight < constraints.maxWidth
+                    ? constraints.maxHeight
+                    : constraints.maxWidth;
                 return Center(child: _buildBoard(size, gameState));
               },
             ),
           ),
         ),
-        // 20% Side Panel (Flex 1)
+
+        // 25% Side Panel
         Expanded(
           flex: 1,
           child: Container(
             margin: const EdgeInsets.only(top: 8, bottom: 8, right: 8),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor(context).withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.borderColorFor(context)),
+              color: AppTheme.surfaceLevel1(context),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+              border: Border.all(color: AppTheme.borderStroke(context)),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              padding: const EdgeInsets.all(AppTheme.space12),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Opponent Top Zone
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: Text(
-                          gameState.gameMode == GameMode.bot
-                              ? "Bot (${gameState.difficulty.elo})"
-                              : "Friend",
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimaryFor(context),
-                            fontSize: 11,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      ChessTimerWidget(
-                        isWhite: gameState.playerColor == PlayerColor.black,
-                        isActive:
-                            !gameState.isPlayerTurn && !gameState.isCompleted,
-                        compact: true,
-                      ),
-                    ],
+                  // Opponent summary
+                  Text(
+                    gameState.botProfile != null
+                        ? "${gameState.botProfile!.name} (${gameState.botProfile!.elo})"
+                        : (gameState.gameMode == GameMode.bot
+                            ? "Bot (${gameState.difficulty.elo})"
+                            : "Opponent"),
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimaryFor(context),
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (gameState.timeControl.hasTimer) ...[
+                    const SizedBox(height: 4),
+                    ChessTimerWidget(
+                      isWhite: gameState.playerColor == PlayerColor.black,
+                      isActive: !gameState.isPlayerTurn && !gameState.isCompleted,
+                      compact: true,
+                    ),
+                  ],
+
+                  const Divider(height: 16),
+
+                  // Move list scroll
+                  Expanded(
+                    child: MoveList(
+                      moves: gameState.moveHistory,
+                      scrollController: _moveListController,
+                    ),
                   ),
 
-                  // Middle Controls Zone
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
+                  const Divider(height: 16),
+
+                  // Player summary
+                  Text(
+                    "You",
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimaryFor(context),
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (gameState.timeControl.hasTimer) ...[
+                    const SizedBox(height: 4),
+                    ChessTimerWidget(
+                      isWhite: gameState.playerColor == PlayerColor.white,
+                      isActive: gameState.isPlayerTurn && !gameState.isCompleted,
+                      compact: true,
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  // Actions
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       IconButton(
-                        icon: Icon(
-                          Icons.undo,
-                          color: AppTheme.textSecondaryFor(context),
-                          size: 20,
-                        ),
-                        onPressed:
-                            () =>
-                                ref
-                                    .read(gameSessionProvider.notifier)
-                                    .undoMove(),
+                        icon: const Icon(Icons.undo_rounded, size: 20),
                         tooltip: 'Undo',
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(8),
+                        onPressed: gameState.isCompleted
+                            ? null
+                            : () => ref.read(gameSessionProvider.notifier).undoMove(),
                       ),
-                      const SizedBox(height: 8),
                       IconButton(
-                        icon: Icon(
-                          Icons.lightbulb_outline,
-                          color: AppTheme.textSecondaryFor(context),
-                          size: 20,
-                        ),
-                        onPressed:
-                            () => ref
-                                .read(gameSessionProvider.notifier)
-                                .useHint(ref),
+                        icon: const Icon(Icons.lightbulb_outline_rounded, size: 20),
                         tooltip: 'Hint',
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(8),
+                        onPressed: gameState.isCompleted
+                            ? null
+                            : () => _showHintDialog(context, ref),
                       ),
-                    ],
-                  ),
-
-                  // Player Bottom Zone
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ChessTimerWidget(
-                        isWhite: gameState.playerColor == PlayerColor.white,
-                        isActive:
-                            gameState.isPlayerTurn && !gameState.isCompleted,
-                        compact: true,
-                      ),
-                      const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: Text(
-                          "You",
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimaryFor(context),
-                            fontSize: 11,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      IconButton(
+                        icon: const Icon(Icons.swap_vert_rounded, size: 20),
+                        tooltip: 'Flip',
+                        onPressed: () => ref.read(gameSessionProvider.notifier).toggleFlip(),
                       ),
                     ],
                   ),
@@ -343,18 +550,22 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       height: size,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.15),
-              blurRadius: 24,
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 20,
               spreadRadius: -4,
               offset: const Offset(0, 8),
             ),
           ],
+          border: Border.all(
+            color: AppTheme.borderStroke(context),
+            width: 1.5,
+          ),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd - 1.5),
           child: ChessBoard.internal(
             interactive: !gameState.isCompleted,
             flipped: gameState.isFlipped,
@@ -368,25 +579,148 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget _buildBottomPanel(GameSession gameState) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor(context).withValues(alpha: 0.8),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(32),
-          topRight: Radius.circular(32),
+        color: AppTheme.surfaceLevel1(context),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.borderStroke(context),
+            width: 1.0,
+          ),
         ),
-        border: Border.all(color: AppTheme.borderColorFor(context)),
       ),
       child: SafeArea(
         top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 12),
-            _buildHorizontalMoveList(gameState),
-            const SizedBox(height: 8),
-            _buildControlBar(context, gameState),
+            // Move history strip
+            MoveList(
+              moves: gameState.moveHistory,
+              scrollController: _moveListController,
+              onExpandTap: () => _showMoveHistorySheet(context, gameState),
+            ),
+
+            // Ergonomic thumb-zone bottom action bar
+            BottomActionBar(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12, vertical: AppTheme.space4),
+              children: [
+                BottomActionItem(
+                  icon: Icons.undo_rounded,
+                  label: 'Undo',
+                  onPressed: gameState.isCompleted
+                      ? null
+                      : () => ref.read(gameSessionProvider.notifier).undoMove(),
+                ),
+                BottomActionItem(
+                  icon: Icons.lightbulb_outline_rounded,
+                  label: 'Hint',
+                  onPressed: gameState.isCompleted
+                      ? null
+                      : () => _showHintDialog(context, ref),
+                ),
+                BottomActionItem(
+                  icon: Icons.swap_vert_rounded,
+                  label: 'Flip',
+                  onPressed: () => ref.read(gameSessionProvider.notifier).toggleFlip(),
+                ),
+                BottomActionItem(
+                  icon: Icons.more_horiz_rounded,
+                  label: 'More',
+                  onPressed: () => _showGameMenuBottomSheet(context, gameState),
+                ),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showMoveHistorySheet(BuildContext context, GameSession gameState) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surfaceLevel1(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusXl)),
+      ),
+      builder: (_) => MoveTableSheet(moves: gameState.moveHistory),
+    );
+  }
+
+  void _showGameMenuBottomSheet(BuildContext context, GameSession gameState) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surfaceLevel1(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusXl)),
+      ),
+      builder: (sheetContext) {
+        final textPrimary = AppTheme.textPrimaryFor(sheetContext);
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.borderStroke(sheetContext),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                if (!gameState.isCompleted) ...[
+                  ListTile(
+                    leading: const Icon(Icons.handshake_outlined),
+                    title: Text('Offer Draw', style: TextStyle(color: textPrimary)),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _showDrawConfirmation(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.flag_outlined, color: AppTheme.crimsonRed),
+                    title: const Text('Resign Match', style: TextStyle(color: AppTheme.crimsonRed)),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _showResignConfirmation(context);
+                    },
+                  ),
+                ],
+                ListTile(
+                  leading: const Icon(Icons.analytics_outlined),
+                  title: Text('Analyze Position', style: TextStyle(color: textPrimary)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AnalysisScreen(
+                          moves: gameState.moveHistory,
+                          startingFen: gameState.startingFen,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings_outlined),
+                  title: Text('Game Settings', style: TextStyle(color: textPrimary)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -406,414 +740,83 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     }
   }
 
-  Widget _buildCustomAppBar(BuildContext context, GameSession gameState) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(
-              Icons.arrow_back,
-              color: AppTheme.textSecondaryFor(context),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            gameState.timeControl.displayString,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppTheme.textSecondaryFor(context),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              reverse: true,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.flip,
-                      color: AppTheme.textSecondaryFor(context),
-                    ),
-                    onPressed:
-                        () =>
-                            ref.read(gameSessionProvider.notifier).toggleFlip(),
-                    tooltip: 'Flip Board',
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.handshake_outlined,
-                      color: AppTheme.textSecondaryFor(context),
-                    ),
-                    onPressed: () => _showDrawConfirmation(context),
-                    tooltip: 'Offer Draw',
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.flag_outlined,
-                      color: AppTheme.textSecondaryFor(context),
-                    ),
-                    onPressed: () => _showResignConfirmation(context),
-                    tooltip: 'Resign',
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      _isLandscapeLocked
-                          ? Icons.screen_lock_landscape
-                          : Icons.screen_rotation,
-                      color:
-                          _isLandscapeLocked
-                              ? AppTheme.primaryColor
-                              : AppTheme.textSecondaryFor(context),
-                    ),
-                    onPressed: _toggleOrientationLock,
-                    tooltip: 'Toggle Landscape Lock',
-                  ),
-                  const EngineStatusIndicator(),
-                  _buildMoreMenu(context),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMoreMenu(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert, color: AppTheme.textSecondaryFor(context)),
-      color: AppTheme.surfaceColor(context),
-      onSelected: (value) {
-        switch (value) {
-          case 'settings':
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-            );
-            break;
-          case 'exit':
-            Navigator.pop(context);
-            break;
-        }
-      },
-      itemBuilder:
-          (context) => [
-            PopupMenuItem(
-              value: 'settings',
-              child: Text(
-                'Settings',
-                style: TextStyle(color: AppTheme.textPrimaryFor(context)),
-              ),
-            ),
-            PopupMenuItem(
-              value: 'exit',
-              child: Text(
-                'Save & Exit',
-                style: TextStyle(color: AppTheme.textPrimaryFor(context)),
-              ),
-            ),
-          ],
-    );
-  }
-
   void _showGameOverDialog(BuildContext context, GameSession gameState) {
-    final isWin =
-        (gameState.result == GameResult.whiteWins &&
-            gameState.playerColor == PlayerColor.white) ||
-        (gameState.result == GameResult.blackWins &&
-            gameState.playerColor == PlayerColor.black);
+    final isWhite = gameState.playerColor == PlayerColor.white;
+    final isBot = gameState.gameMode == GameMode.bot;
+    final bool isDraw = gameState.result == GameResult.draw;
+    final bool isWin = !isDraw &&
+        ((gameState.result == GameResult.whiteWins && isWhite) ||
+            (gameState.result == GameResult.blackWins && !isWhite));
+
+    final String title;
+    if (isDraw) {
+      title = 'Draw';
+    } else if (gameState.gameMode == GameMode.localMultiplayer) {
+      title = gameState.result == GameResult.whiteWins ? 'White Victory!' : 'Black Victory!';
+    } else if (isWin) {
+      title = 'Victory!';
+    } else {
+      title = 'Defeat';
+    }
+
+    final reason = gameState.resultReason ??
+        (isDraw ? 'Game drawn' : (isWin ? 'Checkmate' : 'Defeat'));
+
+    final opponentName = isBot
+        ? (gameState.botProfile?.name ?? 'Bot')
+        : 'Pass & Play';
+
+    final opponentElo = isBot
+        ? (gameState.botProfile?.elo ?? gameState.difficulty.elo)
+        : null;
+
+    final playerAccuracy = isWhite ? gameState.whiteAccuracy : gameState.blackAccuracy;
+    final opponentAccuracy = isWhite ? gameState.blackAccuracy : gameState.whiteAccuracy;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.surfaceColor(context),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Row(
-              children: [
-                Icon(
-                  isWin ? Icons.emoji_events_rounded : Icons.flag_rounded,
-                  color: isWin ? Colors.amber : AppTheme.primaryColor,
+      builder: (dialogContext) {
+        return ResultCard(
+          title: title,
+          subtitle: reason,
+          isWin: isWin,
+          isDraw: isDraw,
+          opponentName: opponentName,
+          opponentElo: opponentElo,
+          playerAccuracy: playerAccuracy,
+          opponentAccuracy: opponentAccuracy,
+          campaignStarsEarned: (isWin && gameState.campaignLevel != null) ? 3 : null,
+          onRematch: () {
+            Navigator.pop(dialogContext);
+            ref.read(gameSessionProvider.notifier).startNewGame(
+                  playerColor: gameState.playerColor,
+                  difficulty: gameState.difficulty,
+                  timeControl: gameState.timeControl,
+                  gameMode: gameState.gameMode,
+                  botType: gameState.botType,
+                  botProfile: gameState.botProfile,
+                  campaignLevel: gameState.campaignLevel,
+                );
+          },
+          onAnalyse: () {
+            Navigator.pop(dialogContext);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AnalysisScreen(
+                  moves: gameState.moveHistory,
+                  startingFen: gameState.startingFen,
                 ),
-                const SizedBox(width: 12),
-                Text(isWin ? 'Victory!' : 'Game Over'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(gameState.resultReason ?? 'Game finished'),
-                if (gameState.whiteAccuracy != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Accuracy: ${(gameState.whiteAccuracy ?? gameState.blackAccuracy ?? 0).toStringAsFixed(0)}%',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                },
-                child: const Text('Home'),
               ),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => AnalysisScreen(
-                            moves: gameState.moveHistory,
-                            startingFen: gameState.startingFen,
-                          ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.analytics_outlined, size: 18),
-                label: const Text('Analyze'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ref
-                      .read(gameSessionProvider.notifier)
-                      .startNewGame(
-                        playerColor: gameState.playerColor,
-                        difficulty: gameState.difficulty,
-                        timeControl: gameState.timeControl,
-                        gameMode: gameState.gameMode,
-                        botType: gameState.botType,
-                      );
-                },
-                child: const Text('New Game'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  Widget _buildCompactPlayerBar(
-    BuildContext context, {
-    required bool isOpponent,
-    required String name,
-    required bool isActive,
-    required bool isWhite,
-    required GameSession gameState,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor:
-                isActive ? AppTheme.primaryColor : AppTheme.cardColor(context),
-            child: Icon(
-              isOpponent ? Icons.smart_toy : Icons.person,
-              color: AppTheme.textPrimaryFor(context),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryFor(context),
-                    fontSize: 13,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                _buildCapturedPiecesCompact(gameState, forOpponent: isOpponent),
-              ],
-            ),
-          ),
-          const SizedBox(width: 4),
-          if (gameState.gameMode != GameMode.bot)
-            Flexible(
-              child: ChessTimerWidget(isWhite: isWhite, isActive: isActive),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCapturedPiecesCompact(
-    GameSession gameState, {
-    required bool forOpponent,
-  }) {
-    final settings = ref.watch(settingsProvider);
-    final isWhite = gameState.playerColor == PlayerColor.white;
-
-    // Determine which pieces were captured by analyzing move history
-    // We need to track which color made the capture based on move index
-    final piecesToShow = <String>[];
-    for (int i = 0; i < gameState.moveHistory.length; i++) {
-      final move = gameState.moveHistory[i];
-      if (move.capturedPiece != null) {
-        // Even index = white's move, odd index = black's move
-        final moveByWhite = i % 2 == 0;
-
-        if (forOpponent) {
-          // Show pieces captured BY opponent
-          if (isWhite && !moveByWhite) {
-            // Player is white, show pieces captured by black (white pieces)
-            piecesToShow.add('w${move.capturedPiece!.toUpperCase()}');
-          } else if (!isWhite && moveByWhite) {
-            // Player is black, show pieces captured by white (black pieces)
-            piecesToShow.add('b${move.capturedPiece!.toUpperCase()}');
-          }
-        } else {
-          // Show pieces captured BY player
-          if (isWhite && moveByWhite) {
-            // Player is white, show pieces captured by white (black pieces)
-            piecesToShow.add('b${move.capturedPiece!.toUpperCase()}');
-          } else if (!isWhite && !moveByWhite) {
-            // Player is black, show pieces captured by black (white pieces)
-            piecesToShow.add('w${move.capturedPiece!.toUpperCase()}');
-          }
-        }
-      }
-    }
-
-    return Row(
-      children:
-          piecesToShow
-              .take(8)
-              .map(
-                (piece) => Padding(
-                  padding: const EdgeInsets.only(right: 2),
-                  child: ChessPiece(
-                    piece: piece,
-                    size: 10,
-                    pieceSet: settings.currentPieceSet,
-                  ),
-                ),
-              )
-              .toList(),
-    );
-  }
-
-  Widget _buildHorizontalMoveList(GameSession gameState) {
-    return SizedBox(
-      height: 36,
-      child: _buildMoveList(gameState, horizontal: true),
-    );
-  }
-
-  Widget _buildMoveList(GameSession gameState, {bool horizontal = false}) {
-    final moves = gameState.moveHistory;
-    return ListView.builder(
-      controller: _moveListController,
-      scrollDirection: horizontal ? Axis.horizontal : Axis.vertical,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: (moves.length / 2).ceil(),
-      itemBuilder: (context, index) {
-        final moveNum = index + 1;
-        final whiteMove = moves[index * 2];
-        final blackMove =
-            (index * 2 + 1 < moves.length) ? moves[index * 2 + 1] : null;
-
-        final content = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$moveNum. ',
-              style: TextStyle(color: AppTheme.textHintFor(context)),
-            ),
-            Text(
-              whiteMove.san,
-              style: TextStyle(color: AppTheme.textPrimaryFor(context)),
-            ),
-            if (blackMove != null) ...[
-              const SizedBox(width: 8),
-              Text(
-                blackMove.san,
-                style: TextStyle(color: AppTheme.textPrimaryFor(context)),
-              ),
-            ],
-            if (horizontal) const SizedBox(width: 16),
-          ],
-        );
-
-        return horizontal
-            ? content
-            : Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: content,
             );
+          },
+          onHome: () {
+            Navigator.pop(dialogContext);
+            Navigator.pop(context);
+          },
+        );
       },
-    );
-  }
-
-  Widget _buildControlBar(BuildContext context, GameSession gameState) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final iconColor =
-        isDark ? AppTheme.textSecondary : AppTheme.textSecondaryLight;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          IconButton(
-            icon: Icon(Icons.undo, color: iconColor),
-            tooltip: 'Undo Move',
-            onPressed:
-                gameState.isCompleted
-                    ? null
-                    : () => ref.read(gameSessionProvider.notifier).undoMove(),
-          ),
-          IconButton(
-            icon: Icon(Icons.lightbulb_outline, color: iconColor),
-            tooltip: 'Engine Hint',
-            onPressed:
-                gameState.isCompleted
-                    ? null
-                    : () => _showHintDialog(context, ref),
-          ),
-          IconButton(
-            icon: Icon(Icons.swap_vert_rounded, color: iconColor),
-            tooltip: 'Flip Board',
-            onPressed:
-                () => ref.read(gameSessionProvider.notifier).toggleFlip(),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.flag_outlined,
-              color:
-                  gameState.isCompleted ? iconColor : Colors.redAccent.shade200,
-            ),
-            tooltip: 'Resign Game',
-            onPressed:
-                gameState.isCompleted
-                    ? null
-                    : () => _showResignConfirmation(context),
-          ),
-        ],
-      ),
     );
   }
 
@@ -821,13 +824,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final state = ref.read(gameSessionProvider);
     if (state == null) return;
 
-    // Check if we already have a hint
     if (state.hintDetails == null) {
-      // Need to fetch it first
       await ref.read(gameSessionProvider.notifier).useHint(ref);
     }
 
-    // Read again to get updated state
     final updatedState = ref.read(gameSessionProvider);
     if (updatedState == null || updatedState.hintDetails == null) return;
 
@@ -836,75 +836,68 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (context.mounted) {
       showDialog(
         context: context,
-        builder:
-            (context) => AlertDialog(
-              backgroundColor: AppTheme.surfaceColor(context),
-              title: Row(
-                children: [
-                  const Icon(Icons.lightbulb, color: AppTheme.accentColor),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Engine Hint',
-                    style: TextStyle(color: AppTheme.textPrimaryFor(context)),
-                  ),
-                ],
+        builder: (dialogCtx) => AlertDialog(
+          backgroundColor: AppTheme.surfaceLevel2(dialogCtx),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLg)),
+          title: Row(
+            children: [
+              const Icon(Icons.lightbulb_rounded, color: AppTheme.amberGold),
+              const SizedBox(width: 8),
+              Text(
+                'Engine Hint',
+                style: GoogleFonts.spaceGrotesk(
+                  color: AppTheme.textPrimaryFor(dialogCtx),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Best Move: ${hint.bestMove}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    hint.explanation,
-                    style: TextStyle(color: AppTheme.textSecondaryFor(context)),
-                  ),
-                  if (hint.tacticalMotif != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.flash_on,
-                          color: AppTheme.accentColor,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Motif: ${hint.tacticalMotif}',
-                          style: TextStyle(
-                            color: AppTheme.textPrimaryFor(context),
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (hint.alternativeMove != null) ...[
-                    const SizedBox(height: 8),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Best Move: ${hint.bestMove}',
+                style: GoogleFonts.spaceGrotesk(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                hint.explanation,
+                style: GoogleFonts.inter(
+                  color: AppTheme.textSecondaryFor(dialogCtx),
+                  fontSize: 13,
+                ),
+              ),
+              if (hint.tacticalMotif != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.flash_on_rounded, color: AppTheme.amberGold, size: 16),
+                    const SizedBox(width: 4),
                     Text(
-                      'Alternative: ${hint.alternativeMove}',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryFor(context),
-                        fontSize: 13,
+                      'Motif: ${hint.tacticalMotif}',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textPrimaryFor(dialogCtx),
+                        fontStyle: FontStyle.italic,
+                        fontSize: 12,
                       ),
                     ),
                   ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
                 ),
               ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Got it'),
             ),
+          ],
+        ),
       );
     }
   }
@@ -912,62 +905,143 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   void _showResignConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder:
-          (innerContext) => AlertDialog(
-            backgroundColor: AppTheme.surfaceColor(innerContext),
-            title: Text(
-              'Resign Game?',
-              style: TextStyle(color: AppTheme.textPrimaryFor(innerContext)),
-            ),
-            content: Text(
-              'Are you sure you want to resign this match?',
-              style: TextStyle(color: AppTheme.textSecondaryFor(innerContext)),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(innerContext),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.pop(innerContext);
-                  ref.read(gameSessionProvider.notifier).resign();
-                },
-                child: const Text('Resign'),
-              ),
-            ],
+      builder: (innerContext) => AlertDialog(
+        backgroundColor: AppTheme.surfaceLevel2(innerContext),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLg)),
+        title: Text(
+          'Resign Match?',
+          style: GoogleFonts.spaceGrotesk(
+            color: AppTheme.textPrimaryFor(innerContext),
+            fontWeight: FontWeight.bold,
           ),
+        ),
+        content: Text(
+          'Are you sure you want to resign? This will count as a loss in your match history.',
+          style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(innerContext)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(innerContext),
+            child: const Text('Keep Playing'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.crimsonRed,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+            ),
+            onPressed: () {
+              Navigator.pop(innerContext);
+              ref.read(gameSessionProvider.notifier).resign();
+            },
+            child: const Text('Resign'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showDrawConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder:
-          (innerContext) => AlertDialog(
-            backgroundColor: AppTheme.surfaceColor(innerContext),
-            title: Text(
-              'Offer Draw?',
-              style: TextStyle(color: AppTheme.textPrimaryFor(innerContext)),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(innerContext),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(innerContext);
-                  ref.read(gameSessionProvider.notifier).handleDraw();
-                },
-                child: const Text('Offer Draw'),
-              ),
-            ],
+      builder: (innerContext) => AlertDialog(
+        backgroundColor: AppTheme.surfaceLevel2(innerContext),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLg)),
+        title: Text(
+          'Offer Draw?',
+          style: GoogleFonts.spaceGrotesk(
+            color: AppTheme.textPrimaryFor(innerContext),
+            fontWeight: FontWeight.bold,
           ),
+        ),
+        content: Text(
+          'Offer a draw to your opponent for this game?',
+          style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(innerContext)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(innerContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.royalBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusSm)),
+            ),
+            onPressed: () {
+              Navigator.pop(innerContext);
+              ref.read(gameSessionProvider.notifier).handleDraw();
+            },
+            child: const Text('Offer Draw'),
+          ),
+        ],
+      ),
     );
+  }
+
+  List<String> _getCapturedPieces(GameSession gameState, {required bool forOpponent}) {
+    final isWhite = gameState.playerColor == PlayerColor.white;
+    final piecesToShow = <String>[];
+
+    for (int i = 0; i < gameState.moveHistory.length; i++) {
+      final move = gameState.moveHistory[i];
+      if (move.capturedPiece != null) {
+        final moveByWhite = i % 2 == 0;
+        if (forOpponent) {
+          if (isWhite && !moveByWhite) {
+            piecesToShow.add('w${move.capturedPiece!.toUpperCase()}');
+          } else if (!isWhite && moveByWhite) {
+            piecesToShow.add('b${move.capturedPiece!.toUpperCase()}');
+          }
+        } else {
+          if (isWhite && moveByWhite) {
+            piecesToShow.add('b${move.capturedPiece!.toUpperCase()}');
+          } else if (!isWhite && !moveByWhite) {
+            piecesToShow.add('w${move.capturedPiece!.toUpperCase()}');
+          }
+        }
+      }
+    }
+    return piecesToShow;
+  }
+
+  int _calculateMaterialAdvantage(GameSession gameState, {required bool isWhite}) {
+    int whiteCapturedValue = 0;
+    int blackCapturedValue = 0;
+
+    for (int i = 0; i < gameState.moveHistory.length; i++) {
+      final move = gameState.moveHistory[i];
+      if (move.capturedPiece != null) {
+        final val = _pieceValue(move.capturedPiece);
+        final moveByWhite = (i % 2 == 0);
+        if (moveByWhite) {
+          whiteCapturedValue += val;
+        } else {
+          blackCapturedValue += val;
+        }
+      }
+    }
+
+    return isWhite
+        ? (whiteCapturedValue - blackCapturedValue)
+        : (blackCapturedValue - whiteCapturedValue);
+  }
+
+  int _pieceValue(String? pieceChar) {
+    if (pieceChar == null || pieceChar.isEmpty) return 0;
+    switch (pieceChar.toLowerCase()) {
+      case 'p':
+        return 1;
+      case 'n':
+      case 'b':
+        return 3;
+      case 'r':
+        return 5;
+      case 'q':
+        return 9;
+      default:
+        return 0;
+    }
   }
 }

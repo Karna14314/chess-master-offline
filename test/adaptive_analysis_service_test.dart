@@ -5,14 +5,14 @@ import 'package:chess_master/models/analysis_model.dart';
 void main() {
   group('Analysis Configuration Constants', () {
     test(
-      'batchAnalysisDepth is set to 14 for accurate tactical assessment',
+      'batchAnalysisDepth is set to 10 for <10s full-game analysis',
       () {
-        expect(AppConstants.batchAnalysisDepth, equals(14));
+        expect(AppConstants.batchAnalysisDepth, equals(10));
       },
     );
 
-    test('batchAnalysisMultiPv is set to 2 for Great move detection', () {
-      expect(AppConstants.batchAnalysisMultiPv, equals(2));
+    test('batchAnalysisMultiPv is set to 1 for speed', () {
+      expect(AppConstants.batchAnalysisMultiPv, equals(1));
     });
 
     test('Opening pves are skipped for efficiency', () {

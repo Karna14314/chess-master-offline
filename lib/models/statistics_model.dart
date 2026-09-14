@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 
 class EloSnapshot {
   final int elo;
@@ -14,7 +15,7 @@ class EloSnapshot {
 
   factory EloSnapshot.fromMap(Map<String, dynamic> map) {
     return EloSnapshot(
-      elo: map['elo'] as int? ?? 1500,
+      elo: map['elo'] as int? ?? StatisticsModel.defaultGameElo,
       gameNumber: map['gameNumber'] as int? ?? 0,
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         map['timestamp'] as int? ?? DateTime.now().millisecondsSinceEpoch,
@@ -47,11 +48,22 @@ class StatisticsModel {
   final int hintsUsed;
   final int lastUpdated;
   final int currentGameElo;
+  final int initialGameElo;
   final int consecutiveWins;
   final int consecutiveLosses;
   final List<EloSnapshot> eloHistory;
+  // Peak records (persisted so failed attempts never erase the best).
+  final int highestPuzzleRating;
+  final int strongestBotEloBeaten;
+  final int gamesAnalysed;
+  // Lichess-style personal records.
+  final int maxWinStreak;
+  final int bestEloDate;
+  final int winsAsWhite;
+  final int winsAsBlack;
+  final int maxPuzzleStreak;
   static const int provisionalGames = 10;
-  static const int defaultGameElo = 1500;
+  static const int defaultGameElo = 400;
 
   const StatisticsModel({
     this.totalGames = 0,
@@ -68,9 +80,18 @@ class StatisticsModel {
     this.hintsUsed = 0,
     this.lastUpdated = 0,
     this.currentGameElo = defaultGameElo,
+    this.initialGameElo = defaultGameElo,
     this.consecutiveWins = 0,
     this.consecutiveLosses = 0,
     this.eloHistory = const [],
+    this.highestPuzzleRating = 1200,
+    this.strongestBotEloBeaten = 0,
+    this.gamesAnalysed = 0,
+    this.maxWinStreak = 0,
+    this.bestEloDate = 0,
+    this.winsAsWhite = 0,
+    this.winsAsBlack = 0,
+    this.maxPuzzleStreak = 0,
   });
 
   /// Win rate as a percentage
@@ -93,21 +114,36 @@ class StatisticsModel {
   double get averageGameTimeMinutes =>
       totalGames > 0 ? (totalGameTimeSeconds / totalGames) / 60 : 0;
 
-  /// Whether the player is still in provisional period
+  /// Whether the player is still in provisional period.
   bool get isProvisional => totalGames < provisionalGames;
 
-  /// Current K-factor based on provisional status
-  int get kFactor => isProvisional ? 40 : 32;
+  /// Calibrated K-factor for sequential, grounded rating adjustments:
+  /// - Provisional (<10 games): 24 (steady sequential placement, max swing ~22)
+  /// - Developing (<30 games): 20 (max swing ~18)
+  /// - Established (30+ games): 16 (max swing ~15)
+  int get kFactor {
+    if (totalGames < provisionalGames) return 24;
+    if (totalGames < 30) return 20;
+    return 16;
+  }
 
-  /// ELO trend over last N games (positive = improving)
+  /// ELO trend over recent games (positive = improving, negative = dipping)
   int get eloTrend {
-    if (eloHistory.length < 2) return 0;
+    if (eloHistory.isEmpty) return 0;
+    if (eloHistory.length == 1) {
+      return eloHistory.first.elo - initialGameElo;
+    }
     final recent =
         eloHistory.length > 10
             ? eloHistory.sublist(eloHistory.length - 10)
             : eloHistory;
-    return recent.last.elo - recent.first.elo;
+    final startElo =
+        eloHistory.length <= 10 ? initialGameElo : recent.first.elo;
+    return recent.last.elo - startElo;
   }
+
+  /// Strongest bot ELO ever beaten (0 = none yet).
+  int get strongestBotBeaten => strongestBotEloBeaten;
 
   /// Best ELO achieved
   int get bestElo {
@@ -116,6 +152,61 @@ class StatisticsModel {
       currentGameElo,
       eloHistory.map((e) => e.elo).reduce(math.max),
     );
+  }
+
+  /// Standard rating tier title
+  static String getRatingTier(int elo) {
+    if (elo >= 2200) return 'Grandmaster';
+    if (elo >= 1800) return 'Master';
+    if (elo >= 1400) return 'Intermediate';
+    if (elo >= 1000) return 'Club Player';
+    if (elo >= 700) return 'Apprentice';
+    return 'Novice';
+  }
+
+  /// Standard rating tier accent color
+  static Color getRatingColor(int elo) {
+    if (elo >= 2200) return const Color(0xFF00E5FF); // Diamond Cyan
+    if (elo >= 1800) return const Color(0xFF7B1FA2); // Master Purple
+    if (elo >= 1400) return const Color(0xFFFFB300); // Amber Gold
+    if (elo >= 1000) return const Color(0xFF1E88E5); // Royal Blue
+    if (elo >= 700) return const Color(0xFF00BFA5);  // Teal Apprentice
+    return const Color(0xFF8D6E63);                  // Warm Bronze Novice
+  }
+
+  /// Get details about the next rating tier milestone:
+  /// returns (nextTierName, nextTierElo, pointsNeeded, progressFraction 0.0..1.0)
+  (String, int, int, double)? get nextTierProgress {
+    if (currentGameElo >= 2200) return null; // Reached peak tier
+    int targetElo;
+    int floorElo;
+    String targetTier;
+
+    if (currentGameElo < 700) {
+      targetTier = 'Apprentice';
+      floorElo = 400;
+      targetElo = 700;
+    } else if (currentGameElo < 1000) {
+      targetTier = 'Club Player';
+      floorElo = 700;
+      targetElo = 1000;
+    } else if (currentGameElo < 1400) {
+      targetTier = 'Intermediate';
+      floorElo = 1000;
+      targetElo = 1400;
+    } else if (currentGameElo < 1800) {
+      targetTier = 'Master';
+      floorElo = 1400;
+      targetElo = 1800;
+    } else {
+      targetTier = 'Grandmaster';
+      floorElo = 1800;
+      targetElo = 2200;
+    }
+
+    final pointsNeeded = math.max(0, targetElo - currentGameElo);
+    final progress = ((currentGameElo - floorElo) / (targetElo - floorElo)).clamp(0.0, 1.0);
+    return (targetTier, targetElo, pointsNeeded, progress);
   }
 
   /// Create from database map
@@ -170,10 +261,42 @@ class StatisticsModel {
       totalGameTimeSeconds: map['total_game_time_seconds'] as int? ?? 0,
       hintsUsed: map['hints_used'] as int? ?? 0,
       lastUpdated: map['last_updated'] as int? ?? 0,
-      currentGameElo: map['current_game_elo'] as int? ?? defaultGameElo,
+      currentGameElo: () {
+        final raw = map['current_game_elo'] as int?;
+        final games = map['total_games'] as int? ?? 0;
+        if (games == 0 &&
+            (raw == null ||
+                raw == 1500 ||
+                raw == 1000 ||
+                raw == 400 ||
+                raw == 0)) {
+          return defaultGameElo;
+        }
+        return raw ?? defaultGameElo;
+      }(),
+      initialGameElo: map['initial_game_elo'] as int? ?? () {
+        if (eloHistory.isNotEmpty) {
+          final firstElo = eloHistory.first.elo;
+          if (firstElo >= 1150 && firstElo <= 1250) return 1200;
+          if (firstElo >= 750 && firstElo <= 850) return 800;
+          return defaultGameElo;
+        }
+        return map['current_game_elo'] as int? ?? defaultGameElo;
+      }(),
       consecutiveWins: map['consecutive_wins'] as int? ?? 0,
       consecutiveLosses: map['consecutive_losses'] as int? ?? 0,
       eloHistory: eloHistory,
+      // Backfill peaks from existing data so long-time users keep records.
+      highestPuzzleRating:
+          map['highest_puzzle_rating'] as int? ??
+          (map['current_puzzle_rating'] as int? ?? 1200),
+      strongestBotEloBeaten: map['strongest_bot_elo_beaten'] as int? ?? 0,
+      gamesAnalysed: map['games_analysed'] as int? ?? 0,
+      maxWinStreak: map['max_win_streak'] as int? ?? 0,
+      bestEloDate: map['best_elo_date'] as int? ?? 0,
+      winsAsWhite: map['wins_as_white'] as int? ?? 0,
+      winsAsBlack: map['wins_as_black'] as int? ?? 0,
+      maxPuzzleStreak: map['max_puzzle_streak'] as int? ?? 0,
     );
   }
 
@@ -199,9 +322,18 @@ class StatisticsModel {
       'hints_used': hintsUsed,
       'last_updated': DateTime.now().millisecondsSinceEpoch,
       'current_game_elo': currentGameElo,
+      'initial_game_elo': initialGameElo,
       'consecutive_wins': consecutiveWins,
       'consecutive_losses': consecutiveLosses,
       'elo_history': jsonEncode(eloHistory.map((e) => e.toMap()).toList()),
+      'highest_puzzle_rating': highestPuzzleRating,
+      'strongest_bot_elo_beaten': strongestBotEloBeaten,
+      'games_analysed': gamesAnalysed,
+      'max_win_streak': maxWinStreak,
+      'best_elo_date': bestEloDate,
+      'wins_as_white': winsAsWhite,
+      'wins_as_black': winsAsBlack,
+      'max_puzzle_streak': maxPuzzleStreak,
     };
   }
 
@@ -220,9 +352,18 @@ class StatisticsModel {
     int? hintsUsed,
     int? lastUpdated,
     int? currentGameElo,
+    int? initialGameElo,
     int? consecutiveWins,
     int? consecutiveLosses,
     List<EloSnapshot>? eloHistory,
+    int? highestPuzzleRating,
+    int? strongestBotEloBeaten,
+    int? gamesAnalysed,
+    int? maxWinStreak,
+    int? bestEloDate,
+    int? winsAsWhite,
+    int? winsAsBlack,
+    int? maxPuzzleStreak,
   }) {
     return StatisticsModel(
       totalGames: totalGames ?? this.totalGames,
@@ -239,9 +380,19 @@ class StatisticsModel {
       hintsUsed: hintsUsed ?? this.hintsUsed,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       currentGameElo: currentGameElo ?? this.currentGameElo,
+      initialGameElo: initialGameElo ?? this.initialGameElo,
       consecutiveWins: consecutiveWins ?? this.consecutiveWins,
       consecutiveLosses: consecutiveLosses ?? this.consecutiveLosses,
       eloHistory: eloHistory ?? this.eloHistory,
+      highestPuzzleRating: highestPuzzleRating ?? this.highestPuzzleRating,
+      strongestBotEloBeaten:
+          strongestBotEloBeaten ?? this.strongestBotEloBeaten,
+      gamesAnalysed: gamesAnalysed ?? this.gamesAnalysed,
+      maxWinStreak: maxWinStreak ?? this.maxWinStreak,
+      bestEloDate: bestEloDate ?? this.bestEloDate,
+      winsAsWhite: winsAsWhite ?? this.winsAsWhite,
+      winsAsBlack: winsAsBlack ?? this.winsAsBlack,
+      maxPuzzleStreak: maxPuzzleStreak ?? this.maxPuzzleStreak,
     );
   }
 }

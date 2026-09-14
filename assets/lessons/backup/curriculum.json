@@ -1,0 +1,446 @@
+{
+  "sections": [
+    {
+      "id": "checkmates",
+      "title": "Checkmate Mastery",
+      "description": "Essential mating patterns and execution techniques",
+      "icon": "flag",
+      "categories": [
+        {
+          "id": "piece_checkmates_1",
+          "title": "Piece Checkmates I",
+          "subtitle": "Basic checkmates with major pieces",
+          "difficulty": "Beginner",
+          "icon": "shield",
+          "chapterIds": [
+            "cm_queen_1",
+            "cm_queen_2",
+            "cm_two_rooks_1",
+            "cm_rook_1",
+            "cm_rook_2"
+          ]
+        },
+        {
+          "id": "checkmate_patterns_1",
+          "title": "Checkmate Patterns I",
+          "subtitle": "Back-rank and corridor mates",
+          "difficulty": "Beginner",
+          "icon": "bolt",
+          "chapterIds": [
+            "cm_backrank_1",
+            "cm_backrank_2",
+            "cm_backrank_3",
+            "cm_opera_1"
+          ]
+        },
+        {
+          "id": "checkmate_patterns_2",
+          "title": "Checkmate Patterns II",
+          "subtitle": "Anastasia, Arabian, and Hook mates",
+          "difficulty": "Intermediate",
+          "icon": "crosshair",
+          "chapterIds": [
+            "cm_anastasia_1",
+            "cm_anastasia_2",
+            "cm_arabian_1",
+            "cm_arabian_2"
+          ]
+        },
+        {
+          "id": "checkmate_patterns_3",
+          "title": "Checkmate Patterns III",
+          "subtitle": "Smothered mate and variations",
+          "difficulty": "Intermediate",
+          "icon": "lock",
+          "chapterIds": [
+            "cm_smothered_1",
+            "cm_smothered_2",
+            "cm_smothered_3"
+          ]
+        },
+        {
+          "id": "checkmate_patterns_4",
+          "title": "Checkmate Patterns IV",
+          "subtitle": "Boden's, Balestra, and double bishop mates",
+          "difficulty": "Advanced",
+          "icon": "star",
+          "chapterIds": [
+            "cm_boden_1",
+            "cm_boden_2",
+            "cm_double_bishop_1"
+          ]
+        },
+        {
+          "id": "piece_checkmates_2",
+          "title": "Piece Checkmates II",
+          "subtitle": "Two bishops and bishop with knight setup",
+          "difficulty": "Advanced",
+          "icon": "award",
+          "chapterIds": [
+            "cm_two_bishops_1",
+            "cm_two_bishops_2"
+          ]
+        },
+        {
+          "id": "knight_bishop_mate",
+          "title": "Knight & Bishop Mate",
+          "subtitle": "The ultimate test of coordination and corner driving",
+          "difficulty": "Expert",
+          "icon": "crown",
+          "chapterIds": [
+            "cm_kb_1",
+            "cm_kb_2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fundamental_tactics",
+      "title": "Fundamental Tactics",
+      "description": "The building blocks of tactical chess vision",
+      "icon": "swords",
+      "categories": [
+        {
+          "id": "the_pin",
+          "title": "The Pin",
+          "subtitle": "Pin pieces to more valuable targets",
+          "difficulty": "Beginner",
+          "icon": "pin",
+          "chapterIds": [
+            "tac_pin_1",
+            "tac_pin_2",
+            "tac_pin_3",
+            "tac_pin_4"
+          ]
+        },
+        {
+          "id": "the_skewer",
+          "title": "The Skewer",
+          "subtitle": "Attack a high-value piece to win what lies behind",
+          "difficulty": "Beginner",
+          "icon": "arrow_right",
+          "chapterIds": [
+            "tac_skewer_1",
+            "tac_skewer_2",
+            "tac_skewer_3"
+          ]
+        },
+        {
+          "id": "the_fork",
+          "title": "The Fork",
+          "subtitle": "Double attacks with knights, pawns, and pieces",
+          "difficulty": "Beginner",
+          "icon": "fork",
+          "chapterIds": [
+            "tac_fork_1",
+            "tac_fork_2",
+            "tac_fork_3",
+            "tac_fork_4"
+          ]
+        },
+        {
+          "id": "discovered_attacks",
+          "title": "Discovered Attacks",
+          "subtitle": "Unleash devastating hidden line attacks",
+          "difficulty": "Intermediate",
+          "icon": "eye",
+          "chapterIds": [
+            "tac_disc_1",
+            "tac_disc_2",
+            "tac_disc_3"
+          ]
+        },
+        {
+          "id": "double_check",
+          "title": "Double Check",
+          "subtitle": "The most forcing tactical weapon in chess",
+          "difficulty": "Intermediate",
+          "icon": "zap",
+          "chapterIds": [
+            "tac_dcheck_1",
+            "tac_dcheck_2"
+          ]
+        },
+        {
+          "id": "overloaded_pieces",
+          "title": "Overloaded Pieces",
+          "subtitle": "Exploiting defenders tasked with multiple jobs",
+          "difficulty": "Intermediate",
+          "icon": "layers",
+          "chapterIds": [
+            "tac_overload_1",
+            "tac_overload_2"
+          ]
+        },
+        {
+          "id": "zwischenzug",
+          "title": "Zwischenzug",
+          "subtitle": "In-between moves that disrupt calculation",
+          "difficulty": "Advanced",
+          "icon": "clock",
+          "chapterIds": [
+            "tac_zwischen_1",
+            "tac_zwischen_2"
+          ]
+        },
+        {
+          "id": "x_ray",
+          "title": "X-Ray Attack",
+          "subtitle": "Attacking or defending through enemy pieces",
+          "difficulty": "Intermediate",
+          "icon": "maximize",
+          "chapterIds": [
+            "tac_xray_1",
+            "tac_xray_2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced_tactics",
+      "title": "Advanced Tactics",
+      "description": "Combinations, sacrifices, and positional geometry",
+      "icon": "flame",
+      "categories": [
+        {
+          "id": "zugzwang",
+          "title": "Zugzwang",
+          "subtitle": "When any legal move ruins the position",
+          "difficulty": "Advanced",
+          "icon": "hand",
+          "chapterIds": [
+            "adv_zug_1",
+            "adv_zug_2"
+          ]
+        },
+        {
+          "id": "interference",
+          "title": "Interference",
+          "subtitle": "Severing the line between defending pieces",
+          "difficulty": "Advanced",
+          "icon": "scissors",
+          "chapterIds": [
+            "adv_interfere_1",
+            "adv_interfere_2"
+          ]
+        },
+        {
+          "id": "greek_gift",
+          "title": "Greek Gift Sacrifice",
+          "subtitle": "The classical Bxh7+ bishop sacrifice on kingside",
+          "difficulty": "Advanced",
+          "icon": "gift",
+          "chapterIds": [
+            "adv_greekgift_1",
+            "adv_greekgift_2"
+          ]
+        },
+        {
+          "id": "deflection",
+          "title": "Deflection",
+          "subtitle": "Forcing key defenders away from critical squares",
+          "difficulty": "Intermediate",
+          "icon": "shuffle",
+          "chapterIds": [
+            "adv_deflect_1",
+            "adv_deflect_2",
+            "adv_deflect_3"
+          ]
+        },
+        {
+          "id": "attraction",
+          "title": "Attraction & Decoy",
+          "subtitle": "Luring enemy king or queen to lethal squares",
+          "difficulty": "Intermediate",
+          "icon": "magnet",
+          "chapterIds": [
+            "adv_attract_1",
+            "adv_attract_2"
+          ]
+        },
+        {
+          "id": "underpromotion",
+          "title": "Underpromotion",
+          "subtitle": "Promoting to Knight, Rook, or Bishop to win",
+          "difficulty": "Intermediate",
+          "icon": "chevrons_up",
+          "chapterIds": [
+            "adv_underprom_1",
+            "adv_underprom_2"
+          ]
+        },
+        {
+          "id": "desperado",
+          "title": "Desperado",
+          "subtitle": "Inflicting maximum collateral before piece demise",
+          "difficulty": "Advanced",
+          "icon": "skull",
+          "chapterIds": [
+            "adv_desperado_1",
+            "adv_desperado_2"
+          ]
+        },
+        {
+          "id": "counter_check",
+          "title": "Counter Check",
+          "subtitle": "Parrying check with an even stronger check",
+          "difficulty": "Advanced",
+          "icon": "shield_alert",
+          "chapterIds": [
+            "adv_ccheck_1",
+            "adv_ccheck_2"
+          ]
+        },
+        {
+          "id": "undermining",
+          "title": "Undermining",
+          "subtitle": "Removing the foundation of an enemy structure",
+          "difficulty": "Intermediate",
+          "icon": "hammer",
+          "chapterIds": [
+            "adv_undermine_1",
+            "adv_undermine_2"
+          ]
+        },
+        {
+          "id": "clearance",
+          "title": "Clearance Sacrifice",
+          "subtitle": "Vacating squares or diagonals for a winning piece",
+          "difficulty": "Advanced",
+          "icon": "wind",
+          "chapterIds": [
+            "adv_clear_1",
+            "adv_clear_2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endgames",
+      "title": "Endgame Essentials",
+      "description": "Theoretical pawn and rook endgame techniques",
+      "icon": "anchor",
+      "categories": [
+        {
+          "id": "key_squares",
+          "title": "Key Squares",
+          "subtitle": "King position rules in king and pawn endings",
+          "difficulty": "Beginner",
+          "icon": "key",
+          "chapterIds": [
+            "end_key_1",
+            "end_key_2",
+            "end_key_3"
+          ]
+        },
+        {
+          "id": "the_opposition",
+          "title": "The Opposition",
+          "subtitle": "Direct, diagonal, and distant opposition",
+          "difficulty": "Intermediate",
+          "icon": "users",
+          "chapterIds": [
+            "end_opp_1",
+            "end_opp_2"
+          ]
+        },
+        {
+          "id": "pawn_7th_rank",
+          "title": "7th-Rank Rook Pawn",
+          "subtitle": "Defending against queen with a-pawn or h-pawn",
+          "difficulty": "Intermediate",
+          "icon": "shield",
+          "chapterIds": [
+            "end_pawn7_1",
+            "end_pawn7_2"
+          ]
+        },
+        {
+          "id": "basic_rook_endgames",
+          "title": "Lucena & Philidor",
+          "subtitle": "The two cornerstone rook endgame techniques",
+          "difficulty": "Intermediate",
+          "icon": "castle",
+          "chapterIds": [
+            "end_lucena_1",
+            "end_philidor_1"
+          ]
+        },
+        {
+          "id": "intermediate_rook_endings",
+          "title": "Intermediate Rook Endings",
+          "subtitle": "Cutting the king and active rook defense",
+          "difficulty": "Advanced",
+          "icon": "crosshair",
+          "chapterIds": [
+            "end_rook_cut_1",
+            "end_rook_active_1"
+          ]
+        },
+        {
+          "id": "practical_rook_endings",
+          "title": "Practical Rook Endings",
+          "subtitle": "Managing passed pawns and rooks behind pawns",
+          "difficulty": "Advanced",
+          "icon": "trending_up",
+          "chapterIds": [
+            "end_tarrasch_rule_1",
+            "end_passer_race_1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "middlegame_strategy",
+      "title": "Middlegame & Strategy",
+      "description": "Strategic planning, pawn structures, and piece placement",
+      "icon": "compass",
+      "categories": [
+        {
+          "id": "outposts",
+          "title": "Knight Outposts",
+          "subtitle": "Anchoring pieces on unshakeable central holes",
+          "difficulty": "Intermediate",
+          "icon": "target",
+          "chapterIds": [
+            "mid_outpost_1",
+            "mid_outpost_2"
+          ]
+        },
+        {
+          "id": "open_files",
+          "title": "Open Files & 7th Rank",
+          "subtitle": "Controlling open avenues and pigs on the seventh",
+          "difficulty": "Intermediate",
+          "icon": "columns",
+          "chapterIds": [
+            "mid_files_1",
+            "mid_files_2"
+          ]
+        },
+        {
+          "id": "pawn_levers",
+          "title": "Pawn Levers & Weaknesses",
+          "subtitle": "Pry open closed positions and target backward pawns",
+          "difficulty": "Advanced",
+          "icon": "activity",
+          "chapterIds": [
+            "mid_lever_1",
+            "mid_lever_2"
+          ]
+        },
+        {
+          "id": "king_safety",
+          "title": "Castling & King Attacks",
+          "subtitle": "Opposite-side castling storms and piece sacrifices",
+          "difficulty": "Advanced",
+          "icon": "zap",
+          "chapterIds": [
+            "mid_kingsafety_1",
+            "mid_kingsafety_2"
+          ]
+        }
+      ]
+    }
+  ]
+}

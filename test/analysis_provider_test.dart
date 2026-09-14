@@ -31,7 +31,7 @@ void main() {
     // runs concurrently with goToMove(), causing position state corruption
     // Fix: _analysisToken increments on goToMove(), loop checks token != _analysisToken
     test(
-      'goToMove cancels running analyzeFullGame - _analysisToken pattern',
+      'goToMove preserves running analyzeFullGame without aborting',
       () async {
         // Create a list of valid moves (using the correct ChessMove constructor)
         final moves = [
@@ -155,20 +155,18 @@ void main() {
         // Wait a small amount for analysis to start (but not complete)
         await Future.delayed(const Duration(milliseconds: 100));
 
-        // Call goToMove which should cancel the running analysis
+        // Call goToMove which should navigate without aborting the background analysis
         await notifier.goToMove(5);
 
-        // Wait for analysis to complete (or be cancelled)
+        // Wait for analysis to complete
         await analysisFuture;
 
         // Get the final state
         final state = container.read(analysisProvider);
 
-        // The key assertion: we didn't hang forever (test timeout would fail if it hung)
-        // If the token wasn't working, analyzeFullGame would continue processing
-        // all moves even after goToMove
-        // Analysis should either be complete (isAnalyzing=false) or partially done
-        expect(state.isAnalyzing || state.analyzedMoves.isNotEmpty, isTrue);
+        // Analysis completed all moves and currentMoveIndex is at 5
+        expect(state.analyzedMoves.length, equals(moves.length));
+        expect(state.currentMoveIndex, equals(5));
       },
       timeout: const Timeout(Duration(seconds: 30)),
     );

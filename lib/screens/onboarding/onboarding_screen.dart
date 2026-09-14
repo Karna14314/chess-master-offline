@@ -3,8 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
+import 'package:chess_master/core/services/notification_service.dart';
+import 'package:chess_master/core/constants/app_constants.dart';
+import 'package:chess_master/models/bot_profile.dart';
 import 'package:chess_master/providers/settings_provider.dart';
-import 'package:chess_master/screens/main_screen.dart';
+import 'package:chess_master/providers/statistics_provider.dart';
+import 'package:chess_master/providers/game_session_viewmodel.dart';
+import 'package:chess_master/screens/game/game_screen.dart';
 
 /// Onboarding screen for first-time players.
 /// Features welcome message, skill level picker, feature highlights, and privacy positioning.
@@ -19,6 +24,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   int _selectedSkillLevel = 1; // 1 = Beginner, 3 = Intermediate, 5 = Advanced
+  bool _enableReminders = true;
 
   @override
   void dispose() {
@@ -33,10 +39,58 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     // Persist selected starting difficulty
     ref.read(settingsProvider.notifier).setLastDifficulty(_selectedSkillLevel);
 
+    // Map self-declared skill to a starting rating so Intermediate/Advanced
+    // players don't grind up from Novice. Fresh accounts only.
+    final startingElo =
+        _selectedSkillLevel >= 5
+            ? 1200
+            : _selectedSkillLevel >= 3
+            ? 800
+            : 400;
+    try {
+      await ref.read(statisticsProvider.notifier).setStartingElo(startingElo);
+    } catch (_) {}
+
+    // In-context reminder opt-in: only ask the OS once the user said yes
+    // here (Android 13+ requires an in-context prompt, not a splash ask).
+    ref
+        .read(settingsProvider.notifier)
+        .setNotificationsEnabled(_enableReminders);
+    if (_enableReminders) {
+      final granted =
+          await NotificationService.instance.requestPermissions();
+      if (granted) {
+        NotificationService.instance.scheduleDailyPuzzleReminder();
+        NotificationService.instance.scheduleStreakReminder();
+      }
+    } else {
+      NotificationService.instance.cancelDailyPuzzleReminder();
+      NotificationService.instance.cancelStreakReminder();
+    }
+
+    // Drop first-time players straight into a Rusty game instead of an
+    // empty home screen — onboarding ends in an action, not a menu.
+    BotProfile rusty;
+    try {
+      rusty = BotProfile.getById('bot_rusty');
+    } catch (_) {
+      rusty = BotProfile.allBots.first;
+    }
+    try {
+      ref.read(gameSessionProvider.notifier).startNewGame(
+        gameMode: GameMode.bot,
+        botType: rusty.engineType,
+        difficulty: rusty.difficultyLevel,
+        timeControl: AppConstants.timeControls[0],
+        playerColor: PlayerColor.white,
+        botProfile: rusty,
+      );
+    } catch (_) {}
+
     if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
+        MaterialPageRoute(builder: (context) => const GameScreen()),
       );
     }
   }
@@ -225,8 +279,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     Color cardColor,
     Color borderColor,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,12 +430,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     Color cardColor,
     Color borderColor,
   ) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 24),
           Text(
             'Everything You Need',
             style: GoogleFonts.inter(
@@ -425,6 +480,60 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             textPrimary: textPrimary,
             textSecondary: textSecondary,
           ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor),
+              color: cardColor,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.notifications_none_outlined,
+                    color: Colors.amber,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Daily reminders',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: textPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Puzzle + streak nudges (change anytime in Settings)',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _enableReminders,
+                  onChanged:
+                      (value) => setState(() => _enableReminders = value),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );

@@ -8,6 +8,10 @@ import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:chess_master/models/game_session.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
+import 'package:chess_master/widgets/shared/app_card.dart';
+import 'package:chess_master/widgets/shared/app_badge.dart';
+import 'package:chess_master/widgets/shared/mini_board.dart';
+import 'package:chess_master/screens/history/game_history_screen.dart';
 
 /// Enhanced analysis menu screen matching the new requirements
 class AnalysisMenuScreen extends ConsumerWidget {
@@ -53,15 +57,13 @@ class AnalysisMenuScreen extends ConsumerWidget {
                       icon: Icons.grid_on_outlined,
                       color: AppTheme.primaryColor,
                       onTap: () {
-                        final session = gameSession;
-                        if (session == null) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder:
                                 (context) => AnalysisScreen(
-                                  moves: session.moveHistory,
-                                  startingFen: session.startingFen,
+                                  moves: gameSession.moveHistory,
+                                  startingFen: gameSession.startingFen,
                                 ),
                           ),
                         );
@@ -94,13 +96,19 @@ class AnalysisMenuScreen extends ConsumerWidget {
                       _SectionHeader(title: 'Recent Analyses'),
                       TextButton(
                         onPressed: () {
-                          // Could navigate to a full history screen here, but
-                          // the main history screen is already accessible via the main nav.
-                          // For now, this could just show more items in the list.
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const GameHistoryScreen(),
+                            ),
+                          );
                         },
                         child: Text(
                           'View Full History',
-                          style: TextStyle(color: AppTheme.primaryColor),
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -255,61 +263,51 @@ class _AnalysisOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppTheme.cardColor(context),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.borderColorFor(context)),
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppTheme.space16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppTheme.space12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 28),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+          const SizedBox(width: AppTheme.space16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimaryFor(context),
+                  ),
                 ),
-                child: Icon(icon, color: color, size: 32),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimaryFor(context),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppTheme.textSecondaryFor(context),
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppTheme.textSecondaryFor(context),
+                    height: 1.3,
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: AppTheme.textHintFor(context),
-                size: 28,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: AppTheme.space8),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: AppTheme.textHintFor(context),
+            size: 24,
+          ),
+        ],
       ),
     );
   }
@@ -341,104 +339,100 @@ class _SavedGameCard extends StatelessWidget {
       opponent = 'Unknown';
     }
 
-    final accuracyText =
-        game.whiteAccuracy != null
-            ? '${game.whiteAccuracy!.toStringAsFixed(1)}%'
-            : '-';
-
-    // Determine the color played if possible
-    Color iconColor = AppTheme.primaryColor;
-    if (game.gameMode == GameMode.bot) {
-      iconColor =
-          game.playerColor == PlayerColor.white
-              ? Colors.white
-              : Colors.grey[400]!;
+    // Determine badge color and icon for result
+    final Color badgeColor;
+    final IconData badgeIcon;
+    final lower = result.toLowerCase();
+    if (lower.contains('win') || lower.contains('won')) {
+      badgeColor = AppTheme.emeraldGreen;
+      badgeIcon = Icons.check_circle_outline_rounded;
+    } else if (lower.contains('loss') || lower.contains('lost')) {
+      badgeColor = AppTheme.crimsonRed;
+      badgeIcon = Icons.cancel_outlined;
+    } else if (lower.contains('draw')) {
+      badgeColor = AppTheme.amberGold;
+      badgeIcon = Icons.remove_circle_outline_rounded;
+    } else {
+      badgeColor = AppTheme.royalBlue;
+      badgeIcon = Icons.info_outline_rounded;
     }
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.cardColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColorFor(context)),
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppTheme.space16),
+      child: Row(
+        children: [
+          MiniBoard(
+            fen: game.startingFen,
+            size: 52,
+            isFlipped: game.isFlipped,
+            borderRadius: AppTheme.radiusSm,
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceColor(context),
-                  borderRadius: BorderRadius.circular(8),
+          const SizedBox(width: AppTheme.space12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isHuman ? 'Human Game' : 'vs $opponent',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimaryFor(context),
+                  ),
                 ),
-                child: Icon(
-                  isHuman ? Icons.person_outline : Icons.smart_toy_outlined,
-                  color: iconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
+                    AppBadge.status(label: result, color: badgeColor, icon: badgeIcon),
                     Text(
-                      isHuman ? 'Human Game' : 'vs $opponent',
+                      '• ${game.moveHistory.length} moves',
                       style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimaryFor(context),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$result • ${game.moveHistory.length} moves',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
+                        fontSize: 12,
                         color: AppTheme.textSecondaryFor(context),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (game.whiteAccuracy != null)
-                    Text(
-                      accuracyText,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: _getAccuracyColor(game.whiteAccuracy!),
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                  Text(
-                    dateStr,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppTheme.textHintFor(context),
-                    ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (game.whiteAccuracy != null)
+                Text(
+                  '${game.whiteAccuracy!.toStringAsFixed(1)}%',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: _getAccuracyColor(game.whiteAccuracy!),
                   ),
-                ],
+                ),
+              const SizedBox(height: 4),
+              Text(
+                dateStr,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppTheme.textHintFor(context),
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 
   Color _getAccuracyColor(double accuracy) {
-    if (accuracy >= 90) return Colors.blue;
-    if (accuracy >= 80) return Colors.green;
-    if (accuracy >= 70) return Colors.yellow;
+    if (accuracy >= 90) return AppTheme.royalBlue;
+    if (accuracy >= 80) return AppTheme.emeraldGreen;
+    if (accuracy >= 70) return AppTheme.amberGold;
     if (accuracy >= 50) return Colors.orange;
-    return Colors.red;
+    return AppTheme.crimsonRed;
   }
 }

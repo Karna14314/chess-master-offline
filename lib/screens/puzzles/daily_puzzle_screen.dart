@@ -34,13 +34,6 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
 
   @override
   void dispose() {
-    // Reset orientation
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeRight,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
     super.dispose();
   }
 
@@ -146,7 +139,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (state.errorMessage != null)
-                _buildErrorMessage(state.errorMessage!),
+                _buildErrorMessage(state.errorMessage!, state.lastRatingDelta),
               if (state.state == PuzzleState.correct) _buildSuccessMessage(),
             ],
           ),
@@ -236,7 +229,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
     );
   }
 
-  Widget _buildErrorMessage(String message) {
+  Widget _buildErrorMessage(String message, [int? delta]) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
@@ -251,8 +244,8 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              message,
-              style: GoogleFonts.inter(color: AppTheme.error),
+              delta != null ? '$message ($delta)' : message,
+              style: GoogleFonts.inter(color: AppTheme.error, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -480,6 +473,15 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
                   ),
                   Divider(height: 24, color: AppTheme.borderColorFor(context)),
                   _buildStatRow('Hints Used', '${state.hintsUsed}'),
+                  if (state.lastRatingDelta != null) ...[
+                    Divider(height: 24, color: AppTheme.borderColorFor(context)),
+                    _buildStatRow(
+                      'Rating Change',
+                      state.lastRatingDelta! >= 0
+                          ? '+${state.lastRatingDelta}'
+                          : '${state.lastRatingDelta}',
+                    ),
+                  ],
                 ],
               ),
             ),

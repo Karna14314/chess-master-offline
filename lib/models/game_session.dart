@@ -2,6 +2,7 @@ import 'package:chess_master/core/models/chess_models.dart';
 import 'dart:convert';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/game_model.dart';
+import 'package:chess_master/models/bot_profile.dart';
 import 'package:chess/chess.dart' as chess;
 
 /// Represents a centralized game session and acts as the single source of truth for the game state.
@@ -35,6 +36,10 @@ class GameSession {
   final bool isRecorded;
   final double? whiteAccuracy;
   final double? blackAccuracy;
+
+  // Bot identity / campaign plumbing (persisted)
+  final String? botId;
+  final int? campaignLevel;
 
   // UI State (Not persisted in DB)
   final String? selectedSquare;
@@ -74,6 +79,8 @@ class GameSession {
     this.hint,
     this.hintDetails,
     this.hintsUsed = 0,
+    this.botId,
+    this.campaignLevel,
   });
 
   /// Create a fresh session
@@ -86,11 +93,12 @@ class GameSession {
     String? startingFen,
     bool isPuzzle = false,
     String? puzzleId,
+    String? botId,
+    int? campaignLevel,
   }) {
     final now = DateTime.now();
     final diff = difficulty ?? AppConstants.difficultyLevels[4];
     final tc = timeControl ?? AppConstants.timeControls[0];
-
     PlayerColor actualColor = playerColor;
     if (actualColor == PlayerColor.random) {
       actualColor =
@@ -139,12 +147,16 @@ class GameSession {
       isFlipped:
           actualColor == PlayerColor.black, // Default flip for black player
       hintsUsed: 0,
+      botId: botId,
+      campaignLevel: campaignLevel,
     );
   }
 
   bool get isWhiteTurn => fen.split(' ')[1] == 'w';
   bool get isBlackTurn => !isWhiteTurn;
   bool get isBot => gameMode == GameMode.bot;
+  BotProfile? get botProfile =>
+      botId != null ? BotProfile.getById(botId!) : null;
   bool get isLocalMultiplayer => gameMode == GameMode.localMultiplayer;
   bool get isAnalysis => gameMode == GameMode.analysis;
 
@@ -195,6 +207,8 @@ class GameSession {
     ChessMove? hint,
     HintResult? hintDetails,
     int? hintsUsed,
+    String? botId,
+    int? campaignLevel,
   }) {
     return GameSession(
       id: id ?? this.id,
@@ -227,6 +241,8 @@ class GameSession {
       legalMoves: clearSelection ? const [] : (legalMoves ?? this.legalMoves),
       hint: clearHint ? null : (hint ?? this.hint),
       hintsUsed: hintsUsed ?? this.hintsUsed,
+      botId: botId ?? this.botId,
+      campaignLevel: campaignLevel ?? this.campaignLevel,
     );
   }
 
@@ -259,6 +275,8 @@ class GameSession {
       'whiteAccuracy': whiteAccuracy,
       'blackAccuracy': blackAccuracy,
       'hintsUsed': hintsUsed,
+      'botId': botId,
+      'campaignLevel': campaignLevel,
     };
   }
 
@@ -345,6 +363,8 @@ class GameSession {
       whiteAccuracy: (map['whiteAccuracy'] as num?)?.toDouble(),
       blackAccuracy: (map['blackAccuracy'] as num?)?.toDouble(),
       hintsUsed: map['hintsUsed'] as int? ?? 0,
+      botId: map['botId'] as String?,
+      campaignLevel: map['campaignLevel'] as int?,
     );
   }
 }

@@ -48,6 +48,7 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     required int moveCount,
     required int gameTimeSeconds,
     String? openingName,
+    bool? isPlayerWhite,
   }) async {
     // Update ELO-specific stats
     final newGamesByElo = Map<int, EloStats>.from(state.gamesByElo);
@@ -74,20 +75,40 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
       openingsPlayed: newOpeningsPlayed,
       totalMoves: state.totalMoves + moveCount,
       totalGameTimeSeconds: state.totalGameTimeSeconds + gameTimeSeconds,
+      strongestBotEloBeaten:
+          isWin && botElo > state.strongestBotEloBeaten
+              ? botElo
+              : state.strongestBotEloBeaten,
+      winsAsWhite:
+          isWin && (isPlayerWhite ?? true)
+              ? state.winsAsWhite + 1
+              : state.winsAsWhite,
+      winsAsBlack:
+          isWin && !(isPlayerWhite ?? true)
+              ? state.winsAsBlack + 1
+              : state.winsAsBlack,
     );
 
     await _saveStatistics();
   }
 
-  /// Record game result with ELO calculation
+  /// Record a completed full-game analysis.
+  Future<void> recordGameAnalysed() async {
+    state = state.copyWith(gamesAnalysed: state.gamesAnalysed + 1);
+    await _saveStatistics();
+  }
+
+  /// Record game result with calibrated, sequential ELO calculation
   Future<void> recordGameElo({
     required int botElo,
     required bool isWin,
     required bool isLoss,
     required bool isDraw,
   }) async {
+    // 1. Standard FIDE 400-point difference clamp prevents explosive rating jumps or deflation
+    final rawDiff = (botElo - state.currentGameElo).clamp(-400, 400);
     final expectedScore =
-        1.0 / (1.0 + math.pow(10, (botElo - state.currentGameElo) / 400));
+        1.0 / (1.0 + math.pow(10, rawDiff / 400));
     final actualScore =
         isWin
             ? 1.0
@@ -95,7 +116,22 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
             ? 0.5
             : 0.0;
 
-    final eloChange = (state.kFactor * (actualScore - expectedScore)).round();
+    // 2. Calibrated K-factor (provisional: 24, developing: 20, established: 16)
+    final k = state.kFactor;
+    int eloChange = (k * (actualScore - expectedScore)).round();
+
+    // 3. Grounded sequential progression:
+    // - Wins: always grant sequential positive progression (at least +1, bounded by K)
+    // - Losses: ALWAYS dip (at least -1, bounded by -K, ensuring rating is never "always up")
+    // - Draws: small bounded Elo adjustment
+    if (isWin) {
+      eloChange = eloChange.clamp(1, k);
+    } else if (isLoss) {
+      eloChange = eloChange.clamp(-k, -1);
+    } else if (isDraw) {
+      eloChange = eloChange.clamp(-k ~/ 2, k ~/ 2);
+    }
+
     final newElo = (state.currentGameElo + eloChange).clamp(100, 3200);
 
     final newConsecutiveWins = isWin ? state.consecutiveWins + 1 : 0;
@@ -104,18 +140,44 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     final newHistory = List<EloSnapshot>.from(state.eloHistory)..add(
       EloSnapshot(
         elo: newElo,
-        gameNumber: state.totalGames + 1,
+        gameNumber: state.totalGames > 0 ? state.totalGames : 1,
         timestamp: DateTime.now(),
       ),
     );
 
+    // If first game, make sure initialGameElo is set cleanly
+    final initialElo = state.eloHistory.isEmpty
+        ? state.initialGameElo
+        : state.initialGameElo;
+
     state = state.copyWith(
       currentGameElo: newElo,
+      initialGameElo: initialElo,
       consecutiveWins: newConsecutiveWins,
       consecutiveLosses: newConsecutiveLosses,
       eloHistory: newHistory,
+      maxWinStreak:
+          newConsecutiveWins > state.maxWinStreak
+              ? newConsecutiveWins
+              : state.maxWinStreak,
+      bestEloDate:
+          newElo > state.bestElo
+              ? DateTime.now().millisecondsSinceEpoch
+              : state.bestEloDate,
     );
 
+    await _saveStatistics();
+  }
+
+  /// Set the starting rating for fresh players (e.g. from onboarding skill
+  /// selection). Only applies when no games have been recorded yet.
+  Future<void> setStartingElo(int elo) async {
+    if (state.totalGames > 0) return;
+    final clamped = elo.clamp(100, 3200);
+    state = state.copyWith(
+      currentGameElo: clamped,
+      initialGameElo: clamped,
+    );
     await _saveStatistics();
   }
 
@@ -125,28 +187,61 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     await _saveStatistics();
   }
 
-  /// Record puzzle attempt
+  /// Record puzzle attempt with dynamic move-scaled rating adjustments
   Future<void> recordPuzzleAttempt({
     required bool solved,
     required int puzzleRating,
     int hintsUsed = 0,
+    int currentStreak = 0,
+    int totalPlayerMoves = 1,
+    int correctPlayerMoves = 0,
   }) async {
-    // Calculate new puzzle rating using ELO-like system
+    // Calculate new puzzle rating using dynamic move-scaled system
     int newRating = state.currentPuzzleRating;
-    const k = 32; // K-factor for rating changes
+    final ratingDiff = puzzleRating - state.currentPuzzleRating;
+    final expectedScore = 1 / (1 + math.pow(10, -ratingDiff / 400));
 
     if (solved) {
-      final ratingDiff = puzzleRating - state.currentPuzzleRating;
-      final expectedScore = 1 / (1 + math.pow(10, -ratingDiff / 400));
-      int change = (k * (1 - expectedScore)).round();
-      if (hintsUsed > 0) {
-        change = (change * 0.5).round();
-      }
-      newRating += change;
+      const baseK = 28;
+
+      // Move-depth scaling: multi-move combinations require finding multiple correct tactics
+      // 1 move: 1.0x, 2 moves: 1.15x, 3 moves: 1.30x, 4+ moves: up to 1.5x
+      final moves = totalPlayerMoves.clamp(1, 5);
+      final moveMultiplier = 1.0 + (moves - 1) * 0.15;
+
+      // Streak bonus: consecutive solves give incremental boost
+      final streakBonus =
+          currentStreak >= 5 ? 4 : (currentStreak >= 3 ? 2 : 0);
+
+      // Hints penalty: each hint reduces gain by 30%
+      final hintFactor = math.max(0.25, 1.0 - (hintsUsed * 0.3));
+
+      // Calculate rating gain with depth and streak bonuses
+      int gain =
+          (baseK * (1 - expectedScore) * moveMultiplier * hintFactor +
+                  streakBonus)
+              .round();
+
+      // Ensure a rewarding minimum gain (+5 if no hints, +2 with hints)
+      final minGain = hintsUsed > 0 ? 2 : 5;
+      gain = math.max(minGain, gain);
+
+      newRating += gain;
     } else {
-      final ratingDiff = puzzleRating - state.currentPuzzleRating;
-      final expectedScore = 1 / (1 + math.pow(10, -ratingDiff / 400));
-      newRating += (k * (0 - expectedScore)).round();
+      // When failed, consider partial credit if player found multiple correct moves in a multi-move puzzle
+      const baseK = 24;
+      double mitigation = 0.0;
+      if (totalPlayerMoves > 1 && correctPlayerMoves > 0) {
+        // Reduced loss if they found most of the tactical sequence (up to 45% mitigation)
+        mitigation =
+            (correctPlayerMoves / totalPlayerMoves).clamp(0.0, 0.9) * 0.45;
+      }
+
+      int penalty = (baseK * expectedScore * (1.0 - mitigation)).round();
+      // Clamp loss so a single failed puzzle is never overly punishing
+      penalty = penalty.clamp(4, 20);
+
+      newRating -= penalty;
     }
 
     // Clamp rating between 400 and 3200
@@ -156,6 +251,14 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
       puzzlesAttempted: state.puzzlesAttempted + 1,
       puzzlesSolved: solved ? state.puzzlesSolved + 1 : state.puzzlesSolved,
       currentPuzzleRating: newRating,
+      highestPuzzleRating:
+          solved && newRating > state.highestPuzzleRating
+              ? newRating
+              : state.highestPuzzleRating,
+      maxPuzzleStreak:
+          currentStreak > state.maxPuzzleStreak
+              ? currentStreak
+              : state.maxPuzzleStreak,
     );
 
     await _saveStatistics();

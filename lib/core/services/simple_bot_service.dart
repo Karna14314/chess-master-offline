@@ -37,30 +37,113 @@ class SimpleBotService {
   /// Get best move for the current position
   /// [fen] - Position in FEN notation
   /// [depth] - Search depth (1-6 recommended for fallback engine)
+  /// [blunderRate] - Probability of making humanized mistakes (0.0 to 1.0)
+  /// [useOpeningBook] - Whether to consult deterministic opening book
+  /// [positionHistory] - FEN keys (first 4 fields) of the real game so far,
+  ///   used for repetition / anti-loop penalties. Cheap Zobrist substitute.
+  /// [openingStyle] - Bot personality style (Italian, Solid Fortress, ...).
+  /// [elo] - Bot ELO, controls book variety + mistake window.
   Future<SimpleBotResult> getBestMove({
     required String fen,
     int depth = 3,
     int timeLimitMs = 900,
+    double blunderRate = 0.0,
+    bool useOpeningBook = true,
+    List<String>? positionHistory,
+    String? openingStyle,
+    int? elo,
+    Random? random,
   }) async {
-    final effectiveDepth = min(depth, 4);
+    // Weak bots (<=500) play shallower: depth 2 keeps them visibly weaker
+    // than 700+ bots beyond what blunder sampling alone achieves.
+    final resolvedElo = elo ?? _eloFromBlunder(blunderRate);
+    final depthCap = resolvedElo <= 500 ? 2 : 4;
+    final effectiveDepth = min(depth, depthCap);
     final cancelId = _cancelToken;
-    final bookResult = _tryOpeningBook(fen);
-    if (bookResult != null) return bookResult;
+    // Random is not isolate-transferable: forward a seed instead so callers
+    // can still get reproducible sampling via the `random` parameter.
+    final seed = random?.nextInt(1 << 32);
+    final historyKeys = (positionHistory ?? const <String>[])
+        .map(_fenBookKey)
+        .toList();
+    if (useOpeningBook) {
+      final bookResult = _tryOpeningBook(
+        fen,
+        elo: elo,
+        openingStyle: openingStyle,
+        blunderRate: blunderRate,
+        random: random,
+      );
+      if (bookResult != null) return bookResult;
+    }
 
     return Isolate.run(
-      () => _getBestMoveSync(fen, effectiveDepth, cancelId, timeLimitMs),
+      () => _getBestMoveSync(
+        fen,
+        effectiveDepth,
+        cancelId,
+        timeLimitMs,
+        blunderRate,
+        historyKeys,
+        elo,
+        seed,
+      ),
     );
   }
 
-  /// Small deterministic opening book for the fallback engine.
-  ///
-  /// This keeps SimpleBot from spending expensive search time in the first
-  /// few plies and avoids unnatural repeated knight-only openings when
-  /// Stockfish is unavailable.
-  SimpleBotResult? _tryOpeningBook(String fen) {
+  /// Weighted multi-line opening book: FEN-key -> candidate UCIs with weights.
+  /// Covers 8-10 plies so bots develop (pawns center, knights, bishops,
+  /// castle) instead of knight-shuffling after move 2.
+  SimpleBotResult? _tryOpeningBook(
+    String fen, {
+    int? elo,
+    String? openingStyle,
+    double blunderRate = 0.0,
+    Random? random,
+  }) {
     final key = _fenBookKey(fen);
-    final bookMove = _openingBook[key];
-    if (bookMove == null) return null;
+    var candidates = _openingBook[key];
+    if (candidates == null || candidates.isEmpty) return null;
+
+    // Personality filter: Italian/Spanish/Queen Gambit bots prefer their lines
+    // when multiple replies exist; low-ELO Random bots keep full variety.
+    final style = (openingStyle ?? '').toLowerCase();
+    if (style.contains('italian')) {
+      final italian = candidates
+          .where((c) => _italianMoves.contains(c.move))
+          .toList();
+      if (italian.isNotEmpty) candidates = italian;
+    } else if (style.contains('spanish') || style.contains('ruy')) {
+      final spanish = candidates
+          .where((c) => _spanishMoves.contains(c.move))
+          .toList();
+      if (spanish.isNotEmpty) candidates = spanish;
+    }
+
+    // ELO variety: 400-500 samples everything incl. offbeat; 650+ only
+    // main developing replies; 850+ already filtered by personality above.
+    // Deterministic default (tests / no elo): top weight wins (e4, e5).
+    final hasVariety = elo != null || random != null;
+    final rng = random ?? Random();
+    String bookMove;
+    if (!hasVariety) {
+      bookMove = candidates.reduce((a, b) => a.weight >= b.weight ? a : b).move;
+    } else {
+      if ((elo ?? 800) >= 650) {
+        final main = candidates.where((c) => !c.offbeat).toList();
+        if (main.isNotEmpty) candidates = main;
+      }
+      final total = candidates.fold<int>(0, (s, c) => s + c.weight);
+      var roll = rng.nextInt(total <= 0 ? 1 : total);
+      bookMove = candidates.first.move;
+      for (final c in candidates) {
+        roll -= c.weight;
+        if (roll < 0) {
+          bookMove = c.move;
+          break;
+        }
+      }
+    }
 
     try {
       final board = chess.Chess.fromFEN(fen);
@@ -93,20 +176,100 @@ class SimpleBotService {
     return parts.take(4).join(' ');
   }
 
-  static const Map<String, String> _openingBook = {
-    // Initial position: claim the center.
-    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -': 'e2e4',
+  static const Set<String> _italianMoves = {
+    'f1c4',
+    'f8c5',
+    'g1f3',
+    'g8f6',
+    'b1c3',
+    'b8c6',
+  };
+  static const Set<String> _spanishMoves = {'f1b5', 'a7a6', 'g1f3', 'b8c6'};
 
+  static const Map<String, List<BookMove>> _openingBook = {
+    // Initial position: claim the center with variety.
+    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -': [
+      BookMove('e2e4', 40),
+      BookMove('d2d4', 30),
+      BookMove('g1f3', 15),
+      BookMove('c2c4', 10),
+      BookMove('g2g3', 3, offbeat: true),
+      BookMove('b2b3', 2, offbeat: true),
+    ],
     // Common first moves by White.
-    'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -': 'e7e5',
-    'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -': 'd7d5',
-    'rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq -': 'e7e5',
-    'rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -': 'd7d5',
-
+    'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -': [
+      BookMove('e7e5', 35),
+      BookMove('c7c5', 25),
+      BookMove('e7e6', 15),
+      BookMove('c7c6', 10),
+      BookMove('d7d5', 10),
+      BookMove('g8f6', 5),
+    ],
+    'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -': [
+      BookMove('d7d5', 35),
+      BookMove('g8f6', 30),
+      BookMove('e7e6', 20),
+      BookMove('c7c5', 10),
+      BookMove('d7d6', 5, offbeat: true),
+    ],
+    'rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq -': [
+      BookMove('e7e5', 50),
+      BookMove('c7c5', 25),
+      BookMove('g8f6', 15),
+      BookMove('e7e6', 10),
+    ],
+    'rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -': [
+      BookMove('d7d5', 40),
+      BookMove('g8f6', 30),
+      BookMove('d7d6', 20),
+      BookMove('e7e5', 10),
+    ],
     // Simple second moves: develop naturally after central replies.
-    'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -': 'g1f3',
-    'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -': 'c2c4',
-    'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -': 'g1f3',
+    'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -': [
+      BookMove('g1f3', 40),
+      BookMove('b1c3', 25),
+      BookMove('f1c4', 15),
+      BookMove('d2d4', 10),
+      BookMove('f1b5', 10),
+    ],
+    'rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -': [
+      BookMove('c2c4', 40),
+      BookMove('g1f3', 30),
+      BookMove('b1c3', 15),
+      BookMove('e2e3', 10),
+      BookMove('c1f4', 5, offbeat: true),
+    ],
+    'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -': [
+      BookMove('g1f3', 45),
+      BookMove('b1c3', 25),
+      BookMove('d2d4', 20),
+      BookMove('f1c4', 10),
+    ],
+    // Italian / Spanish development + castling ideas.
+    'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -': [
+      BookMove('f1c4', 45),
+      BookMove('f1b5', 30),
+      BookMove('d2d4', 15),
+      BookMove('b1c3', 10),
+    ],
+    'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -': [
+      BookMove('e1g1', 55),
+      BookMove('d2d3', 20),
+      BookMove('c2c3', 15),
+      BookMove('b1c3', 10),
+    ],
+    'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -': [
+      BookMove('b8c6', 40),
+      BookMove('g8f6', 30),
+      BookMove('f8c5', 15),
+      BookMove('d7d6', 15),
+    ],
+    'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -': [
+      BookMove('g8f6', 40),
+      BookMove('f8c5', 30),
+      BookMove('d7d6', 20),
+      BookMove('f8e7', 10),
+    ],
   };
 
   /// Synchronous computation — runs inside an isolate.
@@ -115,8 +278,12 @@ class SimpleBotService {
     String fen,
     int depth,
     int cancelId,
-    int timeLimitMs,
-  ) {
+    int timeLimitMs, [
+    double blunderRate = 0.0,
+    List<String> historyKeys = const [],
+    int? elo,
+    int? seed,
+  ]) {
     // Sync cancel token — isolates have their own static copy starting at 0
     _cancelToken = cancelId;
     final searchTimer = Stopwatch()..start();
@@ -150,25 +317,59 @@ class SimpleBotService {
       );
     }
 
-    // --- Iterative Deepening ---
-    String bestMove = moves.isNotEmpty ? _moveToStr(moves[0] as Map) : '';
-    int bestEval = 0;
-    List<String> bestPv = [];
+    // --- Iterative Deepening with scored root moves ---
     final isWhiteToMove = board.turn == chess.Color.WHITE;
+    List<({String move, int score, List<String> pv})> scored = [];
 
     for (int idDepth = 1; idDepth <= depth; idDepth++) {
       if (_cancelToken != cancelId) break;
       if (_isTimedOut(searchTimer, timeLimitMs)) break;
 
-      final rootResult = _searchRoot(board, idDepth, searchTimer, timeLimitMs);
+      final rootResult = _searchRoot(
+        board,
+        idDepth,
+        searchTimer,
+        timeLimitMs,
+        historyKeys,
+      );
 
       if (_cancelToken != cancelId) break;
-      if (_isTimedOut(searchTimer, timeLimitMs) && bestMove.isNotEmpty) break;
-
-      bestMove = rootResult.bestMove;
-      bestEval = rootResult.eval;
-      bestPv = rootResult.pv;
+      if (_isTimedOut(searchTimer, timeLimitMs) && scored.isNotEmpty) break;
+      if (rootResult.isNotEmpty) scored = rootResult;
     }
+
+    if (scored.isEmpty) {
+      final fallback = _moveToStr(moves[0] as Map);
+      return SimpleBotResult(bestMove: fallback, evaluation: 0);
+    }
+
+    // Hard-ban immediate 2-fold: drop moves recreating the last position
+    // unless everything loses heavily or we are evading check.
+    final lastKey = historyKeys.isEmpty ? '' : historyKeys.last;
+    if (lastKey.isNotEmpty && !board.in_check && scored.length > 1) {
+      final filtered = <({String move, int score, List<String> pv})>[];
+      for (final s in scored) {
+        if (_moveLeadsToKey(board, s.move, lastKey)) {
+          // Keep only if it is clearly best (tactical necessity).
+          if (s.score >= scored.first.score - 50) {
+            // Ban: would repeat last position for no gain.
+            continue;
+          }
+        }
+        filtered.add(s);
+      }
+      if (filtered.isNotEmpty) scored = filtered;
+    }
+
+    final chosen = _sampleByElo(
+      scored,
+      elo ?? _eloFromBlunder(blunderRate),
+      blunderRate,
+      seed == null ? Random() : Random(seed),
+    );
+    var bestMove = chosen.move;
+    var bestEval = chosen.score;
+    var bestPv = chosen.pv;
 
     if (!isWhiteToMove && depth > 0) bestEval = -bestEval;
 
@@ -187,44 +388,43 @@ class SimpleBotService {
 
     for (final move in moves) {
       final m = move as Map;
+      final uci = _moveToStr(m);
       board.move(m);
-      final rawEval = _evaluatePosition(board);
+      final rawEval =
+          _evaluatePosition(board) + _developmentBonus(board, m, uci);
       board.undo();
 
       final eval = isWhiteToMove ? rawEval : -rawEval;
 
       if (eval > bestEval) {
         bestEval = eval;
-        bestMove = _moveToStr(m);
+        bestMove = uci;
       }
     }
 
     return SimpleBotResult(bestMove: bestMove, evaluation: bestEval);
   }
 
-  /// Root search — tries each root move and calls negamax for deeper search.
-  ({String bestMove, int eval, List<String> pv}) _searchRoot(
+  /// Root search — returns ALL root moves scored (for ELO sampling).
+  /// Keeps killer/history across iterations (decay only) to reduce oscillation.
+  List<({String move, int score, List<String> pv})> _searchRoot(
     chess.Chess board,
     int depth,
     Stopwatch searchTimer,
     int timeLimitMs,
+    List<String> historyKeys,
   ) {
     final moves = board.moves({'verbose': true});
-    // Clear killer/history tables for new search
-    for (int i = 0; i < _killers.length; i++) {
-      _killers[i] = [null, null];
-    }
-    _history.clear();
-
-    String bestMove = '';
-    int bestEval = -999999;
-    List<String> bestPv = [];
+    // Decay (not clear) history so shuffles are not re-rewarded every move.
+    _history.updateAll((k, v) => (v * 0.8).round());
 
     _orderMoves(moves, null, 0, board);
 
+    final scored = <({String move, int score, List<String> pv})>[];
     for (final move in moves) {
       if (_isTimedOut(searchTimer, timeLimitMs)) break;
       final m = move as Map;
+      final uci = _moveToStr(m);
       board.move(m);
       final result = _negamax(
         board,
@@ -235,18 +435,191 @@ class SimpleBotService {
         searchTimer,
         timeLimitMs,
       );
+      // Layer human-like bonuses on top of search (side-to-move relative).
+      var eval = -result.score;
+      eval += _developmentBonus(board, m, uci);
+      eval += _repetitionScore(board, historyKeys);
+      eval += _antiLoopScore(m, uci, historyKeys);
+      final pv = [uci, ...result.pv];
       board.undo();
 
-      final eval = -result.score;
+      scored.add((move: uci, score: eval, pv: pv));
 
-      if (eval > bestEval) {
-        bestEval = eval;
-        bestMove = _moveToStr(m);
-        bestPv = [bestMove, ...result.pv];
+      // Record killer for quiet best-raising moves (no per-search clear).
+      if (m['captured'] == null && m['promotion'] == null) {
+        final ply = 0;
+        if (_killers[ply][0] != uci) {
+          _killers[ply][1] = _killers[ply][0];
+          _killers[ply][0] = uci;
+        }
       }
     }
 
-    return (bestMove: bestMove, eval: bestEval, pv: bestPv);
+    scored.sort((a, b) => b.score.compareTo(a.score));
+    return scored;
+  }
+
+  /// Development / castling / center bonus (side-to-move relative, centipawns).
+  /// Fixes knight-shuffling: developing + castling + occupying center outscores
+  /// going Nf3-g1 or Ra1-b1-a1 at depth 1-3.
+  int _developmentBonus(chess.Chess board, Map m, String uci) {
+    var bonus = 0;
+    final piece = m['piece']?.toString().toLowerCase() ?? '';
+    final isKnight = piece.contains('knight') || piece == 'n';
+    final isBishop = piece.contains('bishop') || piece == 'b';
+    final to = m['to'] as String? ?? (uci.length >= 4 ? uci.substring(2, 4) : '');
+    final from = m['from'] as String? ?? uci.substring(0, 2);
+    final moveNo = board.move_number;
+
+    // Develop minors off the back rank early.
+    if ((isKnight || isBishop) && moveNo <= 14) {
+      final backRank = board.turn == chess.Color.WHITE ? '1' : '8';
+      if (from.endsWith(backRank) && !to.endsWith(backRank)) bonus += 28;
+    }
+    // e/d center pawn pushes from start.
+    if ((uci == 'e2e4' || uci == 'd2d4' || uci == 'e7e5' || uci == 'd7d5')) {
+      bonus += 30;
+    }
+    if (uci == 'c2c4' || uci == 'c7c5' || uci == 'e2e3' || uci == 'e7e6') {
+      bonus += 12;
+    }
+    // Castling is good; losing the right without castling is bad.
+    if (uci == 'e1g1' || uci == 'e1c1' || uci == 'e8g8' || uci == 'e8c8') {
+      bonus += 45;
+    }
+    // Penalize early queen sorties (Wayward Queen stays only for Aaron via book).
+    final isQueen = piece.contains('queen') || piece == 'q';
+    if (isQueen && moveNo < 8) bonus -= 35;
+    // Penalize knight retreat to its origin square (Nf3-g1, Nb1-a3-c2-b1 loops).
+    if (isKnight && _isOwnBackRankOrigin(from, to, board.turn)) bonus -= 25;
+    return board.turn == chess.Color.WHITE ? bonus : -bonus;
+  }
+
+  bool _isOwnBackRankOrigin(String from, String to, chess.Color turn) {
+    // Knight returned to b1/g1 (white) or b8/g8 (black) after leaving.
+    if (turn == chess.Color.WHITE) {
+      return (to == 'b1' || to == 'g1') && from != to;
+    }
+    return (to == 'b8' || to == 'g8') && from != to;
+  }
+
+  /// Repetition score: avoid draw when ahead, seek when behind.
+  int _repetitionScore(chess.Chess board, List<String> historyKeys) {
+    if (historyKeys.isEmpty) return 0;
+    final key = _fenBookKey(board.fen);
+    var count = 0;
+    for (final h in historyKeys) {
+      if (h == key) count++;
+    }
+    if (count >= 2) return board.turn == chess.Color.WHITE ? -10000 : 10000;
+    if (count == 1) {
+      final staticEval = _sideToMoveEval(board);
+      if (staticEval > 100) return -150; // ahead: avoid 2-fold
+      if (staticEval < -100) return 100; // behind: seek 2-fold
+      return -60;
+    }
+    return 0;
+  }
+
+  /// Anti-loop: penalize immediate back-and-forth (A-B-A) with same piece.
+  int _antiLoopScore(Map m, String uci, List<String> historyKeys) {
+    if (historyKeys.length < 2) return 0;
+    if (m['captured'] != null || m['promotion'] != null) return 0;
+    // Heuristic: rook/knight shuffle between two squares scores -60.
+    // Full A-B-A-B tracking needs move history; approximate via killer table:
+    // if this UCI is already killer[0] at ply 0 two searches running, it is
+    // being replayed — penalize lightly so a developing alternative wins ties.
+    if (_killers[0][0] == uci || _killers[0][1] == uci) return -25;
+    return 0;
+  }
+
+  bool _moveLeadsToKey(chess.Chess board, String uci, String key) {
+    try {
+      final from = uci.substring(0, 2);
+      final to = uci.substring(2, 4);
+      final promo = uci.length > 4 ? uci.substring(4, 5) : null;
+      board.move({'from': from, 'to': to, if (promo != null) 'promotion': promo});
+      final after = _fenBookKey(board.fen);
+      board.undo();
+      return after == key;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  int _eloFromBlunder(double blunderRate) {
+    if (blunderRate >= 0.4) return 400;
+    if (blunderRate >= 0.3) return 500;
+    if (blunderRate >= 0.2) return 700;
+    if (blunderRate >= 0.12) return 950;
+    if (blunderRate > 0.0) return 1100;
+    return 1200;
+  }
+
+  /// ELO-scaled sampling over scored root moves (never uniform-random legal).
+  /// Deterministic when blunderRate == 0 and no elo given (unit tests).
+  ({String move, int score, List<String> pv}) _sampleByElo(
+    List<({String move, int score, List<String> pv})> scored,
+    int elo,
+    double blunderRate,
+    Random rng,
+  ) {
+    if (blunderRate == 0.0) return scored.first;
+    final int topN, window;
+    final double temp, blunderProb;
+    if (elo <= 450) {
+      topN = 9;
+      window = 280;
+      temp = 1.1;
+      blunderProb = 0.25;
+    } else if (elo <= 550) {
+      topN = 6;
+      window = 200;
+      temp = 0.9;
+      blunderProb = 0.20;
+    } else if (elo <= 750) {
+      topN = 5;
+      window = 150;
+      temp = 0.7;
+      blunderProb = 0.15;
+    } else if (elo <= 950) {
+      topN = 4;
+      window = 120;
+      temp = 0.5;
+      blunderProb = 0.10;
+    } else if (elo <= 1100) {
+      topN = 3;
+      window = 80;
+      temp = 0.3;
+      blunderProb = 0.07;
+    } else {
+      topN = 2;
+      window = 50;
+      temp = 0.15;
+      blunderProb = 0.04;
+    }
+    final best = scored.first.score;
+    final pool =
+        scored.where((s) => best - s.score <= window).take(topN).toList();
+    if (pool.length <= 1) return scored.first;
+
+    // Occasional human lapse: uniform inside pool (never outside window).
+    final p = blunderRate > 0 ? blunderRate.clamp(0.0, 1.0) : blunderProb;
+    if (rng.nextDouble() < p && pool.length > 1) {
+      return pool[1 + rng.nextInt(pool.length - 1)];
+    }
+    // Softmax by score/temperature.
+    final weights = pool.map((s) {
+      final d = (s.score - best).toDouble(); // <= 0
+      return exp(d / (temp * 100.0));
+    }).toList();
+    var total = weights.fold<double>(0, (a, b) => a + b);
+    var roll = rng.nextDouble() * total;
+    for (var i = 0; i < pool.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) return pool[i];
+    }
+    return pool.first;
   }
 
   /// Pure negamax with alpha-beta pruning and move ordering.
@@ -522,6 +895,14 @@ class SimpleBotService {
   int _evaluatePositionFast(chess.Chess board) {
     return PositionEvaluator.evaluate(board, skipMobility: true);
   }
+}
+
+/// Weighted opening-book candidate.
+class BookMove {
+  final String move;
+  final int weight;
+  final bool offbeat;
+  const BookMove(this.move, this.weight, {this.offbeat = false});
 }
 
 /// Result from simple bot calculation

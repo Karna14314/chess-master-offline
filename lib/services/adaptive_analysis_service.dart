@@ -296,7 +296,21 @@ class AdaptiveAnalysisService {
 
         // Reuse carried-forward "after" eval if FEN matches
         double actualEval;
-        if (carriedForward != null && carriedForward.fen == board.fen) {
+        final isDeliveredCheckmate = board.in_checkmate;
+        if (isDeliveredCheckmate) {
+          actualEval = isWhiteMove ? 100.0 : -100.0;
+          bestLines = [
+            EngineLine(
+              rank: 1,
+              evaluation: actualEval,
+              depth: 0,
+              moves: const [],
+              isMate: true,
+              mateIn: isWhiteMove ? 1 : -1,
+            ),
+          ];
+          carriedForward = null;
+        } else if (carriedForward != null && carriedForward.fen == board.fen) {
           actualEval = carriedForward.eval;
           bestLines = carriedForward.lines;
         } else {
@@ -319,7 +333,7 @@ class AdaptiveAnalysisService {
           );
         }
 
-        final actualIsMate = bestLines.isNotEmpty && bestLines.first.isMate;
+        final actualIsMate = isDeliveredCheckmate || (bestLines.isNotEmpty && bestLines.first.isMate);
         double actualEvalAfter = actualEval;
 
         // ── Step B: Compute centipawn loss and classify ──
@@ -328,7 +342,7 @@ class AdaptiveAnalysisService {
             isWhiteMove
                 ? (bestEval - actualEvalAfter) * 100.0
                 : (actualEvalAfter - bestEval) * 100.0;
-        final double cplAbs = centipawnLossVal.abs();
+        final double cplClamped = isDeliveredCheckmate ? 0.0 : (centipawnLossVal < 0.0 ? 0.0 : centipawnLossVal);
 
         final actualEvalBeforeMove =
             actualEvalSoFar ?? bestEval; // ignore: dead_null_aware_expression
@@ -343,7 +357,7 @@ class AdaptiveAnalysisService {
         final winBefore = isWhiteMove ? winBest : (100.0 - winBest);
         final winAfter = isWhiteMove ? winActual : (100.0 - winActual);
         final rawWinDiff = winBefore - winAfter;
-        final winDiff = rawWinDiff < 0 ? 0.0 : rawWinDiff;
+        final winDiff = isDeliveredCheckmate ? 0.0 : (rawWinDiff < 0 ? 0.0 : rawWinDiff);
 
         // Static exchange evaluation
         double? seeCentipawns;
@@ -370,7 +384,7 @@ class AdaptiveAnalysisService {
         }
 
         final classification = classifyMoveCpl(
-          centipawnLoss: cplAbs,
+          centipawnLoss: cplClamped,
           bestMove: bestMoveForPlayer,
           actualMove: '${move.from}${move.to}${move.promotion ?? ''}',
           isMateBefore: bestIsMate,
@@ -379,13 +393,16 @@ class AdaptiveAnalysisService {
           secondBestCentipawnLoss: secondBestCpl,
           playerWinPercentBefore: winBefore,
           winPercentDiff: winDiff,
+          isCheckmate: isDeliveredCheckmate,
         );
 
-        final moveAccuracy = computeWinPercentAccuracy(
-          evalBeforePawns: actualEvalBeforeMove,
-          evalAfterPawns: actualEval,
-          isWhiteMove: isWhiteMove,
-        );
+        final moveAccuracy = isDeliveredCheckmate
+            ? 100.0
+            : computeWinPercentAccuracy(
+                evalBeforePawns: actualEvalBeforeMove,
+                evalAfterPawns: actualEval,
+                isWhiteMove: isWhiteMove,
+              );
 
         final moveAnalysis = MoveAnalysis(
           moveIndex: i,
@@ -400,7 +417,7 @@ class AdaptiveAnalysisService {
           classification: classification,
           engineLines: bestLines,
           isWhiteMove: isWhiteMove,
-          centipawnLoss: cplAbs,
+          centipawnLoss: cplClamped,
           accuracy: moveAccuracy,
           isMateBefore: bestIsMate,
           isMateAfter: actualIsMate,

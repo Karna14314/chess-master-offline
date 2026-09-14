@@ -14,6 +14,8 @@ import 'package:chess_master/services/notification_service.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/providers/achievement_provider.dart';
 import 'package:chess_master/providers/streak_provider.dart';
+import 'package:chess_master/models/bot_profile.dart';
+import 'package:chess_master/providers/bot_progress_provider.dart';
 import 'package:chess/chess.dart' as chess;
 
 /// Provider for the active game session
@@ -38,6 +40,9 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     required TimeControl timeControl,
     GameMode gameMode = GameMode.bot,
     BotType botType = BotType.stockfish,
+    String? startingFen,
+    BotProfile? botProfile,
+    int? campaignLevel,
   }) async {
     // Reset engine first to ensure clean state for new game (except local multiplayer)
     if (gameMode != GameMode.localMultiplayer) {
@@ -48,10 +53,13 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     final session = GameSession.create(
       gameMode: gameMode,
-      botType: botType,
-      difficulty: difficulty,
+      botType: botProfile?.engineType ?? botType,
+      difficulty: botProfile?.difficultyLevel ?? difficulty,
       timeControl: timeControl,
       playerColor: playerColor,
+      startingFen: startingFen,
+      botId: botProfile?.id,
+      campaignLevel: campaignLevel,
     );
 
     state = session;
@@ -170,19 +178,25 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       _makeBotMove();
     }
 
-    // Play haptic feedback if enabled
+    // Play haptic feedback if enabled. Guarded: the vibration plugin
+    // throws MissingPluginException on unsupported devices/emulators,
+    // which would otherwise crash the game on every move.
     final settings = _ref.read(settingsProvider);
     if (settings.vibrationEnabled) {
-      if (board.in_checkmate) {
-        Vibration.vibrate(pattern: [0, 100, 50, 100, 50, 200]);
-      } else if (board.in_check) {
-        Vibration.vibrate(pattern: [0, 50, 50, 50]);
-      } else if (isCapture) {
-        Vibration.vibrate(duration: 50, amplitude: 128);
-      } else if (promotion != null) {
-        Vibration.vibrate(duration: 80, amplitude: 128);
-      } else {
-        Vibration.vibrate(duration: 15, amplitude: 64);
+      try {
+        if (board.in_checkmate) {
+          Vibration.vibrate(pattern: [0, 100, 50, 100, 50, 200]);
+        } else if (board.in_check) {
+          Vibration.vibrate(pattern: [0, 50, 50, 50]);
+        } else if (isCapture) {
+          Vibration.vibrate(duration: 50, amplitude: 128);
+        } else if (promotion != null) {
+          Vibration.vibrate(duration: 80, amplitude: 128);
+        } else {
+          Vibration.vibrate(duration: 15, amplitude: 64);
+        }
+      } catch (_) {
+        // Haptics unavailable — game continues without feedback.
       }
     }
 
@@ -203,10 +217,19 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     try {
       final engineNotifier = _ref.read(engineProvider.notifier);
+      BotProfile? botProfile;
+      if (currentSession.botId != null) {
+        try {
+          botProfile = BotProfile.getById(currentSession.botId!);
+        } catch (_) {
+          botProfile = null;
+        }
+      }
       final result = await engineNotifier.getBotMove(
         fen: currentSession.fen,
         difficulty: currentSession.difficulty,
         botType: currentSession.botType,
+        botProfile: botProfile,
         startingFen: currentSession.startingFen,
         moves: _uciMoves(currentSession),
       );
@@ -355,8 +378,9 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     final currentSession = state;
     if (currentSession == null ||
         currentSession.moveHistory.isEmpty ||
-        currentSession.isCompleted)
+        currentSession.isCompleted) {
       return;
+    }
 
     int historyPopCount = 1;
     if (currentSession.gameMode == GameMode.bot &&
@@ -485,10 +509,13 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     final currentSession = state;
     if (currentSession == null ||
         !currentSession.isCompleted ||
-        currentSession.isRecorded)
+        currentSession.isRecorded) {
       return;
-    if (currentSession.gameMode == GameMode.analysis || currentSession.isPuzzle)
+    }
+    if (currentSession.gameMode == GameMode.analysis ||
+        currentSession.isPuzzle) {
       return;
+    }
 
     final isWhite = currentSession.playerColor == PlayerColor.white;
     final isWin =
@@ -501,12 +528,15 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     double accuracy = _calculateAccuracy(currentSession);
 
+    final botElo =
+        currentSession.botProfile?.elo ?? currentSession.difficulty.elo;
+
     final statsNotifier = _ref.read(statisticsProvider.notifier);
     await statsNotifier.recordGameResult(
       isWin: isWin,
       isLoss: isLoss,
       isDraw: isDraw,
-      botElo: currentSession.difficulty.elo,
+      botElo: botElo,
       moveCount: currentSession.moveHistory.length,
       gameTimeSeconds:
           DateTime.now().difference(currentSession.startedAt).inSeconds,
@@ -514,11 +544,41 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     if (currentSession.gameMode == GameMode.bot) {
       await statsNotifier.recordGameElo(
-        botElo: currentSession.difficulty.elo,
+        botElo: botElo,
         isWin: isWin,
         isLoss: isLoss,
         isDraw: isDraw,
       );
+
+      if (currentSession.result != null) {
+        String botId = currentSession.botId ?? '';
+        if (botId.isEmpty) {
+          try {
+            botId =
+                BotProfile.getClosestToElo(
+                  currentSession.difficulty.elo,
+                ).id;
+          } catch (_) {
+            botId = BotProfile.allBots.first.id;
+          }
+        }
+        await _ref.read(botProgressProvider.notifier).recordBotMatch(
+          botId: botId,
+          result: currentSession.result!,
+          isPlayerWhite: isWhite,
+          usedTakebacks: false,
+          hintsUsed: currentSession.hintsUsed,
+        );
+        if (currentSession.campaignLevel != null) {
+          await _ref.read(botProgressProvider.notifier).recordCampaignMatch(
+            levelNumber: currentSession.campaignLevel!,
+            result: currentSession.result!,
+            isPlayerWhite: isWhite,
+            usedTakebacks: false,
+            hintsUsed: currentSession.hintsUsed,
+          );
+        }
+      }
     }
 
     if (isWin) {
@@ -586,10 +646,20 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     state = session;
   }
 
+  /// Resume a game session and trigger bot if it's the bot's turn
+  void resumeSession(GameSession session) {
+    state = session;
+    if (session.gameMode == GameMode.bot &&
+        !session.isPlayerTurn &&
+        !session.isCompleted) {
+      _makeBotMove();
+    }
+  }
+
   Future<void> loadSession(String id) async {
     final session = await _repository.getSession(id);
     if (session != null) {
-      state = session;
+      resumeSession(session);
     }
   }
 

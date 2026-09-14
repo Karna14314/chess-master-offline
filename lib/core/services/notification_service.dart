@@ -173,4 +173,42 @@ class NotificationService {
       debugPrint('Failed to cancel all notifications: $e');
     }
   }
+
+  /// Fire immediate test notifications (debug menu + permission checks).
+  /// Returns true if shown, false when permission was denied.
+  Future<bool> showTestNotifications() async {
+    if (!_isInitialized) await initialize();
+    final granted = await requestPermissions();
+    if (!granted) return false;
+
+    const androidDetails = AndroidNotificationDetails(
+      'debug_test_channel',
+      'Test Notifications',
+      channelDescription: 'Immediate test notifications from the debug menu',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
+    try {
+      await _notificationsPlugin.show(
+        9001,
+        'Daily Puzzle Reminder (Test) 🧩',
+        'This is how your daily puzzle reminder will look.',
+        details,
+      );
+      await _notificationsPlugin.show(
+        9002,
+        'Streak Nudge (Test) 🔥',
+        'This is how your streak protection nudge will look.',
+        details,
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Failed to show test notifications: $e');
+      return false;
+    }
+  }
 }

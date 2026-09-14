@@ -28,6 +28,7 @@ class GameHistoryScreen extends ConsumerStatefulWidget {
 class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
   String _filterGameMode = 'all'; // 'all', 'bot', 'local'
   String _filterResult = 'all'; // 'all', 'win', 'loss', 'draw'
+  String _filterStatus = 'all'; // 'all', 'completed', 'unfinished', 'analysed'
 
   void _showFilterSheet() {
     showModalBottomSheet(
@@ -75,6 +76,50 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
                         onSelected:
                             (_) =>
                                 setSheetState(() => _filterGameMode = 'local'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Status Filter
+                  Text(
+                    'Status',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        selected: _filterStatus == 'all',
+                        onSelected:
+                            (_) => setSheetState(() => _filterStatus = 'all'),
+                      ),
+                      _FilterChip(
+                        label: 'Completed',
+                        selected: _filterStatus == 'completed',
+                        onSelected:
+                            (_) =>
+                                setSheetState(
+                                  () => _filterStatus = 'completed',
+                                ),
+                      ),
+                      _FilterChip(
+                        label: 'Unfinished',
+                        selected: _filterStatus == 'unfinished',
+                        onSelected:
+                            (_) =>
+                                setSheetState(
+                                  () => _filterStatus = 'unfinished',
+                                ),
+                      ),
+                      _FilterChip(
+                        label: 'Analysed',
+                        selected: _filterStatus == 'analysed',
+                        onSelected:
+                            (_) =>
+                                setSheetState(() => _filterStatus = 'analysed'),
                       ),
                     ],
                   ),
@@ -196,6 +241,15 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
         if (effectiveMode != _filterGameMode) return false;
       }
 
+      // Filter by status
+      if (_filterStatus == 'completed') {
+        if (!game.isCompleted) return false;
+      } else if (_filterStatus == 'unfinished') {
+        if (game.isCompleted) return false;
+      } else if (_filterStatus == 'analysed') {
+        if (game.analysisData == null) return false;
+      }
+
       // Filter by result
       if (_filterResult != 'all') {
         if (game.result == null) return false;
@@ -303,10 +357,14 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            date,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppTheme.textSecondaryFor(context),
+          Expanded(
+            child: Text(
+              date,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppTheme.textSecondaryFor(context),
+              ),
             ),
           ),
         ],
@@ -352,14 +410,19 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
       }
 
       if (context.mounted) {
-        Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder:
-                (context) =>
-                    AnalysisScreen(moves: moves, startingFen: game.startingFen),
+                (context) => AnalysisScreen(
+                  moves: moves,
+                  startingFen: game.startingFen,
+                  gameId: game.id,
+                ),
           ),
         );
+        // Refresh so a freshly analysed game shows under the Analysed filter.
+        ref.invalidate(gameHistoryProvider);
       }
       return;
     }
@@ -386,13 +449,11 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
 
     if (confirm != true) return;
 
-    // Initialize engine
-    final engineNotifier = ref.read(engineProvider.notifier);
-    await engineNotifier.initialize();
-    engineNotifier.resetForNewGame();
+    // Immediately restore session synchronously so GameScreen has data right away
+    ref.read(gameSessionProvider.notifier).resumeSession(game);
 
-    // Load game session
-    await ref.read(gameSessionProvider.notifier).loadSession(game.id);
+    // Warm up engine in the background asynchronously without blocking navigation
+    ref.read(engineProvider.notifier).initialize();
 
     if (context.mounted) {
       Navigator.pushReplacement(
@@ -606,9 +667,13 @@ class _GameCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          displayName,
-                          style: Theme.of(context).textTheme.titleMedium,
+                        Expanded(
+                          child: Text(
+                            displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                         ),
                         if (isSaved)
                           Padding(
@@ -644,9 +709,13 @@ class _GameCard extends StatelessWidget {
                         ),
                         if (game.resultReason != null) ...[
                           const SizedBox(width: 8),
-                          Text(
-                            game.resultReason!,
-                            style: Theme.of(context).textTheme.bodySmall,
+                          Expanded(
+                            child: Text(
+                              game.resultReason!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ),
                         ],
                       ],
@@ -654,6 +723,8 @@ class _GameCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${game.moveHistory.length} moves • ${game.playerColor == PlayerColor.white ? '♔' : '♚'} as ${game.playerColor.name.capitalize()} • ${timeFormat.format(dateTime)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppTheme.textHintFor(context),
                       ),

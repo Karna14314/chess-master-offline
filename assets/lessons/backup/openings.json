@@ -1,0 +1,734 @@
+[
+  {
+    "eco": "C50",
+    "name": "Italian Game: Giuoco Piano",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Bc5"
+    ],
+    "description": "One of the oldest and most respected openings. White rapidly develops the bishop to target Black's weak f7 pawn while aiming for central control with c3 and d4.",
+    "keyThemes": [
+      "Pressure on the vulnerable f7 square",
+      "Central pawn break with c3 and d4",
+      "Rapid kingside castling and piece harmony"
+    ],
+    "fen": "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+  },
+  {
+    "eco": "C55",
+    "name": "Italian Game: Two Knights Defense",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Nf6"
+    ],
+    "description": "A counter-attacking response where Black immediately attacks White's e4 pawn instead of playing passively. Often leads to sharp tactical battles such as the Fried Liver Attack.",
+    "keyThemes": [
+      "Immediate counter-strike against e4",
+      "Sharp complications after Ng5",
+      "Active black piece activity for pawn sacrifices"
+    ],
+    "fen": "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+  },
+  {
+    "eco": "C78",
+    "name": "Ruy Lopez: Morphy Defense",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "Nf6"
+    ],
+    "description": "The cornerstone of classical chess. White pins the c6 knight defending e5, forcing Black to make strategic positional decisions across a deep middlegame.",
+    "keyThemes": [
+      "Indirect pressure against Black's e5 stronghold",
+      "Pawn maneuvers on the queenside (b5, Na5)",
+      "Long-term central tension with c3 and d4"
+    ],
+    "fen": "r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 5"
+  },
+  {
+    "eco": "C65",
+    "name": "Ruy Lopez: Berlin Defense",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "Nf6"
+    ],
+    "description": "The famous 'Berlin Wall' popularized by Vladimir Kramnik against Garry Kasparov. Black immediately challenges e4, neutralizing White's opening initiative into an equal endgame.",
+    "keyThemes": [
+      "Immediate attack on e4 pawn",
+      "Solid, nearly impenetrable pawn fortress",
+      "Early queenless middlegame transition"
+    ],
+    "fen": "r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+  },
+  {
+    "eco": "B90",
+    "name": "Sicilian Defense: Najdorf Variation",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "a6"
+    ],
+    "description": "The favored weapon of Bobby Fischer and Garry Kasparov. 5...a6 controls the b5 square, prepares queenside expansion with ...b5, and keeps maximum flexibility.",
+    "keyThemes": [
+      "Flexible central pawn shield (e5 or e6)",
+      "Queenside counter-attack along the open c-file",
+      "Complex opposite-side castling battles"
+    ],
+    "fen": "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6"
+  },
+  {
+    "eco": "B70",
+    "name": "Sicilian Defense: Dragon Variation",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "g6"
+    ],
+    "description": "Named for Black's pawn structure resembling the constellation Draco. Black fianchettoes the dark-squared bishop onto g7, aiming like a laser beam down the long diagonal.",
+    "keyThemes": [
+      "Fierce fianchetto bishop on the h8-a1 diagonal",
+      "Exchange sacrifices on c3 to wreck White's king",
+      "Wild race between White's h-pawn storm and Black's c-file attack"
+    ],
+    "fen": "rnbqkb1r/pp2pp1p/3p1np1/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6"
+  },
+  {
+    "eco": "B22",
+    "name": "Sicilian Defense: Alapin Variation",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "c5",
+      "c3",
+      "d5",
+      "exd5",
+      "Qxd5",
+      "d4"
+    ],
+    "description": "An anti-Sicilian setup where White plays 2. c3 to immediately establish a classical pawn center with d4, avoiding Black's theoretical deep-water complications.",
+    "keyThemes": [
+      "Solid central pawn duo (c3 + d4)",
+      "Avoiding sharp open Sicilian lines",
+      "Active piece play against Black's early queen"
+    ],
+    "fen": "rnb1kbnr/pp2pppp/8/3q4/3P4/2P5/PP3PPP/RNBQKBNR b KQkq - 0 4"
+  },
+  {
+    "eco": "C02",
+    "name": "French Defense: Advance Variation",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "e5",
+      "c5",
+      "c3",
+      "Nc6",
+      "Nf3"
+    ],
+    "description": "A positional masterclass in pawn chains. White locks the center with e5 gaining kingside space, while Black aggressively assaults the base of the chain at d4.",
+    "keyThemes": [
+      "Interlocking pawn wedge (White: d4/e5 vs Black: d5/e6)",
+      "Relentless Black siege against the d4 pawn",
+      "Maneuvering to activate Black's 'bad' light-squared bishop"
+    ],
+    "fen": "r1bqkbnr/pp1p1ppp/2n1p3/2p1P3/3P4/2P2N2/PP3PPP/RNBQKB1R b KQkq - 2 5"
+  },
+  {
+    "eco": "C15",
+    "name": "French Defense: Winawer Variation",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "Nc3",
+      "Bb4"
+    ],
+    "description": "One of the sharpest clashes in the French. Black pins the c3 knight, often parting with the dark-squared bishop to double White's c-pawns in exchange for positional imbalance.",
+    "keyThemes": [
+      "Pinning and exchanging on c3 to compromise White's structure",
+      "White's kingside queen attack (Qg4)",
+      "Dynamic imbalance: White bishop pair vs Black solid pawn structure"
+    ],
+    "fen": "rnbqk1nr/ppp2ppp/4p3/3p4/1b1PP3/2N5/PPP2PPP/R1BQKBNR w KQkq - 2 4"
+  },
+  {
+    "eco": "B12",
+    "name": "Caro-Kann Defense: Advance Variation",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "c6",
+      "d4",
+      "d5",
+      "e5",
+      "Bf5"
+    ],
+    "description": "A hyper-solid defense. Unlike the French Defense, Black develops the light-squared bishop to f5 before locking the pawns with ...e6, solving the bad bishop dilemma.",
+    "keyThemes": [
+      "Solving the problem of the light-squared bishop early",
+      "Rock-solid c6/e6 pawn structure",
+      "Queenside counterplay with ...c5 and ...Qb6"
+    ],
+    "fen": "rn1qkbnr/pp2pppp/2p5/3pPb2/3P4/8/PPP2PPP/RNBQKBNR w KQkq - 1 4"
+  },
+  {
+    "eco": "B18",
+    "name": "Caro-Kann Defense: Classical Variation",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "c6",
+      "d4",
+      "d5",
+      "Nc3",
+      "dxe4",
+      "Nxe4",
+      "Bf5"
+    ],
+    "description": "The traditional main line of the Caro-Kann. Black concedes central space to establish an unassailable pawn structure with zero weaknesses.",
+    "keyThemes": [
+      "Trading central pawns for harmonious piece development",
+      "Safe king shelter on the kingside",
+      "Superior late-game pawn structure"
+    ],
+    "fen": "rn1qkbnr/pp2pppp/2p5/5b2/3PN3/8/PPP2PPP/R1BQKBNR w KQkq - 1 5"
+  },
+  {
+    "eco": "B01",
+    "name": "Scandinavian Defense",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "d5",
+      "exd5",
+      "Qxd5",
+      "Nc3",
+      "Qa5"
+    ],
+    "description": "Black immediately strikes at White's e4 pawn on move 1. After 2. exd5 Qxd5 3. Nc3, the queen retreats to a5, leading to open piece play and clear plans.",
+    "keyThemes": [
+      "Immediate central challenge on move 1",
+      "Safe queen haven on a5 or d6",
+      "Quick development of light pieces and c6 pawn structure"
+    ],
+    "fen": "rnb1kbnr/ppp1pppp/8/q7/8/2N5/PPPP1PPP/R1BQKBNR w KQkq - 2 4"
+  },
+  {
+    "eco": "C45",
+    "name": "Scotch Game",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "d4",
+      "exd4",
+      "Nxd4"
+    ],
+    "description": "White immediately blows open the center on move 3. Championed by Garry Kasparov, it avoids dense Ruy Lopez theory for energetic piece play.",
+    "keyThemes": [
+      "Early liquidation of the central e-pawns",
+      "Fast open lines for bishops and rooks",
+      "Dominant central knight on d4"
+    ],
+    "fen": "r1bqkbnr/pppp1ppp/2n5/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4"
+  },
+  {
+    "eco": "C26",
+    "name": "Vienna Game",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e5",
+      "Nc3",
+      "Nf6",
+      "f4"
+    ],
+    "description": "An aggressive, romantic opening where White develops the c3 knight before thrusting the f-pawn forward, combining central solidity with sudden kingside assault.",
+    "keyThemes": [
+      "f4 pawn lever to open the f-file for White's rook",
+      "Tactical king hunts if Black miscalculates",
+      "Flexible piece coordination behind the center"
+    ],
+    "fen": "r1bqkb1r/pppp1ppp/2n2n2/4p3/4PP2/2N5/PPPP2PP/R1BQKBNR w KQkq - 1 4"
+  },
+  {
+    "eco": "C30",
+    "name": "King's Gambit",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e5",
+      "f4",
+      "exf4",
+      "Nf3"
+    ],
+    "description": "The quintessential romantic chess opening. White sacrifices the f-pawn on move 2 to divert Black's central e5 pawn and open the f-file for a blistering attack.",
+    "keyThemes": [
+      "Romantic pawn sacrifice on move 2",
+      "Blistering attack on the f7 square",
+      "Rapid central expansion with d4"
+    ],
+    "fen": "rnbqkbnr/pppp1ppp/8/8/4Pp2/5N2/PPPP2PP/RNBQKB1R b KQkq - 1 3"
+  },
+  {
+    "eco": "C42",
+    "name": "Petrov's Defense",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nf6",
+      "Nxe5",
+      "d6",
+      "Nf3",
+      "Nxe4"
+    ],
+    "description": "A hyper-solid symmetrical counter-attack. Black ignores White's threat against e5 and directly counter-attacks White's e4 pawn, leading to high drawing margins.",
+    "keyThemes": [
+      "Symmetrical counter-strike against e4",
+      "Pawn structure balance and easy piece liquidation",
+      "Favored elite grandmaster drawing weapon"
+    ],
+    "fen": "rnbqkb1r/ppp2ppp/3p4/8/4n3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 5"
+  },
+  {
+    "eco": "B07",
+    "name": "Pirc Defense",
+    "category": "King's Pawn (1. e4)",
+    "movesSan": [
+      "e4",
+      "d6",
+      "d4",
+      "Nf6",
+      "Nc3",
+      "g6"
+    ],
+    "description": "A hypermodern defense where Black invites White to build a broad pawn center, planning to counter-attack and undermine it from the wings with ...c5 or ...e5.",
+    "keyThemes": [
+      "Allowing White full center occupancy",
+      "Dark-squared bishop fianchetto on g7",
+      "Timing timely strikes with ...e5 or ...c5"
+    ],
+    "fen": "rnbqkb1r/ppp1pp1p/3p1np1/8/3PP3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4"
+  },
+  {
+    "eco": "D30",
+    "name": "Queen's Gambit Declined",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "d5",
+      "c4",
+      "e6",
+      "Nc3",
+      "Nf6"
+    ],
+    "description": "One of the most classical and deeply respected openings in history. Black firmly reinforces d5 with ...e6, resisting White's gambit to maintain an ironclad central bastion.",
+    "keyThemes": [
+      "Ironclad pawn anchor on d5",
+      "Managing Black's light-squared bishop",
+      "Middlegame pawn breaks with ...c5 or ...e5"
+    ],
+    "fen": "rnbqkb1r/ppp2ppp/4pn2/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4"
+  },
+  {
+    "eco": "D20",
+    "name": "Queen's Gambit Accepted",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "d5",
+      "c4",
+      "dxc4",
+      "Nf3",
+      "Nf6",
+      "e3"
+    ],
+    "description": "Black accepts the gambited c4 pawn, momentarily giving up the center in order to achieve rapid and uninhibited piece development before striking back with ...c5.",
+    "keyThemes": [
+      "Surrendering the center temporarily for rapid development",
+      "White regains the c4 pawn with Bxc4",
+      "Black breaks with ...c5 to challenge d4"
+    ],
+    "fen": "rnbqkb1r/ppp1pppp/5n2/8/2pP4/4PN2/PP3PPP/RNBQKB1R b KQkq - 0 4"
+  },
+  {
+    "eco": "D10",
+    "name": "Slav Defense",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "d5",
+      "c4",
+      "c6",
+      "Nf3",
+      "Nf6",
+      "Nc3",
+      "dxc4"
+    ],
+    "description": "Black reinforces d5 with ...c6 instead of ...e6. This keeps the c8 bishop's diagonal completely open, allowing active deployment to f5 or g4.",
+    "keyThemes": [
+      "Reinforcing d5 without boxing in the c8 bishop",
+      "Capturing on c4 followed by ...b5 holding material",
+      "Solid pawn structure resistant to direct attack"
+    ],
+    "fen": "rnbqkb1r/pp2pppp/2p2n2/8/2pP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5"
+  },
+  {
+    "eco": "D43",
+    "name": "Semi-Slav Defense",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "d5",
+      "c4",
+      "c6",
+      "Nf3",
+      "Nf6",
+      "Nc3",
+      "e6"
+    ],
+    "description": "A hybrid combining the solidity of the Slav with the toughness of the QGD. Often leads to the sharpest, most intricate tactical positions in Queen's Pawn openings.",
+    "keyThemes": [
+      "Rock-solid triangle pawn formation (c6, d5, e6)",
+      "Extremely complex tactical variations (Botvinnik, Meran)",
+      "Counter-striking on the queenside with ...b5 and ...Bb7"
+    ],
+    "fen": "rnbqkb1r/pp3ppp/2p1pn2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5"
+  },
+  {
+    "eco": "E60",
+    "name": "King's Indian Defense",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "Bg7",
+      "e4",
+      "d6"
+    ],
+    "description": "A fiery, dynamic defense championed by Kasparov and Fischer. Black cedes the center early, locks it with ...e5, and launches an all-out kingside attack with ...f5 and ...g5.",
+    "keyThemes": [
+      "Locked center creating opposite-flank attacks",
+      "White attacks on the queenside, Black hunts the enemy king",
+      "Aggressive pawn storms with ...f5, ...f4, and ...g5"
+    ],
+    "fen": "rnbqk2r/ppp1ppbp/3p1np1/8/2PPP3/2N5/PP3PPP/R1BQKBNR w KQkq - 0 5"
+  },
+  {
+    "eco": "E20",
+    "name": "Nimzo-Indian Defense",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "Nc3",
+      "Bb4"
+    ],
+    "description": "Considered one of Black's most theoretically sound responses to 1. d4. Black pins White's c3 knight, preventing e4 and fighting for control over the crucial e4 square.",
+    "keyThemes": [
+      "Pinning the c3 knight to exert positional control over e4",
+      "Willingness to double White's c-pawns via ...Bxc3",
+      "Flexible piece coordination and dark-square blockade"
+    ],
+    "fen": "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4"
+  },
+  {
+    "eco": "D85",
+    "name": "Gr\u00fcnfeld Defense",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "d5",
+      "cxd5",
+      "Nxd5",
+      "e4",
+      "Nxc3",
+      "bxc3",
+      "Bg7"
+    ],
+    "description": "The ultimate hypermodern weapon. Black lures White into occupying the entire center with c3/d4/e4, and then relentlessly hammers it with ...c5, ...Nc6, and ...Bg7.",
+    "keyThemes": [
+      "Inviting White to create an imposing central pawn duo",
+      "Laser-focus pressure on White's d4 and c3 pawn anchors",
+      "Active black rooks and bishops along open diagonals"
+    ],
+    "fen": "rnbqk2r/ppp1ppbp/6p1/8/3PP3/2P5/P4PPP/R1BQKBNR w KQkq - 1 7"
+  },
+  {
+    "eco": "D00",
+    "name": "London System",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "d5",
+      "Bf4",
+      "Nf6",
+      "e3",
+      "c5",
+      "c3",
+      "Nc6",
+      "Nd2"
+    ],
+    "description": "One of the most popular modern systems. White develops the dark-squared bishop outside the pawn chain before playing e3, establishing an impenetrable pyramid center.",
+    "keyThemes": [
+      "Unshakeable pawn pyramid on c3, d4, and e3",
+      "Active dark-squared bishop outside the pawn chain",
+      "Outpost knight anchor on the e5 square"
+    ],
+    "fen": "r1bqkb1r/pp2pppp/2n2n2/2pp4/3P1B2/2P1P3/PP1N1PPP/R2QKBNR b KQkq - 2 5"
+  },
+  {
+    "eco": "E00",
+    "name": "Catalan Opening",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "g3",
+      "d5",
+      "Bg2",
+      "Be7",
+      "Nf3",
+      "O-O"
+    ],
+    "description": "A sophisticated blend of Queen's Gambit and Reti principles. White fianchettoes the light-squared bishop to g2, dominating the long diagonal into the deep endgame.",
+    "keyThemes": [
+      "Tremendous long-range pressure from the g2 bishop",
+      "Positional squeeze and endgame superiority",
+      "Subtle pawn sacrifices to dominate open diagonals"
+    ],
+    "fen": "rnbq1rk1/ppp1bppp/4pn2/3p4/2PP4/5NP1/PP2PPBP/RNBQ1RK1 w - - 4 6"
+  },
+  {
+    "eco": "A80",
+    "name": "Dutch Defense",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "f5",
+      "c4",
+      "Nf6",
+      "g3",
+      "e6",
+      "Bg2",
+      "Be7"
+    ],
+    "description": "An asymmetrical counter-attack where Black stakes an immediate claim on the e4 square with 1...f5, aiming for an aggressive kingside campaign.",
+    "keyThemes": [
+      "Controlling e4 with an asymmetrical pawn structure",
+      "Kingside attacking potential with ...Qe8-h5",
+      "Positional weakness on the e8-h5 diagonal"
+    ],
+    "fen": "rnbqk2r/ppppb1pp/4pn2/5p2/2PP4/6P1/PP2PPBP/RNBQK1NR w KQkq - 2 5"
+  },
+  {
+    "eco": "A60",
+    "name": "Benoni Defense",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "Nf6",
+      "c4",
+      "c5",
+      "d5",
+      "e6",
+      "Nc3",
+      "exd5",
+      "cxd5",
+      "d6"
+    ],
+    "description": "Hebrew for 'Son of Sorrow'. An unbalanced, dynamic fight where Black accepts a cramped center in exchange for an active queenside pawn majority and open diagonals.",
+    "keyThemes": [
+      "Queenside pawn majority (a6, b5)",
+      "Fianchetto bishop on g7 breathing fire down the diagonal",
+      "White's central e4 pawn wedge vs Black's mobile wings"
+    ],
+    "fen": "rnbqkb1r/pp3ppp/3p1n2/2pP4/8/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 6"
+  },
+  {
+    "eco": "A45",
+    "name": "Trompowsky Attack",
+    "category": "Queen's Pawn (1. d4)",
+    "movesSan": [
+      "d4",
+      "Nf6",
+      "Bg5",
+      "d5",
+      "Bxf6",
+      "exf6"
+    ],
+    "description": "An aggressive, anti-theory weapon. White immediately pins or trades for Black's f6 knight on move 2, doubling Black's pawns and throwing the game into unique territory.",
+    "keyThemes": [
+      "Immediate structural imbalance by doubling Black's f-pawns",
+      "Side-stepping hundreds of pages of Indian Defense theory",
+      "Rapid, intuitive piece deployment"
+    ],
+    "fen": "rnbqkb1r/ppp2ppp/4pp2/3p4/3P4/8/PPP1PPPP/RN1QKBNR w KQkq - 0 4"
+  },
+  {
+    "eco": "A20",
+    "name": "English Opening: King's English",
+    "category": "Flank & Modern",
+    "movesSan": [
+      "c4",
+      "e5",
+      "Nc3",
+      "Nf6",
+      "Nf3",
+      "Nc6"
+    ],
+    "description": "A hypermodern flank opening. White fights for the d5 square from the side (c4), often playing a reversed Sicilian with an extra tempo and deep strategic flexibility.",
+    "keyThemes": [
+      "Controlling d5 from the flank with c4 and Nc3",
+      "Reversed Sicilian structures with an extra move",
+      "Long-term strategic maneuvering rather than direct clash"
+    ],
+    "fen": "r1bqkb1r/pppp1ppp/2n2n2/4p3/2P5/2N2N2/PP1PPPPP/R1BQKB1R w KQkq - 4 4"
+  },
+  {
+    "eco": "A30",
+    "name": "English Opening: Symmetrical Variation",
+    "category": "Flank & Modern",
+    "movesSan": [
+      "c4",
+      "c5",
+      "Nc3",
+      "Nc6",
+      "g3",
+      "g6",
+      "Bg2",
+      "Bg7"
+    ],
+    "description": "Both players adopt mirror-image hypermodern setups, fianchettoing their bishops to contest the central diagonals in a battle of quiet positional maneuvering.",
+    "keyThemes": [
+      "Pure symmetrical tension on d4 and d5",
+      "Fianchetto bishop duel across the long diagonals",
+      "Breakout pawn moves with d4 or b4"
+    ],
+    "fen": "r1bqk1nr/pp1pppbp/2n3p1/2p5/2P5/2N3P1/PP1PPPBP/R1BQK1NR w KQkq - 4 5"
+  },
+  {
+    "eco": "A04",
+    "name": "R\u00e9ti Opening",
+    "category": "Flank & Modern",
+    "movesSan": [
+      "Nf3",
+      "d5",
+      "c4",
+      "c6",
+      "g3",
+      "Nf6",
+      "Bg2"
+    ],
+    "description": "Pioneered by Richard R\u00e9ti. White avoids occupying the center with pawns immediately, choosing instead to pressure Black's center from afar with knights and bishops.",
+    "keyThemes": [
+      "Pawnless center opening with hypermodern principles",
+      "Flank pawn lever with c4 attacking d5",
+      "Flexible transpositions into English or Catalan structures"
+    ],
+    "fen": "rnbqkb1r/pp2pppp/2p2n2/3p4/2P5/5NP1/PP1PPPBP/RNBQK2R b KQkq - 2 4"
+  },
+  {
+    "eco": "A07",
+    "name": "King's Indian Attack",
+    "category": "Flank & Modern",
+    "movesSan": [
+      "Nf3",
+      "d5",
+      "g3",
+      "Nf6",
+      "Bg2",
+      "c6",
+      "O-O",
+      "Bg4",
+      "d3",
+      "Nbd7",
+      "Nbd2",
+      "e5"
+    ],
+    "description": "A universal system for White. White adopts the King's Indian setup with colors reversed, launching a powerful central expansion with e4 followed by kingside attack.",
+    "keyThemes": [
+      "Universal setup playable against almost any Black response",
+      "Central breakthrough with e4",
+      "Kingside attack with pawn storms and rook lifts"
+    ],
+    "fen": "r2qkb1r/pp1n1ppp/2p2n2/3pp3/8/3P1NP1/PPPNPPBP/R1BQ1RK1 w kq - 2 7"
+  },
+  {
+    "eco": "A02",
+    "name": "Bird's Opening",
+    "category": "Flank & Modern",
+    "movesSan": [
+      "f4",
+      "d5",
+      "Nf3",
+      "Nf6",
+      "e3",
+      "g6"
+    ],
+    "description": "An aggressive, unconventional flank opening. White plays 1. f4 on the first move to seize control of the e5 square, leading to sharp Dutch-like structures with an extra tempo.",
+    "keyThemes": [
+      "Direct claim on the e5 outpost on move 1",
+      "Kingside rook activation along the semi-open f-file",
+      "Unorthodox positions that take opponents out of book"
+    ],
+    "fen": "rnbqkb1r/ppp1pp1p/5np1/3p4/5P2/4PN2/PPPP2PP/RNBQKB1R w KQkq - 0 4"
+  }
+]

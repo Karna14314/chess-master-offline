@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/home/home_screen.dart';
 import 'package:chess_master/screens/puzzles/puzzle_menu_screen.dart';
 import 'package:chess_master/screens/analysis/analysis_menu_screen.dart';
 import 'package:chess_master/screens/stats/statistics_screen.dart';
-import 'package:chess_master/screens/more/more_screen.dart';
+import 'package:chess_master/providers/settings_provider.dart';
 
 /// Main screen with bottom navigation
 class MainScreen extends ConsumerStatefulWidget {
@@ -23,67 +24,73 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     PuzzleMenuScreen(),
     AnalysisMenuScreen(),
     StatisticsScreen(),
-    MoreScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final settings = ref.watch(settingsProvider);
+    final accentColor = settings.themePreset.accentColor;
+
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: AppTheme.surfaceLevel1(context),
           border: Border(
             top: BorderSide(
-              color: AppTheme.borderColorFor(context).withValues(alpha: 0.2),
-              width: 0.5,
+              color: AppTheme.borderStroke(context),
+              width: 1.0,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
+              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -3),
             ),
           ],
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          selectedItemColor: AppTheme.primaryColor,
-          unselectedItemColor:
-              Theme.of(context).brightness == Brightness.dark
-                  ? AppTheme.textSecondary
-                  : AppTheme.textSecondaryLight,
+          onTap: (index) {
+            HapticFeedback.selectionClick();
+            setState(() => _currentIndex = index);
+          },
+          backgroundColor: AppTheme.surfaceLevel1(context),
+          selectedItemColor: accentColor,
+          unselectedItemColor: AppTheme.textSecondaryFor(context),
           type: BottomNavigationBarType.fixed,
+          elevation: 0,
           showUnselectedLabels: true,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 11,
+          ),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
+              icon: Icon(Icons.sports_esports_outlined),
+              activeIcon: Icon(Icons.sports_esports),
+              label: 'Play',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.extension_outlined),
-              activeIcon: Icon(Icons.extension),
-              label: 'Puzzles',
+              icon: Icon(Icons.school_outlined),
+              activeIcon: Icon(Icons.school_rounded),
+              label: 'Learn',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.analytics_outlined),
-              activeIcon: Icon(Icons.analytics),
-              label: 'Analysis',
+              icon: Icon(Icons.insights_rounded),
+              activeIcon: Icon(Icons.analytics_rounded),
+              label: 'Review',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              activeIcon: Icon(Icons.bar_chart_sharp),
-              label: 'Stats',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.more_horiz_outlined),
-              activeIcon: Icon(Icons.more_horiz),
-              label: 'More',
+              icon: Icon(Icons.person_outline_rounded),
+              activeIcon: Icon(Icons.person_rounded),
+              label: 'Profile',
             ),
           ],
         ),

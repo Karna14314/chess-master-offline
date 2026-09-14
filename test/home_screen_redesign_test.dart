@@ -33,9 +33,9 @@ void main() {
 
   group('HomeScreen Redesign Tests', () {
     testWidgets(
-      'Renders Daily Streak badge, Daily Puzzle Hero, and Game Mode tiles in light theme',
+      'Renders Bot Arena, 12-Level Campaign, Quick Play, Lessons and History in light theme',
       (tester) async {
-        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.physicalSize = const Size(1080, 6000);
         tester.view.devicePixelRatio = 2.0;
         addTearDown(tester.view.resetPhysicalSize);
 
@@ -45,20 +45,32 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
 
-        // Verify Header and Streak Badge
+        // 1. Verify Header and Streak
         expect(find.text('Welcome Back,'), findsOneWidget);
         expect(find.text('Chess Master'), findsOneWidget);
-        expect(find.textContaining('Day'), findsWidgets);
 
-        // Verify Daily Puzzle Hero
-        expect(find.textContaining('TODAY\'S DAILY PUZZLE'), findsOneWidget);
-        expect(find.text('Solve Daily Puzzle Now'), findsOneWidget);
+        // 2. Verify Bot Arena (#1 Section)
+        expect(find.text('Bot Arena'), findsOneWidget);
+        expect(find.textContaining('Personalities'), findsOneWidget);
+        expect(find.text('Scrub ELO'), findsOneWidget);
 
-        // Verify Game Modes Grid
-        expect(find.text('Play Bot'), findsOneWidget);
+        // 3. Verify 12-Level Master Campaign (#2 Section)
+        expect(find.text('12-Level Master Campaign'), findsOneWidget);
+        expect(find.text('View Map'), findsOneWidget);
+
+        // 4. Verify Quick Play (#3 Section)
+        expect(find.text('Quick Play'), findsOneWidget);
+        expect(find.text('Pass & Play'), findsOneWidget);
         expect(find.text('Daily Puzzle'), findsOneWidget);
-        expect(find.text('Play Friend'), findsOneWidget);
         expect(find.text('Analyze Game'), findsOneWidget);
+
+        // 5. Verify Learn & Master (#4 Section)
+        expect(find.text('Learn & Master'), findsOneWidget);
+        expect(find.text('Chess Lessons'), findsOneWidget);
+        expect(find.text('Opening Playbook'), findsOneWidget);
+
+        // 6. Verify Recent Games (#5 Section)
+        expect(find.text('Recent Games'), findsOneWidget);
       },
     );
 
@@ -74,11 +86,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Welcome Back,'), findsOneWidget);
-      expect(find.text('Quick Play vs AI'), findsOneWidget);
+      expect(find.text('Bot Arena'), findsOneWidget);
+      expect(find.text('12-Level Master Campaign'), findsOneWidget);
     });
 
     testWidgets(
-      'Tapping Solve Daily Puzzle Hero navigates to DailyPuzzleScreen',
+      'Tapping Daily Puzzle in Quick Play navigates to DailyPuzzleScreen',
       (tester) async {
         tester.view.physicalSize = const Size(1080, 2400);
         tester.view.devicePixelRatio = 2.0;
@@ -90,10 +103,10 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
 
-        final solveButton = find.text('Solve Daily Puzzle Now');
-        expect(solveButton, findsOneWidget);
+        final dailyPuzzleTile = find.text('Daily Puzzle');
+        expect(dailyPuzzleTile, findsOneWidget);
 
-        await tester.tap(solveButton);
+        await tester.tap(dailyPuzzleTile);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
 
