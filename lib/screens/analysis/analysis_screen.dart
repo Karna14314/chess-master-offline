@@ -389,10 +389,17 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                   ],
 
                   // 3. Engine Recommendations
+                  // isLoading only while a live engine pass is actually
+                  // running: after analyzeFullGame() completes, isAnalyzing
+                  // is false but currentEngineLines stays empty until the
+                  // user taps a move (goToMove fills lines instantly from
+                  // analyzedMoves). Gating on isAnalyzing avoids the stale
+                  // "Analyzing position..." spinner after overall analysis.
                   EngineRecommendations(
                     lines: state.currentEngineLines,
                     isLoading:
                         state.isLiveAnalysis &&
+                        state.isAnalyzing &&
                         state.currentEngineLines.isEmpty,
                     fen: state.fen,
                   ),

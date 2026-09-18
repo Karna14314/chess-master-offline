@@ -118,12 +118,12 @@ class StatisticsModel {
   bool get isProvisional => totalGames < provisionalGames;
 
   /// Calibrated K-factor for sequential, grounded rating adjustments:
-  /// - Provisional (<10 games): 24 (steady sequential placement, max swing ~22)
-  /// - Developing (<30 games): 20 (max swing ~18)
+  /// - Provisional (<10 games): 40 (fast placement, max swing ~40)
+  /// - Developing (<30 games): 28 (max swing ~28)
   /// - Established (30+ games): 16 (max swing ~15)
   int get kFactor {
-    if (totalGames < provisionalGames) return 24;
-    if (totalGames < 30) return 20;
+    if (totalGames < provisionalGames) return 40;
+    if (totalGames < 30) return 28;
     return 16;
   }
 
@@ -264,15 +264,19 @@ class StatisticsModel {
       currentGameElo: () {
         final raw = map['current_game_elo'] as int?;
         final games = map['total_games'] as int? ?? 0;
-        if (games == 0 &&
-            (raw == null ||
-                raw == 1500 ||
-                raw == 1000 ||
-                raw == 400 ||
-                raw == 0)) {
+        if (raw == null || raw <= 0) return defaultGameElo;
+        // Legacy defaults (pre-baseline builds stored 1500/1000) carry no
+        // signal: a profile with little gameplay and no recorded history
+        // showing 1500 is a stale default, not a real rating. Fall back to
+        // the onboarding seed so Intermediate/Advanced starters keep 800/1200.
+        if (eloHistory.isEmpty &&
+            games < provisionalGames &&
+            (raw == 1500 || raw == 1000)) {
+          final seed = map['initial_game_elo'] as int?;
+          if (seed != null && seed > 0) return seed;
           return defaultGameElo;
         }
-        return raw ?? defaultGameElo;
+        return raw;
       }(),
       initialGameElo: map['initial_game_elo'] as int? ?? () {
         if (eloHistory.isNotEmpty) {

@@ -32,70 +32,43 @@ class PieceTestScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Traditional Pieces',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  pieces.map((piece) {
-                    return Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        color: Colors.white,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ChessPiece(
-                            piece: piece,
-                            size: 60,
-                            pieceSet: PieceSet.traditional,
-                          ),
-                          Text(piece, style: const TextStyle(fontSize: 10)),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              'Modern Pieces',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  pieces.map((piece) {
-                    return Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        color: Colors.white,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ChessPiece(
-                            piece: piece,
-                            size: 60,
-                            pieceSet: PieceSet.modern,
-                          ),
-                          Text(piece, style: const TextStyle(fontSize: 10)),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-            ),
-            const SizedBox(height: 32),
+            for (final pieceSet in PieceSet.allSets) ...[
+              Text(
+                '${pieceSet.name} Pieces',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    pieces.map((piece) {
+                      return Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ChessPiece(
+                              piece: piece,
+                              size: 60,
+                              pieceSet: pieceSet,
+                            ),
+                            Text(piece, style: const TextStyle(fontSize: 10)),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+              ),
+              const SizedBox(height: 32),
+            ],
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(16),
@@ -115,6 +88,7 @@ class PieceTestScreen extends ConsumerWidget {
                     Text(
                       '4. Check console for "ChessPiece: Loading..." messages',
                     ),
+                    Text('5. Each set below should look visibly different'),
                   ],
                 ),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Chess board visual themes
 enum BoardThemeType {
@@ -88,11 +89,11 @@ enum ThemePreset {
       case ThemePreset.classic:
         return PieceSetType.traditional;
       case ThemePreset.midnight:
-        return PieceSetType.modern;
+        return PieceSetType.midnight;
       case ThemePreset.emerald:
-        return PieceSetType.traditional;
+        return PieceSetType.emerald;
       case ThemePreset.royal:
-        return PieceSetType.modern;
+        return PieceSetType.traditional;
     }
   }
 }
@@ -280,19 +281,44 @@ class BoardTheme {
   ];
 }
 
-/// Piece set types
+/// Piece set types.
+///
+/// Audit note: the app used to list 11 piece sets backed by only two asset
+/// folders whose SVGs were byte-identical, so every option rendered the
+/// exact same pixels. The unimplemented entries were removed and the
+/// remaining styles are genuinely distinct: they share the single bundled
+/// Cburnett-style artwork (pure #fff/#000 fills) recolored per style with a
+/// [ColorMapper], so switching sets visibly changes the pieces.
 enum PieceSetType {
   traditional,
-  modern,
-  classic,
-  neo,
+  midnight,
   wood,
-  glass,
-  alpha,
-  merida,
-  cburnett,
-  minimal,
-  fantasy,
+  emerald,
+}
+
+/// Recolors the bundled piece artwork by substituting its two hardcoded
+/// fills: pure white (#fff) becomes [light], pure black (#000) becomes
+/// [dark] (fills and strokes alike, so outlines stay coherent).
+///
+/// Must stay immutable with a const constructor: flutter_svg includes the
+/// mapper in its picture-cache key by identity/equality.
+class _PiecePaletteMapper extends ColorMapper {
+  final Color light;
+  final Color dark;
+
+  const _PiecePaletteMapper({required this.light, required this.dark});
+
+  @override
+  Color substitute(
+    String? id,
+    String elementName,
+    String attributeName,
+    Color color,
+  ) {
+    if (color == const Color(0xFFFFFFFF)) return light;
+    if (color == const Color(0xFF000000)) return dark;
+    return color;
+  }
 }
 
 /// Configuration for a piece set
@@ -300,103 +326,62 @@ class PieceSet {
   final String name;
   final String assetPath;
 
-  const PieceSet({required this.name, required this.assetPath});
+  /// Optional palette applied at SVG parse time. Null renders the raw
+  /// artwork (used by Traditional).
+  final ColorMapper? colorMapper;
+
+  const PieceSet({
+    required this.name,
+    required this.assetPath,
+    this.colorMapper,
+  });
 
   static const PieceSet traditional = PieceSet(
     name: 'Traditional',
     assetPath: 'assets/pieces/traditional/',
   );
 
-  static const PieceSet modern = PieceSet(
-    name: 'Modern',
-    assetPath: 'assets/pieces/modern/',
-  );
-
-  static const PieceSet classic = PieceSet(
-    name: 'Classic',
-    assetPath: 'assets/pieces/traditional/', // Use fallback until assets exist
-  );
-
-  static const PieceSet neo = PieceSet(
-    name: 'Neo',
-    assetPath: 'assets/pieces/modern/', // Use fallback
+  static const PieceSet midnight = PieceSet(
+    name: 'Midnight',
+    assetPath: 'assets/pieces/traditional/',
+    colorMapper: _PiecePaletteMapper(
+      light: Color(0xFFEAF3FA),
+      dark: Color(0xFF33475E),
+    ),
   );
 
   static const PieceSet wood = PieceSet(
     name: 'Wood',
-    assetPath: 'assets/pieces/traditional/', // Use fallback
+    assetPath: 'assets/pieces/traditional/',
+    colorMapper: _PiecePaletteMapper(
+      light: Color(0xFFF4E3C2),
+      dark: Color(0xFF7C5330),
+    ),
   );
 
-  static const PieceSet glass = PieceSet(
-    name: 'Glass',
-    assetPath: 'assets/pieces/modern/', // Use fallback
-  );
-
-  static const PieceSet alpha = PieceSet(
-    name: 'Alpha',
-    assetPath: 'assets/pieces/traditional/', // Use fallback
-  );
-
-  static const PieceSet merida = PieceSet(
-    name: 'Merida',
-    assetPath: 'assets/pieces/modern/', // Use fallback
-  );
-
-  static const PieceSet cburnett = PieceSet(
-    name: 'CBurnett',
-    assetPath: 'assets/pieces/traditional/', // Use fallback
-  );
-
-  static const PieceSet minimal = PieceSet(
-    name: 'Minimal',
-    assetPath: 'assets/pieces/modern/', // Use fallback
-  );
-
-  static const PieceSet fantasy = PieceSet(
-    name: 'Fantasy',
-    assetPath: 'assets/pieces/traditional/', // Use fallback
+  static const PieceSet emerald = PieceSet(
+    name: 'Emerald',
+    assetPath: 'assets/pieces/traditional/',
+    colorMapper: _PiecePaletteMapper(
+      light: Color(0xFFDFF2E3),
+      dark: Color(0xFF2E6B4F),
+    ),
   );
 
   static PieceSet fromType(PieceSetType type) {
     switch (type) {
       case PieceSetType.traditional:
         return traditional;
-      case PieceSetType.modern:
-        return modern;
-      case PieceSetType.classic:
-        return classic;
-      case PieceSetType.neo:
-        return neo;
+      case PieceSetType.midnight:
+        return midnight;
       case PieceSetType.wood:
         return wood;
-      case PieceSetType.glass:
-        return glass;
-      case PieceSetType.alpha:
-        return alpha;
-      case PieceSetType.merida:
-        return merida;
-      case PieceSetType.cburnett:
-        return cburnett;
-      case PieceSetType.minimal:
-        return minimal;
-      case PieceSetType.fantasy:
-        return fantasy;
+      case PieceSetType.emerald:
+        return emerald;
     }
   }
 
-  static List<PieceSet> get allSets => [
-    traditional,
-    modern,
-    classic,
-    neo,
-    wood,
-    glass,
-    alpha,
-    merida,
-    cburnett,
-    minimal,
-    fantasy,
-  ];
+  static List<PieceSet> get allSets => [traditional, midnight, wood, emerald];
 
   /// Get the asset path for a specific piece
   /// [piece] is in format: 'wK', 'bQ', etc.

@@ -30,7 +30,7 @@ class DatabaseService {
 
       return await openDatabase(
         path,
-        version: 12,
+        version: 13,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -145,6 +145,7 @@ class DatabaseService {
         hints_used INTEGER DEFAULT 0,
         last_updated INTEGER,
         current_game_elo INTEGER DEFAULT 400,
+        initial_game_elo INTEGER DEFAULT 400,
         consecutive_wins INTEGER DEFAULT 0,
         consecutive_losses INTEGER DEFAULT 0,
         elo_history TEXT,
@@ -393,6 +394,36 @@ class DatabaseService {
           );
         } catch (_) {}
         debugPrint('Repaired statistics columns + 400 baseline');
+        break;
+      case 13:
+        // initial_game_elo was written by the app but never existed as a
+        // column, so every statistics save failed silently (no such column)
+        // and ratings reset on every restart. Add it idempotently, backfill
+        // it, and normalize stale legacy defaults (1500/1000) still sitting
+        // on barely-played profiles with no recorded history.
+        try {
+          await db.execute(
+            'ALTER TABLE statistics ADD COLUMN initial_game_elo INTEGER DEFAULT 400',
+          );
+        } catch (_) {
+          // Column already exists — safe to ignore.
+        }
+        try {
+          await db.execute(
+            'UPDATE statistics SET initial_game_elo = 400 '
+            'WHERE initial_game_elo IS NULL',
+          );
+        } catch (_) {}
+        try {
+          await db.execute(
+            'UPDATE statistics SET current_game_elo = '
+            'COALESCE(initial_game_elo, 400) '
+            'WHERE (elo_history IS NULL OR elo_history = \'[]\') '
+            'AND total_games < 10 '
+            'AND current_game_elo IN (1000, 1500)',
+          );
+        } catch (_) {}
+        debugPrint('Added initial_game_elo + normalized legacy ratings');
         break;
     }
   }

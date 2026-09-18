@@ -40,6 +40,10 @@ class ChessPiece extends StatelessWidget {
         height: size * 0.9,
         fit: BoxFit.contain,
         placeholderBuilder: (context) => _buildFallbackPiece(),
+        // Recolors the shared artwork per piece set (null = raw artwork).
+        // The mapper is part of flutter_svg's cache key, so each set is
+        // cached and rendered independently.
+        colorMapper: pieceSet.colorMapper,
         colorFilter: null, // Don't apply color filter to preserve piece colors
       ),
     );
@@ -104,14 +108,16 @@ class PieceAssets {
     BuildContext context, [
     PieceSet? pieceSet,
   ]) async {
-    final setsToLoad =
-        pieceSet != null ? [pieceSet] : [PieceSet.traditional, PieceSet.modern];
+    final setsToLoad = pieceSet != null ? [pieceSet] : PieceSet.allSets;
     final futures = <Future<void>>[];
     for (final set in setsToLoad) {
       for (final piece in allPieceCodes) {
         futures.add(() async {
           try {
-            final loader = SvgAssetLoader(set.getAssetPath(piece));
+            final loader = SvgAssetLoader(
+              set.getAssetPath(piece),
+              colorMapper: set.colorMapper,
+            );
             await svg.cache.putIfAbsent(
               loader.cacheKey(null),
               () => loader.loadBytes(null),

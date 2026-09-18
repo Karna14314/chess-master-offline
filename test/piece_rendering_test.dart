@@ -75,9 +75,21 @@ void main() {
         'assets/pieces/traditional/bQ.svg',
       );
 
-      final modern = PieceSet.modern;
-      expect(modern.getAssetPath('wK'), 'assets/pieces/modern/wK.svg');
-      expect(modern.getAssetPath('bQ'), 'assets/pieces/modern/bQ.svg');
+      // Every implemented set resolves to the bundled artwork…
+      for (final set in PieceSet.allSets) {
+        expect(set.getAssetPath('wK'), 'assets/pieces/traditional/wK.svg');
+      }
+
+      // …but each set renders visibly different pieces: Traditional uses
+      // the raw artwork, every other set carries its own palette mapper.
+      expect(PieceSet.traditional.colorMapper, isNull);
+      final mappers =
+          PieceSet.allSets
+              .where((s) => s != PieceSet.traditional)
+              .map((s) => s.colorMapper)
+              .toList();
+      expect(mappers, everyElement(isNotNull));
+      expect(mappers.toSet().length, mappers.length);
     });
   });
 }

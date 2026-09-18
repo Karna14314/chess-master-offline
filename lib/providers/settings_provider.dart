@@ -121,6 +121,33 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     _loadSettings();
   }
 
+  /// Resolve the saved piece set by name, falling back to the legacy int
+  /// index and finally the theme default.
+  ///
+  /// The legacy 11-entry [PieceSetType] enum was trimmed to the styles that
+  /// actually render differently, so old indices no longer map 1:1. Every
+  /// legacy entry rendered byte-identical pixels anyway, so legacy users
+  /// simply inherit their theme's default set.
+  PieceSetType _resolvePieceSet(
+    SharedPreferences prefs,
+    ThemePreset themePreset, {
+    required int legacyIndex,
+  }) {
+    final savedName = prefs.getString('pieceSetName');
+    if (savedName != null) {
+      for (final type in PieceSetType.values) {
+        if (type.name == savedName) return type;
+      }
+    }
+    if (prefs.containsKey('pieceSet')) {
+      return themePreset.defaultPieceSet;
+    }
+    if (legacyIndex >= 0 && legacyIndex < PieceSetType.values.length) {
+      return PieceSetType.values[legacyIndex];
+    }
+    return themePreset.defaultPieceSet;
+  }
+
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
@@ -136,7 +163,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     final boardTheme = BoardThemeType.values[savedBoardThemeIdx.clamp(0, BoardThemeType.values.length - 1)];
 
     final savedPieceSetIdx = prefs.getInt('pieceSet') ?? themePreset.defaultPieceSet.index;
-    final pieceSet = PieceSetType.values[savedPieceSetIdx.clamp(0, PieceSetType.values.length - 1)];
+    final pieceSet = _resolvePieceSet(
+      prefs,
+      themePreset,
+      legacyIndex: savedPieceSetIdx,
+    );
 
     state = AppSettings(
       themePreset: themePreset,
@@ -177,7 +208,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
     await prefs.setInt('themePreset', s.themePreset.index);
     await prefs.setInt('boardTheme', s.boardTheme.index);
-    await prefs.setInt('pieceSet', s.pieceSet.index);
+    // Persist piece sets by name: the enum was trimmed to implemented
+    // styles, so raw indices are no longer stable across versions.
+    await prefs.setString('pieceSetName', s.pieceSet.name);
+    await prefs.remove('pieceSet');
     await prefs.setBool('showCoordinates', s.showCoordinates);
     await prefs.setBool('showLegalMoves', s.showLegalMoves);
     await prefs.setBool('showLastMove', s.showLastMove);

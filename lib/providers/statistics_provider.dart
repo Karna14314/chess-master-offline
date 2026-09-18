@@ -98,7 +98,17 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
     await _saveStatistics();
   }
 
-  /// Record game result with calibrated, sequential ELO calculation
+  /// Record game result with calibrated, sequential ELO calculation.
+  ///
+  /// Shape of the curve:
+  /// - Standard FIDE expected score with a 400-point difference clamp.
+  /// - K-factor from games played (40 provisional / 28 developing / 16
+  ///   established), so new players place quickly instead of grinding.
+  /// - Underdog bonus: beating stronger opposition accelerates the climb
+  ///   toward their level, still bounded (no teleport leaps).
+  /// - Anti-farming: beating far weaker bots yields nothing, so the only
+  ///   way up is beating peers or stronger opponents.
+  /// - Losses always dip but a single game can never plummet (bounded by K).
   Future<void> recordGameElo({
     required int botElo,
     required bool isWin,
@@ -107,8 +117,7 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
   }) async {
     // 1. Standard FIDE 400-point difference clamp prevents explosive rating jumps or deflation
     final rawDiff = (botElo - state.currentGameElo).clamp(-400, 400);
-    final expectedScore =
-        1.0 / (1.0 + math.pow(10, rawDiff / 400));
+    final expectedScore = 1.0 / (1.0 + math.pow(10, rawDiff / 400));
     final actualScore =
         isWin
             ? 1.0
@@ -116,17 +125,35 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
             ? 0.5
             : 0.0;
 
-    // 2. Calibrated K-factor (provisional: 24, developing: 20, established: 16)
+    // 2. Calibrated K-factor (provisional: 40, developing: 28, established: 16)
     final k = state.kFactor;
+    final provisional = state.isProvisional;
     int eloChange = (k * (actualScore - expectedScore)).round();
 
     // 3. Grounded sequential progression:
-    // - Wins: always grant sequential positive progression (at least +1, bounded by K)
-    // - Losses: ALWAYS dip (at least -1, bounded by -K, ensuring rating is never "always up")
-    // - Draws: small bounded Elo adjustment
     if (isWin) {
       eloChange = eloChange.clamp(1, k);
+      final gap = botElo - state.currentGameElo;
+      if (gap > 0) {
+        // Underdog bonus: +3 per 100 ELO of gap while provisional,
+        // +2 once established — capped so progress stays sequential.
+        final bonus = ((gap ~/ 100) * (provisional ? 3 : 2)).clamp(
+          0,
+          provisional ? 12 : 6,
+        );
+        eloChange = (eloChange + bonus).clamp(1, k + (provisional ? 12 : 6));
+      } else {
+        // Anti-farming: grinding far weaker bots yields no progress.
+        final overmatch = -gap;
+        if (overmatch >= 300) {
+          eloChange = 0;
+        } else if (overmatch >= 200) {
+          eloChange = eloChange.clamp(0, 1);
+        }
+      }
     } else if (isLoss) {
+      // Losses ALWAYS dip (at least -1, bounded by -K), ensuring rating is
+      // never "always up" — but one game can never cause a plummet.
       eloChange = eloChange.clamp(-k, -1);
     } else if (isDraw) {
       eloChange = eloChange.clamp(-k ~/ 2, k ~/ 2);
@@ -145,14 +172,10 @@ class StatisticsNotifier extends StateNotifier<StatisticsModel> {
       ),
     );
 
-    // If first game, make sure initialGameElo is set cleanly
-    final initialElo = state.eloHistory.isEmpty
-        ? state.initialGameElo
-        : state.initialGameElo;
-
+    // initialGameElo is seeded once (fresh default or onboarding skill
+    // pick) and never rewritten by results — it anchors trend/progress UI.
     state = state.copyWith(
       currentGameElo: newElo,
-      initialGameElo: initialElo,
       consecutiveWins: newConsecutiveWins,
       consecutiveLosses: newConsecutiveLosses,
       eloHistory: newHistory,
