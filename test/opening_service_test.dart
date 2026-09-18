@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chess_master/core/services/opening_service.dart';
 
@@ -55,6 +57,72 @@ void main() {
       expect(results.length, greaterThanOrEqualTo(3));
       for (final o in results) {
         expect(o.name.toLowerCase(), contains('sicilian'));
+      }
+    });
+
+    test('Every line carries a distinct study goal', () {
+      final goals = service.allOpenings.map((o) => o.displayGoal).toList();
+      expect(goals, everyElement(isNotEmpty));
+      // Goals must differentiate lines: near-unique across the playbook.
+      expect(goals.toSet().length, greaterThanOrEqualTo(70));
+    });
+
+    test('Move notes align with plies and start-position note exists', () {
+      for (final o in service.allOpenings) {
+        expect(
+          o.moveNotes.length,
+          equals(o.movesSan.length),
+          reason: '${o.name}: moveNotes/plies mismatch',
+        );
+        expect(o.noteForPly(0), isNotEmpty);
+        expect(o.noteForPly(o.movesSan.length), isNotEmpty);
+      }
+    });
+
+    test('No duplicate theory lines across the playbook', () {
+      final seen = <String>{};
+      for (final o in service.allOpenings) {
+        final key =
+            '${o.eco}:${o.movesSan.map((m) => m.toLowerCase()).join(' ')}';
+        expect(seen, isNot(contains(key)), reason: 'duplicate: ${o.name}');
+        seen.add(key);
+      }
+    });
+
+    test('Quiz answers are not pinned to one slot', () {
+      // OpeningEntry does not parse quizzes; check the bundled JSON
+      // directly (same file the service loads).
+      final raw =
+          File('assets/lessons/openings.json').readAsStringSync();
+      final decoded = json.decode(raw) as List;
+      final answers = <int>{};
+      for (final item in decoded) {
+        final quiz = (item as Map)['quiz'];
+        if (quiz is Map) answers.add((quiz['answer'] as num).toInt());
+      }
+      expect(answers.length, greaterThanOrEqualTo(2));
+    });
+
+    test('Quiz questions vary within each category', () {
+      final raw =
+          File('assets/lessons/openings.json').readAsStringSync();
+      final decoded = json.decode(raw) as List;
+      final byCategory = <String, Set<String>>{};
+      for (final item in decoded) {
+        final m = item as Map;
+        final quiz = m['quiz'];
+        if (quiz is Map) {
+          byCategory
+              .putIfAbsent(m['category'].toString(), () => <String>{})
+              .add(quiz['question'].toString());
+        }
+      }
+      for (final entry in byCategory.entries) {
+        expect(
+          entry.value.length,
+          greaterThanOrEqualTo(3),
+          reason: 'category ${entry.key} repeats one question',
+        );
       }
     });
   });

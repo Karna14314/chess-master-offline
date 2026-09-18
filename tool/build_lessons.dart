@@ -72,7 +72,7 @@ const List<MotifPack> kMatePacks = [
     sectionId: 'checkmates',
     difficulty: 'Beginner',
     icon: 'grid',
-    count: 12,
+    count: 24,
     puzzleTheme: 'backRankMate',
     minRating: 600,
     maxRating: 1600,
@@ -101,7 +101,7 @@ const List<MotifPack> kMatePacks = [
     sectionId: 'checkmates',
     difficulty: 'Beginner',
     icon: 'bolt',
-    count: 12,
+    count: 24,
     puzzleTheme: 'mateIn1',
     minRating: 600,
     maxRating: 1200,
@@ -130,7 +130,7 @@ const List<MotifPack> kMatePacks = [
     sectionId: 'checkmates',
     difficulty: 'Beginner',
     icon: 'bolt',
-    count: 12,
+    count: 24,
     puzzleTheme: 'mateIn2',
     minRating: 600,
     maxRating: 1400,
@@ -159,7 +159,7 @@ const List<MotifPack> kMatePacks = [
     sectionId: 'checkmates',
     difficulty: 'Intermediate',
     icon: 'star',
-    count: 6,
+    count: 8,
     puzzleTheme: 'smotheredMate',
     minRating: 600,
     maxRating: 1800,
@@ -184,7 +184,7 @@ const List<MotifPack> kMatePacks = [
     sectionId: 'checkmates',
     difficulty: 'Intermediate',
     icon: 'star',
-    count: 4,
+    count: 6,
     puzzleTheme: 'arabianMate',
     minRating: 600,
     maxRating: 1800,
@@ -213,7 +213,7 @@ const List<MotifPack> kMatePacks = [
     sectionId: 'checkmates',
     difficulty: 'Intermediate',
     icon: 'star',
-    count: 4,
+    count: 6,
     puzzleTheme: 'anastasiaMate',
     minRating: 600,
     maxRating: 1800,
@@ -242,7 +242,7 @@ const List<MotifPack> kMatePacks = [
     sectionId: 'checkmates',
     difficulty: 'Intermediate',
     icon: 'star',
-    count: 4,
+    count: 6,
     puzzleTheme: 'morphysMate',
     minRating: 600,
     maxRating: 1800,
@@ -271,7 +271,7 @@ const List<MotifPack> kMatePacks = [
     sectionId: 'checkmates',
     difficulty: 'Intermediate',
     icon: 'star',
-    count: 6,
+    count: 10,
     puzzleTheme: 'operaMate',
     minRating: 600,
     maxRating: 1800,
@@ -299,7 +299,7 @@ const List<MotifPack> kFundamentalPacks = [
     sectionId: 'fundamental_tactics',
     difficulty: 'Beginner',
     icon: 'call_split',
-    count: 30,
+    count: 40,
     puzzleTheme: 'fork',
     minRating: 600,
     maxRating: 1300,
@@ -327,7 +327,7 @@ const List<MotifPack> kFundamentalPacks = [
     sectionId: 'fundamental_tactics',
     difficulty: 'Beginner',
     icon: 'push_pin',
-    count: 25,
+    count: 32,
     puzzleTheme: 'pin',
     minRating: 600,
     maxRating: 1300,
@@ -355,7 +355,7 @@ const List<MotifPack> kFundamentalPacks = [
     sectionId: 'fundamental_tactics',
     difficulty: 'Beginner',
     icon: 'shopping_bag',
-    count: 20,
+    count: 28,
     puzzleTheme: 'hangingPiece',
     minRating: 600,
     maxRating: 1200,
@@ -383,7 +383,7 @@ const List<MotifPack> kFundamentalPacks = [
     sectionId: 'fundamental_tactics',
     difficulty: 'Beginner',
     icon: 'arrow_range',
-    count: 15,
+    count: 24,
     puzzleTheme: 'skewer',
     minRating: 600,
     maxRating: 1300,
@@ -411,7 +411,7 @@ const List<MotifPack> kFundamentalPacks = [
     sectionId: 'fundamental_tactics',
     difficulty: 'Beginner',
     icon: 'visibility',
-    count: 20,
+    count: 30,
     puzzleTheme: 'discoveredAttack',
     minRating: 600,
     maxRating: 1400,
@@ -439,7 +439,7 @@ const List<MotifPack> kFundamentalPacks = [
     sectionId: 'fundamental_tactics',
     difficulty: 'Intermediate',
     icon: 'exposure_plus_2',
-    count: 10,
+    count: 12,
     puzzleTheme: 'doubleCheck',
     minRating: 600,
     maxRating: 1500,
@@ -467,7 +467,7 @@ const List<MotifPack> kFundamentalPacks = [
     sectionId: 'fundamental_tactics',
     difficulty: 'Intermediate',
     icon: 'call_missed_outgoing',
-    count: 12,
+    count: 24,
     puzzleTheme: 'deflection',
     minRating: 600,
     maxRating: 1500,
@@ -495,7 +495,7 @@ const List<MotifPack> kFundamentalPacks = [
     sectionId: 'fundamental_tactics',
     difficulty: 'Intermediate',
     icon: 'magnet',
-    count: 8,
+    count: 20,
     puzzleTheme: 'attraction',
     minRating: 600,
     maxRating: 1600,
@@ -526,7 +526,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Advanced',
     icon: 'cleaning_services',
-    count: 15,
+    count: 20,
     puzzleTheme: 'clearance',
     minRating: 600,
     maxRating: 1800,
@@ -554,7 +554,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Advanced',
     icon: 'block',
-    count: 10,
+    count: 12,
     puzzleTheme: 'interference',
     minRating: 600,
     maxRating: 1800,
@@ -582,7 +582,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Advanced',
     icon: 'x_ray',
-    count: 6,
+    count: 8,
     puzzleTheme: 'xRayAttack',
     minRating: 600,
     maxRating: 1800,
@@ -610,7 +610,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Advanced',
     icon: 'sentiment_very_dissatisfied',
-    count: 15,
+    count: 20,
     puzzleTheme: 'zugzwang',
     minRating: 600,
     maxRating: 1800,
@@ -638,7 +638,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Advanced',
     icon: 'skip_next',
-    count: 12,
+    count: 18,
     puzzleTheme: 'intermezzo',
     minRating: 600,
     maxRating: 1800,
@@ -652,7 +652,7 @@ const List<MotifPack> kIntermediatePacks = [
     hintTemplate: 'Before recapturing, is there a check or threat to insert?',
     quizQuestion: 'An intermezzo is…',
     quizOptions: [
-      'Ahaltime break',
+      'A halftime break',
       'An unexpected forcing move played before the "obvious" reply',
       'A type of pin',
     ],
@@ -666,7 +666,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Intermediate',
     icon: 'security',
-    count: 10,
+    count: 12,
     puzzleTheme: 'capturingDefender',
     minRating: 600,
     maxRating: 1600,
@@ -694,7 +694,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Intermediate',
     icon: 'trap',
-    count: 12,
+    count: 16,
     puzzleTheme: 'trappedPiece',
     minRating: 600,
     maxRating: 1600,
@@ -722,7 +722,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Advanced',
     icon: 'whatshot',
-    count: 12,
+    count: 20,
     puzzleTheme: 'sacrifice',
     minRating: 1300,
     maxRating: 1800,
@@ -750,7 +750,7 @@ const List<MotifPack> kIntermediatePacks = [
     sectionId: 'advanced_tactics',
     difficulty: 'Advanced',
     icon: 'volume_mute',
-    count: 8,
+    count: 16,
     puzzleTheme: 'quietMove',
     minRating: 1200,
     maxRating: 1800,
@@ -781,7 +781,7 @@ const List<MotifPack> kEndgamePacks = [
     sectionId: 'endgames',
     difficulty: 'Intermediate',
     icon: 'castle',
-    count: 20,
+    count: 30,
     puzzleTheme: 'rookEndgame',
     minRating: 600,
     maxRating: 1600,
@@ -809,7 +809,7 @@ const List<MotifPack> kEndgamePacks = [
     sectionId: 'endgames',
     difficulty: 'Beginner',
     icon: 'circle',
-    count: 15,
+    count: 20,
     puzzleTheme: 'pawnEndgame',
     minRating: 600,
     maxRating: 1400,
@@ -837,7 +837,7 @@ const List<MotifPack> kEndgamePacks = [
     sectionId: 'endgames',
     difficulty: 'Advanced',
     icon: 'queen',
-    count: 8,
+    count: 12,
     puzzleTheme: 'queenEndgame',
     minRating: 600,
     maxRating: 1800,
@@ -850,7 +850,7 @@ const List<MotifPack> kEndgamePacks = [
         'That allows endless checks or loses the race. Centralize and time the pawn push.',
     hintTemplate: 'Centralize the queen and time the pawn advance.',
     quizQuestion: 'The biggest danger when winning a queen endgame is…',
-    quizOptions: [' stalemate tricks only', 'Perpetual check', 'The fifty-move rule only'],
+      quizOptions: ['Stalemate tricks only', 'Perpetual check', 'The fifty-move rule only'],
     quizAnswer: 1,
   ),
   MotifPack(
@@ -861,7 +861,7 @@ const List<MotifPack> kEndgamePacks = [
     sectionId: 'endgames',
     difficulty: 'Intermediate',
     icon: 'diagonal',
-    count: 8,
+    count: 10,
     puzzleTheme: 'bishopEndgame',
     minRating: 600,
     maxRating: 1600,
@@ -875,7 +875,7 @@ const List<MotifPack> kEndgamePacks = [
     hintTemplate: 'Pawns fixed on your bishop’s color are targets. Attack them with king and bishop.',
     quizQuestion: 'Why do opposite-color bishop endings favor the attacker?',
     quizOptions: [
-      'Bishops are worth more then',
+      'Bishops are worth more than pawns',
       'The defender’s bishop can never guard what the attacker’s bishop attacks',
       'There are more pawns',
     ],
@@ -889,7 +889,7 @@ const List<MotifPack> kEndgamePacks = [
     sectionId: 'endgames',
     difficulty: 'Intermediate',
     icon: 'horse',
-    count: 6,
+    count: 8,
     puzzleTheme: 'knightEndgame',
     minRating: 600,
     maxRating: 1600,
@@ -917,7 +917,7 @@ const List<MotifPack> kEndgamePacks = [
     sectionId: 'endgames',
     difficulty: 'Advanced',
     icon: 'swap',
-    count: 5,
+    count: 8,
     puzzleTheme: 'queenRookEndgame',
     minRating: 600,
     maxRating: 1800,
@@ -945,7 +945,7 @@ const List<MotifPack> kEndgamePacks = [
     sectionId: 'endgames',
     difficulty: 'Beginner',
     icon: 'arrow_upward',
-    count: 10,
+    count: 16,
     puzzleTheme: 'promotion',
     minRating: 600,
     maxRating: 1400,
@@ -973,7 +973,7 @@ const List<MotifPack> kEndgamePacks = [
     sectionId: 'endgames',
     difficulty: 'Beginner',
     icon: 'fast_forward',
-    count: 8,
+    count: 16,
     puzzleTheme: 'advancedPawn',
     minRating: 600,
     maxRating: 1300,
@@ -1004,7 +1004,7 @@ const List<MotifPack> kStrategyPacks = [
     sectionId: 'middlegame_strategy',
     difficulty: 'Intermediate',
     icon: 'storm',
-    count: 20,
+    count: 36,
     puzzleTheme: 'kingsideAttack',
     minRating: 600,
     maxRating: 1700,
@@ -1032,7 +1032,7 @@ const List<MotifPack> kStrategyPacks = [
     sectionId: 'middlegame_strategy',
     difficulty: 'Intermediate',
     icon: 'exposure',
-    count: 12,
+    count: 18,
     puzzleTheme: 'exposedKing',
     minRating: 600,
     maxRating: 1700,
@@ -1060,7 +1060,7 @@ const List<MotifPack> kStrategyPacks = [
     sectionId: 'middlegame_strategy',
     difficulty: 'Advanced',
     icon: 'west',
-    count: 10,
+    count: 16,
     puzzleTheme: 'queensideAttack',
     minRating: 600,
     maxRating: 1800,
@@ -1088,7 +1088,7 @@ const List<MotifPack> kStrategyPacks = [
     sectionId: 'middlegame_strategy',
     difficulty: 'Beginner',
     icon: 'target',
-    count: 8,
+    count: 10,
     puzzleTheme: 'attackingF2F7',
     minRating: 600,
     maxRating: 1400,
@@ -1116,7 +1116,7 @@ const List<MotifPack> kStrategyPacks = [
     sectionId: 'middlegame_strategy',
     difficulty: 'Advanced',
     icon: 'trending_up',
-    count: 10,
+    count: 20,
     puzzleTheme: 'advantage',
     minRating: 1400,
     maxRating: 2000,
@@ -1239,6 +1239,11 @@ const Map<String, Map<String, String>> kOpeningFamilies = {
     'black': 'Return material for development, hold the centre, castle fast.',
     'themes': 'Tempo, gambit compensation, king safety',
   },
+  'd4_gambits': {
+    'white': 'Sacrifice a pawn for open lines and a lasting lead in development — keep the initiative at all costs.',
+    'black': 'Meet the gambit with fast development; return material to complete development and castle.',
+    'themes': 'Gambit initiative, open lines, development lead',
+  },
 };
 
 const List<OpeningSpec> kOpeningSpecs = [
@@ -1277,7 +1282,7 @@ const List<OpeningSpec> kOpeningSpecs = [
   OpeningSpec(eco: 'B06', name: 'Modern Defence', category: "King's Pawn (1. e4)", family: 'pirc_modern', uci: ['e2e4', 'g7g6', 'd2d4', 'f8g7'], note: 'Hypermodern fianchetto: invite the centre, then strike it.'),
   OpeningSpec(eco: 'B01', name: 'Scandinavian Defence', category: "King's Pawn (1. e4)", family: 'scandi', uci: ['e2e4', 'd7d5', 'e4d5', 'd8d5'], note: 'The queen comes out early; Black develops with gain of time trades.'),
   OpeningSpec(eco: 'B02', name: 'Alekhine Defence', category: "King's Pawn (1. e4)", family: 'scandi', uci: ['e2e4', 'g8f6', 'e4e5', 'f6d5', 'd2d4', 'd7d6'], note: 'Provoke the pawns forward, then undermine the overextended centre.'),
-  OpeningSpec(eco: 'A40', name: "Queen's Pawn: Modern", category: "Queen's Pawn (1. d4)", family: 'english_reti', uci: ['d2d4', 'g8f6', 'c2c4', 'e7e6', 'g1f3', 'b7b6'], note: 'Queen’s Indian setups: fianchetto pressure on the long diagonal.'),
+  OpeningSpec(eco: 'A40', name: "Queen's Pawn: Modern Defence", category: "Queen's Pawn (1. d4)", family: 'pirc_modern', uci: ['d2d4', 'g7g6', 'e2e4', 'f8g7'], note: 'Hypermodern versus 1.d4: fianchetto first, then strike the centre with …c5 or …e5.'),
   OpeningSpec(eco: 'E00', name: 'Catalan Opening', category: "Queen's Pawn (1. d4)", family: 'slav_catalan', uci: ['d2d4', 'g8f6', 'c2c4', 'e7e6', 'g2g3'], note: 'The g2 bishop grinds for 40 moves: pressure without risk.'),
   OpeningSpec(eco: 'E12', name: "Queen's Indian Defence", category: "Queen's Pawn (1. d4)", family: 'slav_catalan', uci: ['d2d4', 'g8f6', 'c2c4', 'e7e6', 'g1f3', 'b7b6'], note: 'Solid fianchetto defence: exchange the white bishop when it suits.'),
   OpeningSpec(eco: 'E20', name: 'Nimzo-Indian Defence', category: "Queen's Pawn (1. d4)", family: 'nimzo_qgd', uci: ['d2d4', 'g8f6', 'c2c4', 'e7e6', 'b1c3', 'f8b4'], note: 'Pin, double, pressure: the most respected defence to 1.d4.'),
@@ -1292,11 +1297,11 @@ const List<OpeningSpec> kOpeningSpecs = [
   OpeningSpec(eco: 'A60', name: 'Benoni Defence: Modern', category: "Queen's Pawn (1. d4)", family: 'kid', uci: ['d2d4', 'g8f6', 'c2c4', 'c7c5', 'd4d5', 'e7e6'], note: 'Imbalanced and double-edged: e5 outpost versus queenside majority.'),
   OpeningSpec(eco: 'A45', name: 'London System', category: "Queen's Pawn (1. d4)", family: 'london_colle', uci: ['d2d4', 'g8f6', 'c1f4', 'e7e6', 'g1f3', 'c7c5'], note: 'The system everyone plays: develop the same way, outplay them later.'),
   OpeningSpec(eco: 'D05', name: 'Colle System', category: "Queen's Pawn (1. d4)", family: 'london_colle', uci: ['d2d4', 'g8f6', 'g1f3', 'e7e6', 'e2e3', 'c7c5', 'c2c3'], note: 'Solid pyramid, e4 break coming: simple and venomous at club level.'),
-  OpeningSpec(eco: 'A10', name: 'English Opening', category: 'Flank Openings', family: 'english_reti', uci: ['c2c4'], note: 'Fight for d5 from the flank; transpose or stay independent.'),
-  OpeningSpec(eco: 'A20', name: "English Opening: King's English", category: 'Flank Openings', family: 'english_reti', uci: ['c2c4', 'e7e5', 'b1c3', 'g8f6'], note: 'Reversed Sicilian structures with an extra tempo for White.'),
-  OpeningSpec(eco: 'A30', name: 'English Opening: Symmetrical', category: 'Flank Openings', family: 'english_reti', uci: ['c2c4', 'c7c5', 'g1f3', 'b8c6'], note: 'Hedgehog structures: cramped but unbreakable for Black.'),
-  OpeningSpec(eco: 'A09', name: 'Réti Opening', category: 'Flank Openings', family: 'english_reti', uci: ['g1f3', 'd7d5', 'c2c4'], note: 'Hypermodern flank pressure before occupying the centre.'),
-  OpeningSpec(eco: 'A04', name: 'Réti: Kingside Fianchetto', category: 'Flank Openings', family: 'english_reti', uci: ['g1f3', 'g8f6', 'g2g3', 'd7d5', 'f1g2'], note: 'The double fianchetto squeeze: pressure from both wings.'),
+  OpeningSpec(eco: 'A10', name: 'English Opening', category: 'Flank & Modern', family: 'english_reti', uci: ['c2c4'], note: 'Fight for d5 from the flank; transpose or stay independent.'),
+  OpeningSpec(eco: 'A20', name: "English Opening: King's English", category: 'Flank & Modern', family: 'english_reti', uci: ['c2c4', 'e7e5', 'b1c3', 'g8f6'], note: 'Reversed Sicilian structures with an extra tempo for White.'),
+  OpeningSpec(eco: 'A30', name: 'English Opening: Symmetrical', category: 'Flank & Modern', family: 'english_reti', uci: ['c2c4', 'c7c5', 'g1f3', 'b8c6'], note: 'Hedgehog structures: cramped but unbreakable for Black.'),
+  OpeningSpec(eco: 'A09', name: 'Réti Opening', category: 'Flank & Modern', family: 'english_reti', uci: ['g1f3', 'd7d5', 'c2c4'], note: 'Hypermodern flank pressure before occupying the centre.'),
+  OpeningSpec(eco: 'A04', name: 'Réti: Kingside Fianchetto', category: 'Flank & Modern', family: 'english_reti', uci: ['g1f3', 'g8f6', 'g2g3', 'd7d5', 'f1g2'], note: 'The double fianchetto squeeze: pressure from both wings.'),
   OpeningSpec(eco: 'C25', name: 'Vienna Game', category: "King's Pawn (1. e4)", family: 'vienna_gambits', uci: ['e2e4', 'e7e5', 'b1c3'], note: 'Delayed central punch with f4 coming: aggressive yet sound.'),
   OpeningSpec(eco: 'C27', name: 'Vienna Gambit', category: "King's Pawn (1. e4)", family: 'vienna_gambits', uci: ['e2e4', 'e7e5', 'b1c3', 'g8f6', 'f2f4'], note: 'A pawn for open f-file lines and a flying start in development.'),
   OpeningSpec(eco: 'C30', name: "King's Gambit Declined", category: "King's Pawn (1. e4)", family: 'vienna_gambits', uci: ['e2e4', 'e7e5', 'f2f4', 'f8c5'], note: 'Black declines the pawn and develops: solidity against the storm.'),
@@ -1306,8 +1311,8 @@ const List<OpeningSpec> kOpeningSpecs = [
   OpeningSpec(eco: 'C49', name: 'Four Knights: Spanish', category: "King's Pawn (1. e4)", family: 'scotch', uci: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'b1c3', 'g8f6', 'f1b5', 'f8b4'], note: 'Symmetrical knights, Spanish flavour: solid with sting.'),
   OpeningSpec(eco: 'C24', name: "Bishop's Opening", category: "King's Pawn (1. e4)", family: 'italian', uci: ['e2e4', 'e7e5', 'f1c4'], note: 'Italian ideas a move early, sidestepping the Petrov.'),
   OpeningSpec(eco: 'B00', name: "King's Pawn Opening", category: "King's Pawn (1. e4)", family: 'pirc_modern', uci: ['e2e4', 'b7b6'], note: "Owen's Defence: fianchetto pressure on e4 from move one."),
-  OpeningSpec(eco: 'A00', name: 'Polish Opening', category: 'Flank Openings', family: 'english_reti', uci: ['b2b4'], note: 'Flank provocation: sidestep theory from move one.'),
-  OpeningSpec(eco: 'A03', name: "Bird's Opening", category: 'Flank Openings', family: 'english_reti', uci: ['f2f4'], note: 'Dutch with a tempo: kingside ambitions, e5 weakness to mind.'),
+  OpeningSpec(eco: 'A00', name: 'Polish Opening', category: 'Flank & Modern', family: 'english_reti', uci: ['b2b4'], note: 'Flank provocation: sidestep theory from move one.'),
+  OpeningSpec(eco: 'A03', name: "Bird's Opening", category: 'Flank & Modern', family: 'english_reti', uci: ['f2f4'], note: 'Dutch with a tempo: kingside ambitions, e5 weakness to mind.'),
   OpeningSpec(eco: 'A80', name: 'Dutch Defence', category: "Queen's Pawn (1. d4)", family: 'kid', uci: ['d2d4', 'f7f5'], note: 'Fight for e4 from the flank; Leningrad …g6 setups are sharpest.'),
   OpeningSpec(eco: 'D00', name: "Queen's Pawn Game", category: "Queen's Pawn (1. d4)", family: 'london_colle', uci: ['d2d4', 'd7d5', 'g1f3', 'g8f6', 'c1f4'], note: 'London-style development against anything Black tries.'),
   OpeningSpec(eco: 'D02', name: "Queen's Gambit: Zukertort", category: "Queen's Pawn (1. d4)", family: 'london_colle', uci: ['d2d4', 'd7d5', 'g1f3'], note: 'Flexible move order into QGD, Slav or Catalan waters.'),
@@ -1322,6 +1327,40 @@ const List<OpeningSpec> kOpeningSpecs = [
   OpeningSpec(eco: 'B48', name: 'Sicilian: Taimanov', category: "King's Pawn (1. e4)", family: 'sicilian_open', uci: ['e2e4', 'c7c5', 'g1f3', 'e7e6', 'd2d4', 'c5d4', 'f3d4', 'b8c6'], note: 'Kasparov’s counterpunching system: …Nge7, …d5 in one go.'),
   OpeningSpec(eco: 'B61', name: 'Sicilian: Richter-Rauzer', category: "King's Pawn (1. e4)", family: 'sicilian_open', uci: ['e2e4', 'c7c5', 'g1f3', 'd7d6', 'd2d4', 'c5d4', 'f3d4', 'g8f6', 'b1c3', 'b8c6', 'c1g5'], note: 'Pin and pressure d6: White plays for the two bishops and e5.'),
   OpeningSpec(eco: 'B75', name: 'Sicilian Dragon: Yugoslav Attack', category: "King's Pawn (1. e4)", family: 'sicilian_open', uci: ['e2e4', 'c7c5', 'g1f3', 'd7d6', 'd2d4', 'c5d4', 'f3d4', 'g8f6', 'b1c3', 'g7g6', 'c1e3', 'f8g7', 'f2f3'], note: 'The critical test of the Dragon: Be3, Qd2, long castle, h4-h5 storm.'),
+  // ---- Second repertoire tier: standard branches of the same families ----
+  OpeningSpec(eco: 'B33', name: 'Sicilian Defence: Sveshnikov', category: "King's Pawn (1. e4)", family: 'sicilian_open', uci: ['e2e4', 'c7c5', 'g1f3', 'b8c6', 'd2d4', 'c5d4', 'f3d4', 'g8f6', 'b1c3', 'e7e5'], note: 'The fighting Sicilian of Kasparov and Carlsen: …e5 concedes d5 but seizes central control and piece activity.'),
+  OpeningSpec(eco: 'B58', name: 'Sicilian Defence: Classical', category: "King's Pawn (1. e4)", family: 'sicilian_open', uci: ['e2e4', 'c7c5', 'g1f3', 'd7d6', 'd2d4', 'c5d4', 'f3d4', 'g8f6', 'b1c3', 'b8c6'], note: 'Natural development with …Nc6: Black keeps …e5 breaks, …d5 strikes and opposite-side castling all in hand.'),
+  OpeningSpec(eco: 'B32', name: 'Sicilian Defence: Kalashnikov', category: "King's Pawn (1. e4)", family: 'sicilian_open', uci: ['e2e4', 'c7c5', 'g1f3', 'b8c6', 'd2d4', 'c5d4', 'f3d4', 'e7e5'], note: '…e5 at once: Sveshnikov ideas while sidestepping the Rossolimo pin.'),
+  OpeningSpec(eco: 'B34', name: 'Sicilian Defence: Accelerated Dragon', category: "King's Pawn (1. e4)", family: 'sicilian_open', uci: ['e2e4', 'c7c5', 'g1f3', 'b8c6', 'd2d4', 'c5d4', 'f3d4', 'g7g6'], note: 'Dragon structures a tempo up by skipping …d6 — but White’s Maroczy Bind is the critical test.'),
+  OpeningSpec(eco: 'C03', name: 'French Defence: Guimard', category: "King's Pawn (1. e4)", family: 'french', uci: ['e2e4', 'e7e6', 'd2d4', 'd7d5', 'b1d2', 'b8c6'], note: 'An offbeat Tarrasch: …Nc6 pressures d4 while keeping …Nf6 options and surprise value.'),
+  OpeningSpec(eco: 'C10', name: 'French Defence: Rubinstein', category: "King's Pawn (1. e4)", family: 'french', uci: ['e2e4', 'e7e6', 'd2d4', 'd7d5', 'b1c3', 'd5e4'], note: 'Give back the centre pawn for simplification: rock-solid, slightly passive, endgame-friendly.'),
+  OpeningSpec(eco: 'B19', name: 'Caro-Kann: Main Line', category: "King's Pawn (1. e4)", family: 'caro', uci: ['e2e4', 'c7c6', 'd2d4', 'd7d5', 'b1c3', 'd5e4', 'c3e4', 'c8f5', 'g1f3'], note: 'The Karpov battleground: White keeps attacking chances against the wall; Black holds and counterpunches.'),
+  OpeningSpec(eco: 'B13', name: 'Caro-Kann: Exchange', category: "King's Pawn (1. e4)", family: 'caro', uci: ['e2e4', 'c7c6', 'd2d4', 'd7d5', 'e4d5', 'c6d5'], note: 'Symmetry with a tempo: White’s edge is faster development — Black holds comfortably.'),
+  OpeningSpec(eco: 'C53', name: 'Italian Game: Giuoco Piano Main Line', category: "King's Pawn (1. e4)", family: 'italian', uci: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'f8c5', 'c2c3', 'g8f6', 'd2d4'], note: 'The classical main line: c3 prepares the d4 break for a full pawn centre.'),
+  OpeningSpec(eco: 'C65', name: 'Ruy Lopez: Berlin Defence', category: "King's Pawn (1. e4)", family: 'spanish', uci: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'g8f6'], note: 'The Berlin Wall that dethroned Kasparov: trade queens early, outplay the endgame.'),
+  OpeningSpec(eco: 'C63', name: 'Ruy Lopez: Schliemann Defence', category: "King's Pawn (1. e4)", family: 'spanish', uci: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'f7f5'], note: 'Radical from move 3: …f5 weakens e5 and the kingside, but the surprise scores heavily at club level.'),
+  OpeningSpec(eco: 'C68', name: 'Ruy Lopez: Exchange Variation', category: "King's Pawn (1. e4)", family: 'spanish', uci: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'a7a6', 'b5c6', 'd7c6'], note: 'Trade bishops, damage the structure, grind the endgame — Fischer’s weapon.'),
+  OpeningSpec(eco: 'C37', name: "King's Gambit: Muzio Gambit", category: "King's Pawn (1. e4)", family: 'vienna_gambits', uci: ['e2e4', 'e7e5', 'f2f4', 'e5f4', 'g1f3', 'g7g5', 'f1c4', 'g5g4', 'e1g1'], note: 'The wildest King’s Gambit: sacrifice the knight for a raging attack with both rooks joining.'),
+  OpeningSpec(eco: 'C36', name: "King's Gambit: Kieseritzky", category: "King's Pawn (1. e4)", family: 'vienna_gambits', uci: ['e2e4', 'e7e5', 'f2f4', 'e5f4', 'g1f3', 'g7g5', 'h2h4', 'g5g4', 'f3e5'], note: 'Meet …g5 with h4: open the h-file before Black consolidates the extra pawn.'),
+  OpeningSpec(eco: 'B09', name: 'Pirc Defence: Austrian Attack', category: "King's Pawn (1. e4)", family: 'pirc_modern', uci: ['e2e4', 'd7d6', 'd2d4', 'g8f6', 'b1c3', 'g7g6', 'f2f4'], note: 'The aggressive anti-Pirc: f4 stakes everything on a central steamroller and kingside attack.'),
+  OpeningSpec(eco: 'B04', name: 'Alekhine Defence: Modern', category: "King's Pawn (1. e4)", family: 'scandi', uci: ['e2e4', 'g8f6', 'e4e5', 'f6d5', 'd2d4', 'd7d6', 'g1f3'], note: 'Keep the tension: develop around the giant e5 pawn instead of fixing the structure.'),
+  OpeningSpec(eco: 'B03', name: 'Alekhine Defence: Exchange', category: "King's Pawn (1. e4)", family: 'scandi', uci: ['e2e4', 'g8f6', 'e4e5', 'f6d5', 'd2d4', 'd7d6', 'c2c4', 'd5b6', 'e5d6'], note: 'Clarify at once: near-symmetry where White’s space means a lasting pull.'),
+  OpeningSpec(eco: 'D38', name: 'QGD: Ragozin Defence', category: "Queen's Pawn (1. d4)", family: 'nimzo_qgd', uci: ['d2d4', 'd7d5', 'c2c4', 'e7e6', 'b1c3', 'g8f6', 'g1f3', 'f8b4'], note: 'Nimzo ideas in QGD clothing: …Bb4 with active piece play and …c5 breaks.'),
+  OpeningSpec(eco: 'D52', name: 'QGD: Cambridge Springs', category: "Queen's Pawn (1. d4)", family: 'nimzo_qgd', uci: ['d2d4', 'd7d5', 'c2c4', 'e7e6', 'b1c3', 'g8f6', 'c1g5', 'b8d7', 'e2e3', 'c7c6', 'g1f3', 'd8a5'], note: 'The trap-laden QGD: …Qa5 pressures c3, and the …Qa5+ elephant trap lurks.'),
+  OpeningSpec(eco: 'D13', name: 'Slav Defence: Exchange', category: "Queen's Pawn (1. d4)", family: 'slav_catalan', uci: ['d2d4', 'd7d5', 'c2c4', 'c7c6', 'g1f3', 'g8f6', 'c4d5', 'c6d5'], note: 'Total symmetry: White’s tries are the minority attack and the bishop pair.'),
+  OpeningSpec(eco: 'D43', name: 'Slav Defence: Semi-Slav', category: "Queen's Pawn (1. d4)", family: 'slav_catalan', uci: ['d2d4', 'd7d5', 'c2c4', 'e7e6', 'g1f3', 'g8f6', 'b1c3', 'c7c6'], note: 'The fighting Slav: keep …c6 and …e6 — Meran and Botvinnik complications await.'),
+  OpeningSpec(eco: 'E32', name: 'Nimzo-Indian: Classical', category: "Queen's Pawn (1. d4)", family: 'nimzo_qgd', uci: ['d2d4', 'g8f6', 'c2c4', 'e7e6', 'b1c3', 'f8b4', 'd1c2'], note: 'Ask the question at once: 4.Qc2 fights for e4 and avoids doubled pawns.'),
+  OpeningSpec(eco: 'E62', name: 'KID: Fianchetto Variation', category: "Queen's Pawn (1. d4)", family: 'kid', uci: ['d2d4', 'g8f6', 'c2c4', 'g7g6', 'b1c3', 'f8g7', 'g1f3', 'e8g8', 'g2g3'], note: 'Meet the King’s Indian calmly: g3 blunts …Bg7 — control, not chaos.'),
+  OpeningSpec(eco: 'E80', name: 'KID: Sämisch Variation', category: "Queen's Pawn (1. d4)", family: 'kid', uci: ['d2d4', 'g8f6', 'c2c4', 'g7g6', 'b1c3', 'f8g7', 'e2e4', 'd7d6', 'f2f3'], note: 'Build the fortress: f3 supports e4 — slow, space-grabbing, demanding.'),
+  OpeningSpec(eco: 'A56', name: 'Benoni: Czech Benoni', category: "Queen's Pawn (1. d4)", family: 'kid', uci: ['d2d4', 'g8f6', 'c2c4', 'c7c5', 'd4d5', 'e7e5'], note: 'The closed wall: …e5 locks the centre — White storms kingside, Black queenside.'),
+  OpeningSpec(eco: 'E06', name: 'Catalan: Closed Variation', category: "Queen's Pawn (1. d4)", family: 'slav_catalan', uci: ['d2d4', 'g8f6', 'c2c4', 'e7e6', 'g2g3', 'd7d5', 'f1g2', 'f8e7', 'g1f3', 'e8g8'], note: 'Patient Catalan: complete development before the c-file and g2-bishop tell.'),
+  OpeningSpec(eco: 'A29', name: 'English Opening: Four Knights', category: 'Flank & Modern', family: 'english_reti', uci: ['c2c4', 'e7e5', 'b1c3', 'g8f6', 'g1f3', 'b8c6', 'g2g3'], note: 'Full English development: flexible transpositions into reversed Sicilians.'),
+  OpeningSpec(eco: 'A27', name: 'English Opening: Reversed Dragon', category: 'Flank & Modern', family: 'english_reti', uci: ['c2c4', 'e7e5', 'b1c3', 'g8f6', 'g1f3', 'd7d5', 'c4d5', 'f6d5'], note: 'Sicilian themes a tempo up: …d5 break and …Bg4 pressure against White’s setup.'),
+  OpeningSpec(eco: 'A07', name: "King's Indian Attack", category: 'Flank & Modern', family: 'london_colle', uci: ['g1f3', 'd7d5', 'g2g3'], note: 'The universal system: play it against anything — Nf3, g3, Bg2, castling, then the e4 steamroller.'),
+  OpeningSpec(eco: 'A45', name: 'Trompowsky Attack', category: "Queen's Pawn (1. d4)", family: 'nimzo_qgd', uci: ['d2d4', 'g8f6', 'c1g5'], note: 'Sidestep Nimzo and QGD theory: early Bg5 provokes …Ne4 and doubled-pawn structures.'),
+  OpeningSpec(eco: 'A81', name: 'Dutch Defence: Leningrad', category: "Queen's Pawn (1. d4)", family: 'pirc_modern', uci: ['d2d4', 'f7f5', 'g2g3', 'g7g6'], note: 'The sharpest Dutch: …g6 setups fight for e4 with …Qe8–h5 kingside ideas.'),
+  OpeningSpec(eco: 'D08', name: 'Albin Countergambit', category: "Queen's Pawn (1. d4)", family: 'd4_gambits', uci: ['d2d4', 'd7d5', 'c2c4', 'e7e5'], note: 'The countergambit with a trap: after 3.dxe5 d4, the Lasker Trap punishes careless development.'),
+  OpeningSpec(eco: 'A51', name: 'Budapest Gambit', category: "Queen's Pawn (1. d4)", family: 'd4_gambits', uci: ['d2d4', 'g8f6', 'c2c4', 'e7e5'], note: 'Rubinstein’s gambit: …e5 sacrifices a pawn for activity and …Ng4 pressure.'),
 ];
 
 String _normFen(String fen) {
@@ -1348,7 +1387,7 @@ List<_VerifiedMove>? _replay(String fen, List<String> uciMoves) {
     final promo = u.length >= 5 ? u.substring(4, 5) : null;
     String? san;
     try {
-      final legal = board.moves({'verbose': true}) as List;
+      final legal = board.moves({'verbose': true});
       for (final m in legal) {
         final mm = Map<String, dynamic>.from(m as Map);
         if (mm['from'] == from && mm['to'] == to) {
@@ -1367,7 +1406,7 @@ List<_VerifiedMove>? _replay(String fen, List<String> uciMoves) {
     } catch (_) {
       return null;
     }
-    out.add(_VerifiedMove(u, san!));
+    out.add(_VerifiedMove(u, san));
   }
   return out;
 }
@@ -1425,7 +1464,7 @@ bool _endsInMate(String fen, List<String> uciMoves) {
     final from = setup.substring(0, 2);
     final to = setup.substring(2, 4);
     // The setup move must be legal for the side to move (the opponent).
-    final legal = board.moves({'verbose': true}) as List;
+    final legal = board.moves({'verbose': true});
     var found = false;
     for (final m in legal) {
       final mm = Map<String, dynamic>.from(m as Map);
@@ -1474,13 +1513,160 @@ String _narrate(MotifPack pack, int playerMoveNumber, String san) {
   return 'Move $playerMoveNumber: $san — $idea. ${pack.takeaway}';
 }
 
+/// Legal SANs at [fen], excluding [excludeSan], sorted for determinism.
+List<String> _legalSansExcept(String fen, String excludeSan) {
+  try {
+    final board = chess.Chess.fromFEN(fen);
+    final legal = board.moves({'verbose': true});
+    final out = <String>[];
+    for (final m in legal) {
+      final mm = Map<String, dynamic>.from(m as Map);
+      final san = (mm['san'] ?? '').toString();
+      if (san.isEmpty || san == excludeSan) continue;
+      out.add(san);
+    }
+    out.sort();
+    return out;
+  } catch (_) {
+    return [];
+  }
+}
+
+/// FEN after playing the first [plies] UCI moves from [fen].
+String _fenAfter(String fen, List<String> uciMoves, int plies) {
+  final board = chess.Chess.fromFEN(fen);
+  for (var i = 0; i < plies && i < uciMoves.length; i++) {
+    final u = uciMoves[i].trim().toLowerCase();
+    if (u.length >= 5) {
+      board.move({
+        'from': u.substring(0, 2),
+        'to': u.substring(2, 4),
+        'promotion': u.substring(4, 5),
+      });
+    } else {
+      board.move({'from': u.substring(0, 2), 'to': u.substring(2, 4)});
+    }
+  }
+  return board.fen;
+}
+
+/// Rotate options left by seed%3 so the correct answer is not pinned to one
+/// position across a category.
+({List<String> options, int answer}) _rotateQuiz(
+  List<String> options,
+  int answer,
+  int seed,
+) {
+  final r = seed % 3;
+  if (r == 0) return (options: options, answer: answer);
+  final rotated = [
+    for (var i = 0; i < options.length; i++) options[(i + r) % options.length],
+  ];
+  return (
+    options: rotated,
+    answer: (answer - r + options.length * 3) % options.length,
+  );
+}
+
+/// Per-chapter quiz for tactics/mate lessons: three rotating variants so no
+/// category asks the same question every time. Falls back to the pack quiz
+/// (rotated) when there are not enough legal distractors.
+///
+/// [variant] selects the question shape, [seed] rotates the answer slot —
+/// derived independently so the slot is not predictable from the shape.
+({String question, List<String> options, int answer}) _tacticQuiz(
+  MotifPack pack,
+  int variant,
+  int seed,
+  String firstSan,
+  String side,
+  int playerMoveCount,
+  List<String> distractors,
+) {
+  if (variant == 1 && distractors.length >= 2) {
+    final r = _rotateQuiz(
+      [firstSan, distractors[0], distractors[1]],
+      0,
+      seed,
+    );
+    return (
+      question: 'Which move executes ${pack.ideaNoun} here for $side?',
+      options: r.options,
+      answer: r.answer,
+    );
+  }
+  if (variant == 2) {
+    if (pack.mustMate) {
+      final r = _rotateQuiz(
+        ['$playerMoveCount', '${playerMoveCount + 1}', '${playerMoveCount + 2}'],
+        0,
+        seed,
+      );
+      return (
+        question: 'After $firstSan, in how many of your moves is mate forced?',
+        options: r.options,
+        answer: r.answer,
+      );
+    }
+    final r = _rotateQuiz(
+      ['Decisive advantage', 'Rough equality', 'Nothing special'],
+      0,
+      seed,
+    );
+    return (
+      question: 'You find $firstSan. How do you stand?',
+      options: r.options,
+      answer: r.answer,
+    );
+  }
+  final r = _rotateQuiz(pack.quizOptions, pack.quizAnswer, seed);
+  return (
+    question: pack.quizQuestion,
+    options: r.options,
+    answer: r.answer,
+  );
+}
+
+/// One-line study goal for a tactics/mate chapter, specific to the position.
+String _chapterGoal(
+  MotifPack pack,
+  String side,
+  String firstSan,
+  int playerMoveCount,
+  int rating,
+) {
+  if (pack.mustMate) {
+    return '$side to move — force mate starting with $firstSan, mate in $playerMoveCount (rated $rating).';
+  }
+  return '$side to move — win with $firstSan: ${pack.ideaNoun} in $playerMoveCount of your moves (rated $rating).';
+}
+
+/// Per-ply study note for an opening move, derived from the actual SAN.
+String _moveNote(String san, String side, bool isLast, String tabiyaNote) {
+  if (isLast) return 'Theory ends here: $san. $tabiyaNote';
+  final clean = san.replaceAll('+', '').replaceAll('#', '');
+  if (san.startsWith('O-O')) {
+    return '$san: $side castles — king safe, rook centralized.';
+  }
+  if (san.endsWith('+') || san.endsWith('#')) {
+    return '$san: check! Every reply is forced — calculate to the end.';
+  }
+  if (clean.contains('x')) {
+    return '$san: a capture — recount attackers and defenders before continuing.';
+  }
+  if (RegExp(r'^[a-h]').hasMatch(clean)) {
+    return '$san: pawn stakes space — watch the squares it leaves behind.';
+  }
+  return '$san: develops with purpose — $side follows the plan.';
+}
+
 Map<String, dynamic> _buildChapter(
   MotifPack pack,
   int index,
   Map<String, dynamic> puzzle,
   List<_VerifiedMove> verified,
 ) {
-  final num = index + 1;
+  final chapterNum = index + 1;
   final fen = puzzle['fen'] as String;
   final solutionUci = verified.map((v) => v.uci).toList();
   final playerSans = <String>[];
@@ -1493,13 +1679,40 @@ Map<String, dynamic> _buildChapter(
   }
   final firstSan = verified.first.san;
   final side = fen.split(' ')[1] == 'b' ? 'Black' : 'White';
+  final rating = (puzzle['rating'] as num?)?.toInt() ?? 0;
+  final goal = _chapterGoal(
+    pack,
+    side,
+    firstSan,
+    playerSans.length,
+    rating,
+  );
+  // Quizzes gate lesson completion in the player, so they appear on every
+  // 3rd chapter only: spaced checks keep a smooth flow, and the variant
+  // rotation keeps them from repeating. Other chapters complete straight
+  // after the position is solved (LessonPlayer skips a missing quiz).
+  final hasQuiz = chapterNum % 3 == 0;
+  final quizOrdinal = (chapterNum ~/ 3) - 1;
+  final quiz =
+      hasQuiz
+          ? _tacticQuiz(
+            pack,
+            quizOrdinal % 3,
+            quizOrdinal ~/ 2,
+            firstSan,
+            side,
+            playerSans.length,
+            _legalSansExcept(fen, firstSan),
+          )
+          : null;
   return {
-    'id': '${pack.id}_$num',
+    'id': '${pack.id}_$chapterNum',
     'categoryId': pack.categoryId,
     'type': 'guided_try',
-    'title': '${pack.categoryTitle} $num',
+    'title': '${pack.categoryTitle} $chapterNum',
     'fen': fen,
-    'instruction': '$side to move. ${pack.instruction}',
+    'instruction': goal,
+    'goal': goal,
     'concept': pack.concept,
     'takeaway': pack.takeaway,
     'solutionMoves': solutionUci,
@@ -1509,11 +1722,12 @@ Map<String, dynamic> _buildChapter(
     'mistakeText': pack.mistakeText,
     'explanation':
         '${pack.takeaway} Solution${solutionUci.length > 1 ? 's' : ''}: ${playerSans.join(', ')}.',
-    'quiz': {
-      'question': pack.quizQuestion,
-      'options': pack.quizOptions,
-      'answer': pack.quizAnswer,
-    },
+    if (quiz != null)
+      'quiz': {
+        'question': quiz.question,
+        'options': quiz.options,
+        'answer': quiz.answer,
+      },
   };
 }
 
@@ -1614,8 +1828,10 @@ void main() {
   // ---- Openings: replay lines, derive SAN + FEN, attach family plans ----
   final openings = <Map<String, dynamic>>[];
   final openingCats = <String, List<String>>{};
+  final seenLines = <String>{};
   var openingDropped = 0;
   var openingIndex = 0;
+  final familyNames = kOpeningFamilies.keys.toList();
   for (final spec in kOpeningSpecs) {
     const startFen =
         'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -1625,11 +1841,95 @@ void main() {
       report.add('OPENING DROPPED (illegal line): ${spec.eco} ${spec.name}');
       continue;
     }
+    // Safety net: two specs must never ship the same theory line twice.
+    final lineKey = spec.uci.map((u) => u.trim().toLowerCase()).join(' ');
+    if (seenLines.contains(lineKey)) {
+      openingDropped++;
+      report.add('OPENING DROPPED (duplicate line): ${spec.eco} ${spec.name}');
+      continue;
+    }
+    seenLines.add(lineKey);
     openingIndex++;
     final family = kOpeningFamilies[spec.family]!;
     final sans = verified.map((v) => v.san).toList();
     final fen = _finalFen(startFen, spec.uci);
-    final id = 'op_${openingIndex}';
+    final id = 'op_$openingIndex';
+    // Per-ply study notes derived from the actual moves, so every line
+    // teaches its own moves instead of repeating the family text.
+    final moveNotes = <String>[];
+    for (var i = 0; i < sans.length; i++) {
+      final side = i % 2 == 0 ? 'White' : 'Black';
+      moveNotes.add(
+        _moveNote(sans[i], side, i == sans.length - 1, spec.note),
+      );
+    }
+    final goal =
+        '${spec.note} Goal: play through to ${sans.last} knowing both sides’ ideas.';
+    // Spaced quizzes (every 3rd line only): the walkthrough + drill carry
+    // the teaching, so the quiz is an occasional check, not a tollbooth.
+    // Variant and answer slot rotate independently across quizzed lines.
+    final hasOpQuiz = openingIndex % 3 == 0;
+    final opQuizOrdinal = (openingIndex ~/ 3) - 1;
+    final quizVariant = hasOpQuiz ? opQuizOrdinal % 3 : -1;
+    final quizSeed = hasOpQuiz ? opQuizOrdinal ~/ 2 : 0;
+    Map<String, Object>? quizMap;
+    if (quizVariant == 1 && sans.length >= 2) {
+      final k = sans.length ~/ 2;
+      final before = sans.take(k).join(' ');
+      final side = k % 2 == 0 ? 'White' : 'Black';
+      final atFen = _fenAfter(startFen, spec.uci, k);
+      final distractors = _legalSansExcept(atFen, sans[k]);
+      if (distractors.length >= 2) {
+        final r = _rotateQuiz(
+          [sans[k], distractors[0], distractors[1]],
+          0,
+          quizSeed,
+        );
+        quizMap = {
+          'question': 'After $before, $side plays…?',
+          'options': r.options,
+          'answer': r.answer,
+        };
+      }
+    }
+    if (quizMap == null && quizVariant == 2) {
+      final fi = familyNames.indexOf(spec.family);
+      final otherA =
+          kOpeningFamilies[familyNames[(fi + 3) % familyNames.length]]!;
+      final otherB =
+          kOpeningFamilies[familyNames[(fi + 5) % familyNames.length]]!;
+      final whiteSide = openingIndex % 2 == 0;
+      final correct = whiteSide ? family['white']! : family['black']!;
+      final r = _rotateQuiz(
+        [correct, otherA[whiteSide ? 'white' : 'black']!, otherB[whiteSide ? 'white' : 'black']!],
+        0,
+        quizSeed,
+      );
+      quizMap = {
+        'question':
+            whiteSide
+                ? 'In ${spec.name}, White’s core plan is…?'
+                : 'In ${spec.name}, Black’s core plan is…?',
+        'options': r.options,
+        'answer': r.answer,
+      };
+    }
+    if (quizMap == null && hasOpQuiz) {
+      final r = _rotateQuiz(
+        [
+          'Memorizing every move order',
+          'Understanding both sides’ plans: ${family['themes']}',
+          'Avoiding the opening entirely',
+        ],
+        1,
+        quizSeed,
+      );
+      quizMap = {
+        'question': 'What matters most when learning ${spec.name}?',
+        'options': r.options,
+        'answer': r.answer,
+      };
+    }
     openings.add({
       'id': id,
       'eco': spec.eco,
@@ -1639,9 +1939,11 @@ void main() {
       'concept':
           'White plan: ${family['white']} Black plan: ${family['black']}',
       'takeaway': 'Ideas over moves: ${family['themes']}.',
-      'instruction': 'Play through the main line and learn both sides’ plans.',
+      'instruction': spec.note,
+      'goal': goal,
       'solutionMoves': spec.uci,
       'movesSan': sans,
+      'moveNotes': moveNotes,
       'narration': [
         'Main line: ${sans.join(' ')}. ${spec.note}',
         'White plan: ${family['white']}',
@@ -1652,15 +1954,7 @@ void main() {
       'description':
           '${spec.name} (${spec.eco}). ${spec.note} White plan: ${family['white']} Black plan: ${family['black']}',
       'keyThemes': (family['themes'] as String).split(', '),
-      'quiz': {
-        'question': 'What matters most when learning ${spec.name}?',
-        'options': [
-          'Memorizing every move order',
-          'Understanding both sides’ plans: ${family['themes']}',
-          'Avoiding the opening entirely',
-        ],
-        'answer': 1,
-      },
+      if (quizMap != null) 'quiz': quizMap,
     });
     openingCats
         .putIfAbsent(spec.category, () => [])
@@ -1744,7 +2038,8 @@ void main() {
     {
       'id': 'openings',
       'title': 'Opening Repertoire',
-      'description': '80 essential lines taught as plans, not memorization.',
+      'description':
+          '${openings.length} essential lines taught as plans, not memorization.',
       'icon': 'menu_book',
       'categories':
           categories.values

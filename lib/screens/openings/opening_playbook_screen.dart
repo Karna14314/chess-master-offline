@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -319,9 +320,10 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
             ),
             const SizedBox(height: 8),
 
-            // Description snippet
+            // Description snippet: per-line study goal so cards in one
+            // category never read the same.
             Text(
-              opening.description,
+              opening.displayGoal,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 height: 1.35,
@@ -393,19 +395,29 @@ class _InteractiveOpeningModalState
   int _currentPly = 0;
   final List<String> _fenHistory = [];
 
+  // Offline line drill: guess each book move in order. Fully local —
+  // distractors are legal moves from the drill position.
+  bool _drilling = false;
+  int _drillPly = 0;
+  List<String> _drillOptions = const [];
+  String _drillFeedback = '';
+  int _drillMistakes = 0;
+  int _drillFails = 0;
+  bool _drillDone = false;
+
   @override
   void initState() {
     super.initState();
     _board = chess.Chess();
     _fenHistory.add(_board.fen);
 
-    // Play moves up to current ply
+    // Precompute the full line for the scrubber, but START at ply 0 so the
+    // line is studied forward instead of showing the final position upfront.
     for (final san in widget.opening.movesSan) {
       _board.move(san);
       _fenHistory.add(_board.fen);
     }
-    _currentPly = widget.opening.movesSan.length;
-    _board.load(_fenHistory[_currentPly]);
+    _board.load(_fenHistory[0]);
   }
 
   void _goToPly(int ply) {
@@ -414,6 +426,88 @@ class _InteractiveOpeningModalState
       _currentPly = ply;
       _board.load(_fenHistory[ply]);
     });
+  }
+
+  void _startDrill() {
+    _board.load(_fenHistory[0]);
+    _drilling = true;
+    _drillDone = false;
+    _drillPly = 0;
+    _drillMistakes = 0;
+    _drillFails = 0;
+    _drillFeedback = '';
+    _loadDrillOptions();
+    setState(() {});
+  }
+
+  void _exitDrill() {
+    setState(() {
+      _drilling = false;
+      _currentPly = _drillPly.clamp(0, _fenHistory.length - 1);
+      _board.load(_fenHistory[_currentPly]);
+    });
+  }
+
+  void _loadDrillOptions() {
+    final opening = widget.opening;
+    if (_drillPly >= opening.movesSan.length) {
+      _drillDone = true;
+      _drillOptions = const [];
+      return;
+    }
+    final correct = opening.movesSan[_drillPly];
+    final candidates = <String>[];
+    try {
+      final legal = _board.moves({'verbose': true});
+      for (final m in legal) {
+        final san =
+            (Map<String, dynamic>.from(m as Map)['san'] ?? '').toString();
+        if (san.isNotEmpty && san != correct && !candidates.contains(san)) {
+          candidates.add(san);
+        }
+      }
+    } catch (_) {}
+    if (candidates.length < 2) {
+      // Forced reply — reveal it and move on.
+      try {
+        _board.move(correct);
+      } catch (_) {}
+      _drillPly++;
+      _drillFails = 0;
+      _drillFeedback = opening.noteForPly(_drillPly);
+      _loadDrillOptions();
+      return;
+    }
+    final rnd = math.Random(opening.name.hashCode + _drillPly);
+    candidates.shuffle(rnd);
+    _drillOptions = [correct, ...candidates.take(2)]..shuffle(rnd);
+    _drillFails = 0;
+  }
+
+  void _onDrillPick(String san) {
+    if (_drillDone || !_drilling) return;
+    final opening = widget.opening;
+    if (_drillPly >= opening.movesSan.length) return;
+    if (san == opening.movesSan[_drillPly]) {
+      try {
+        _board.move(san);
+      } catch (_) {}
+      setState(() {
+        _drillPly++;
+        _drillFails = 0;
+        _drillFeedback = opening.noteForPly(_drillPly);
+        _loadDrillOptions();
+      });
+    } else {
+      setState(() {
+        _drillMistakes++;
+        _drillFails++;
+        _drillFeedback =
+            _drillFails > 1
+                ? 'Not theory. Hint: ${opening.noteForPly(_drillPly + 1)}'
+                : 'Not the book move — try again.';
+      });
+    }
   }
 
   void _practiceVsBot(BuildContext context) {
@@ -543,19 +637,23 @@ class _InteractiveOpeningModalState
                   ),
                   const SizedBox(height: 12),
 
-                  // Move Scrubber Row
+                  // Move Scrubber Row (disabled while drilling the line)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.first_page_rounded),
-                        onPressed: _currentPly > 0 ? () => _goToPly(0) : null,
+                        onPressed:
+                            _currentPly > 0 && !_drilling
+                                ? () => _goToPly(0)
+                                : null,
                       ),
                       IconButton(
                         icon: const Icon(Icons.chevron_left_rounded),
-                        onPressed: _currentPly > 0
-                            ? () => _goToPly(_currentPly - 1)
-                            : null,
+                        onPressed:
+                            _currentPly > 0 && !_drilling
+                                ? () => _goToPly(_currentPly - 1)
+                                : null,
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -572,19 +670,153 @@ class _InteractiveOpeningModalState
                       ),
                       IconButton(
                         icon: const Icon(Icons.chevron_right_rounded),
-                        onPressed: _currentPly < opening.movesSan.length
-                            ? () => _goToPly(_currentPly + 1)
-                            : null,
+                        onPressed:
+                            _currentPly < opening.movesSan.length && !_drilling
+                                ? () => _goToPly(_currentPly + 1)
+                                : null,
                       ),
                       IconButton(
                         icon: const Icon(Icons.last_page_rounded),
-                        onPressed: _currentPly < opening.movesSan.length
-                            ? () => _goToPly(opening.movesSan.length)
-                            : null,
+                        onPressed:
+                            _currentPly < opening.movesSan.length && !_drilling
+                                ? () => _goToPly(opening.movesSan.length)
+                                : null,
                       ),
                     ],
                   ),
+                  // Per-ply study note: each position teaches its own move.
+                  if (!_drilling) ...[
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        opening.noteForPly(_currentPly),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          height: 1.4,
+                          color: AppTheme.textSecondaryFor(context),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
+
+                  // Line drill: guess each book move in order.
+                  if (_drilling) ...[
+                    AppCard(
+                      borderColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Drill the line',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimaryFor(context),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _exitDrill,
+                                child: const Text('Exit'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value:
+                                  opening.movesSan.isEmpty
+                                      ? 1.0
+                                      : _drillPly /
+                                          opening.movesSan.length,
+                              minHeight: 6,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          if (!_drillDone) ...[
+                            Text(
+                              'Move ${_drillPly + 1} of ${opening.movesSan.length} — ${_drillPly % 2 == 0 ? 'White' : 'Black'} to move. Find the book move.',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimaryFor(context),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ..._drillOptions.map(
+                              (san) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: OutlinedButton(
+                                  onPressed: () => _onDrillPick(san),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    san,
+                                    style: GoogleFonts.robotoMono(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: AppTheme.emeraldGreen,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Line complete with $_drillMistakes mistake${_drillMistakes == 1 ? '' : 's'} — drill again to lock it in.',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.textPrimaryFor(context),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton.icon(
+                              onPressed: _startDrill,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Drill again'),
+                            ),
+                          ],
+                          if (_drillFeedback.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              _drillFeedback,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                                height: 1.4,
+                                color: AppTheme.textSecondaryFor(context),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
 
                   // Move sequence
                   AppCard(
@@ -671,12 +903,31 @@ class _InteractiveOpeningModalState
                   ),
                   const SizedBox(height: 20),
 
-                  // Action Button: Practice Against Bot
+                  // Actions: drill the line from the start, or play the
+                  // resulting position against the bot.
+                  OutlinedButton.icon(
+                    onPressed: _drilling ? null : _startDrill,
+                    icon: const Icon(Icons.school_rounded),
+                    label: Text(
+                      'Drill the line',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   ElevatedButton.icon(
                     onPressed: () => _practiceVsBot(context),
                     icon: const Icon(Icons.play_arrow_rounded),
                     label: Text(
-                      'Practice this Opening vs AI',
+                      'Play final position vs AI',
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,

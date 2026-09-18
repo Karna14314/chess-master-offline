@@ -11,6 +11,12 @@ class OpeningEntry {
   /// Final position after the line. Falls back to [fen] for legacy entries.
   final String? finalFen;
 
+  /// One-line study goal for this line. Falls back to [description].
+  final String goal;
+
+  /// Per-ply study notes aligned with [movesSan]. Empty for legacy entries.
+  final List<String> moveNotes;
+
   const OpeningEntry({
     required this.eco,
     required this.name,
@@ -20,10 +26,22 @@ class OpeningEntry {
     required this.keyThemes,
     required this.fen,
     this.finalFen,
+    this.goal = '',
+    this.moveNotes = const [],
   });
 
   /// Position to practice from: the end of the line when known.
   String get practiceFen => finalFen ?? fen;
+
+  /// Display goal: per-line study goal, falling back to the description.
+  String get displayGoal => goal.isNotEmpty ? goal : description;
+
+  /// Study note for a board position at [ply] (0 = start). Empty when none.
+  String noteForPly(int ply) {
+    if (ply <= 0) return 'Starting position — follow the main line below.';
+    if (ply - 1 < moveNotes.length) return moveNotes[ply - 1];
+    return '';
+  }
 
   /// Formatted move sequence string (e.g., "1. e4 e5 2. Nf3 Nc6 3. Bc4")
   String get formattedMoves {
@@ -54,6 +72,8 @@ class OpeningEntry {
         'keyThemes': keyThemes,
         'fen': fen,
         if (finalFen != null) 'finalFen': finalFen,
+        if (goal.isNotEmpty) 'goal': goal,
+        if (moveNotes.isNotEmpty) 'moveNotes': moveNotes,
       };
 
   factory OpeningEntry.fromMap(Map<String, dynamic> map) => OpeningEntry(
@@ -65,5 +85,7 @@ class OpeningEntry {
         keyThemes: List<String>.from(map['keyThemes'] as List),
         fen: map['fen'] as String,
         finalFen: map['finalFen'] as String?,
+        goal: map['goal'] as String? ?? '',
+        moveNotes: List<String>.from(map['moveNotes'] as List? ?? []),
       );
 }

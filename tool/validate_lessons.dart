@@ -9,6 +9,8 @@
 ///  5. No duplicate positions across chapters.
 ///  6. Every curriculum chapterId resolves; every category non-empty.
 ///  7. Opening SAN lists match replay; finalFen matches.
+///  8. No duplicate theory lines across openings; moveNotes align with plies.
+///  9. No category asks the same quiz question (or same answer slot) always.
 library;
 
 import 'dart:convert';
@@ -41,7 +43,7 @@ bool _replay(String fen, List<String> moves, List<String> errors, String id) {
     final to = u.substring(2, 4);
     final promo = u.length >= 5 ? u.substring(4, 5) : null;
     try {
-      final legal = board.moves({'verbose': true}) as List;
+      final legal = board.moves({'verbose': true});
       var found = false;
       for (final m in legal) {
         final mm = Map<String, dynamic>.from(m as Map);
@@ -181,11 +183,27 @@ void main() {
 
   // Openings cross-checks.
   const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  final seenLines = <String, String>{};
   for (final raw in openings) {
     final o = Map<String, dynamic>.from(raw as Map);
     final id = o['id'] as String? ?? '?opening';
     final uci = (o['solutionMoves'] as List? ?? []).cast<String>();
     final sans = (o['movesSan'] as List? ?? []).cast<String>();
+    final lineKey = uci.map((u) => u.trim().toLowerCase()).join(' ');
+    if (seenLines.containsKey(lineKey)) {
+      errors.add('$id: duplicate theory line of ${seenLines[lineKey]}');
+    } else {
+      seenLines[lineKey] = id;
+    }
+    if (((o['goal'] ?? '') as String).isEmpty) {
+      errors.add('$id: empty goal');
+    }
+    final notes = (o['moveNotes'] as List? ?? []);
+    if (notes.length != sans.length) {
+      errors.add(
+        '$id: moveNotes (${notes.length}) do not align with plies (${sans.length})',
+      );
+    }
     if (uci.length != sans.length) {
       errors.add('$id: solutionMoves/SAN length mismatch');
     }
@@ -194,7 +212,7 @@ void main() {
     final replayedSans = <String>[];
     for (final u in uci) {
       try {
-        final legal = board.moves({'verbose': true}) as List;
+        final legal = board.moves({'verbose': true});
         String? san;
         for (final m in legal) {
           final mm = Map<String, dynamic>.from(m as Map);
@@ -252,6 +270,53 @@ void main() {
       }
     }
   }
+
+  // Category variety: no category may ask one quiz question (or pin the
+  // answer to one slot) across all its chapters.
+  final quizByCategory = <String, List<Map<String, dynamic>>>{};
+  chapters.forEach((id, raw) {
+    final ch = Map<String, dynamic>.from(raw as Map);
+    final cat = (ch['categoryId'] ?? '') as String;
+    final quiz = ch['quiz'];
+    if (quiz is Map) {
+      quizByCategory.putIfAbsent(cat, () => []).add({
+        'id': id,
+        'question': (quiz['question'] ?? '').toString(),
+        'answer': quiz['answer'] as int? ?? -1,
+      });
+    }
+  });
+  // Opening categories are keyed by name in openings.json; map them onto
+  // the same check via their category field.
+  for (final raw in openings) {
+    final o = Map<String, dynamic>.from(raw as Map);
+    final quiz = o['quiz'];
+    if (quiz is Map) {
+      quizByCategory.putIfAbsent('opening:${o['category']}', () => []).add({
+        'id': o['id'],
+        'question': (quiz['question'] ?? '').toString(),
+        'answer': quiz['answer'] as int? ?? -1,
+      });
+    }
+  }
+  quizByCategory.forEach((cat, list) {
+    if (list.length < 2) return;
+    final distinctQuestions = list.map((e) => e['question']).toSet();
+    final wantDistinct = list.length >= 3 ? 3 : list.length;
+    if (distinctQuestions.length < wantDistinct) {
+      errors.add(
+        'category $cat: only ${distinctQuestions.length} distinct quiz '
+        'question(s) across ${list.length} chapters',
+      );
+    }
+    final distinctAnswers = list.map((e) => e['answer']).toSet();
+    if (distinctAnswers.length < 2) {
+      errors.add(
+        'category $cat: quiz answer pinned to one slot across '
+        '${list.length} chapters',
+      );
+    }
+  });
 
   print('=== LESSON VALIDATION ===');
   print('Chapters checked: $checked');

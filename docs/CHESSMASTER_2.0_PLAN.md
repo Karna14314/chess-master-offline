@@ -183,7 +183,7 @@ $$\Delta\text{Win\%} = P(\text{win} \mid Eval_{\text{best}}) - P(\text{win} \mid
 To ensure complete maintainability, extensibility, and separation of concerns:
 - **No chess boards, FEN strings, move coordinates, or lesson text are hardcoded inside Dart source code.**
 - All curriculum definitions, categories, and interactive chapter data are stored in structured, validated JSON files located in `assets/lessons/`.
-- Automated ingestion is managed via `tool/import_lichess_lessons.py`, which parses verified Lichess study databases and transforms them into offline-optimized schemas.
+- Automated ingestion is managed via `tool/build_lessons.dart` (run: `dart tool/build_lessons.dart`), which builds validated offline JSON from the local `assets/puzzles/puzzles.json` snapshot plus curated opening specs — no network fetch. `tool/validate_lessons.dart` gates every build.
 
 ```
 assets/lessons/
@@ -373,7 +373,7 @@ gantt
 - [x] Lichess $\Delta\text{Win\%}$ evaluation model implementation.
 - [x] Fixed `.abs()` sign inversion bug on Black evaluations.
 - [x] Opening book immunity from blunder classification.
-- [x] `tool/import_lichess_lessons.py` offline asset generator.
+- [x] `tool/build_lessons.dart` offline asset generator (+ `tool/validate_lessons.dart` gate).
 - [x] 31-category structured curriculum (`curriculum.json`, `lessons_data.json`).
 - [x] Interactive Lesson Player screen with step validation and opponent replies.
 - [x] Opening Playbook screen with mini-board and direct bot match launch.

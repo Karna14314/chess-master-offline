@@ -47,7 +47,7 @@ void main() {
       final forkCategory = service.getCategory('tactic_fork');
       expect(forkCategory, isNotNull);
       expect(forkCategory!.title, equals('The Fork'));
-      expect(forkCategory.chapterIds.length, equals(30));
+      expect(forkCategory.chapterIds.length, equals(40));
 
       final first = service.getChapter(forkCategory.chapterIds.first);
       expect(first, isNotNull);
@@ -60,7 +60,25 @@ void main() {
       expect(first.takeaway.isNotEmpty, isTrue);
       expect(first.mistakeText.isNotEmpty, isTrue);
       expect(first.narration.isNotEmpty, isTrue);
-      expect(first.hasQuiz, isTrue);
+    });
+
+    test('Quizzes are spaced every 3rd chapter for smooth flow', () {
+      final forkCategory = service.getCategory('tactic_fork')!;
+      // Chapters 1, 2, 4, 5… solve straight through with no quiz gate.
+      for (final id in ['fork_1', 'fork_2', 'fork_4', 'fork_5']) {
+        expect(service.getChapter(id)!.hasQuiz, isFalse, reason: id);
+      }
+      // Every 3rd chapter carries a quiz — and they vary.
+      final quizzed =
+          forkCategory.chapterIds
+              .map((id) => service.getChapter(id)!)
+              .where((c) => c.hasQuiz)
+              .toList();
+      expect(quizzed.length, equals(13)); // 40 ~/ 3
+      final questions = quizzed.map((c) => c.quizQuestion).toSet();
+      expect(questions.length, greaterThanOrEqualTo(3));
+      final answers = quizzed.map((c) => c.quizAnswer).toSet();
+      expect(answers.length, greaterThanOrEqualTo(2));
     });
 
     test('Resolves rook endgames category', () {
@@ -69,7 +87,7 @@ void main() {
       expect(rookCategory!.title, contains('Rook Endgames'));
 
       final chapters = service.getChaptersForCategory('end_rook_endings');
-      expect(chapters.length, equals(20));
+      expect(chapters.length, equals(30));
     });
 
     test('Opening lessons carry plans, not stubs', () {
