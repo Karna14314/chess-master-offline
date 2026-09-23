@@ -94,6 +94,22 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
   String? _animatingMoveTo;
   String? _animatingPieceCode;
 
+  // v90 stability: Chess.fromFEN parses the whole position — never do it on
+  // every build (60fps drag/animation frames). Cache per FEN.
+  String? _checkCacheFen;
+  bool _checkCacheValue = false;
+
+  bool _isInCheckCached(String fen) {
+    if (_checkCacheFen == fen) return _checkCacheValue;
+    bool value = false;
+    try {
+      value = chess.Chess.fromFEN(fen).in_check;
+    } catch (_) {}
+    _checkCacheFen = fen;
+    _checkCacheValue = value;
+    return value;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -191,9 +207,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
       effectiveLastMoveFrom = settings.showLastMove ? lastMove?.from : null;
       effectiveLastMoveTo = settings.showLastMove ? lastMove?.to : null;
       effectiveShowCoordinates = settings.showCoordinates;
-      effectiveInCheck =
-          gameState.fen.contains('check') ||
-          chess.Chess.fromFEN(gameState.fen).in_check; // Basic check
+      effectiveInCheck = _isInCheckCached(gameState.fen);
       effectiveKingSquare = _findKingSquareWithState(
         gameState,
         gameState.isWhiteTurn,
@@ -231,7 +245,10 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                 isInteractive
                     ? (details) => _onTap(details, squareSize, effectiveFlipped)
                     : null,
-            child: Stack(
+            // Single repaint boundary for the whole board (v90 stability):
+            // one GPU layer instead of ~32 per-piece layers (skgpu OOM).
+            child: RepaintBoundary(
+              child: Stack(
               children: [
                 // Board squares
                 CustomPaint(
@@ -360,6 +377,7 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                     ),
                   ),
               ],
+            ),
             ),
           );
         },

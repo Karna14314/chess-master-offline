@@ -123,10 +123,11 @@ class AdaptiveAnalysisService {
       return;
     }
 
-    // Prepare the engine for deep analysis
-    _engine.setMaxStrength();
-    _engine.setAnalysisStrength();
-    _engine.newGame(); // Flush TT once for this batch
+    // Prepare the engine for deep analysis (awaited: options + TT flush must
+    // land before the first ply's `go`).
+    await _engine.setMaxStrength();
+    await _engine.setAnalysisStrength();
+    await _engine.newGame(); // Flush TT once for this batch
 
     final accumulator = GameAnalysisAccumulator();
     final board = chess.Chess.fromFEN(startingFen);

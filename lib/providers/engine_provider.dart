@@ -179,7 +179,10 @@ class EngineNotifier extends StateNotifier<EngineState> {
         );
       }
 
-      _service.setSkillLevel(effectiveElo);
+      // Configure strength BEFORE the search: setSkillLevel is queued ahead of
+      // getBestMove in the engine's serialized queue, and awaiting it
+      // guarantees the UCI_Elo options are delivered before `go`.
+      await _service.setSkillLevel(effectiveElo);
 
       // Minimum think time: a fixed floor (not additive) to prevent
       // instant replies that feel robotic. If the engine finishes faster
@@ -285,7 +288,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
       if (currentSearchId != _searchId) return null;
 
       if (_service.isReady) {
-        _service.setMaxStrength();
+        await _service.setMaxStrength();
         try {
           final result = await _service.analyzePosition(
             fen: fen,
@@ -338,7 +341,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
           );
         } finally {
           if (_currentDifficulty != null) {
-            _service.setSkillLevel(_currentDifficulty!.elo);
+            await _service.setSkillLevel(_currentDifficulty!.elo);
           }
         }
       } else {
@@ -430,7 +433,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
   /// Analyze a full game move-by-move for accuracy calculation
   Future<List<int?>> analyzeGame(List<String> fens, {int depth = 12}) async {
     List<int?> evaluations = [];
-    _service.setMaxStrength();
+    await _service.setMaxStrength();
 
     for (final fen in fens) {
       if (!_service.isReady) break;
@@ -450,13 +453,15 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
   /// Reset for new game. If [difficulty] is provided, configure the engine's
   /// strength for that difficulty level once (not on every move).
-  void resetForNewGame({DifficultyLevel? difficulty}) {
+  /// Awaited by callers so `ucinewgame` + strength are applied before the
+  /// first search — this replaces the old fixed-delay hack in startNewGame.
+  Future<void> resetForNewGame({DifficultyLevel? difficulty}) async {
     stopAnalysis();
     _currentDifficulty = difficulty;
     if (difficulty != null) {
-      _service.setSkillLevel(difficulty.elo);
+      await _service.setSkillLevel(difficulty.elo);
     }
-    _service.newGame();
+    await _service.newGame();
     state = const EngineState();
   }
 
@@ -467,12 +472,14 @@ class EngineNotifier extends StateNotifier<EngineState> {
       (a, b) => (a.elo - targetElo).abs() < (b.elo - targetElo).abs() ? a : b,
     );
     _currentDifficulty = closest;
-    _service.setSkillLevel(closest.elo);
+    // Fire-and-forget: queue order vs. later searches is preserved by FIFO.
+    unawaited(_service.setSkillLevel(closest.elo));
   }
 
   @override
   void dispose() {
     _searchId++;
+    _service.stopAnalysis();
     super.dispose();
   }
 

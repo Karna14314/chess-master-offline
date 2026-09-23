@@ -190,7 +190,8 @@ class _EngineDebugScreenState extends ConsumerState<EngineDebugScreen> {
         _testResult += '\n--- Testing ELO $elo ---\n';
         setState(() {});
 
-        service.setSkillLevel(elo);
+        // Awaited so the ELO options land before this iteration's `go`.
+        await service.setSkillLevel(elo);
 
         final startTime = DateTime.now();
         final result = await service.getBestMove(

@@ -168,6 +168,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   bool _isInitialized = false;
   bool _isAnalyzing = false; // Guard flag to prevent concurrent analysis
   int _analysisToken = 0; // Cancellation token for analyzeFullGame
+  // Throttle for progressive Report-tab ticks (v90 ANR fix).
+  DateTime _lastProgressTick = DateTime.fromMillisecondsSinceEpoch(0);
 
   @visibleForTesting
   int stateUpdateCount = 0;
@@ -446,20 +448,22 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     // Ensure engine is at maximum strength for full game analysis, and give it
     // more threads/hash than live play for the duration of the batch. Restored
     // in the finally block below, including on the cancellation path.
-    _stockfish!.setMaxStrength();
-    _stockfish!.setAnalysisStrength();
-
+    // Awaited: guarantees options + TT flush land before the first ply's `go`,
+    // so a Hash resize can never race a dying search thread.
+    await _stockfish!.setMaxStrength();
+    await _stockfish!.setAnalysisStrength();
     // Flush the transposition table ONCE at the start of the batch so the run
     // does not inherit entries from prior live play. Per-ply flushes are
     // suppressed via isBatchAnalysis, letting the engine reuse TT work across
     // consecutive plies of this game.
-    _stockfish!.newGame();
+    await _stockfish!.newGame();
 
     state = state.copyWith(
       isAnalyzing: true,
       analysisProgress: 0.0,
       analyzedMoves: [],
     );
+    _lastProgressTick = DateTime.now();
 
     try {
       _isAnalyzing = true;
@@ -570,8 +574,12 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             'promotion': move.promotion,
           });
 
-          // Emit progress tick.
-          if ((i + 1) % 1 == 0 || i == moves.length - 1) {
+          // Emit progress tick (throttled — see main-loop tick below).
+          final bookElapsed = DateTime.now().difference(_lastProgressTick);
+          if ((i + 1) % 5 == 0 ||
+              bookElapsed.inMilliseconds >= 750 ||
+              i == moves.length - 1) {
+            _lastProgressTick = DateTime.now();
             state = state.copyWith(
               analysisProgress: (i + 1) / moves.length,
               analyzedMoves: accumulator.moves,
@@ -896,8 +904,18 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
         // Update progress — emit partial fullAnalysis so the Report tab
         // renders progressively instead of showing a spinner until the end.
-        final tickEvery = moves.length > 40 ? 2 : 1;
-        if ((i + 1) % tickEvery == 0 || i == moves.length - 1) {
+        // v90 stability: throttle ticks (every 5 plies or 750ms, plus the last
+        // ply). Each tick rebuilds the full aggregates + notifies listeners on
+        // the UI thread; unthrottled ticks were a PlatformTaskQueue ANR source
+        // on long games.
+        final progressElapsed = DateTime.now().difference(
+          _lastProgressTick,
+        );
+        final isLastPly = i == moves.length - 1;
+        if ((i + 1) % 5 == 0 ||
+            progressElapsed.inMilliseconds >= 750 ||
+            isLastPly) {
+          _lastProgressTick = DateTime.now();
           final isCurrentPly = state.currentMoveIndex == i;
           state = state.copyWith(
             analysisProgress: (i + 1) / moves.length,
@@ -940,7 +958,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       _isAnalyzing = false;
       // Return the engine to its low-footprint live-play configuration. This
       // runs on every exit path: normal completion, cancellation and errors.
-      _stockfish?.setLivePlayStrength();
+      await _stockfish?.setLivePlayStrength();
       // Ensure state.isAnalyzing is always cleared, even on cancellation
       if (state.isAnalyzing) {
         state = state.copyWith(isAnalyzing: false);
@@ -1160,6 +1178,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
   @override
   void dispose() {
+    _analysisToken++; // Cancel any running analyzeFullGame loop first
     _stockfish?.stopAnalysis();
     super.dispose();
   }

@@ -67,19 +67,22 @@ class MockStockfishService implements StockfishService {
   Future<void> dispose() async {}
 
   @override
-  void setSkillLevel(int elo) {}
+  Future<void> setSkillLevel(int elo) async {}
 
   @override
-  void setMaxStrength() {}
+  Future<void> setMaxStrength() async {}
 
   @override
-  void setAnalysisStrength({int? threadsOverride, int? hashMbOverride}) {}
+  Future<void> setAnalysisStrength({
+    int? threadsOverride,
+    int? hashMbOverride,
+  }) async {}
 
   @override
-  void setLivePlayStrength() {}
+  Future<void> setLivePlayStrength() async {}
 
   @override
-  void newGame() {}
+  Future<void> newGame() async {}
 
   @override
   String buildPositionCommand({

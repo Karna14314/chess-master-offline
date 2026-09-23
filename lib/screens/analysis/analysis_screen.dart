@@ -54,6 +54,12 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
   @override
   void dispose() {
+    // Stop any in-flight engine search: navigating away mid-analysis must not
+    // leave native search threads running with callbacks targeting this
+    // disposed widget (DartMessenger SIGABRT / fml::KillProcess).
+    try {
+      ref.read(analysisProvider.notifier).stopAnalysis();
+    } catch (_) {}
     super.dispose();
   }
 

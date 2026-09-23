@@ -99,8 +99,8 @@ class _AppState extends State<_App> {
         return;
       }
 
-      engine.setMaxStrength();
-      engine.setAnalysisStrength();
+      await engine.setMaxStrength();
+      await engine.setAnalysisStrength();
 
       final fens = _positions();
       _log('POSITIONS ${fens.length}');
@@ -251,7 +251,7 @@ class _AppState extends State<_App> {
         );
       }
 
-      engine.setLivePlayStrength();
+      await engine.setLivePlayStrength();
       _log('===== DONE =====');
       setState(() => _status = 'done — see logcat (NODES)');
     } catch (e, st) {

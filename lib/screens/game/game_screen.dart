@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
+import 'package:chess_master/providers/engine_provider.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/timer_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
@@ -67,6 +68,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+    // Stop any in-flight bot search so native threads don't outlive the
+    // screen and fire callbacks after dispose (DartMessenger SIGABRT).
+    try {
+      ref.read(engineProvider.notifier).stopAnalysis();
+    } catch (_) {}
     _moveListController.dispose();
     super.dispose();
   }

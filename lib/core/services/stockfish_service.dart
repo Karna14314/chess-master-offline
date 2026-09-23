@@ -607,6 +607,27 @@ class StockfishService {
     List<String>? moves,
   ) => _areMovesLegal(fen, startingFen, moves);
 
+  /// Expand a FEN rank (e.g. `r1bqkbnr`) into 8 square chars
+  /// (empty squares as `' '`) for home-square checks.
+  static List<String> _expandRank(String rank) {
+    final squares = <String>[];
+    for (int i = 0; i < rank.length && squares.length < 8; i++) {
+      final char = rank[i];
+      final empty = int.tryParse(char);
+      if (empty != null) {
+        for (int j = 0; j < empty; j++) {
+          squares.add(' ');
+        }
+      } else {
+        squares.add(char);
+      }
+    }
+    while (squares.length < 8) {
+      squares.add(' ');
+    }
+    return squares;
+  }
+
   /// Internal FEN validation to prevent native Stockfish C++ engine crashes (SIGSEGV).
   /// Enforces board structure, piece counts, valid kings, castling, move numbers,
   /// pawn placement, and king adjacency.
@@ -722,6 +743,48 @@ class StockfishService {
     if (ep != '-') {
       final validEp = RegExp(r'^[a-h][36]$');
       if (!validEp.hasMatch(ep)) return false;
+      // The ep square is the skipped square of the last double push, so its
+      // rank must match the side to move: rank 6 (black just pushed... i.e.
+      // white to move) or rank 3 (white just pushed, black to move).
+      // A stale ep square from a custom position setup is a known trigger
+      // for native Position::is_draw crashes — reject it to fallback.
+      final epRank = ep[1];
+      if (epRank == '6' && color != 'w') {
+        return false;
+      }
+      if (epRank == '3' && color != 'b') {
+        return false;
+      }
+    }
+
+    // Total material cap: a side can never own more than its initial 16 men
+    // (promotions don't change the count, captures only reduce it).
+    final whiteTotal = whitePawnCount + whiteNonPawnCount + whiteKingCount;
+    final blackTotal = blackPawnCount + blackNonPawnCount + blackKingCount;
+    if (whiteTotal > 16 || blackTotal > 16) return false;
+
+    // Castling consistency: rights require the king on its home square AND
+    // the corresponding rook on its home square. Missing pieces with rights
+    // set describe an impossible position the native parser chokes on.
+    if (castling != '-') {
+      final rank1 = _expandRank(rows[7]);
+      final rank8 = _expandRank(rows[0]);
+      if (castling.contains('K') &&
+          (rank1[4] != 'K' || rank1[7] != 'R')) {
+        return false;
+      }
+      if (castling.contains('Q') &&
+          (rank1[4] != 'K' || rank1[0] != 'R')) {
+        return false;
+      }
+      if (castling.contains('k') &&
+          (rank8[4] != 'k' || rank8[7] != 'r')) {
+        return false;
+      }
+      if (castling.contains('q') &&
+          (rank8[4] != 'k' || rank8[0] != 'r')) {
+        return false;
+      }
     }
 
     // Halfmove and fullmove checks if provided
@@ -858,7 +921,23 @@ class StockfishService {
 
         subscription = _outputController.stream.listen((line) {
           if (searchId != _activeSearchId) {
+            // Superseded by stopAnalysis() or a newer search: release the
+            // execution-queue slot now with a partial result instead of
+            // hanging on the full search timeout. Callers treat an empty
+            // bestMove as "no legal move reported" and reconcile with the
+            // Dart board (terminal detection / refusal), never forwarding
+            // it to the native engine.
             subscription?.cancel();
+            if (!completer.isCompleted) {
+              completer.complete(
+                BestMoveResult(
+                  bestMove: '',
+                  ponderMove: ponderMove,
+                  evaluation: evaluation,
+                  mateIn: mateIn,
+                ),
+              );
+            }
             return;
           }
 
@@ -1188,7 +1267,22 @@ class StockfishService {
 
         subscription = _outputController.stream.listen((line) {
           if (searchId != _activeSearchId) {
+            // Superseded by stopAnalysis(): release the execution-queue slot
+            // now with the best partial result gathered so far instead of
+            // hanging on the full analysis timeout. Callers fall back to the
+            // basic evaluator on empty lines; the batch loop additionally
+            // checks its cancellation token before using the result.
             subscription?.cancel();
+            if (!completer.isCompleted) {
+              completer.complete(
+                AnalysisResult(
+                  evaluation: mainEvaluation ?? 0,
+                  mateIn: mateIn,
+                  lines: List.from(lines),
+                  depth: depth,
+                ),
+              );
+            }
             return;
           }
 
@@ -1327,9 +1421,13 @@ class StockfishService {
           }
         });
 
-        // Ensure engine is at max strength for analysis (after stop, before position)
+        // Ensure engine is at max strength for analysis (after stop, before position).
+        // Already inside the serialized execution slot, so send directly via
+        // the command queue: calling setMaxStrength() here would enqueue a new
+        // execution-queue task that cannot run until THIS search completes,
+        // applying the option after the search instead of before it.
         if (!_useFallback) {
-          setMaxStrength();
+          _sendCommand('setoption name UCI_LimitStrength value false');
         }
 
         // Set position and analyze
@@ -1398,11 +1496,16 @@ class StockfishService {
   /// Set the engine skill level (affects playing strength).
   /// Uses Stockfish's UCI_Elo with UCI_LimitStrength=true for strength control.
   /// Do NOT set Skill Level simultaneously — Stockfish ignores it when UCI_LimitStrength is active.
-  void setSkillLevel(int elo) {
-    if (_isDisposed || _useFallback) return;
+  ///
+  /// Returns a Future that completes when the options have been handed to the
+  /// command queue. Await it whenever ordering vs. a subsequent search matters
+  /// (new game, batch setup, difficulty change) — otherwise a later `go` could
+  /// be delivered before the options on slow devices.
+  Future<void> setSkillLevel(int elo) {
+    if (_isDisposed || _useFallback) return Future.value();
 
     final clampedElo = elo.clamp(1320, 3190);
-    _executionQueue.run(() async {
+    return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
       _sendCommand('setoption name UCI_LimitStrength value true');
       _sendCommand('setoption name UCI_Elo value $clampedElo');
@@ -1410,10 +1513,11 @@ class StockfishService {
     });
   }
 
-  /// Set the engine to maximum strength
-  void setMaxStrength() {
-    if (_isDisposed || _useFallback) return;
-    _executionQueue.run(() async {
+  /// Set the engine to maximum strength.
+  /// See [setSkillLevel] for why this returns an awaitable Future.
+  Future<void> setMaxStrength() {
+    if (_isDisposed || _useFallback) return Future.value();
+    return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
       _sendCommand('setoption name UCI_LimitStrength value false');
     });
@@ -1447,14 +1551,15 @@ class StockfishService {
   /// Raise Threads/Hash for a full-game batch analysis pass.
   /// Must be paired with [setLivePlayStrength] when the pass finishes or is
   /// cancelled, so live play returns to its low-footprint configuration.
+  /// Returns an awaitable Future — see [setSkillLevel].
   ///
   /// [threadsOverride] raises the thread count above the reproducibility-safe
   /// default. Only safe when the completed analysis is persisted and replayed
   /// from storage, so a user never re-runs the same game and sees different
   /// numbers. Used by the config sweep harness for measurement.
-  void setAnalysisStrength({int? threadsOverride, int? hashMbOverride}) {
-    if (_isDisposed || _useFallback) return;
-    _executionQueue.run(() async {
+  Future<void> setAnalysisStrength({int? threadsOverride, int? hashMbOverride}) {
+    if (_isDisposed || _useFallback) return Future.value();
+    return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
       final threads = threadsOverride ?? _analysisThreads;
       final hash = hashMbOverride ?? analysisHashMb;
@@ -1468,9 +1573,10 @@ class StockfishService {
   }
 
   /// Restore the live-play Threads/Hash configuration.
-  void setLivePlayStrength() {
-    if (_isDisposed || _useFallback) return;
-    _executionQueue.run(() async {
+  /// Returns an awaitable Future — see [setSkillLevel].
+  Future<void> setLivePlayStrength() {
+    if (_isDisposed || _useFallback) return Future.value();
+    return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
       _sendCommand('setoption name Threads value $livePlayThreads');
       _sendCommand('setoption name Hash value $livePlayHashMb');
@@ -1481,9 +1587,17 @@ class StockfishService {
     });
   }
 
-  /// Stop any ongoing analysis
+  /// Stop any ongoing analysis.
+  ///
+  /// Stays synchronous (safe to call from dispose/lifecycle callbacks): it
+  /// invalidates the active search id FIRST so an in-flight search completes
+  /// with a partial result on the next engine line instead of hanging on its
+  /// full timeout while holding the execution-queue slot, then asks the
+  /// engine to stop. The trailing `isready` guarantees engine output arrives
+  /// (bestmove and/or readyok) to release the orphaned search promptly.
   void stopAnalysis() {
     if (_isDisposed || _useFallback) return;
+    _activeSearchId++;
     _sendCommand('stop');
     _sendCommand('isready');
   }
@@ -1531,10 +1645,11 @@ class StockfishService {
     }
   }
 
-  /// Start a new game
-  void newGame() {
-    if (_isDisposed || _useFallback) return;
-    _executionQueue.run(() async {
+  /// Start a new game.
+  /// Returns an awaitable Future — see [setSkillLevel].
+  Future<void> newGame() {
+    if (_isDisposed || _useFallback) return Future.value();
+    return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
       _sendCommand('ucinewgame');
     });

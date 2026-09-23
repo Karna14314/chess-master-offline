@@ -103,7 +103,7 @@ class _S extends State<_App> {
         setState(() => _status = 'FATAL: fallback');
         return;
       }
-      engine.setMaxStrength();
+      await engine.setMaxStrength();
 
       final fens = _positions();
       _log('positions=${fens.length} plies=${_game.length}');
@@ -112,8 +112,7 @@ class _S extends State<_App> {
 
       for (final cfg in _configs) {
         setState(() => _status = 'running ${cfg.name}…');
-        engine.setAnalysisStrength(threadsOverride: cfg.threads);
-        await Future<void>.delayed(const Duration(milliseconds: 300));
+        await engine.setAnalysisStrength(threadsOverride: cfg.threads);
 
         final evals = <double>[];
         final sw = Stopwatch()..start();
@@ -175,7 +174,7 @@ class _S extends State<_App> {
         );
       }
 
-      engine.setLivePlayStrength();
+      await engine.setLivePlayStrength();
       _log('===== DONE =====');
       setState(() => _status = 'done — logcat SWEEP');
     } catch (e, st) {

@@ -14,7 +14,10 @@ import 'package:chess_master/data/repositories/game_session_repository.dart';
 
 final gameHistoryProvider = FutureProvider<List<GameSession>>((ref) async {
   final repo = ref.read(gameSessionRepositoryProvider);
-  return await repo.getRealGamesHistory();
+  // v90 stability: cap rows. Each session carries full PGN + move history and
+  // sqflite decodes the whole result set via StandardMessageCodec — unbounded
+  // loads OOM low-end devices (readBytes crash). 200 is well beyond real use.
+  return await repo.getRealGamesHistory(limit: 200);
 });
 
 /// Game history screen showing saved games

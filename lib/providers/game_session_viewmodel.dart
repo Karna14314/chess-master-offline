@@ -44,11 +44,12 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     BotProfile? botProfile,
     int? campaignLevel,
   }) async {
-    // Reset engine first to ensure clean state for new game (except local multiplayer)
+    // Reset engine first to ensure clean state for new game (except local multiplayer).
+    // Awaited: resetForNewGame serializes stop + skill level + ucinewgame
+    // ahead of the first search, so no arbitrary delay is needed.
     if (gameMode != GameMode.localMultiplayer) {
       final engineNotifier = _ref.read(engineProvider.notifier);
-      engineNotifier.resetForNewGame(difficulty: difficulty);
-      await Future.delayed(const Duration(milliseconds: 300));
+      await engineNotifier.resetForNewGame(difficulty: difficulty);
     }
 
     final session = GameSession.create(

@@ -31,21 +31,22 @@ class ChessPiece extends StatelessWidget {
     // Try to load SVG first
     final assetPath = pieceSet.getAssetPath(piece);
 
-    // ⚡ Bolt: Using RepaintBoundary to isolate the piece from the board's pixels.
-    // This stops the 'Raster' thread from doing 64+ redraws per frame during a drag.
-    return RepaintBoundary(
-      child: SvgPicture.asset(
-        assetPath,
-        width: size * 0.9,
-        height: size * 0.9,
-        fit: BoxFit.contain,
-        placeholderBuilder: (context) => _buildFallbackPiece(),
-        // Recolors the shared artwork per piece set (null = raw artwork).
-        // The mapper is part of flutter_svg's cache key, so each set is
-        // cached and rendered independently.
-        colorMapper: pieceSet.colorMapper,
-        colorFilter: null, // Don't apply color filter to preserve piece colors
-      ),
+    // NOTE (v90 stability): no per-piece RepaintBoundary here. One boundary
+    // per piece meant ~32 extra GPU layers (skgpu buffer pressure →
+    // TClientMappedBufferManager SIGSEGV on low-end arm64). The board wraps
+    // the whole stack in a single RepaintBoundary instead; SVGs stay cached
+    // by flutter_svg so repaints are cheap.
+    return SvgPicture.asset(
+      assetPath,
+      width: size * 0.9,
+      height: size * 0.9,
+      fit: BoxFit.contain,
+      placeholderBuilder: (context) => _buildFallbackPiece(),
+      // Recolors the shared artwork per piece set (null = raw artwork).
+      // The mapper is part of flutter_svg's cache key, so each set is
+      // cached and rendered independently.
+      colorMapper: pieceSet.colorMapper,
+      colorFilter: null, // Don't apply color filter to preserve piece colors
     );
   }
 
