@@ -36,9 +36,9 @@ class _BotsHubScreenState extends ConsumerState<BotsHubScreen>
     super.dispose();
   }
 
-  void _startBotMatch(BotProfile bot) {
+  Future<void> _startBotMatch(BotProfile bot) async {
     final viewModel = ref.read(gameSessionProvider.notifier);
-    viewModel.startNewGame(
+    await viewModel.startNewGame(
       gameMode: GameMode.bot,
       difficulty: bot.difficultyLevel,
       timeControl: AppConstants.timeControls[0],
@@ -46,6 +46,7 @@ class _BotsHubScreenState extends ConsumerState<BotsHubScreen>
       botType: bot.engineType,
       botProfile: bot,
     );
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const GameScreen()),

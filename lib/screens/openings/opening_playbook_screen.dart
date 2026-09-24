@@ -510,11 +510,12 @@ class _InteractiveOpeningModalState
     }
   }
 
-  void _practiceVsBot(BuildContext context) {
+  Future<void> _practiceVsBot(BuildContext context) async {
+    final navigator = Navigator.of(context);
     final gameViewModel = ref.read(gameSessionProvider.notifier);
 
-    // Setup bot match starting from this opening position
-    gameViewModel.startNewGame(
+    navigator.pop();
+    await gameViewModel.startNewGame(
       playerColor: PlayerColor.white,
       difficulty: AppConstants.difficultyLevels[3], // Intermediate (1600 ELO)
       timeControl: AppConstants.timeControls[7], // 10+0 Rapid
@@ -523,9 +524,8 @@ class _InteractiveOpeningModalState
       startingFen: widget.opening.practiceFen,
     );
 
-    Navigator.pop(context); // Close modal
-    Navigator.push(
-      context,
+    if (!navigator.mounted) return;
+    navigator.push(
       MaterialPageRoute(builder: (context) => const GameScreen()),
     );
   }
@@ -924,7 +924,9 @@ class _InteractiveOpeningModalState
                   ),
                   const SizedBox(height: 10),
                   ElevatedButton.icon(
-                    onPressed: () => _practiceVsBot(context),
+                    onPressed: () async {
+                      await _practiceVsBot(context);
+                    },
                     icon: const Icon(Icons.play_arrow_rounded),
                     label: Text(
                       'Play final position vs AI',

@@ -50,12 +50,14 @@ class BestMoveResult {
   final String? ponderMove;
   final int? evaluation; // In centipawns
   final int? mateIn;
+  final bool wasCancelled;
 
   BestMoveResult({
     required this.bestMove,
     this.ponderMove,
     this.evaluation,
     this.mateIn,
+    this.wasCancelled = false,
   });
 
   /// UCI sentinels Stockfish reports when there is no legal move to play
@@ -90,12 +92,14 @@ class AnalysisResult {
   final int? mateIn;
   final List<EngineLine> lines;
   final int depth;
+  final bool wasCancelled;
 
   AnalysisResult({
     required this.evaluation,
     this.mateIn,
     required this.lines,
     required this.depth,
+    this.wasCancelled = false,
   });
 
   /// Get evaluation in pawns (centipawns / 100)

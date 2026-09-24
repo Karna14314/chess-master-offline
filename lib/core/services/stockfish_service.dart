@@ -13,9 +13,8 @@ import 'package:chess_master/core/services/basic_evaluator_service.dart';
 /// Queued command for serial execution
 class _QueuedCommand {
   final String command;
-  final Completer<void>? completer;
 
-  _QueuedCommand({required this.command, this.completer});
+  _QueuedCommand({required this.command});
 }
 
 /// Service class for interacting with the Stockfish chess engine
@@ -70,6 +69,19 @@ class StockfishService {
   // that isn't actually running.
   bool _searchInFlight = false;
 
+  bool _isSearchCancelled(int searchId) =>
+      _isDisposed || searchId != _activeSearchId;
+
+  BestMoveResult _cancelledBestMoveResult() =>
+      BestMoveResult(bestMove: '', wasCancelled: true);
+
+  AnalysisResult _cancelledAnalysisResult() => AnalysisResult(
+    evaluation: 0,
+    lines: const [],
+    depth: 0,
+    wasCancelled: true,
+  );
+
   @visibleForTesting
   Duration searchTimeoutForTesting = const Duration(seconds: 30);
   @visibleForTesting
@@ -97,6 +109,7 @@ class StockfishService {
 
   // Phase 2: Lifecycle management
   bool _isDisposed = false;
+  Future<void>? _disposeFuture;
   int _engineSessionId =
       0; // Incremented on each _startEngineIsolate to detect stale messages
   DateTime? _lastFallbackTime;
@@ -143,6 +156,7 @@ class StockfishService {
     _forceFallback = false;
     _lastFallbackTime = null;
     _engineSessionId = 0;
+    _disposeFuture = null;
     _activeSearchId = 0;
     _searchInFlight = false;
     _skipReadyOkForTesting = false;
@@ -204,8 +218,13 @@ class StockfishService {
   /// Initialization commands bypass the normal command queue to avoid circular
   /// dependency: the queue requires _isReady which is not set until step 5.
   Future<void> initialize() async {
+    final pendingDispose = _disposeFuture;
+    if (pendingDispose != null) {
+      await pendingDispose;
+    }
     if (_isDisposed) {
       _isDisposed = false;
+      _disposeFuture = null;
       statusNotifier.value = EngineStatus.initializing;
     }
     if (_isReady || _useFallback) return;
@@ -243,6 +262,13 @@ class StockfishService {
     // --- Step 1: Start the engine isolate ---
     try {
       await _startEngineIsolate();
+      if (_isDisposed || _engineCommandPort == null) {
+        await _killEngineIfRunning();
+        final initCompleter = _initCompleter;
+        _initCompleter = null;
+        initCompleter?.complete();
+        return;
+      }
     } catch (e) {
       debugPrint('ENGINE INIT: Isolate start failed: $e');
       _enableFallback('Isolate start failed: $e');
@@ -306,7 +332,9 @@ class StockfishService {
         // _isReady is also set by the permanent stdout listener in _startEngineIsolate
 
         debugPrint('ENGINE INIT: Engine fully initialized');
-        _initCompleter?.complete();
+        final initCompleter = _initCompleter;
+        _initCompleter = null;
+        initCompleter?.complete();
         return;
       } catch (e) {
         retryCount++;
@@ -445,8 +473,7 @@ class StockfishService {
   void _sendCommand(String command) {
     if (_isDisposed || _useFallback) return;
 
-    final completer = Completer<void>();
-    _commandQueue.add(_QueuedCommand(command: command, completer: completer));
+    _commandQueue.add(_QueuedCommand(command: command));
     _processCommandQueue();
   }
 
@@ -460,22 +487,25 @@ class StockfishService {
 
     _isProcessingQueue = true;
 
-    while (_commandQueue.isNotEmpty) {
-      final cmd = _commandQueue.removeAt(0);
-      try {
-        _engineCommandPort?.send({
-          'type': 'stdin',
-          'command': '${cmd.command}\n',
-        });
-        cmd.completer?.complete();
-        // Small delay between commands to prevent overwhelming the engine
-        await Future.delayed(const Duration(milliseconds: 10));
-      } catch (e) {
-        cmd.completer?.completeError(e);
+    try {
+      while (_commandQueue.isNotEmpty) {
+        final cmd = _commandQueue.removeAt(0);
+        try {
+          _engineCommandPort?.send({
+            'type': 'stdin',
+            'command': '${cmd.command}\n',
+          });
+          // Small delay between commands to prevent overwhelming the engine
+          await Future.delayed(const Duration(milliseconds: 10));
+        } catch (e) {
+          _enableFallback('Failed to send engine command: $e');
+          _commandQueue.clear();
+          break;
+        }
       }
+    } finally {
+      _isProcessingQueue = false;
     }
-
-    _isProcessingQueue = false;
   }
 
   /// Send a command directly to the engine isolate, bypassing the command queue.
@@ -769,20 +799,16 @@ class StockfishService {
     if (castling != '-') {
       final rank1 = _expandRank(rows[7]);
       final rank8 = _expandRank(rows[0]);
-      if (castling.contains('K') &&
-          (rank1[4] != 'K' || rank1[7] != 'R')) {
+      if (castling.contains('K') && (rank1[4] != 'K' || rank1[7] != 'R')) {
         return false;
       }
-      if (castling.contains('Q') &&
-          (rank1[4] != 'K' || rank1[0] != 'R')) {
+      if (castling.contains('Q') && (rank1[4] != 'K' || rank1[0] != 'R')) {
         return false;
       }
-      if (castling.contains('k') &&
-          (rank8[4] != 'k' || rank8[7] != 'r')) {
+      if (castling.contains('k') && (rank8[4] != 'k' || rank8[7] != 'r')) {
         return false;
       }
-      if (castling.contains('q') &&
-          (rank8[4] != 'k' || rank8[0] != 'r')) {
+      if (castling.contains('q') && (rank8[4] != 'k' || rank8[0] != 'r')) {
         return false;
       }
     }
@@ -828,7 +854,10 @@ class StockfishService {
     List<String>? moves,
   }) {
     final cleanFen = sanitizeFen(fen);
-    if (startingFen == null || startingFen.isEmpty || moves == null || moves.isEmpty) {
+    if (startingFen == null ||
+        startingFen.isEmpty ||
+        moves == null ||
+        moves.isEmpty) {
       return 'position fen $cleanFen';
     }
     final cleanStartingFen = sanitizeFen(startingFen);
@@ -864,6 +893,8 @@ class StockfishService {
       return _getSimpleBotMove(fen, depth, thinkTimeMs);
     }
 
+    final searchId = ++_activeSearchId;
+
     // Attempt fallback recovery if cooldown has elapsed
     if (_useFallback && _shouldRetryInit()) {
       await _tryFallbackRecovery();
@@ -886,14 +917,17 @@ class StockfishService {
     }
 
     return _executionQueue.run(() async {
-      if (_isDisposed) {
-        return _getSimpleBotMove(fen, depth, thinkTimeMs);
+      if (_isSearchCancelled(searchId)) {
+        return _cancelledBestMoveResult();
       }
       if (_useFallback && _shouldRetryInit()) {
         await _tryFallbackRecovery();
       }
       if (!_isReady && !_useFallback) {
         await initialize();
+      }
+      if (_isSearchCancelled(searchId)) {
+        return _cancelledBestMoveResult();
       }
       if (_useFallback || !_isReady) {
         return _getSimpleBotMove(fen, depth, thinkTimeMs);
@@ -904,44 +938,35 @@ class StockfishService {
         return _getSimpleBotMove(fen, depth, thinkTimeMs);
       }
       _isEngineBusy = true;
-
-      final searchId = ++_activeSearchId;
       StreamSubscription<String>? subscription;
 
       try {
         // Stop any lingering search from a previous call BEFORE attaching our
         // listener, so a stale bestmove line cannot be consumed by this search.
         await _stopCurrentSearchAndWait();
+        if (_isSearchCancelled(searchId)) {
+          return _cancelledBestMoveResult();
+        }
 
         final completer = Completer<BestMoveResult>();
         String? bestMove;
         String? ponderMove;
         int? evaluation;
         int? mateIn;
+        var goSent = false;
 
         subscription = _outputController.stream.listen((line) {
-          if (searchId != _activeSearchId) {
-            // Superseded by stopAnalysis() or a newer search: release the
-            // execution-queue slot now with a partial result instead of
-            // hanging on the full search timeout. Callers treat an empty
-            // bestMove as "no legal move reported" and reconcile with the
-            // Dart board (terminal detection / refusal), never forwarding
-            // it to the native engine.
-            subscription?.cancel();
-            if (!completer.isCompleted) {
-              completer.complete(
-                BestMoveResult(
-                  bestMove: '',
-                  ponderMove: ponderMove,
-                  evaluation: evaluation,
-                  mateIn: mateIn,
-                ),
-              );
+          final trimmedLine = line.trim();
+          if (_isSearchCancelled(searchId)) {
+            if (goSent && trimmedLine.startsWith('bestmove')) {
+              _searchInFlight = false;
+              subscription?.cancel();
+              if (!completer.isCompleted) {
+                completer.complete(_cancelledBestMoveResult());
+              }
             }
             return;
           }
-
-          final trimmedLine = line.trim();
 
           // Parse evaluation from info line.
           // Stockfish's "score cp" is from the side-to-move's perspective.
@@ -980,6 +1005,8 @@ class StockfishService {
               ponderMove = parts[3];
             }
 
+            if (!goSent) return;
+            _searchInFlight = false;
             subscription?.cancel();
             if (!completer.isCompleted) {
               completer.complete(
@@ -1011,12 +1038,16 @@ class StockfishService {
           debugPrint('Position ready timeout for FEN: $fen. Using fallback.');
           return _getSimpleBotMove(fen, depth, thinkTimeMs);
         }
+        if (_isSearchCancelled(searchId)) {
+          return _cancelledBestMoveResult();
+        }
 
         // UCI search command strategy:
         //   Bot play  → "go movetime <ms>" — time-bounded search (no depth limit)
         //   Analysis  → "go depth <depth>" — depth-bounded search (no time limit)
         //
         // Never combine depth and movetime in one "go" command (ISSUE-006).
+        goSent = true;
         if (thinkTimeMs != null) {
           _searchInFlight = true;
           _sendCommand('go movetime $thinkTimeMs');
@@ -1026,9 +1057,10 @@ class StockfishService {
         }
 
         // Failsafe timeout for Stockfish response: dynamic based on thinkTimeMs
-        final effectiveTimeout = thinkTimeMs != null
-            ? Duration(milliseconds: thinkTimeMs * 2 + 2500)
-            : searchTimeoutForTesting;
+        final effectiveTimeout =
+            thinkTimeMs != null
+                ? Duration(milliseconds: thinkTimeMs * 2 + 2500)
+                : searchTimeoutForTesting;
         return await completer.future.timeout(
           effectiveTimeout,
           onTimeout: () async {
@@ -1037,12 +1069,17 @@ class StockfishService {
             );
             _sendCommand('stop');
             await _stopCurrentSearchAndWait();
+            if (_isSearchCancelled(searchId)) {
+              return _cancelledBestMoveResult();
+            }
             return _getSimpleBotMove(fen, depth, thinkTimeMs);
           },
         );
       } finally {
-        subscription?.cancel();
-        _searchInFlight = false;
+        await subscription?.cancel();
+        if (_searchInFlight) {
+          await _stopCurrentSearchAndWait();
+        }
         _isEngineBusy = false;
       }
     });
@@ -1086,12 +1123,6 @@ class StockfishService {
     if (thinkTimeMs == null) return 900;
     return thinkTimeMs.clamp(500, 1200);
   }
-
-  // Pending analysis for dedup: when a second analyzePosition call comes in
-  // for the same FEN while the first is still running, the second call awaits
-  // this future instead of starting a new search.
-  Future<AnalysisResult>? _pendingAnalysis;
-  String? _pendingAnalysisFen;
 
   /// Analyze a position and get multiple lines
   /// Returns evaluation and top engine lines
@@ -1166,6 +1197,8 @@ class StockfishService {
       }
     } catch (_) {}
 
+    final searchId = ++_activeSearchId;
+
     // Guard: If disposed, return fallback
     if (_isDisposed) {
       return BasicEvaluatorService.instance.analyze(fen);
@@ -1180,30 +1213,28 @@ class StockfishService {
       await initialize();
     }
 
+    if (_isSearchCancelled(searchId)) {
+      return _cancelledAnalysisResult();
+    }
+
     // If using fallback, use basic evaluator
     if (_useFallback) {
       debugPrint('Engine not ready for analysis, using fallback for FEN: $fen');
       return BasicEvaluatorService.instance.analyze(fen);
     }
 
-    // Dedup: if a search for the same FEN is already running, await it instead
-    // of starting a new search. This prevents overlapping searches and ensures
-    // both callers get the same result.
-    if (_pendingAnalysis != null &&
-        _pendingAnalysisFen == fen &&
-        _isEngineBusy) {
-      return _pendingAnalysis!;
-    }
-
     return _executionQueue.run(() async {
-      if (_isDisposed) {
-        return BasicEvaluatorService.instance.analyze(fen);
+      if (_isSearchCancelled(searchId)) {
+        return _cancelledAnalysisResult();
       }
       if (_useFallback && _shouldRetryInit()) {
         await _tryFallbackRecovery();
       }
       if (!_isReady && !_useFallback) {
         await initialize();
+      }
+      if (_isSearchCancelled(searchId)) {
+        return _cancelledAnalysisResult();
       }
       if (_useFallback || !_isReady) {
         debugPrint(
@@ -1212,23 +1243,15 @@ class StockfishService {
         return BasicEvaluatorService.instance.analyze(fen);
       }
 
-      if (_pendingAnalysis != null &&
-          _pendingAnalysisFen == fen &&
-          _isEngineBusy) {
-        return _pendingAnalysis!;
-      }
-
       if (_isEngineBusy || _searchInFlight) {
         await _stopCurrentSearchAndWait();
       }
+      if (_isSearchCancelled(searchId)) {
+        return _cancelledAnalysisResult();
+      }
       _isEngineBusy = true;
 
-      // Track this search for dedup
-      _pendingAnalysisFen = fen;
       final analysisCompleter = Completer<AnalysisResult>();
-      _pendingAnalysis = analysisCompleter.future;
-
-      final searchId = ++_activeSearchId;
       final callStarted = DateTime.now();
       StreamSubscription<String>? subscription;
 
@@ -1237,6 +1260,9 @@ class StockfishService {
         // listener, so a stale bestmove line cannot be consumed by this analysis.
         final wasStopped = _searchInFlight;
         await _stopCurrentSearchAndWait();
+        if (_isSearchCancelled(searchId)) {
+          return _cancelledAnalysisResult();
+        }
 
         // Reset engine state before new analysis to prevent SIGSEGV from stale TT entries.
         // Only send ucinewgame when we actually stopped a previous search, to avoid
@@ -1257,6 +1283,7 @@ class StockfishService {
         final lines = <EngineLine>[];
         int? mainEvaluation;
         int? mateIn;
+        var goSent = false;
 
         // Per-depth accumulation so the final result can be taken from the
         // deepest COMPLETED iteration rather than whatever was mid-flight when
@@ -1266,27 +1293,17 @@ class StockfishService {
         final mateByDepth = <int, int?>{};
 
         subscription = _outputController.stream.listen((line) {
-          if (searchId != _activeSearchId) {
-            // Superseded by stopAnalysis(): release the execution-queue slot
-            // now with the best partial result gathered so far instead of
-            // hanging on the full analysis timeout. Callers fall back to the
-            // basic evaluator on empty lines; the batch loop additionally
-            // checks its cancellation token before using the result.
-            subscription?.cancel();
-            if (!completer.isCompleted) {
-              completer.complete(
-                AnalysisResult(
-                  evaluation: mainEvaluation ?? 0,
-                  mateIn: mateIn,
-                  lines: List.from(lines),
-                  depth: depth,
-                ),
-              );
+          final trimmedLine = line.trim();
+          if (_isSearchCancelled(searchId)) {
+            if (goSent && trimmedLine.startsWith('bestmove')) {
+              _searchInFlight = false;
+              subscription?.cancel();
+              if (!completer.isCompleted) {
+                completer.complete(_cancelledAnalysisResult());
+              }
             }
             return;
           }
-
-          final trimmedLine = line.trim();
 
           if (trimmedLine.startsWith('info') && trimmedLine.contains('pv')) {
             final pvMatch = _multiPvRegex.firstMatch(trimmedLine);
@@ -1361,19 +1378,25 @@ class StockfishService {
               }
 
               if (onUpdate != null && mainEvaluation != null) {
-                onUpdate(
-                  AnalysisResult(
-                    evaluation: mainEvaluation!,
-                    mateIn: mateIn,
-                    lines: List.from(lines),
-                    depth: currentDepth,
-                  ),
-                );
+                try {
+                  onUpdate(
+                    AnalysisResult(
+                      evaluation: mainEvaluation!,
+                      mateIn: mateIn,
+                      lines: List.from(lines),
+                      depth: currentDepth,
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint('Analysis update callback failed: $e');
+                }
               }
             }
           }
 
           if (trimmedLine.startsWith('bestmove')) {
+            if (!goSent) return;
+            _searchInFlight = false;
             subscription?.cancel();
             // Reset MultiPV to 1
             _sendCommand('setoption name MultiPV value 1');
@@ -1449,7 +1472,11 @@ class StockfishService {
           );
           return BasicEvaluatorService.instance.analyze(fen);
         }
+        if (_isSearchCancelled(searchId)) {
+          return _cancelledAnalysisResult();
+        }
 
+        goSent = true;
         _searchInFlight = true;
         // Node-bounded search caps total work regardless of device speed.
         // (Reproducibility comes from the completed-iteration capture in the
@@ -1466,6 +1493,9 @@ class StockfishService {
             _sendCommand('stop');
             await _stopCurrentSearchAndWait();
             _sendCommand('setoption name MultiPV value 1');
+            if (_isSearchCancelled(searchId)) {
+              return _cancelledAnalysisResult();
+            }
             return BasicEvaluatorService.instance.analyze(fen);
           },
         );
@@ -1482,13 +1512,11 @@ class StockfishService {
 
         return searchResult;
       } finally {
-        subscription?.cancel();
-        _searchInFlight = false;
-        _isEngineBusy = false;
-        if (_pendingAnalysisFen == fen) {
-          _pendingAnalysis = null;
-          _pendingAnalysisFen = null;
+        await subscription?.cancel();
+        if (_searchInFlight) {
+          await _stopCurrentSearchAndWait();
         }
+        _isEngineBusy = false;
       }
     });
   }
@@ -1557,7 +1585,10 @@ class StockfishService {
   /// default. Only safe when the completed analysis is persisted and replayed
   /// from storage, so a user never re-runs the same game and sees different
   /// numbers. Used by the config sweep harness for measurement.
-  Future<void> setAnalysisStrength({int? threadsOverride, int? hashMbOverride}) {
+  Future<void> setAnalysisStrength({
+    int? threadsOverride,
+    int? hashMbOverride,
+  }) {
     if (_isDisposed || _useFallback) return Future.value();
     return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
@@ -1596,8 +1627,9 @@ class StockfishService {
   /// engine to stop. The trailing `isready` guarantees engine output arrives
   /// (bestmove and/or readyok) to release the orphaned search promptly.
   void stopAnalysis() {
-    if (_isDisposed || _useFallback) return;
+    if (_isDisposed) return;
     _activeSearchId++;
+    if (_useFallback) return;
     _sendCommand('stop');
     _sendCommand('isready');
   }
@@ -1613,13 +1645,17 @@ class StockfishService {
     }
     if (!_searchInFlight && !_isEngineBusy) return;
 
+    final waitForBestMove = _searchInFlight;
     final completer = Completer<void>();
     StreamSubscription<String>? subscription;
 
     subscription = _outputController.stream.listen((line) {
       final trimmed = line.trim();
-      if ((trimmed.startsWith('bestmove') || trimmed == 'readyok') &&
-          !completer.isCompleted) {
+      final acknowledged =
+          waitForBestMove
+              ? trimmed.startsWith('bestmove')
+              : trimmed == 'readyok';
+      if (acknowledged && !completer.isCompleted) {
         completer.complete();
       }
     });
@@ -1630,15 +1666,9 @@ class StockfishService {
     try {
       await completer.future.timeout(const Duration(milliseconds: 3000));
     } catch (_) {
-      // Hard timeout exceeded: engine is stalled or wedged.
-      // NEVER proceed while search threads might still be active!
-      debugPrint('ENGINE RECOVERY → Engine stalled on stop; respawning isolate');
+      debugPrint('ENGINE RECOVERY → Engine stalled on stop; disabling engine');
       await _killEngineIfRunning();
-      try {
-        await initialize();
-      } catch (e) {
-        _enableFallback('Failed to reinitialize engine after wedged stop: $e');
-      }
+      _enableFallback('Engine did not acknowledge stop');
     } finally {
       await subscription.cancel();
       _searchInFlight = false;
@@ -1657,23 +1687,27 @@ class StockfishService {
 
   /// Dispose the engine, killing the isolate and freeing resources.
   /// The service can be re-initialized later via initialize().
-  Future<void> dispose() async {
-    if (_isDisposed) return;
+  Future<void> dispose() {
+    final existing = _disposeFuture;
+    if (existing != null) return existing;
+    if (_isDisposed) return Future.value();
+
     _isDisposed = true;
     debugPrint('ENGINE LIFECYCLE → Disposing engine');
 
-    await _killEngineIfRunning();
-    _commandQueue.clear();
+    final future = () async {
+      await _killEngineIfRunning();
+      _commandQueue.clear();
 
-    // Cancel any pending completers to unblock waiters
-    _initCompleter?.complete();
-    _initCompleter = null;
-    _engineReadyCompleter?.complete();
-    _engineReadyCompleter = null;
+      _initCompleter?.complete();
+      _initCompleter = null;
+      _engineReadyCompleter?.complete();
+      _engineReadyCompleter = null;
 
-    statusNotifier.value = EngineStatus.disposed;
-    // Do NOT close _outputController — it's a singleton stream that lives
-    // for the app lifetime. Closing it would permanently break the service.
+      statusNotifier.value = EngineStatus.disposed;
+    }();
+    _disposeFuture = future;
+    return future;
   }
 
   Future<void> _startEngineIsolate() async {
@@ -1683,19 +1717,38 @@ class StockfishService {
     _engineSessionId++;
     final sessionId = _engineSessionId;
 
-    _engineResponsePort = ReceivePort();
-    _engineIsolate = await Isolate.spawn(
-      _stockfishIsolateEntryPoint,
-      _engineResponsePort!.sendPort,
-    );
+    final responsePort = ReceivePort();
+    late final Isolate isolate;
+    try {
+      isolate = await Isolate.spawn(
+        _stockfishIsolateEntryPoint,
+        responsePort.sendPort,
+      );
+    } catch (_) {
+      responsePort.close();
+      rethrow;
+    }
+
+    if (_isDisposed || _engineSessionId != sessionId) {
+      isolate.kill(priority: Isolate.beforeNextEvent);
+      responsePort.close();
+      return;
+    }
+
+    _engineResponsePort = responsePort;
+    _engineIsolate = isolate;
 
     // Track consecutive isolate crashes for circuit breaker
     _consecutiveCrashes++;
 
     // Set up a death and exit detection port
     final deathPort = ReceivePort();
-    _engineIsolate!.addErrorListener(deathPort.sendPort);
+    isolate.addErrorListener(deathPort.sendPort);
     deathPort.listen((message) {
+      if (_engineSessionId != sessionId) {
+        deathPort.close();
+        return;
+      }
       debugPrint('ENGINE CRASH: Isolate died with error: $message');
       _isReady = false;
       _isEngineBusy = false;
@@ -1706,7 +1759,7 @@ class StockfishService {
     });
 
     final exitPort = ReceivePort();
-    _engineIsolate!.addOnExitListener(exitPort.sendPort);
+    isolate.addOnExitListener(exitPort.sendPort);
     exitPort.listen((_) {
       if (!_isDisposed && _engineSessionId == sessionId && !_useFallback) {
         debugPrint('ENGINE CRASH: Isolate exited unexpectedly');
@@ -1727,7 +1780,9 @@ class StockfishService {
 
       if (message is SendPort) {
         _engineCommandPort = message;
-        completer.complete();
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
       } else if (message is Map<String, dynamic>) {
         final type = message['type'] as String;
         if (type == 'stdout') {
@@ -1773,13 +1828,14 @@ class StockfishService {
   Future<void> _killEngineIfRunning() async {
     if (_engineIsolate == null && _engineCommandPort == null) return;
     debugPrint('ENGINE LIFECYCLE → Killing engine isolate');
+    _engineSessionId++;
+    _commandQueue.clear();
 
-    // Cancel response port subscription first
     await _engineResponseSubscription?.cancel();
     _engineResponseSubscription = null;
 
     try {
-      _engineCommandPort?.send({'type': 'stdin', 'command': 'stop\n'});
+      _engineCommandPort?.send({'type': 'dispose'});
       await Future.delayed(const Duration(milliseconds: 200));
     } catch (_) {}
     try {
@@ -1793,7 +1849,6 @@ class StockfishService {
     _isEngineBusy = false;
     _searchInFlight = false;
 
-    // Cancel any pending init
     _engineReadyCompleter?.complete();
     _engineReadyCompleter = null;
   }
@@ -1812,7 +1867,9 @@ void _stockfishIsolateEntryPoint(SendPort sendPort) {
 
       switch (type) {
         case 'init':
-          stockfish?.dispose();
+          try {
+            stockfish?.dispose();
+          } catch (_) {}
           try {
             stockfish = Stockfish();
             stockfish!.stdout.listen((line) {
@@ -1865,7 +1922,9 @@ void _stockfishIsolateEntryPoint(SendPort sendPort) {
           }
           break;
         case 'dispose':
-          stockfish?.dispose();
+          try {
+            stockfish?.dispose();
+          } catch (_) {}
           stockfish = null;
           break;
       }

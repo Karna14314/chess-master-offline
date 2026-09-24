@@ -793,17 +793,19 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           playerAccuracy: playerAccuracy,
           opponentAccuracy: opponentAccuracy,
           campaignStarsEarned: (isWin && gameState.campaignLevel != null) ? 3 : null,
-          onRematch: () {
+          onRematch: () async {
             Navigator.pop(dialogContext);
-            ref.read(gameSessionProvider.notifier).startNewGame(
-                  playerColor: gameState.playerColor,
-                  difficulty: gameState.difficulty,
-                  timeControl: gameState.timeControl,
-                  gameMode: gameState.gameMode,
-                  botType: gameState.botType,
-                  botProfile: gameState.botProfile,
-                  campaignLevel: gameState.campaignLevel,
-                );
+            try {
+              await ref.read(gameSessionProvider.notifier).startNewGame(
+                    playerColor: gameState.playerColor,
+                    difficulty: gameState.difficulty,
+                    timeControl: gameState.timeControl,
+                    gameMode: gameState.gameMode,
+                    botType: gameState.botType,
+                    botProfile: gameState.botProfile,
+                    campaignLevel: gameState.campaignLevel,
+                  );
+            } catch (_) {}
           },
           onAnalyse: () {
             Navigator.pop(dialogContext);

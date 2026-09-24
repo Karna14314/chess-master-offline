@@ -55,9 +55,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  void _startBotMatch(BotProfile bot) {
+  Future<void> _startBotMatch(BotProfile bot) async {
     final viewModel = ref.read(gameSessionProvider.notifier);
-    viewModel.startNewGame(
+    await viewModel.startNewGame(
       gameMode: GameMode.bot,
       botType: bot.engineType,
       difficulty: bot.difficultyLevel,
@@ -65,20 +65,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       playerColor: PlayerColor.white,
       botProfile: bot,
     );
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const GameScreen()),
     );
   }
 
-  void _startLocalGame(TimeControl timeControl) {
+  Future<void> _startLocalGame(TimeControl timeControl) async {
     final viewModel = ref.read(gameSessionProvider.notifier);
-    viewModel.startNewGame(
+    await viewModel.startNewGame(
       gameMode: GameMode.localMultiplayer,
       difficulty: AppConstants.difficultyLevels[4],
       timeControl: timeControl,
       playerColor: PlayerColor.white,
     );
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const GameScreen()),
@@ -171,10 +173,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: BotCard(
                           bot: bot,
-                          onPlay: () {
+                          onPlay: () async {
                             Navigator.pop(sheetContext);
-                            _startBotMatch(bot);
-                          },
+                            await _startBotMatch(bot);
+                           },
                           onInspect: () {
                             Navigator.pop(sheetContext);
                             BotProfileSheet.show(context, bot);
@@ -528,7 +530,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => _startLocalGame(AppConstants.timeControls[0]),
+                onPressed: () async {
+                  await _startLocalGame(AppConstants.timeControls[0]);
+                },
                 icon: const Icon(Icons.people_alt_rounded, size: 18),
                 label: Text(
                   'Pass & Play',
@@ -610,7 +614,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               return BotCard(
                 bot: bot,
                 isFeatured: true,
-                onPlay: () => _startBotMatch(bot),
+                onPlay: () async {
+                  await _startBotMatch(bot);
+                },
                 onInspect: () => BotProfileSheet.show(context, bot),
               );
             },

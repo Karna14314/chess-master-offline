@@ -101,7 +101,9 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
               ],
             ),
             child: ElevatedButton(
-              onPressed: _startGame,
+              onPressed: () async {
+                await _startGame();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -620,7 +622,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
     );
   }
 
-  void _startGame() {
+  Future<void> _startGame() async {
     final diffLevel =
         AppConstants.difficultyLevels[_difficultyLevel.toInt() - 1];
     final timerControl =
@@ -634,7 +636,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
             )
             : AppConstants.timeControls[_selectedTimerIndex];
 
-    ref
+    await ref
         .read(gameSessionProvider.notifier)
         .startNewGame(
           gameMode: _selectedMode,
@@ -644,6 +646,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
           timeControl: timerControl,
         );
 
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const GameScreen()),

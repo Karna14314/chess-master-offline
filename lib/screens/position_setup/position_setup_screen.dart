@@ -150,6 +150,8 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
         }
       }
 
+      if (!mounted) return false;
+
       setState(() {
         _board = newBoard;
         if (parts.length > 1) {
@@ -460,8 +462,15 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.copy, size: 20),
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: _fenController.text));
+              onPressed: () async {
+                try {
+                  await Clipboard.setData(
+                    ClipboardData(text: _fenController.text),
+                  );
+                } on PlatformException catch (_) {
+                  return;
+                }
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('FEN copied to clipboard')),
                 );
@@ -470,18 +479,26 @@ class _PositionSetupScreenState extends ConsumerState<PositionSetupScreen> {
             IconButton(
               icon: const Icon(Icons.paste, size: 20),
               onPressed: () async {
-                final data = await Clipboard.getData(Clipboard.kTextPlain);
-                if (data?.text != null) {
-                  if (_loadFen(data!.text!)) {
-                    _fenController.text = data.text!;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('FEN loaded successfully')),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Invalid FEN')),
-                    );
+                try {
+                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                  if (!mounted) return;
+                  final text = data?.text;
+                  if (text != null) {
+                    if (_loadFen(text)) {
+                      _fenController.text = text;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('FEN loaded successfully'),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Invalid FEN')),
+                      );
+                    }
                   }
+                } on PlatformException catch (_) {
+                  return;
                 }
               },
             ),

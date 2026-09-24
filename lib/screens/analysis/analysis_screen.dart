@@ -48,7 +48,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     ]);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeAnalysis();
+      if (mounted) {
+        _initializeAnalysis();
+      }
     });
   }
 
@@ -58,23 +60,29 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     // leave native search threads running with callbacks targeting this
     // disposed widget (DartMessenger SIGABRT / fml::KillProcess).
     try {
-      ref.read(analysisProvider.notifier).stopAnalysis();
+      final notifier = ref.read(analysisProvider.notifier);
+      notifier.onAnalysisComplete = null;
+      notifier.stopAnalysis();
     } catch (_) {}
     super.dispose();
   }
 
   Future<void> _initializeAnalysis() async {
+    if (!mounted) return;
     final notifier = ref.read(analysisProvider.notifier);
     // Count every completed full-game analysis in statistics + unlocks,
     // and stamp the source game session so History can filter Analysed games.
     notifier.onAnalysisComplete = () async {
+      if (!mounted) return;
       final statsNotifier = ref.read(statisticsProvider.notifier);
       await statsNotifier.recordGameAnalysed();
+      if (!mounted) return;
       final gameId = widget.gameId;
       if (gameId != null) {
         try {
           final repo = ref.read(gameSessionRepositoryProvider);
           final session = await repo.getSession(gameId);
+          if (!mounted) return;
           if (session != null) {
             await repo.saveSession(
               session.copyWith(
@@ -84,9 +92,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                 },
               ),
             );
+            if (!mounted) return;
           }
         } catch (_) {}
       }
+      if (!mounted) return;
       try {
         final stats = ref.read(statisticsProvider);
         ref.read(achievementProvider.notifier).checkStudyProgress(
@@ -99,6 +109,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       } catch (_) {}
     };
     await notifier.initialize();
+    if (!mounted) return;
 
     if (widget.moves != null && widget.moves!.isNotEmpty) {
       await notifier.loadGame(

@@ -387,14 +387,15 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
     );
   }
 
-  void _startMatch() {
-    Navigator.pop(context); // Close sheet
+  Future<void> _startMatch() async {
+    final navigator = Navigator.of(context);
+    navigator.pop();
 
     final viewModel = ref.read(gameSessionProvider.notifier);
     final botIsBlack = _selectedColor != PlayerColor.black;
     final handicapFen = _selectedHandicap.getStartingFen(botIsBlack: botIsBlack);
 
-    viewModel.startNewGame(
+    await viewModel.startNewGame(
       gameMode: GameMode.bot,
       botType: widget.bot.engineType,
       difficulty: widget.bot.difficultyLevel,
@@ -405,8 +406,8 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
       campaignLevel: widget.campaignLevel,
     );
 
-    Navigator.push(
-      context,
+    if (!navigator.mounted) return;
+    navigator.push(
       MaterialPageRoute(builder: (context) => const GameScreen()),
     );
   }

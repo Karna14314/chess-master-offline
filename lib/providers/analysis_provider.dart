@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,10 @@ import 'package:chess_master/core/services/database_service.dart';
 import 'package:chess_master/core/services/static_exchange_evaluator.dart';
 import 'package:chess_master/core/services/opening_service.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
+
+class _AnalysisCancelled implements Exception {
+  const _AnalysisCancelled();
+}
 
 /// Provider for analysis state
 final analysisProvider = StateNotifierProvider<AnalysisNotifier, AnalysisState>(
@@ -168,6 +173,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   bool _isInitialized = false;
   bool _isAnalyzing = false; // Guard flag to prevent concurrent analysis
   int _analysisToken = 0; // Cancellation token for analyzeFullGame
+  int? _analysisOwner;
+  int _positionAnalysisToken = 0;
+  bool _isDisposed = false;
   // Throttle for progressive Report-tab ticks (v90 ANR fix).
   DateTime _lastProgressTick = DateTime.fromMillisecondsSinceEpoch(0);
 
@@ -176,22 +184,24 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
   /// Fired once per successful full-game analysis (UI wires this to
   /// statistics so "Games Analysed" stays accurate without a Ref here).
-  VoidCallback? onAnalysisComplete;
+  Future<void> Function()? onAnalysisComplete;
 
   AnalysisNotifier([this._stockfish]) : super(const AnalysisState());
 
   /// Initialize engine for analysis
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isDisposed || _isInitialized) return;
 
     try {
       _stockfish ??= stockfish.StockfishService.instance;
       await _stockfish!.initialize();
       _isInitialized = true;
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: 'Failed to initialize analysis engine: $e',
-      );
+      if (!_isDisposed) {
+        state = state.copyWith(
+          errorMessage: 'Failed to initialize analysis engine: $e',
+        );
+      }
     }
   }
 
@@ -201,6 +211,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     String startingFen =
         'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
   }) async {
+    if (_isDisposed) return;
     final board = chess.Chess.fromFEN(startingFen);
 
     state = state.copyWith(
@@ -223,7 +234,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     // fail due to the _isAnalyzing guard. The full-game loop already populates
     // engine lines for every position including the starting one.
     if (_isInitialized && moves.isNotEmpty) {
-      analyzeFullGame();
+      unawaited(analyzeFullGame().catchError((_) {}));
     } else if (_isInitialized && moves.isEmpty) {
       // No moves to analyze — emit empty analysis immediately so Report tab
       // doesn't show infinite spinner.
@@ -314,64 +325,79 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
   /// Analyze current position (with eval caching)
   Future<void> _analyzeCurrentPosition() async {
-    if (_stockfish == null || !_isInitialized) return;
+    if (_stockfish == null || !_isInitialized || _isDisposed) return;
     if (_isAnalyzing) return;
 
+    final token = ++_positionAnalysisToken;
+    _isAnalyzing = true;
     final fen = state.fen;
     final depth = AppConstants.analysisDepth;
     final multiPv = AppConstants.topEngineLinesCount;
 
     try {
-      final cached = await _db.getCachedEvaluation(
-        fen: fen,
-        requiredDepth: depth,
-        requiredMultiPv: multiPv,
-      );
-
-      if (cached != null) {
-        final linesJson = jsonDecode(cached['engine_lines'] as String) as List;
-        final lines =
-            linesJson
-                .map(
-                  (l) => EngineLine(
-                    rank: l['rank'] as int,
-                    evaluation: (l['evaluation'] as num).toDouble(),
-                    depth: l['depth'] as int,
-                    moves: List<String>.from(l['moves']),
-                    isMate: (l['isMate'] as bool?) ?? false,
-                    mateIn: l['mateIn'] as int?,
-                  ),
-                )
-                .toList();
-
-        state = state.copyWith(
-          currentEval: (cached['evaluation'] as num).toDouble(),
-          currentEngineLines: lines,
-          bestMove: lines.isNotEmpty ? lines.first.moves.first : null,
+      try {
+        final cached = await _db.getCachedEvaluation(
+          fen: fen,
+          requiredDepth: depth,
+          requiredMultiPv: multiPv,
         );
-        return;
-      }
-    } catch (e) {
-      debugPrint('Eval cache lookup failed: $e');
-    }
 
-    try {
-      _isAnalyzing = true;
+        if (_isDisposed || token != _positionAnalysisToken) return;
+        if (cached != null) {
+          final linesJson =
+              jsonDecode(cached['engine_lines'] as String) as List;
+          final lines =
+              linesJson
+                  .map(
+                    (l) => EngineLine(
+                      rank: l['rank'] as int,
+                      evaluation: (l['evaluation'] as num).toDouble(),
+                      depth: l['depth'] as int,
+                      moves: List<String>.from(l['moves']),
+                      isMate: (l['isMate'] as bool?) ?? false,
+                      mateIn: l['mateIn'] as int?,
+                    ),
+                  )
+                  .toList();
+
+          state = state.copyWith(
+            currentEval: (cached['evaluation'] as num).toDouble(),
+            currentEngineLines: lines,
+            bestMove:
+                lines.isNotEmpty && lines.first.moves.isNotEmpty
+                    ? lines.first.moves.first
+                    : null,
+          );
+          return;
+        }
+      } catch (e) {
+        debugPrint('Eval cache lookup failed: $e');
+      }
+
       final result = await _stockfish!.analyzePosition(
         fen: fen,
         depth: depth,
         multiPv: multiPv,
         onUpdate: (partialResult) {
+          if (_isDisposed || token != _positionAnalysisToken) return;
           state = state.copyWith(
             currentEval: partialResult.evalInPawns,
             currentEngineLines: partialResult.lines,
             bestMove:
-                partialResult.lines.isNotEmpty
+                partialResult.lines.isNotEmpty &&
+                        partialResult.lines.first.moves.isNotEmpty
                     ? partialResult.lines.first.moves.first
                     : null,
           );
         },
       );
+
+      if (_isDisposed ||
+          token != _positionAnalysisToken ||
+          result.wasCancelled) {
+        return;
+      }
+      if (result.lines.isEmpty) return;
 
       final linesJson =
           result.lines
@@ -393,33 +419,36 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         multiPv: multiPv,
         evaluation: result.evalInPawns,
         engineLines: jsonEncode(linesJson),
-        isMate: result.lines.isNotEmpty && result.lines.first.isMate,
-        mateIn: result.lines.isNotEmpty ? result.lines.first.mateIn : null,
+        isMate: result.lines.first.isMate,
+        mateIn: result.lines.first.mateIn,
       );
 
+      if (_isDisposed || token != _positionAnalysisToken) return;
       state = state.copyWith(
         currentEval: result.evalInPawns,
         currentEngineLines: result.lines,
-        bestMove:
-            result.lines.isNotEmpty ? result.lines.first.moves.first : null,
+        bestMove: result.lines.first.moves.first,
       );
     } catch (e) {
+      if (_isDisposed || token != _positionAnalysisToken) return;
       debugPrint('Stockfish analysis failed: $e. Using BasicEvaluator.');
       try {
         final basicResult = await BasicEvaluatorService.instance.analyze(fen);
+        if (_isDisposed || token != _positionAnalysisToken) return;
         state = state.copyWith(
           currentEval: basicResult.evalInPawns,
           currentEngineLines: basicResult.lines,
           bestMove:
-              basicResult.lines.isNotEmpty
+              basicResult.lines.isNotEmpty &&
+                      basicResult.lines.first.moves.isNotEmpty
                   ? basicResult.lines.first.moves.first
                   : null,
         );
-      } catch (e2) {
-        // Silently fail
-      }
+      } catch (_) {}
     } finally {
-      _isAnalyzing = false;
+      if (!_isDisposed && token == _positionAnalysisToken) {
+        _isAnalyzing = false;
+      }
     }
   }
 
@@ -436,37 +465,34 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   ///   3. Emit partial fullAnalysis every 5 moves so the Report tab renders
   ///      progressively instead of showing a spinner until completion.
   Future<void> analyzeFullGame() async {
-    if (_isAnalyzing) return; // Prevent concurrent analysis
-    if (_stockfish == null) {
-      await initialize();
-    }
-
-    if (_stockfish == null || state.originalMoves.isEmpty) return;
-
-    final token = ++_analysisToken; // Capture cancellation token
-
-    // Ensure engine is at maximum strength for full game analysis, and give it
-    // more threads/hash than live play for the duration of the batch. Restored
-    // in the finally block below, including on the cancellation path.
-    // Awaited: guarantees options + TT flush land before the first ply's `go`,
-    // so a Hash resize can never race a dying search thread.
-    await _stockfish!.setMaxStrength();
-    await _stockfish!.setAnalysisStrength();
-    // Flush the transposition table ONCE at the start of the batch so the run
-    // does not inherit entries from prior live play. Per-ply flushes are
-    // suppressed via isBatchAnalysis, letting the engine reuse TT work across
-    // consecutive plies of this game.
-    await _stockfish!.newGame();
-
-    state = state.copyWith(
-      isAnalyzing: true,
-      analysisProgress: 0.0,
-      analyzedMoves: [],
-    );
-    _lastProgressTick = DateTime.now();
+    if (_isAnalyzing || _analysisOwner != null || _isDisposed) return;
+    final token = ++_analysisToken;
+    _analysisOwner = token;
+    _isAnalyzing = true;
 
     try {
-      _isAnalyzing = true;
+      if (_stockfish == null) {
+        await initialize();
+        if (_isDisposed || token != _analysisToken) return;
+      }
+
+      if (_stockfish == null || state.originalMoves.isEmpty) return;
+
+      await _stockfish!.setMaxStrength();
+      if (_isDisposed || token != _analysisToken) return;
+      await _stockfish!.setAnalysisStrength();
+      if (_isDisposed || token != _analysisToken) return;
+      await _stockfish!.newGame();
+      if (_isDisposed || token != _analysisToken) return;
+
+      if (_isDisposed || token != _analysisToken) return;
+      state = state.copyWith(
+        isAnalyzing: true,
+        analysisProgress: 0.0,
+        analyzedMoves: [],
+      );
+      _lastProgressTick = DateTime.now();
+
       final moves = state.originalMoves;
       // Running aggregates. Appending is O(1), so emitting a progress tick
       // after every ply no longer costs a full re-walk of the analysed list.
@@ -475,8 +501,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
       // Identify game opening and ECO code using Master Opening Book
       final allMovesSan = moves.map((m) => m.san).toList();
-      final identifiedOpening =
-          OpeningService.instance.identifyOpening(allMovesSan);
+      final identifiedOpening = OpeningService.instance.identifyOpening(
+        allMovesSan,
+      );
       if (identifiedOpening != null) {
         accumulator.setOpening(
           name: identifiedOpening.name,
@@ -528,8 +555,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         final isWhiteMove = board.turn == chess.Color.WHITE;
 
         // Check if this move continues recognized master opening theory
-        final isBook =
-            OpeningService.instance.isBookMove(playedSanMoves, move.san);
+        final isBook = OpeningService.instance.isBookMove(
+          playedSanMoves,
+          move.san,
+        );
         final isForcedMove = board.moves().length == 1;
         final isRecapture = _isRecapture(board, move);
 
@@ -652,6 +681,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
               bestMoveForPlayer = positionData.lines.first.moves.first;
             }
           }
+        } on _AnalysisCancelled {
+          return;
         } catch (e) {
           try {
             final basicResult = await BasicEvaluatorService.instance.analyze(
@@ -759,6 +790,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
                 fen: board.fen,
               );
             }
+          } on _AnalysisCancelled {
+            return;
           } catch (e) {
             carriedForward = null;
             try {
@@ -774,7 +807,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
         final playedUci =
             '${move.from}${move.to}${move.promotion ?? ''}'.toLowerCase();
-        final isPlayedBestMove = bestMoveForPlayer != null &&
+        final isPlayedBestMove =
+            bestMoveForPlayer != null &&
             playedUci == bestMoveForPlayer.toLowerCase();
 
         // Progressive deepening: If the played move matches the engine's best move
@@ -813,6 +847,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
               lines: refinedData.lines,
               fen: board.fen,
             );
+          } on _AnalysisCancelled {
+            return;
           } catch (e) {
             // Keep depth-8 eval if depth-14 fails
           }
@@ -827,7 +863,8 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
             isWhiteMove
                 ? (bestEval - actualEval) * 100.0
                 : (actualEval - bestEval) * 100.0;
-        final double centipawnLoss = isDeliveredCheckmate ? 0.0 : (rawLoss < 0.0 ? 0.0 : rawLoss);
+        final double centipawnLoss =
+            isDeliveredCheckmate ? 0.0 : (rawLoss < 0.0 ? 0.0 : rawLoss);
 
         // The position actually reached before this ply.
         final double actualEvalBeforeMove = actualEvalSoFar ?? bestEval;
@@ -843,16 +880,18 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         final winBefore = isWhiteMove ? winBest : (100.0 - winBest);
         final winAfter = isWhiteMove ? winActual : (100.0 - winActual);
         final rawWinDiff = winBefore - winAfter;
-        final winDiff = isDeliveredCheckmate ? 0.0 : (rawWinDiff < 0 ? 0.0 : rawWinDiff);
+        final winDiff =
+            isDeliveredCheckmate ? 0.0 : (rawWinDiff < 0 ? 0.0 : rawWinDiff);
 
         // Win%-based accuracy ensures badge and win% delta never disagree
-        final moveAccuracy = isDeliveredCheckmate
-            ? 100.0
-            : computeWinPercentAccuracy(
-                evalBeforePawns: actualEvalBeforeMove,
-                evalAfterPawns: actualEval,
-                isWhiteMove: isWhiteMove,
-              );
+        final moveAccuracy =
+            isDeliveredCheckmate
+                ? 100.0
+                : computeWinPercentAccuracy(
+                  evalBeforePawns: actualEvalBeforeMove,
+                  evalAfterPawns: actualEval,
+                  isWhiteMove: isWhiteMove,
+                );
 
         // ── Step D: Classify using Win% Model (Lichess standards) ──
         final classification = classifyMoveCpl(
@@ -908,9 +947,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         // ply). Each tick rebuilds the full aggregates + notifies listeners on
         // the UI thread; unthrottled ticks were a PlatformTaskQueue ANR source
         // on long games.
-        final progressElapsed = DateTime.now().difference(
-          _lastProgressTick,
-        );
+        final progressElapsed = DateTime.now().difference(_lastProgressTick);
         final isLastPly = i == moves.length - 1;
         if ((i + 1) % 5 == 0 ||
             progressElapsed.inMilliseconds >= 750 ||
@@ -940,7 +977,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
         );
       }
 
-      // Final state — mark analysis complete
+      if (_isDisposed || token != _analysisToken) return;
       final fullAnalysis = accumulator.build();
 
       state = state.copyWith(
@@ -951,25 +988,26 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       );
       if (accumulator.length > 0) {
         try {
-          onAnalysisComplete?.call();
+          await onAnalysisComplete?.call();
         } catch (_) {}
       }
     } finally {
-      _isAnalyzing = false;
-      // Return the engine to its low-footprint live-play configuration. This
-      // runs on every exit path: normal completion, cancellation and errors.
-      await _stockfish?.setLivePlayStrength();
-      // Ensure state.isAnalyzing is always cleared, even on cancellation
-      if (state.isAnalyzing) {
-        state = state.copyWith(isAnalyzing: false);
+      if (_analysisOwner == token) {
+        await _stockfish?.setLivePlayStrength();
+        _analysisOwner = null;
+        _isAnalyzing = false;
+        if (!_isDisposed && token == _analysisToken && state.isAnalyzing) {
+          state = state.copyWith(isAnalyzing: false);
+        }
       }
     }
   }
 
   /// Stop analysis
   void stopAnalysis() {
-    _analysisToken++; // Cancel any running analyzeFullGame
-    _isAnalyzing = false; // Clear guard flag
+    if (_isDisposed) return;
+    _analysisToken++;
+    _positionAnalysisToken++;
     _stockfish?.stopAnalysis();
     state = state.copyWith(isAnalyzing: false);
   }
@@ -1022,6 +1060,12 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
       multiPv: multiPv,
       isBatchAnalysis: isBatchAnalysis,
     );
+    if (result.wasCancelled) {
+      throw const _AnalysisCancelled();
+    }
+    if (result.lines.isEmpty) {
+      return (eval: result.evalInPawns, lines: result.lines);
+    }
 
     // Cache the result
     try {
@@ -1178,7 +1222,10 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
   @override
   void dispose() {
-    _analysisToken++; // Cancel any running analyzeFullGame loop first
+    _isDisposed = true;
+    _analysisToken++;
+    _positionAnalysisToken++;
+    _analysisOwner = null;
     _stockfish?.stopAnalysis();
     super.dispose();
   }

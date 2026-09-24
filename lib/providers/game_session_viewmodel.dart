@@ -29,12 +29,14 @@ final gameSessionProvider =
 class GameSessionViewModel extends StateNotifier<GameSession?> {
   final GameSessionRepository _repository;
   final Ref _ref;
+  int _sessionGeneration = 0;
+  int? _activeSessionGeneration;
   bool _isBotThinking = false;
 
   GameSessionViewModel(this._repository, this._ref) : super(null);
 
   /// Start a new game
-  void startNewGame({
+  Future<void> startNewGame({
     required PlayerColor playerColor,
     required DifficultyLevel difficulty,
     required TimeControl timeControl,
@@ -44,13 +46,22 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     BotProfile? botProfile,
     int? campaignLevel,
   }) async {
+    final generation = ++_sessionGeneration;
+    _isBotThinking = false;
+
     // Reset engine first to ensure clean state for new game (except local multiplayer).
     // Awaited: resetForNewGame serializes stop + skill level + ucinewgame
     // ahead of the first search, so no arbitrary delay is needed.
     if (gameMode != GameMode.localMultiplayer) {
       final engineNotifier = _ref.read(engineProvider.notifier);
-      await engineNotifier.resetForNewGame(difficulty: difficulty);
+      try {
+        await engineNotifier.resetForNewGame(difficulty: difficulty);
+      } catch (e) {
+        debugPrint('Engine reset failed while starting game: $e');
+      }
     }
+
+    if (generation != _sessionGeneration) return;
 
     final session = GameSession.create(
       gameMode: gameMode,
@@ -63,13 +74,24 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       campaignLevel: campaignLevel,
     );
 
+    _activeSessionGeneration = generation;
     state = session;
-    _repository.saveSession(session);
+    try {
+      await _repository.saveSession(session);
+    } catch (e) {
+      debugPrint('Failed to save new game session: $e');
+    }
 
     // If bot is White, it starts the game
     if (gameMode == GameMode.bot && session.playerColor == PlayerColor.black) {
-      _makeBotMove();
+      unawaited(_makeBotMove(generation));
     }
+  }
+
+  bool _ownsSession(int generation, GameSession session) {
+    return generation == _sessionGeneration &&
+        generation == _activeSessionGeneration &&
+        state?.id == session.id;
   }
 
   /// Rebuild the board from the starting FEN + full move history so the
@@ -103,9 +125,15 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     String to, {
     String? promotion,
     double? evaluation,
+    int? sessionGeneration,
   }) async {
+    final generation = sessionGeneration ?? _sessionGeneration;
     final currentSession = state;
-    if (currentSession == null || currentSession.isCompleted) return false;
+    if (currentSession == null ||
+        currentSession.isCompleted ||
+        !_ownsSession(generation, currentSession)) {
+      return false;
+    }
 
     final board = _reconstructBoard(currentSession);
 
@@ -167,16 +195,17 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     state = updatedSession;
     await _repository.saveSession(updatedSession);
+    if (!_ownsSession(generation, updatedSession)) return false;
 
     // Record streak activity whenever player plays a move or completes a game
     _ref.read(streakProvider.notifier).recordActivity();
 
     if (result != null) {
-      _recordStatisticsIfNeeded();
+      unawaited(_recordStatisticsIfNeeded(generation).catchError((_) {}));
     } else if (currentSession.gameMode == GameMode.bot &&
         !updatedSession.isPlayerTurn &&
         !_isBotThinking) {
-      _makeBotMove();
+      unawaited(_makeBotMove(generation));
     }
 
     // Play haptic feedback if enabled. Guarded: the vibration plugin
@@ -204,10 +233,15 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     return true;
   }
 
-  Future<void> _makeBotMove() async {
+  Future<void> _makeBotMove([int? sessionGeneration]) async {
+    final generation = sessionGeneration ?? _sessionGeneration;
     final currentSession = state;
-    if (currentSession == null || currentSession.isCompleted) return;
-    if (_isBotThinking) return;
+    if (currentSession == null ||
+        currentSession.isCompleted ||
+        !_ownsSession(generation, currentSession) ||
+        _isBotThinking) {
+      return;
+    }
 
     _isBotThinking = true;
 
@@ -235,13 +269,20 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         moves: _uciMoves(currentSession),
       );
 
+      if (!_ownsSession(generation, currentSession)) return;
       if (result == null) return;
 
       if (result.isValid) {
         final (from, to, promotion) = result.parsedMove;
         final eval =
             result.evaluation != null ? result.evaluation! / 100.0 : null;
-        await makeMove(from, to, promotion: promotion, evaluation: eval);
+        await makeMove(
+          from,
+          to,
+          promotion: promotion,
+          evaluation: eval,
+          sessionGeneration: generation,
+        );
         return;
       }
 
@@ -249,7 +290,11 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       // an unparseable move. Reconcile with the board: if the game is over,
       // record the result instead of silently hanging on the bot's turn.
       final session = state;
-      if (session == null || session.isCompleted) return;
+      if (session == null ||
+          session.isCompleted ||
+          !_ownsSession(generation, currentSession)) {
+        return;
+      }
 
       final board = _reconstructBoard(session);
       final terminal = _terminalResult(board);
@@ -263,7 +308,8 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         );
         state = updated;
         await _repository.saveSession(updated);
-        _recordStatisticsIfNeeded();
+        if (!_ownsSession(generation, updated)) return;
+        unawaited(_recordStatisticsIfNeeded(generation).catchError((_) {}));
       } else {
         debugPrint(
           'ENGINE: No legal move reported but the board is not terminal; '
@@ -271,11 +317,13 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         );
       }
     } finally {
-      _isBotThinking = false;
-      // Resume the timer for the human player's turn (switchTurn was
-      // already called by the moveHistory listener in game_screen.dart).
-      if (state != null && !state!.isCompleted) {
-        timerNotifier.start();
+      if (_ownsSession(generation, currentSession)) {
+        _isBotThinking = false;
+        // Resume the timer for the human player's turn (switchTurn was
+        // already called by the moveHistory listener in game_screen.dart).
+        if (state != null && !state!.isCompleted) {
+          timerNotifier.start();
+        }
       }
     }
   }
@@ -339,7 +387,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     state = updatedSession;
     await _repository.saveSession(updatedSession);
-    _recordStatisticsIfNeeded();
+    unawaited(_recordStatisticsIfNeeded().catchError((_) {}));
   }
 
   Future<void> resign() async {
@@ -358,7 +406,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     state = updatedSession;
     await _repository.saveSession(updatedSession);
-    _recordStatisticsIfNeeded();
+    unawaited(_recordStatisticsIfNeeded().catchError((_) {}));
   }
 
   Future<void> handleDraw() async {
@@ -372,7 +420,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
 
     state = updatedSession;
     await _repository.saveSession(updatedSession);
-    _recordStatisticsIfNeeded();
+    unawaited(_recordStatisticsIfNeeded().catchError((_) {}));
   }
 
   Future<void> undoMove() async {
@@ -506,11 +554,14 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
     }
   }
 
-  void _recordStatisticsIfNeeded() async {
+  Future<void> _recordStatisticsIfNeeded([int? sessionGeneration]) async {
+    if (!mounted) return;
+    final generation = sessionGeneration ?? _sessionGeneration;
     final currentSession = state;
     if (currentSession == null ||
         !currentSession.isCompleted ||
-        currentSession.isRecorded) {
+        currentSession.isRecorded ||
+        !_ownsSession(generation, currentSession)) {
       return;
     }
     if (currentSession.gameMode == GameMode.analysis ||
@@ -542,6 +593,7 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
       gameTimeSeconds:
           DateTime.now().difference(currentSession.startedAt).inSeconds,
     );
+    if (!mounted || !_ownsSession(generation, currentSession)) return;
 
     if (currentSession.gameMode == GameMode.bot) {
       await statsNotifier.recordGameElo(
@@ -550,52 +602,62 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
         isLoss: isLoss,
         isDraw: isDraw,
       );
+      if (!mounted || !_ownsSession(generation, currentSession)) return;
 
       if (currentSession.result != null) {
         String botId = currentSession.botId ?? '';
         if (botId.isEmpty) {
           try {
             botId =
-                BotProfile.getClosestToElo(
-                  currentSession.difficulty.elo,
-                ).id;
+                BotProfile.getClosestToElo(currentSession.difficulty.elo).id;
           } catch (_) {
             botId = BotProfile.allBots.first.id;
           }
         }
-        await _ref.read(botProgressProvider.notifier).recordBotMatch(
-          botId: botId,
-          result: currentSession.result!,
-          isPlayerWhite: isWhite,
-          usedTakebacks: false,
-          hintsUsed: currentSession.hintsUsed,
-        );
+        await _ref
+            .read(botProgressProvider.notifier)
+            .recordBotMatch(
+              botId: botId,
+              result: currentSession.result!,
+              isPlayerWhite: isWhite,
+              usedTakebacks: false,
+              hintsUsed: currentSession.hintsUsed,
+            );
         if (currentSession.campaignLevel != null) {
-          await _ref.read(botProgressProvider.notifier).recordCampaignMatch(
-            levelNumber: currentSession.campaignLevel!,
-            result: currentSession.result!,
-            isPlayerWhite: isWhite,
-            usedTakebacks: false,
-            hintsUsed: currentSession.hintsUsed,
-          );
+          await _ref
+              .read(botProgressProvider.notifier)
+              .recordCampaignMatch(
+                levelNumber: currentSession.campaignLevel!,
+                result: currentSession.result!,
+                isPlayerWhite: isWhite,
+                usedTakebacks: false,
+                hintsUsed: currentSession.hintsUsed,
+              );
         }
       }
+      if (!mounted || !_ownsSession(generation, currentSession)) return;
     }
 
-    if (isWin) {
-      _ref
-          .read(achievementProvider.notifier)
-          .checkWins(difficultyLevel: currentSession.difficulty.level);
+    if (isWin && mounted) {
+      try {
+        _ref
+            .read(achievementProvider.notifier)
+            .checkWins(difficultyLevel: currentSession.difficulty.level);
+      } catch (_) {}
     }
 
+    if (!mounted) return;
     final prevElo = statsNotifier.state.currentGameElo;
 
-    state = currentSession.copyWith(
+    if (!_ownsSession(generation, currentSession)) return;
+    final recordedSession = currentSession.copyWith(
       isRecorded: true,
       whiteAccuracy: isWhite ? accuracy : null,
       blackAccuracy: !isWhite ? accuracy : null,
     );
-    await _repository.saveSession(state!);
+    state = recordedSession;
+    await _repository.saveSession(recordedSession);
+    if (!mounted || !_ownsSession(generation, currentSession)) return;
 
     final newElo = statsNotifier.state.currentGameElo;
     if (newElo > prevElo &&
@@ -644,16 +706,22 @@ class GameSessionViewModel extends StateNotifier<GameSession?> {
   }
 
   void setSession(GameSession session) {
+    _sessionGeneration++;
+    _activeSessionGeneration = _sessionGeneration;
+    _isBotThinking = false;
     state = session;
   }
 
   /// Resume a game session and trigger bot if it's the bot's turn
   void resumeSession(GameSession session) {
+    _sessionGeneration++;
+    _activeSessionGeneration = _sessionGeneration;
+    _isBotThinking = false;
     state = session;
     if (session.gameMode == GameMode.bot &&
         !session.isPlayerTurn &&
         !session.isCompleted) {
-      _makeBotMove();
+      unawaited(_makeBotMove());
     }
   }
 

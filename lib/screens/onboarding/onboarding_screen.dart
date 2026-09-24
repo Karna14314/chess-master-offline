@@ -77,14 +77,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       rusty = BotProfile.allBots.first;
     }
     try {
-      ref.read(gameSessionProvider.notifier).startNewGame(
-        gameMode: GameMode.bot,
-        botType: rusty.engineType,
-        difficulty: rusty.difficultyLevel,
-        timeControl: AppConstants.timeControls[0],
-        playerColor: PlayerColor.white,
-        botProfile: rusty,
-      );
+      await ref
+          .read(gameSessionProvider.notifier)
+          .startNewGame(
+            gameMode: GameMode.bot,
+            botType: rusty.engineType,
+            difficulty: rusty.difficultyLevel,
+            timeControl: AppConstants.timeControls[0],
+            playerColor: PlayerColor.white,
+            botProfile: rusty,
+          );
     } catch (_) {}
 
     if (mounted) {

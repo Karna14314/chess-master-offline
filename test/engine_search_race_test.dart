@@ -42,8 +42,8 @@ void main() {
     },
   );
 
-  test('overlapping getBestMove calls do not cross-contaminate '
-      '(second call returns fallback, first keeps its own move)', () async {
+  test('a newer queued request cancels the older request before it starts',
+      () async {
     final first = service.getBestMove(fen: startPos, depth: 3);
     final second = service.getBestMove(fen: startPos, depth: 3);
 
@@ -53,14 +53,9 @@ void main() {
     final firstResult = await first.timeout(const Duration(seconds: 5));
     final secondResult = await second.timeout(const Duration(seconds: 5));
 
-    // The first call completes with its own injected bestmove.
-    expect(firstResult.bestMove, 'a2a3');
-    expect(firstResult.isValid, isTrue);
-
-    // The second call is rejected by the busy guard (fallback) and does NOT
-    // consume the first search's stale bestmove.
-    expect(secondResult, isA<BestMoveResult>());
-    expect(secondResult.bestMove, isNotEmpty);
+    expect(firstResult.wasCancelled, isTrue);
+    expect(secondResult.bestMove, 'a2a3');
+    expect(secondResult.isValid, isTrue);
   });
 
   test('a stale bestmove line does not corrupt the next search', () async {
@@ -85,7 +80,8 @@ void main() {
     expect(secondResult.bestMove, isNot('a2a3'));
   });
 
-  test('overlapping analyzePosition calls do not hang', () async {
+  test('a newer analysis request cancels the older request before it starts',
+      () async {
     final first = service.analyzePosition(fen: startPos, depth: 5);
     final second = service.analyzePosition(fen: startPos, depth: 5);
 
@@ -95,8 +91,9 @@ void main() {
     final firstResult = await first.timeout(const Duration(seconds: 5));
     final secondResult = await second.timeout(const Duration(seconds: 5));
 
-    expect(firstResult, isA<AnalysisResult>());
+    expect(firstResult.wasCancelled, isTrue);
     expect(secondResult, isA<AnalysisResult>());
+    expect(secondResult.wasCancelled, isFalse);
   });
 
   test('completed search leaves no leaked output listener', () async {

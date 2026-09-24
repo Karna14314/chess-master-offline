@@ -7,12 +7,14 @@ import 'package:chess_master/core/services/audio_service.dart';
 import 'package:chess_master/core/services/diagnostics_service.dart';
 import 'package:chess_master/core/services/notification_service.dart';
 import 'package:chess_master/core/services/opening_service.dart';
+import 'package:chess_master/core/services/stockfish_lifecycle_observer.dart';
 import 'package:chess_master/core/services/lesson_service.dart';
 import 'package:chess_master/screens/main_screen.dart';
 import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  StockfishLifecycleObserver.ensureRegistered();
 
   // Initialize Local Diagnostics Service (Local-only, privacy-preserving error log)
   try {

@@ -183,6 +183,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
       // getBestMove in the engine's serialized queue, and awaiting it
       // guarantees the UCI_Elo options are delivered before `go`.
       await _service.setSkillLevel(effectiveElo);
+      if (currentSearchId != _searchId) return null;
 
       // Minimum think time: a fixed floor (not additive) to prevent
       // instant replies that feel robotic. If the engine finishes faster
@@ -202,11 +203,16 @@ class EngineNotifier extends StateNotifier<EngineState> {
           .timeout(
             Duration(milliseconds: difficulty.thinkTimeMs * 2 + 2000),
             onTimeout: () {
+              _service.stopAnalysis();
               throw TimeoutException('Engine timed out');
             },
           );
 
       if (currentSearchId != _searchId) return null;
+      if (result.wasCancelled) {
+        state = state.copyWith(isThinking: false);
+        return null;
+      }
 
       // Apply minimum think time floor (not additive — only waits if
       // the search completed faster than the minimum threshold).
@@ -289,6 +295,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
       if (_service.isReady) {
         await _service.setMaxStrength();
+        if (currentSearchId != _searchId) return null;
         try {
           final result = await _service.analyzePosition(
             fen: fen,
@@ -299,6 +306,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
           );
 
           if (currentSearchId != _searchId) return null;
+          if (result.wasCancelled) return null;
 
           if (result.lines.isEmpty) return null;
 
@@ -414,6 +422,10 @@ class EngineNotifier extends StateNotifier<EngineState> {
       );
 
       if (currentSearchId != _searchId) return;
+      if (result.wasCancelled) {
+        state = state.copyWith(isAnalyzing: false);
+        return;
+      }
 
       state = state.copyWith(
         isAnalyzing: false,
@@ -485,7 +497,11 @@ class EngineNotifier extends StateNotifier<EngineState> {
 
   /// Rebuild FEN-key history (first 4 fields) from start + UCI moves.
   /// Falls back to [currentFen] only when replay fails.
-  List<String> _fenHistory(String? startingFen, List<String>? moves, String currentFen) {
+  List<String> _fenHistory(
+    String? startingFen,
+    List<String>? moves,
+    String currentFen,
+  ) {
     String key(String fen) {
       final parts = fen.trim().split(RegExp(r'\s+'));
       if (parts.length < 4) return fen.trim();

@@ -29,14 +29,15 @@ class StockfishLifecycleObserver with WidgetsBindingObserver {
 
     switch (state) {
       case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
-        // App going to background or becoming inactive/hidden
+        // App going to background or hidden
         // Stop engine search immediately to prevent native crashes / battery drain
         debugPrint(
           '[LIFECYCLE_BREADCRUMB] App state changed to $state -> Stopping active engine search',
         );
         service.stopAnalysis();
+        break;
+      case AppLifecycleState.inactive:
         break;
       case AppLifecycleState.resumed:
         debugPrint('[LIFECYCLE_BREADCRUMB] App state resumed');

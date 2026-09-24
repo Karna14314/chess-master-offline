@@ -92,4 +92,29 @@ void main() {
       );
     }
   });
+
+  test('stop waits for bestmove before releasing a cancelled search', () async {
+    service.setReadyForTesting(immediateReadyOk: true);
+
+    final future = service.getBestMove(
+      fen: startPos,
+      depth: 3,
+      thinkTimeMs: 1000,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(service.isEngineBusyForTesting, isTrue);
+
+    var completed = false;
+    future.then((_) => completed = true);
+    service.stopAnalysis();
+    service.emitEngineLineForTesting('readyok');
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(completed, isFalse);
+
+    service.emitEngineLineForTesting('bestmove a2a3');
+    final result = await future.timeout(const Duration(seconds: 5));
+    expect(result.wasCancelled, isTrue);
+    expect(service.isEngineBusyForTesting, isFalse);
+    expect(service.hasOutputListenersForTesting, isFalse);
+  });
 }
