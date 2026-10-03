@@ -98,3 +98,19 @@ I have completed the task to refactor the UI and navigation for production readi
 **Commit:** (see below)
 **Branch:** auto/chess-20260913-journey-progress-fix
 **Notes:** N/A
+
+## 2026-10-03
+**Status:** SUCCESS ✅
+**Category:** C — UI Enhancement
+**Task:** Added scale "pop" animation to piece movement on the chess board.
+**Files Changed:**
+- lib/screens/game/widgets/chess_board.dart: Added Transform.scale with a math.sin based pop effect during AnimatedBuilder moving piece animation.
+- lib/screens/game/widgets/chess_board.dart: Imported dart:math for math.sin and math.pi.
+**Verification:**
+- Build: PASS
+- Tests: PASS
+- Emulator: SKIPPED
+**User-Visible Impact:** When a piece moves, it slightly scales up and then back down (a "pop" effect), making the piece movement feel more dynamic and premium.
+**Commit:** (see below)
+**Branch:** auto/chess-20261003-piece-animation-pop
+**Notes:** Added missing dart:math import to resolve build error.
