@@ -1057,10 +1057,12 @@ class StockfishService {
         }
 
         // Failsafe timeout for Stockfish response: dynamic based on thinkTimeMs
-        final effectiveTimeout =
-            thinkTimeMs != null
-                ? Duration(milliseconds: thinkTimeMs * 2 + 2500)
-                : searchTimeoutForTesting;
+        final calculatedTimeout = thinkTimeMs != null
+            ? Duration(milliseconds: thinkTimeMs * 2 + 2500)
+            : searchTimeoutForTesting;
+        final effectiveTimeout = searchTimeoutForTesting < const Duration(seconds: 30)
+            ? searchTimeoutForTesting
+            : calculatedTimeout;
         return await completer.future.timeout(
           effectiveTimeout,
           onTimeout: () async {

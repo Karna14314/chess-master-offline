@@ -14,6 +14,9 @@ import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Bound image cache size to avoid OutOfMemoryErrors during long sessions
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 30 * 1024 * 1024; // 30 MB
+  PaintingBinding.instance.imageCache.maximumSize = 100;
   StockfishLifecycleObserver.ensureRegistered();
 
   // Initialize Local Diagnostics Service (Local-only, privacy-preserving error log)
