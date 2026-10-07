@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
@@ -343,10 +344,13 @@ class _ChessBoardState extends ConsumerState<ChessBoard>
                         top: pos.dy,
                         width: squareSize,
                         height: squareSize,
-                        child: ChessPiece(
-                          piece: _animatingPieceCode!,
-                          size: squareSize,
-                          pieceSet: settings.currentPieceSet,
+                        child: Transform.scale(
+                          scale: 1.0 + (0.15 * math.sin(curve * math.pi)), // Subtle pop effect during movement
+                          child: ChessPiece(
+                            piece: _animatingPieceCode!,
+                            size: squareSize,
+                            pieceSet: settings.currentPieceSet,
+                          ),
                         ),
                       );
                     },
