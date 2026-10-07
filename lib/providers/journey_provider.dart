@@ -56,10 +56,9 @@ class JourneyState {
 }
 
 class JourneyNotifier extends StateNotifier<JourneyState> {
-  final Ref _ref;
   bool _isDisposed = false;
 
-  JourneyNotifier(this._ref) : super(const JourneyState()) {
+  JourneyNotifier([Ref? _]) : super(const JourneyState()) {
     loadJourneyState();
   }
 

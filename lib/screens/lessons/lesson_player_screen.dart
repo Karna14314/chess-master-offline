@@ -192,7 +192,6 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
 
   void _handlePlayerMove(String from, String to) {
     final expectedMove = _currentChapter.solutionMoves[_moveStep];
-    final playedUci = '$from$to'.toLowerCase();
 
     // Check if move is legal on the board
     final legalMoves = _board.moves({'square': from, 'verbose': true});

@@ -270,7 +270,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Data & Statistics Management
                 _buildSectionHeader(context, 'Data & Profile', Icons.analytics_outlined),
                 const SizedBox(height: 12),
-                _buildSettingsCard(context, []),
+                _buildSettingsCard(context, [
+                  ListTile(
+                    title: Text(
+                      'Reset Rating & Progress',
+                      style: GoogleFonts.inter(
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Reset Game ELO to baseline 400',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.textSecondaryFor(context),
+                        fontSize: 12,
+                      ),
+                    ),
+                    leading: const Icon(
+                      Icons.restore_outlined,
+                      color: Colors.redAccent,
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: AppTheme.textSecondaryFor(context),
+                    ),
+                    onTap: () => _confirmResetStats(context),
+                  ),
+                ]),
                 const SizedBox(height: 24),
 
                 // About Section

@@ -90,6 +90,7 @@ class _AppState extends State<_App> {
         await engine.initialize();
         if (!engine.isUsingFallback) break;
         _log('ENGINE attempt $attempt hit fallback, retrying…');
+        // ignore: invalid_use_of_visible_for_testing_member
         engine.resetTestState();
         await Future<void>.delayed(const Duration(seconds: 5));
       }

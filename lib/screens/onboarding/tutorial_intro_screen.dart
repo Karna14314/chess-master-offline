@@ -16,7 +16,6 @@ class TutorialIntroScreen extends StatefulWidget {
 
 class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
   int _step = 0; // 0 = intro, 1 = how-to-play, 2 = checkmate puzzle
-  bool _showHowToPlay = true;
   String? _selectedSquare;
   List<String> _legalMoves = [];
   late chess.Chess _board;

@@ -16,40 +16,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   StockfishLifecycleObserver.ensureRegistered();
 
-  // Initialize Local Diagnostics Service (Local-only, privacy-preserving error log)
-  try {
-    await LocalDiagnosticsService.instance.initialize();
-  } catch (e) {
-    debugPrint('Diagnostics initialization failed: $e');
-  }
-
-  // Initialize Local Notification Service (On-device scheduled daily puzzle & streak reminders)
-  try {
-    await NotificationService.instance.initialize();
-  } catch (e) {
-    debugPrint('Notification initialization failed: $e');
-  }
-
-  // Initialize Audio Service
-  try {
-    await AudioService.instance.initialize();
-  } catch (e) {
-    debugPrint('Audio initialization failed: $e');
-  }
-
-  // Initialize Opening Playbook & Lesson Services (loads extracted Lichess assets)
-  try {
-    await OpeningService.instance.initialize();
-  } catch (e) {
-    debugPrint('OpeningService initialization failed: $e');
-  }
-
-  try {
-    await LessonService.instance.initialize();
-  } catch (e) {
-    debugPrint('LessonService initialization failed: $e');
-  }
-
   // Set preferred orientations (portrait only)
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -67,6 +33,46 @@ void main() async {
   );
 
   runApp(const ProviderScope(child: ChessMasterApp()));
+
+  // Defer non-critical startup tasks until after the initial frame is drawn
+  // to guarantee immediate window focus and eliminate cold-start ANRs.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future.microtask(() async {
+      // Local Diagnostics Service
+      try {
+        await LocalDiagnosticsService.instance.initialize();
+      } catch (e) {
+        debugPrint('Diagnostics initialization failed: $e');
+      }
+
+      // Local Notification Service
+      try {
+        await NotificationService.instance.initialize();
+      } catch (e) {
+        debugPrint('Notification initialization failed: $e');
+      }
+
+      // Audio Service
+      try {
+        await AudioService.instance.initialize();
+      } catch (e) {
+        debugPrint('Audio initialization failed: $e');
+      }
+
+      // Opening Playbook & Lesson Services (loads Lichess assets)
+      try {
+        await OpeningService.instance.initialize();
+      } catch (e) {
+        debugPrint('OpeningService initialization failed: $e');
+      }
+
+      try {
+        await LessonService.instance.initialize();
+      } catch (e) {
+        debugPrint('LessonService initialization failed: $e');
+      }
+    });
+  });
 }
 
 class ChessMasterApp extends StatelessWidget {

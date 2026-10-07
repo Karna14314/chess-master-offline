@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:chess_master/providers/puzzle_provider.dart';
 import 'stockfish_service.dart';
 
 /// Observes app lifecycle to safely pause/resume Stockfish engine
@@ -33,9 +34,10 @@ class StockfishLifecycleObserver with WidgetsBindingObserver {
         // App going to background or hidden
         // Stop engine search immediately to prevent native crashes / battery drain
         debugPrint(
-          '[LIFECYCLE_BREADCRUMB] App state changed to $state -> Stopping active engine search',
+          '[LIFECYCLE_BREADCRUMB] App state changed to $state -> Stopping active engine search & evicting caches',
         );
         service.stopAnalysis();
+        PuzzleNotifier.evictCache();
         break;
       case AppLifecycleState.inactive:
         break;
@@ -44,9 +46,10 @@ class StockfishLifecycleObserver with WidgetsBindingObserver {
         break;
       case AppLifecycleState.detached:
         debugPrint(
-          '[LIFECYCLE_BREADCRUMB] App state detached -> Stopping active engine search',
+          '[LIFECYCLE_BREADCRUMB] App state detached -> Stopping active engine search & evicting caches',
         );
         service.stopAnalysis();
+        PuzzleNotifier.evictCache();
         break;
     }
   }

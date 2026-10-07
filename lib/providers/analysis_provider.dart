@@ -634,7 +634,6 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
         // Track whether the depth-8 probe was sufficient (early cutoff applied)
         bool depth8Sufficient = false;
-        double depth8Cpl = 0.0;
 
         try {
           if (token != _analysisToken) {

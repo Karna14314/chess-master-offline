@@ -106,6 +106,7 @@ class StockfishService {
   // Initialization lifecycle
   Completer<void>?
   _engineReadyCompleter; // Completed when isolate reports engine binary loaded
+  Completer<void>? _isolateDisposedCompleter; // Completed when isolate acknowledges dispose
 
   // Phase 2: Lifecycle management
   bool _isDisposed = false;
@@ -168,10 +169,13 @@ class StockfishService {
     _engineResponsePort = null;
     _engineResponseSubscription = null;
     _commandQueue.clear();
+    _executionQueue.clear();
     _initCompleter?.complete();
     _initCompleter = null;
     _engineReadyCompleter?.complete();
     _engineReadyCompleter = null;
+    _isolateDisposedCompleter?.complete();
+    _isolateDisposedCompleter = null;
     statusNotifier.value = EngineStatus.initializing;
   }
 
@@ -860,6 +864,13 @@ class StockfishService {
         moves.isEmpty) {
       return 'position fen $cleanFen';
     }
+    // Verify move sequence is strictly legal to prevent Stockfish C++ do_move SIGSEGV
+    if (!_areMovesLegal(fen, startingFen, moves)) {
+      debugPrint(
+        'Moves sequence not legal for position command; falling back to current FEN',
+      );
+      return 'position fen $cleanFen';
+    }
     final cleanStartingFen = sanitizeFen(startingFen);
     final movesPart = ' moves ${moves.join(' ')}';
     return 'position fen $cleanStartingFen$movesPart';
@@ -1058,9 +1069,11 @@ class StockfishService {
 
         // Failsafe timeout for Stockfish response: dynamic based on thinkTimeMs
         final effectiveTimeout =
-            thinkTimeMs != null
-                ? Duration(milliseconds: thinkTimeMs * 2 + 2500)
-                : searchTimeoutForTesting;
+            searchTimeoutForTesting != const Duration(seconds: 30)
+                ? searchTimeoutForTesting
+                : (thinkTimeMs != null
+                    ? Duration(milliseconds: thinkTimeMs * 2 + 2500)
+                    : searchTimeoutForTesting);
         return await completer.future.timeout(
           effectiveTimeout,
           onTimeout: () async {
@@ -1291,6 +1304,8 @@ class StockfishService {
         final linesByDepth = <int, Map<int, EngineLine>>{};
         final evalByDepth = <int, int?>{};
         final mateByDepth = <int, int?>{};
+        DateTime lastUiUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+        int lastUiDepth = -1;
 
         subscription = _outputController.stream.listen((line) {
           final trimmedLine = line.trim();
@@ -1377,7 +1392,12 @@ class StockfishService {
                 lines.add(engineLine);
               }
 
-              if (onUpdate != null && mainEvaluation != null) {
+              final now = DateTime.now();
+              final shouldNotify = currentDepth > lastUiDepth ||
+                  now.difference(lastUiUpdate).inMilliseconds >= 100;
+              if (onUpdate != null && mainEvaluation != null && shouldNotify) {
+                lastUiUpdate = now;
+                lastUiDepth = currentDepth;
                 try {
                   onUpdate(
                     AnalysisResult(
@@ -1630,6 +1650,10 @@ class StockfishService {
     if (_isDisposed) return;
     _activeSearchId++;
     if (_useFallback) return;
+    try {
+      _engineCommandPort?.send({'type': 'stdin', 'command': 'stop\n'});
+      _engineCommandPort?.send({'type': 'stdin', 'command': 'isready\n'});
+    } catch (_) {}
     _sendCommand('stop');
     _sendCommand('isready');
   }
@@ -1698,6 +1722,7 @@ class StockfishService {
     final future = () async {
       await _killEngineIfRunning();
       _commandQueue.clear();
+      _executionQueue.clear();
 
       _initCompleter?.complete();
       _initCompleter = null;
@@ -1802,6 +1827,9 @@ class StockfishService {
           // Engine isolate reports the binary loaded and is accepting commands
           _engineReadyCompleter?.complete();
           _engineReadyCompleter = null;
+        } else if (type == 'disposed') {
+          _isolateDisposedCompleter?.complete();
+          _isolateDisposedCompleter = null;
         } else if (type == 'error') {
           // Error reported from the engine isolate
           final msg = message['message'] as String? ?? 'Unknown error';
@@ -1828,16 +1856,25 @@ class StockfishService {
   Future<void> _killEngineIfRunning() async {
     if (_engineIsolate == null && _engineCommandPort == null) return;
     debugPrint('ENGINE LIFECYCLE → Killing engine isolate');
-    _engineSessionId++;
     _commandQueue.clear();
 
+    _isolateDisposedCompleter = Completer<void>();
+    try {
+      _engineCommandPort?.send({'type': 'stdin', 'command': 'stop\n'});
+      _engineCommandPort?.send({'type': 'stdin', 'command': 'quit\n'});
+      _engineCommandPort?.send({'type': 'dispose'});
+      // Handshake: wait for isolate confirmation that native engine has cleanly stopped & disposed
+      await _isolateDisposedCompleter?.future.timeout(
+        const Duration(milliseconds: 400),
+        onTimeout: () {},
+      );
+    } catch (_) {}
+    _isolateDisposedCompleter = null;
+
+    _engineSessionId++;
     await _engineResponseSubscription?.cancel();
     _engineResponseSubscription = null;
 
-    try {
-      _engineCommandPort?.send({'type': 'dispose'});
-      await Future.delayed(const Duration(milliseconds: 200));
-    } catch (_) {}
     try {
       _engineIsolate?.kill(priority: Isolate.beforeNextEvent);
     } catch (_) {}
@@ -1926,6 +1963,9 @@ void _stockfishIsolateEntryPoint(SendPort sendPort) {
             stockfish?.dispose();
           } catch (_) {}
           stockfish = null;
+          try {
+            sendPort.send({'type': 'disposed'});
+          } catch (_) {}
           break;
       }
     }

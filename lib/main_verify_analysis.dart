@@ -45,6 +45,7 @@ const _gameA = <String>[
 
 /// Game B: contains a clear blunder — Black hangs the queen with 6...Qxg2,
 /// and White has a knight sacrifice on f7 earlier for the Brilliant path.
+// ignore: unused_element
 const _gameB = <String>[
   'e2e4',
   'e7e5',

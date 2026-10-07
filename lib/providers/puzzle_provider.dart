@@ -201,7 +201,15 @@ enum PuzzleFilterMode {
 /// Puzzle notifier managing puzzle logic
 class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   final Ref _ref;
-  List<Puzzle> _allPuzzles = [];
+  static List<Puzzle>? _cachedPuzzles;
+
+  /// Evict the static puzzle cache when the app is backgrounded
+  /// to minimize Dalvik/ART steady-state heap pressure.
+  static void evictCache() {
+    _cachedPuzzles = null;
+  }
+
+  List<Puzzle> _allPuzzles = _cachedPuzzles ?? [];
   final Random _random = Random();
   final Set<int> _recentlySolvedIds = {}; // Track recently solved puzzles
   static const int _maxRecentPuzzles = 50; // Keep last 50 puzzles in memory
@@ -250,8 +258,13 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
     }
   }
 
-  /// Load puzzles from assets
+  /// Load puzzles from assets (cached across provider lifecycles)
   Future<void> _loadPuzzles() async {
+    if (_cachedPuzzles != null && _cachedPuzzles!.isNotEmpty) {
+      _allPuzzles = _cachedPuzzles!;
+      return;
+    }
+
     try {
       debugPrint('🧩 Loading puzzles from assets...');
       final String jsonString = await rootBundle.loadString(
@@ -260,12 +273,12 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
       debugPrint('🧩 JSON loaded, size: ${jsonString.length} bytes');
 
       // Use compute to parse JSON in background isolate to prevent UI jank
-      _allPuzzles = await compute(_parsePuzzles, jsonString);
+      _cachedPuzzles = await compute(_parsePuzzles, jsonString);
+      _allPuzzles = _cachedPuzzles ?? [];
 
       debugPrint('🧩 Successfully loaded ${_allPuzzles.length} puzzles');
     } catch (e) {
       debugPrint('🧩 ERROR loading puzzles: $e');
-      // If JSON doesn't exist, use empty list
       _allPuzzles = [];
     }
   }
@@ -273,6 +286,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleGameState> {
   /// Manually load puzzles for testing
   @visibleForTesting
   void loadPuzzlesForTesting(List<Puzzle> puzzles) {
+    _cachedPuzzles = puzzles;
     _allPuzzles = puzzles;
   }
 

@@ -7,10 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// to eliminate MediaPlayer main-thread Binder polling and ANRs.
 class AudioService {
   static AudioService? _instance;
-  final AudioPlayer _movePlayer = AudioPlayer(playerId: 'chess_move');
-  final AudioPlayer _capturePlayer = AudioPlayer(playerId: 'chess_capture');
-  final AudioPlayer _checkPlayer = AudioPlayer(playerId: 'chess_check');
-  final AudioPlayer _gameEndPlayer = AudioPlayer(playerId: 'chess_game_end');
+  AudioPlayer? _movePlayer;
+  AudioPlayer? _capturePlayer;
+  AudioPlayer? _checkPlayer;
+  AudioPlayer? _gameEndPlayer;
 
   bool _enabled = true;
   bool _initialized = false;
@@ -24,7 +24,9 @@ class AudioService {
   }
 
   AudioService._() {
-    _configureAudioContext();
+    try {
+      _configureAudioContext();
+    } catch (_) {}
   }
 
   static final AudioContext _ambientContext = AudioContext(
@@ -37,14 +39,29 @@ class AudioService {
     ),
     iOS: AudioContextIOS(
       category: AVAudioSessionCategory.ambient,
-      options: const {AVAudioSessionOptions.mixWithOthers},
     ),
   );
+
+  AudioPlayer? _createPlayerSafe(String id) {
+    try {
+      return AudioPlayer(playerId: id);
+    } catch (e) {
+      debugPrint('AudioService: Failed to create AudioPlayer $id: $e');
+      return null;
+    }
+  }
+
+  AudioPlayer? get movePlayer => _movePlayer ??= _createPlayerSafe('chess_move');
+  AudioPlayer? get capturePlayer => _capturePlayer ??= _createPlayerSafe('chess_capture');
+  AudioPlayer? get checkPlayer => _checkPlayer ??= _createPlayerSafe('chess_check');
+  AudioPlayer? get gameEndPlayer => _gameEndPlayer ??= _createPlayerSafe('chess_game_end');
 
   /// Set up audio context for low latency playback and background music mixing
   void _configureAudioContext() {
     try {
-      AudioPlayer.global.setAudioContext(_ambientContext);
+      AudioPlayer.global.setAudioContext(_ambientContext).catchError((e) {
+        debugPrint('AudioService: Failed to configure AudioContext: $e');
+      });
     } catch (e) {
       debugPrint('AudioService: Failed to configure AudioContext: $e');
     }
@@ -60,34 +77,29 @@ class AudioService {
       runZonedGuarded(
         () async {
           try {
-            await Future.wait([
-              _movePlayer.setAudioContext(_ambientContext),
-              _capturePlayer.setAudioContext(_ambientContext),
-              _checkPlayer.setAudioContext(_ambientContext),
-              _gameEndPlayer.setAudioContext(_ambientContext),
-            ]);
+            final players = [movePlayer, capturePlayer, checkPlayer, gameEndPlayer]
+                .whereType<AudioPlayer>()
+                .toList();
 
-            await Future.wait([
-              _movePlayer.setPlayerMode(PlayerMode.lowLatency),
-              _capturePlayer.setPlayerMode(PlayerMode.lowLatency),
-              _checkPlayer.setPlayerMode(PlayerMode.lowLatency),
-              _gameEndPlayer.setPlayerMode(PlayerMode.lowLatency),
-            ]);
+            for (final player in players) {
+              try {
+                await player.setAudioContext(_ambientContext);
+                await player.setPlayerMode(PlayerMode.lowLatency);
+                await player.setReleaseMode(ReleaseMode.stop);
+              } catch (e) {
+                debugPrint('Audio player configuration warning: $e');
+              }
+            }
 
-            await Future.wait([
-              _movePlayer.setReleaseMode(ReleaseMode.stop),
-              _capturePlayer.setReleaseMode(ReleaseMode.stop),
-              _checkPlayer.setReleaseMode(ReleaseMode.stop),
-              _gameEndPlayer.setReleaseMode(ReleaseMode.stop),
-            ]);
-
-            // Preload sources
-            await Future.wait([
-              _movePlayer.setSource(AssetSource('sounds/move.mp3')),
-              _capturePlayer.setSource(AssetSource('sounds/capture.mp3')),
-              _checkPlayer.setSource(AssetSource('sounds/check.mp3')),
-              _gameEndPlayer.setSource(AssetSource('sounds/game_end.mp3')),
-            ]);
+            // Preload sources defensively
+            try {
+              if (movePlayer != null) await movePlayer!.setSource(AssetSource('sounds/move.mp3'));
+              if (capturePlayer != null) await capturePlayer!.setSource(AssetSource('sounds/capture.mp3'));
+              if (checkPlayer != null) await checkPlayer!.setSource(AssetSource('sounds/check.mp3'));
+              if (gameEndPlayer != null) await gameEndPlayer!.setSource(AssetSource('sounds/game_end.mp3'));
+            } catch (e) {
+              debugPrint('Audio preload sources warning: $e');
+            }
 
             _initialized = true;
           } catch (e) {
@@ -111,8 +123,8 @@ class AudioService {
 
   /// Safely play audio on a player without blocking main UI thread or throwing.
   /// Uses PlayerMode.lowLatency (SoundPool) with a 40ms throttle guard.
-  void _playSound(AudioPlayer player, AssetSource source) {
-    if (!_enabled) return;
+  void _playSound(AudioPlayer? player, AssetSource source) {
+    if (!_enabled || player == null) return;
 
     final now = DateTime.now();
     if (_lastSoundPath == source.path &&
@@ -140,17 +152,17 @@ class AudioService {
 
   /// Play move sound
   Future<void> playMove() async {
-    _playSound(_movePlayer, AssetSource('sounds/move.mp3'));
+    _playSound(movePlayer, AssetSource('sounds/move.mp3'));
   }
 
   /// Play capture sound
   Future<void> playCapture() async {
-    _playSound(_capturePlayer, AssetSource('sounds/capture.mp3'));
+    _playSound(capturePlayer, AssetSource('sounds/capture.mp3'));
   }
 
   /// Play check sound
   Future<void> playCheck() async {
-    _playSound(_checkPlayer, AssetSource('sounds/check.mp3'));
+    _playSound(checkPlayer, AssetSource('sounds/check.mp3'));
   }
 
   /// Play castle sound
@@ -160,17 +172,17 @@ class AudioService {
 
   /// Play game start sound
   Future<void> playGameStart() async {
-    _playSound(_movePlayer, AssetSource('sounds/game_start.mp3'));
+    _playSound(movePlayer, AssetSource('sounds/game_start.mp3'));
   }
 
   /// Play game end sound
   Future<void> playGameEnd() async {
-    _playSound(_gameEndPlayer, AssetSource('sounds/game_end.mp3'));
+    _playSound(gameEndPlayer, AssetSource('sounds/game_end.mp3'));
   }
 
   /// Play low time warning
   Future<void> playLowTime() async {
-    _playSound(_movePlayer, AssetSource('sounds/low_time.mp3'));
+    _playSound(movePlayer, AssetSource('sounds/low_time.mp3'));
   }
 
   /// Play sound based on move type
@@ -195,10 +207,22 @@ class AudioService {
 
   /// Dispose audio players safely
   void dispose() {
-    _movePlayer.dispose();
-    _capturePlayer.dispose();
-    _checkPlayer.dispose();
-    _gameEndPlayer.dispose();
+    try {
+      _movePlayer?.dispose();
+    } catch (_) {}
+    try {
+      _capturePlayer?.dispose();
+    } catch (_) {}
+    try {
+      _checkPlayer?.dispose();
+    } catch (_) {}
+    try {
+      _gameEndPlayer?.dispose();
+    } catch (_) {}
+    _movePlayer = null;
+    _capturePlayer = null;
+    _checkPlayer = null;
+    _gameEndPlayer = null;
   }
 }
 
