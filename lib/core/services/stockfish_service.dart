@@ -1684,18 +1684,24 @@ class StockfishService {
       }
     });
 
-    _sendCommand('stop');
-    _sendCommand('isready');
+    // Send stop commands - ensure they're sent even if in fallback state isn't set yet
+    try {
+      _sendCommand('stop');
+      _sendCommand('isready');
+    } catch (_) {
+      // Ignore errors when sending stop commands
+    }
 
     try {
-      await completer.future.timeout(const Duration(milliseconds: 3000));
+      await completer.future.timeout(const Duration(milliseconds: 3500));
     } catch (_) {
       debugPrint('ENGINE RECOVERY → Engine stalled on stop; disabling engine');
       await _killEngineIfRunning();
       _enableFallback('Engine did not acknowledge stop');
     } finally {
-      await subscription.cancel();
+      await subscription?.cancel();
       _searchInFlight = false;
+      _isEngineBusy = false;
     }
   }
 
