@@ -1669,17 +1669,13 @@ class StockfishService {
     }
     if (!_searchInFlight && !_isEngineBusy) return;
 
-    final waitForBestMove = _searchInFlight;
     final completer = Completer<void>();
     StreamSubscription<String>? subscription;
 
     subscription = _outputController.stream.listen((line) {
       final trimmed = line.trim();
-      final acknowledged =
-          waitForBestMove
-              ? trimmed.startsWith('bestmove')
-              : trimmed == 'readyok';
-      if (acknowledged && !completer.isCompleted) {
+      if ((trimmed.startsWith('bestmove') || trimmed == 'readyok') &&
+          !completer.isCompleted) {
         completer.complete();
       }
     });

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -400,7 +401,7 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
           return;
         }
 
-        final parsedMoves = _parsePgnToMoves(pgn);
+        final parsedMoves = await compute(_parsePgnToMoves, pgn);
         if (parsedMoves == null || parsedMoves.isEmpty) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -503,7 +504,13 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     }
   }
 
-  List<ChessMove>? _parsePgnToMoves(String pgn) {
+  static String _algebraic(int i) {
+    final f = i & 15;
+    final r = i >> 4;
+    return '${String.fromCharCode(97 + f)}${8 - r}';
+  }
+
+  static List<ChessMove>? _parsePgnToMoves(String pgn) {
     try {
       final tempBoard = chess.Chess();
       if (!tempBoard.load_pgn(pgn)) return null;
@@ -543,11 +550,6 @@ class _GameHistoryScreenState extends ConsumerState<GameHistoryScreen> {
     }
   }
 
-  String _algebraic(int i) {
-    final f = i & 15;
-    final r = i >> 4;
-    return '${String.fromCharCode(97 + f)}${8 - r}';
-  }
 }
 
 /// Filter Chip widget
