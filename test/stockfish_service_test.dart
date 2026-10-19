@@ -209,6 +209,13 @@ void main() {
     );
 
     test(
+      'stopAnalysis does not throw and executes safely',
+      () async {
+        expect(() => service.stopAnalysis(), returnsNormally);
+      },
+    );
+
+    test(
       'FEN validation accepts valid FEN',
       () async {
         // Valid FEN should pass validation
