@@ -1706,6 +1706,11 @@ class StockfishService {
     if (_isDisposed || _useFallback) return Future.value();
     return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
+      // Stop any in-flight search and await its bestmove before resetting the
+      // position, so `ucinewgame` is never delivered to an active C++ search
+      // thread (a SIGSEGV trigger in Position::is_draw / search<NonPV>).
+      if (_searchInFlight) await _stopCurrentSearchAndWait();
+      if (_isDisposed || _useFallback) return;
       _sendCommand('ucinewgame');
     });
   }
