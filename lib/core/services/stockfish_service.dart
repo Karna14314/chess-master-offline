@@ -1053,7 +1053,7 @@ class StockfishService {
         );
         if (!positionReady) {
           debugPrint('Position ready timeout for FEN: $fen. Using fallback.');
-          return _getSimpleBotMove(fen, depth, thinkTimeMs);
+          return await _getSimpleBotMove(fen, depth, thinkTimeMs);
         }
         if (_isSearchCancelled(searchId)) {
           return _cancelledBestMoveResult();
@@ -1500,7 +1500,7 @@ class StockfishService {
           debugPrint(
             'Position ready timeout for analysis FEN: $fen. Using fallback.',
           );
-          return BasicEvaluatorService.instance.analyze(fen);
+          return await BasicEvaluatorService.instance.analyze(fen);
         }
         if (_isSearchCancelled(searchId)) {
           return _cancelledAnalysisResult();
