@@ -4,7 +4,7 @@
 **PR:** draft, targets `master`  
 **Goal:** Fix production crashes (SIGSEGV) and ANRs reported in Play Console v1.0.92. Bug fixes only — no new features, no UI changes, no refactors beyond what the fixes need.
 
-> Status: Phase 0 (audit) complete. No code changes made in this phase.
+> Status: Phase 0 (audit) complete. Baseline verification run; two engine-safety fixes applied (getBestMove now sends `startingFen`+`moves` for repetition detection; sanitizeFen test assertion corrected to match documented clamp behavior).
 
 ---
 
@@ -76,4 +76,20 @@ Verdicts: **confirmed** = evidence shows the issue exists today / fix is present
 - Phase 3: Native hardening — Stockfish is a pub package (no vendored native to patch); ensure unsafe call sequences from Phase 1 cannot reach the engine; SIGSEGV cannot be caught from Dart — prevention + restart-on-hang only.
 - Phase 4: Verification gate (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build apk --debug`) and `docs/SESSION_FINAL.md`.
 
-> Note on verification: this sandbox has no Flutter SDK, Java, or Android SDK installed, so `flutter analyze`/`flutter test`/`flutter build apk --debug` cannot be executed here. If a Flutter SDK becomes available, run the full gate before marking the PR ready. Native crashes and ANRs cannot be reproduced in CI regardless — state this explicitly in SESSION_FINAL.md.
+## 5. Baseline verification findings (this sandbox)
+
+Flutter SDK was installed at `/tmp/kilo/flutter-sdk` (Flutter 3.47.7, Dart 3.13.5); this sandbox has **no Java or Android SDK**, so `flutter build apk --debug` cannot run.
+
+| Gate step | Result | Notes |
+|-----------|--------|-------|
+| `flutter pub get` | PASS | `vector_math` upgraded 2.2.0 → 2.4.3 by the tool |
+| `flutter analyze` | PASS | 0 warnings, 0 errors (106 info-level `avoid_print` in tests/tools) |
+| `flutter test` | 474 pass / 6 fail | 6 failures are **pre-existing on master, unrelated to v1.0.92 crashes/ANRs**: `move_classification_labels` ×3 (contradicts `analysis_calibration` win%/CPL precedence — irreconcilable without breaking other tests), `statistics` K-factor ×1, `midgame_controls` ×2 (UI mismatch: test expects tooltip buttons `Undo Move`/`Engine Hint`/`Flip Board`/`Resign Game` that don't exist; `Flip Board`/`Resign Match` are popup menu items). Fixing these requires either breaking other tests or prohibited UI changes, so they are left as-is and documented. |
+| `flutter build apk --debug` | NOT RUNNABLE | No Android SDK / NDK in this sandbox |
+
+Two engine-related baseline failures were fixed in this branch:
+- `getBestMove` now sends `position fen <start> moves <uci...>` (via `buildPositionCommand`) when `startingFen`+`moves` are provided, so Stockfish can detect repetition draws (`stockfish_service.dart` position command).
+- `test/engine_threefold_repetition_test.dart`: corrected a `sanitizeFen` halfmove-clock assertion that contradicted the documented clamp-preserve behavior (test passed `fen` halfmove=1 but expected halfmove=0).
+
+> Note on verification: native crashes (SIGSEGV) and ANRs cannot be reproduced in CI and cannot be exercised on a real device from this sandbox, so they are explicitly NOT-verified. The gate steps that *can* run here (`pub get`, `analyze`, `test`) are reported above; `build apk` is blocked by missing Android SDK.
+

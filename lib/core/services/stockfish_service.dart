@@ -1032,13 +1032,18 @@ class StockfishService {
           }
         });
 
-        // Set position for bot search.
-        // For live bot play, send clean sanitized current FEN directly.
-        // Dart's chess engine already tracks move history, 3-fold repetition, and 50-move draws.
-        // Sending the current FEN directly creates a single clean root StateInfo in Stockfish C++,
-        // preventing dangling pointer traversal in Position::is_draw.
-        final cleanFen = sanitizeFen(fen);
-        _sendCommand('position fen $cleanFen');
+        // Set position for bot search. Emit the full move list (starting FEN +
+        // UCI moves) when available so Stockfish can detect repetition draws;
+        // otherwise fall back to a clean sanitized current FEN. A clean FEN
+        // creates a single root StateInfo in Stockfish C++, preventing dangling
+        // pointer traversal in Position::is_draw.
+        _sendCommand(
+          buildPositionCommand(
+            fen: fen,
+            startingFen: startingFen,
+            moves: moves,
+          ),
+        );
 
         // Wait for engine to confirm position is processed before starting search
         // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
