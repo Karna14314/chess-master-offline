@@ -91,7 +91,7 @@ class StockfishService {
   // Flag to simulate binary check failure for testing or if on unsupported platform
   bool _forceFallback = false;
 
-  final StreamController<String> _outputController =
+  StreamController<String> _outputController =
       StreamController<String>.broadcast();
   final ValueNotifier<EngineStatus> statusNotifier = ValueNotifier(
     EngineStatus.initializing,
@@ -170,6 +170,7 @@ class StockfishService {
     _engineResponseSubscription = null;
     _commandQueue.clear();
     _executionQueue.clear();
+    _outputController = StreamController<String>.broadcast();
     _initCompleter?.complete();
     _initCompleter = null;
     _engineReadyCompleter?.complete();
@@ -1032,13 +1033,18 @@ class StockfishService {
           }
         });
 
-        // Set position for bot search.
-        // For live bot play, send clean sanitized current FEN directly.
-        // Dart's chess engine already tracks move history, 3-fold repetition, and 50-move draws.
-        // Sending the current FEN directly creates a single clean root StateInfo in Stockfish C++,
-        // preventing dangling pointer traversal in Position::is_draw.
-        final cleanFen = sanitizeFen(fen);
-        _sendCommand('position fen $cleanFen');
+        // Set position for bot search. Emit the full move list (starting FEN +
+        // UCI moves) when available so Stockfish can detect repetition draws;
+        // otherwise fall back to a clean sanitized current FEN. A clean FEN
+        // creates a single root StateInfo in Stockfish C++, preventing dangling
+        // pointer traversal in Position::is_draw.
+        _sendCommand(
+          buildPositionCommand(
+            fen: fen,
+            startingFen: startingFen,
+            moves: moves,
+          ),
+        );
 
         // Wait for engine to confirm position is processed before starting search
         // This prevents SIGSEGV in Stockfish::Position::is_draw by ensuring position is valid
@@ -1047,7 +1053,7 @@ class StockfishService {
         );
         if (!positionReady) {
           debugPrint('Position ready timeout for FEN: $fen. Using fallback.');
-          return _getSimpleBotMove(fen, depth, thinkTimeMs);
+          return await _getSimpleBotMove(fen, depth, thinkTimeMs);
         }
         if (_isSearchCancelled(searchId)) {
           return _cancelledBestMoveResult();
@@ -1393,8 +1399,12 @@ class StockfishService {
               }
 
               final now = DateTime.now();
+              // Throttle progressive UI updates to ~5/sec (200ms) so a long
+              // analysis does not flood the UI isolate with setState work
+              // (PlatformTaskQueue / input-dispatching ANR source). Keep only
+              // the latest line; consumers recompute from it.
               final shouldNotify = currentDepth > lastUiDepth ||
-                  now.difference(lastUiUpdate).inMilliseconds >= 100;
+                  now.difference(lastUiUpdate).inMilliseconds >= 200;
               if (onUpdate != null && mainEvaluation != null && shouldNotify) {
                 lastUiUpdate = now;
                 lastUiDepth = currentDepth;
@@ -1490,7 +1500,7 @@ class StockfishService {
           debugPrint(
             'Position ready timeout for analysis FEN: $fen. Using fallback.',
           );
-          return BasicEvaluatorService.instance.analyze(fen);
+          return await BasicEvaluatorService.instance.analyze(fen);
         }
         if (_isSearchCancelled(searchId)) {
           return _cancelledAnalysisResult();
@@ -1701,6 +1711,11 @@ class StockfishService {
     if (_isDisposed || _useFallback) return Future.value();
     return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
+      // Stop any in-flight search and await its bestmove before resetting the
+      // position, so `ucinewgame` is never delivered to an active C++ search
+      // thread (a SIGSEGV trigger in Position::is_draw / search<NonPV>).
+      if (_searchInFlight) await _stopCurrentSearchAndWait();
+      if (_isDisposed || _useFallback) return;
       _sendCommand('ucinewgame');
     });
   }
@@ -1719,6 +1734,8 @@ class StockfishService {
       await _killEngineIfRunning();
       _commandQueue.clear();
       _executionQueue.clear();
+      await _outputController.close();
+      _outputController = StreamController<String>.broadcast();
 
       _initCompleter?.complete();
       _initCompleter = null;
