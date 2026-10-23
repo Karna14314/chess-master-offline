@@ -91,7 +91,7 @@ class StockfishService {
   // Flag to simulate binary check failure for testing or if on unsupported platform
   bool _forceFallback = false;
 
-  final StreamController<String> _outputController =
+  StreamController<String> _outputController =
       StreamController<String>.broadcast();
   final ValueNotifier<EngineStatus> statusNotifier = ValueNotifier(
     EngineStatus.initializing,
@@ -170,6 +170,7 @@ class StockfishService {
     _engineResponseSubscription = null;
     _commandQueue.clear();
     _executionQueue.clear();
+    _outputController = StreamController<String>.broadcast();
     _initCompleter?.complete();
     _initCompleter = null;
     _engineReadyCompleter?.complete();
@@ -1398,8 +1399,12 @@ class StockfishService {
               }
 
               final now = DateTime.now();
+              // Throttle progressive UI updates to ~5/sec (200ms) so a long
+              // analysis does not flood the UI isolate with setState work
+              // (PlatformTaskQueue / input-dispatching ANR source). Keep only
+              // the latest line; consumers recompute from it.
               final shouldNotify = currentDepth > lastUiDepth ||
-                  now.difference(lastUiUpdate).inMilliseconds >= 100;
+                  now.difference(lastUiUpdate).inMilliseconds >= 200;
               if (onUpdate != null && mainEvaluation != null && shouldNotify) {
                 lastUiUpdate = now;
                 lastUiDepth = currentDepth;
@@ -1729,6 +1734,8 @@ class StockfishService {
       await _killEngineIfRunning();
       _commandQueue.clear();
       _executionQueue.clear();
+      await _outputController.close();
+      _outputController = StreamController<String>.broadcast();
 
       _initCompleter?.complete();
       _initCompleter = null;
