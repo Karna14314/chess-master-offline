@@ -98,3 +98,18 @@ I have completed the task to refactor the UI and navigation for production readi
 **Commit:** (see below)
 **Branch:** auto/chess-20260913-journey-progress-fix
 **Notes:** N/A
+
+## 2026-09-14
+**Status:** SUCCESS ✅
+**Category:** C — UI Enhancement
+**Task:** Added smooth scaling 'pop' animation to piece movement.
+**Files Changed:**
+- lib/screens/game/widgets/chess_board.dart: Added dart:math import and wrapped the ChessPiece inside the AnimatedBuilder with a Transform.scale calculated via math.sin to create a peak scaling effect mid-animation.
+**Verification:**
+- Build: PASS
+- Tests: PASS
+- Emulator: SKIPPED
+**User-Visible Impact:** When a player makes a move, the moving piece now smoothly slightly scales up and back down, giving it a premium "lifting" or "pop" effect that enhances tactile feedback and overall UI polish.
+**Commit:** (see below)
+**Branch:** auto/chess-20260914-piece-pop-animation
+**Notes:** N/A
