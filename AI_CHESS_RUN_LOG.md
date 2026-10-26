@@ -98,3 +98,18 @@ I have completed the task to refactor the UI and navigation for production readi
 **Commit:** (see below)
 **Branch:** auto/chess-20260913-journey-progress-fix
 **Notes:** N/A
+
+## 2026-10-10
+**Status:** SUCCESS ✅
+**Category:** C — UI Enhancement
+**Task:** Improved chess board piece animations with easeInOutCubic curve and scale pop effect
+**Files Changed:**
+- lib/screens/game/widgets/chess_board.dart: Changed animation curve from easeOutCubic to easeInOutCubic and added a scale pop effect using math.sin during piece movement animations.
+**Verification:**
+- Build: PASS
+- Tests: PASS
+- Emulator: SKIPPED
+**User-Visible Impact:** Piece movements on the board now feel much smoother and more premium with an ease-in-out transition and a slight subtle pop/scaling effect during the drag and animation phase.
+**Commit:** (see below)
+**Branch:** auto/chess-20261010-board-animations
+**Notes:** N/A
