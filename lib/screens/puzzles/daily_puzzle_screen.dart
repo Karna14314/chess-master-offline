@@ -4,6 +4,8 @@ import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/puzzle_model.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
+import 'package:chess_master/core/services/daily_puzzle_notification_service.dart';
+import 'package:chess_master/screens/puzzles/widgets/daily_puzzle_reminder_bottom_sheet.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/screens/puzzles/widgets/puzzle_board_widget.dart';
 import 'package:flutter/services.dart';
@@ -46,6 +48,18 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<PuzzleGameState>(puzzleProvider, (previous, next) {
+      if (previous?.state != PuzzleState.completed &&
+          next.state == PuzzleState.completed) {
+        DailyPuzzleNotificationService.instance.cancelTodayNotification();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            DailyPuzzleReminderBottomSheet.checkAndShow(context, ref);
+          }
+        });
+      }
+    });
+
     final state = ref.watch(puzzleProvider);
 
     return Scaffold(

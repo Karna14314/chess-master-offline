@@ -12,6 +12,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
 import 'package:chess_master/providers/statistics_provider.dart';
+import 'package:chess_master/core/services/daily_puzzle_notification_service.dart';
 
 /// Settings screen for app customization
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -91,6 +92,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 const SizedBox(height: 12),
                 _buildSettingsCard(context, [
+                  _ThemeModeSelector(
+                    currentMode: settings.themeMode,
+                    onChanged: (mode) => settingsNotifier.setThemeMode(mode),
+                  ),
+                  Divider(color: AppTheme.borderColorFor(context)),
                   _ThemePresetSelector(
                     currentPreset: settings.themePreset,
                     onChanged: (preset) => settingsNotifier.setThemePreset(preset),
@@ -251,6 +257,98 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               .toggleDailyPuzzleNotification(),
                         ),
                   ),
+                  FutureBuilder<bool>(
+                    future: DailyPuzzleNotificationService.instance.hasSystemPermission(),
+                    builder: (context, snapshot) {
+                      final hasPermission = snapshot.data ?? true;
+                      if (!hasPermission && settings.dailyPuzzleNotificationEnabled) {
+                        return Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.crimsonRed.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.crimsonRed.withValues(alpha: 0.4)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.warning_amber_rounded, color: AppTheme.crimsonRed, size: 20),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Notifications disabled in system settings',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.crimsonRed,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'To receive daily puzzle reminders, allow notifications for ChessMaster in Android System Settings.',
+                                  style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondaryFor(context)),
+                                ),
+                                const SizedBox(height: 10),
+                                OutlinedButton.icon(
+                                  onPressed: _openSystemSettings,
+                                  icon: const Icon(Icons.settings_applications, size: 18),
+                                  label: const Text('Open App Settings'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.crimsonRed,
+                                    side: const BorderSide(color: AppTheme.crimsonRed),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                  if (settings.dailyPuzzleNotificationEnabled) ...[
+                    Divider(color: AppTheme.borderColorFor(context)),
+                    ListTile(
+                      title: Text(
+                        'Reminder Time',
+                        style: GoogleFonts.inter(
+                          color: AppTheme.textPrimaryFor(context),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Daily local notification delivery time',
+                        style: GoogleFonts.inter(
+                          color: AppTheme.textSecondaryFor(context),
+                          fontSize: 12,
+                        ),
+                      ),
+                      trailing: Text(
+                        settings.dailyPuzzleReminderTime.format(context),
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: settings.dailyPuzzleReminderTime,
+                        );
+                        if (picked != null) {
+                          settingsNotifier.setDailyPuzzleReminderTime(picked);
+                        }
+                      },
+                    ),
+                  ],
                   Divider(color: AppTheme.borderColorFor(context)),
                   _SwitchSetting(
                     title: 'Streak Protection Nudges',
@@ -532,6 +630,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } catch (_) {}
+  }
+
+  Future<void> _openSystemSettings() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final uri = Uri.parse('package:${packageInfo.packageName}');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      debugPrint('Failed to open app settings: $e');
+    }
   }
 
   // Helper for notification reminders
@@ -1014,6 +1124,76 @@ class _AnimationSpeedSelector extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Theme mode selector (System / Dark / Light)
+class _ThemeModeSelector extends StatelessWidget {
+  final ThemeMode currentMode;
+  final ValueChanged<ThemeMode> onChanged;
+
+  const _ThemeModeSelector({
+    required this.currentMode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Theme Mode',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimaryFor(context),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor(context),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                _buildOption(context, 'System', ThemeMode.system),
+                _buildOption(context, 'Dark', ThemeMode.dark),
+                _buildOption(context, 'Light', ThemeMode.light),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOption(BuildContext context, String label, ThemeMode mode) {
+    final isSelected = currentMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onChanged(mode),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              color: isSelected ? Colors.white : AppTheme.textSecondaryFor(context),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 12,
+            ),
+          ),
+        ),
       ),
     );
   }

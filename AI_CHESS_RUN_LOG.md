@@ -98,3 +98,34 @@ I have completed the task to refactor the UI and navigation for production readi
 **Commit:** (see below)
 **Branch:** auto/chess-20260913-journey-progress-fix
 **Notes:** N/A
+
+## 2026-10-23
+**Status:** SUCCESS ✅
+**Category:** C — Navigation & UI Restructuring, A — Bug Fix, B — Feature Enhancement
+**Task:** Redesigned navigation to 4 fixed tabs (Play, Puzzles, Learn, Profile), Play home hub, dark default theme, and Daily Puzzle local notification reminders.
+**Files Changed:**
+- docs/redesign-progress.md: Created redesign progress log.
+- lib/main.dart: Set dark default theme, disabled runtime network font fetching, registered DailyPuzzleNotificationService tap handler and appNavigatorKey.
+- lib/core/theme/app_theme.dart: Refined dark charcoal palette (#161512, #262421 card surfaces, #2E7D32 primary CTA, #FF6D00 accent).
+- lib/providers/settings_provider.dart: Added ThemeMode persistence and daily puzzle reminder settings.
+- lib/screens/main_screen.dart: Restructured bottom navigation to 4 tabs (Play, Puzzles, Learn, Profile) with Puzzles tab badge dot.
+- lib/screens/home/home_screen.dart: Redesigned Play home hub top-to-bottom and fixed Master Campaign stepper bug ("1, 1, 2, 3" -> "1, 2, 3, 4").
+- lib/screens/learn/learn_screen.dart: Created Learn tab with segmented control (Lessons | Openings | Review).
+- lib/screens/puzzles/puzzle_menu_screen.dart: Removed Curriculum & Openings sections from Puzzles tab.
+- lib/screens/puzzles/daily_puzzle_screen.dart: Triggered DailyPuzzleReminderBottomSheet prompt upon puzzle completion.
+- lib/screens/puzzles/widgets/daily_puzzle_reminder_bottom_sheet.dart: Added daily puzzle notification prompt bottom sheet.
+- lib/screens/stats/statistics_screen.dart: Refined Profile screen with top-right Settings gear icon.
+- lib/screens/settings/settings_screen.dart: Added Theme Mode selector and Notification settings with OS permission status and system settings link.
+- lib/widgets/shared/result_card.dart: Standardized game-over Review Game button.
+- lib/core/services/daily_puzzle_notification_service.dart: Built unit-testable local daily puzzle notification service with injectable Clock.
+- android/app/src/main/AndroidManifest.xml: Added notification & boot receiver permissions.
+- pubspec.yaml: Added timezone, flutter_timezone, and clock dependencies.
+- test/daily_puzzle_notification_test.dart: Added unit tests for notification scheduling and prompt rules.
+- test/cross_promotion_test.dart: Updated navigation tab tests.
+**Verification:**
+- Build: PASS
+- Analyze: PASS (0 errors, 0 warnings)
+- Tests: PASS (100% pass rate)
+- Emulator: SKIPPED
+**User-Visible Impact:** Clean, dark-default game-like UI with fewer taps to key features, 4 distinct bottom navigation tabs (Play, Puzzles, Learn, Profile), Daily Puzzle notifications, and seamless game review access across the app.
+**Branch:** auto/chess-20261023-nav-redesign

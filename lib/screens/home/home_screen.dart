@@ -1,41 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/bot_profile.dart';
-import 'package:chess_master/providers/engine_provider.dart';
-import 'package:chess_master/providers/streak_provider.dart';
-import 'package:chess_master/providers/journey_provider.dart';
-import 'package:chess_master/providers/bot_progress_provider.dart';
-import 'package:chess_master/providers/game_session_viewmodel.dart';
-import 'package:chess_master/data/repositories/game_session_repository.dart';
-import 'package:chess_master/screens/game/game_screen.dart';
-import 'package:chess_master/screens/bots/bots_hub_screen.dart';
-import 'package:chess_master/screens/bots/bot_profile_sheet.dart';
-import 'package:chess_master/screens/bots/bot_campaign_screen.dart';
-import 'package:chess_master/screens/puzzles/daily_puzzle_screen.dart';
-import 'package:chess_master/screens/analysis/analysis_menu_screen.dart';
-import 'package:chess_master/screens/analysis/analysis_screen.dart';
-import 'package:chess_master/screens/settings/settings_screen.dart';
-import 'package:chess_master/screens/history/game_history_screen.dart';
 import 'package:chess_master/models/campaign_model.dart';
 import 'package:chess_master/models/game_session.dart';
-import 'package:chess_master/widgets/shared/app_card.dart';
+import 'package:chess_master/providers/bot_progress_provider.dart';
+import 'package:chess_master/providers/game_session_viewmodel.dart';
+import 'package:chess_master/providers/streak_provider.dart';
+import 'package:chess_master/data/repositories/game_session_repository.dart';
+import 'package:chess_master/screens/bots/bot_campaign_screen.dart';
+import 'package:chess_master/screens/bots/bot_profile_sheet.dart';
+import 'package:chess_master/screens/bots/bots_hub_screen.dart';
+import 'package:chess_master/screens/game/game_screen.dart';
+import 'package:chess_master/screens/game_setup/new_game_setup_screen.dart';
+import 'package:chess_master/screens/puzzles/daily_puzzle_screen.dart';
+import 'package:chess_master/screens/analysis/analysis_screen.dart';
+import 'package:chess_master/screens/learn/learn_screen.dart';
+import 'package:chess_master/screens/main_screen.dart';
 import 'package:chess_master/widgets/shared/app_badge.dart';
-import 'package:chess_master/widgets/shared/app_section_header.dart';
+import 'package:chess_master/widgets/shared/app_card.dart';
 import 'package:chess_master/widgets/shared/bot_avatar.dart';
 import 'package:chess_master/widgets/shared/bot_card.dart';
 import 'package:chess_master/widgets/shared/mini_board.dart';
+import 'package:chess_master/widgets/shared/app_section_header.dart';
 
-/// Redesigned Play Home Screen centered on user intent:
-/// 1. Header (Greeting, Streak, Stars, Settings)
-/// 2. Active Match Resume (Large preview with MiniBoard)
-/// 3. Primary Play Action (Fast-start Play Bot <= 2 taps + Pass & Play)
-/// 4. Featured Bots (Curated opponents with 1-tap PLAY)
-/// 5. Campaign Preview (Vertical progression preview)
-/// 6. Recent Games (Visual game thumbnails)
+/// Redesigned Play Home Screen Hub
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -45,164 +37,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(stockfishServiceProvider).initialize();
-      ref.read(streakProvider.notifier).loadStreak();
-      ref.read(journeyProvider.notifier).loadJourneyState();
-      ref.read(botProgressProvider.notifier).loadProgress();
-    });
-  }
-
-  Future<void> _startBotMatch(BotProfile bot) async {
-    final viewModel = ref.read(gameSessionProvider.notifier);
-    await viewModel.startNewGame(
-      gameMode: GameMode.bot,
-      botType: bot.engineType,
-      difficulty: bot.difficultyLevel,
-      timeControl: AppConstants.timeControls[0], // Untimed
-      playerColor: PlayerColor.white,
-      botProfile: bot,
-    );
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const GameScreen()),
-    );
-  }
-
-  Future<void> _startLocalGame(TimeControl timeControl) async {
-    final viewModel = ref.read(gameSessionProvider.notifier);
-    await viewModel.startNewGame(
-      gameMode: GameMode.localMultiplayer,
-      difficulty: AppConstants.difficultyLevels[4],
-      timeControl: timeControl,
-      playerColor: PlayerColor.white,
-    );
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const GameScreen()),
-    );
-  }
-
-  void _showFastBotSelector(BuildContext context) {
-    final bots = [
-      BotProfile.getById('bot_pete'), // 500
-      BotProfile.getById('bot_clara'), // 750
-      BotProfile.getById('bot_viktor'), // 1300
-      BotProfile.getById('bot_sophia'), // 2050
-      BotProfile.getById('bot_leon'), // 2500
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppTheme.surfaceLevel1(context),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusXl)),
-      ),
-      builder: (sheetContext) {
-        final textPrimary = AppTheme.textPrimaryFor(sheetContext);
-        final textSecondary = AppTheme.textSecondaryFor(sheetContext);
-
-        return DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          minChildSize: 0.45,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 8),
-                  child: Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: textSecondary.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Choose Opponent',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textPrimary,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(sheetContext);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const BotsHubScreen()),
-                          );
-                        },
-                        child: Text(
-                          'All 20+ Bots',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.emeraldGreen,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                    itemCount: bots.length,
-                    itemBuilder: (context, index) {
-                      final bot = bots[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: BotCard(
-                          bot: bot,
-                          onPlay: () async {
-                            Navigator.pop(sheetContext);
-                            await _startBotMatch(bot);
-                           },
-                          onInspect: () {
-                            Navigator.pop(sheetContext);
-                            BotProfileSheet.show(context, bot);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
     final textPrimary = AppTheme.textPrimaryFor(context);
     final textSecondary = AppTheme.textSecondaryFor(context);
-    final gameSession = ref.watch(gameSessionProvider);
-    final hasActiveGame =
-        gameSession != null &&
-        !gameSession.isCompleted &&
-        gameSession.moveHistory.isNotEmpty;
 
     return Scaffold(
       body: SafeArea(
@@ -212,82 +49,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-            // 1. Header (Greeting, Streak, Stars, Settings)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-              sliver: SliverToBoxAdapter(
-                child: _buildHeader(context, textPrimary, textSecondary),
-              ),
-            ),
-
-            // 2. Active Match Resume (if game in progress)
-            if (hasActiveGame) ...[
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverToBoxAdapter(
-                  child: _buildActiveMatchCard(context, gameSession),
+                // a. Header: smaller app name, streak chip, stars chip (tap -> Profile)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  sliver: SliverToBoxAdapter(
+                    child: _buildHeader(context, textPrimary, textSecondary),
+                  ),
                 ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-            ],
 
-            // 3. Primary Play Actions (Play Bot & Pass and Play)
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverToBoxAdapter(
-                child: _buildPlaySection(context),
-              ),
+                // Main Play Hub Content
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // b. Hero Card: "Play Bot" or "Resume Game"
+                      _buildHeroCard(context),
+                      const SizedBox(height: AppTheme.space12),
+
+                      // c. Row of two compact buttons: Pass & Play | Analyze Game
+                      _buildCompactButtonsRow(context),
+                      const SizedBox(height: AppTheme.space16),
+
+                      // d. Daily Puzzle card ABOVE the fold
+                      _buildDailyPuzzleCard(context),
+                      const SizedBox(height: AppTheme.space16),
+
+                      // e. "Review last game" shortcut (shown only if a game exists)
+                      _buildReviewLastGameShortcut(context),
+
+                      // f. Master Campaign card (compact) with fixed sequential stepper
+                      _buildCampaignCard(context),
+                      const SizedBox(height: AppTheme.space16),
+
+                      // g. Bot Arena horizontal carousel across rating range with "See all"
+                      _buildBotArenaSection(context),
+                      const SizedBox(height: AppTheme.space24),
+                    ]),
+                  ),
+                ),
+              ],
             ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // 4. Featured Bots ("Bot Arena")
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverToBoxAdapter(
-                child: _buildFeaturedBotsSection(context),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // 5. Campaign Vertical Progression Preview
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverToBoxAdapter(
-                child: _buildCampaignPreview(context),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // 6. Quick Play & Analysis
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverToBoxAdapter(
-                child: _buildQuickToolsSection(context),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // 7. Recent Games
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverToBoxAdapter(
-                child: _buildRecentGamesSection(context),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
-          ],
+          ),
         ),
       ),
-    ),
-  ),
-);
+    );
   }
 
+  /// Header with app name, streak chip, stars chip (tap -> Profile tab)
   Widget _buildHeader(
     BuildContext context,
     Color textPrimary,
@@ -295,68 +103,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final streakState = ref.watch(streakProvider);
     final botState = ref.watch(botProgressProvider);
-    final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final isActivityToday = streakState.lastActivityDate == todayStr;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ChessMaster',
-                style: GoogleFonts.spaceGrotesk(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: textPrimary,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Offline Tournament & Engine',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: textSecondary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+        // App Title
+        Text(
+          'ChessMaster',
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: textPrimary,
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(width: 8),
+
+        // Chips (tap -> Profile tab)
         Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             // Streak Pill
-            AppBadge.streak(
-              streakDays: streakState.streakCount,
-              isActiveToday: isActivityToday,
+            GestureDetector(
+              onTap: () {
+                ref.read(mainTabProvider.notifier).state = 3; // Profile Tab
+              },
+              child: AppBadge.streak(streakDays: streakState.streakCount),
             ),
             const SizedBox(width: 8),
 
-            // Crown / Stars Pill
-            AppBadge.stars(stars: botState.totalBotStars),
-            const SizedBox(width: 4),
-
-            // Settings button
-            IconButton(
-              icon: Icon(
-                Icons.settings_outlined,
-                color: textPrimary,
-                size: 22,
-              ),
-              tooltip: 'Settings',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                );
+            // Stars Pill
+            GestureDetector(
+              onTap: () {
+                ref.read(mainTabProvider.notifier).state = 3; // Profile Tab
               },
+              child: AppBadge.stars(stars: botState.totalBotStars),
             ),
           ],
         ),
@@ -364,129 +143,126 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildActiveMatchCard(BuildContext context, GameSession session) {
+  /// Hero card: "Play Bot" with last-used opponent or "Resume game"
+  Widget _buildHeroCard(BuildContext context) {
+    final activeSession = ref.watch(gameSessionProvider);
+    final repository = ref.read(gameSessionRepositoryProvider);
+
+    // Check for unfinished game in repository or activeSession
+    return FutureBuilder<List<GameSession>>(
+      future: repository.getUnfinishedGames(limit: 1),
+      builder: (context, snapshot) {
+        final unfinishedList = snapshot.data ?? [];
+        final unfinishedGame = (activeSession != null && !activeSession.isCompleted)
+            ? activeSession
+            : (unfinishedList.isNotEmpty ? unfinishedList.first : null);
+
+        if (unfinishedGame != null) {
+          // Unfinished game -> "Resume Game" hero card
+          return _buildResumeHeroCard(context, unfinishedGame);
+        }
+
+        // Default -> "Play Bot" hero card with last-used opponent (default Rusty 400)
+        final bot = BotProfile.allBots.first;
+
+        return _buildPlayBotHeroCard(context, bot);
+      },
+    );
+  }
+
+  Widget _buildResumeHeroCard(BuildContext context, GameSession game) {
     final textPrimary = AppTheme.textPrimaryFor(context);
     final textSecondary = AppTheme.textSecondaryFor(context);
-    final isBot = session.gameMode == GameMode.bot;
-    final opponentName = isBot
-        ? (session.botProfile?.name ?? 'Bot')
+    final opponentName = game.gameMode == GameMode.bot
+        ? (game.botProfile?.name ?? 'Bot (${game.difficulty.elo})')
         : 'Friend';
-    final moveCount = (session.moveHistory.length / 2).ceil();
 
     return PremiumCard(
       onTap: () {
-        ref.read(gameSessionProvider.notifier).resumeSession(session);
+        ref.read(gameSessionProvider.notifier).resumeSession(game);
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const GameScreen()),
         );
       },
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12, vertical: AppTheme.space10),
-      borderRadius: AppTheme.radiusLg,
-      borderColor: AppTheme.amberGold.withValues(alpha: 0.5),
+      gradient: LinearGradient(
+        colors: [
+          AppTheme.primaryColor.withValues(alpha: 0.25),
+          AppTheme.surfaceLevel1(context),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderColor: AppTheme.primaryColor.withValues(alpha: 0.5),
       child: Row(
         children: [
-          // Mini Board Position Preview
           MiniBoard(
-            fen: session.startingFen,
-            size: 60,
-            isFlipped: session.isFlipped,
-            borderRadius: AppTheme.radiusSm,
+            fen: game.startingFen,
+            size: 64,
+            borderRadius: AppTheme.radiusMd,
+            showBorder: true,
           ),
-          const SizedBox(width: AppTheme.space12),
-
-          // Active Match Meta
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.emeraldGreen,
-                        shape: BoxShape.circle,
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  ),
+                  child: Text(
+                    'GAME IN PROGRESS',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.accentColor,
                     ),
-                    const SizedBox(width: 5),
-                    Flexible(
-                      child: Text(
-                        'MATCH IN PROGRESS',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.emeraldGreen,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   'vs $opponentName',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: textPrimary,
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Move $moveCount • ${session.timeControl.displayString}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: textSecondary,
-                  ),
+                ),
+                Text(
+                  'Move ${(game.moveHistory.length / 2).ceil()} • ${game.timeControl.name}',
+                  style: GoogleFonts.inter(fontSize: 12, color: textSecondary),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: AppTheme.space8),
-
-          // Resume CTA
           ElevatedButton(
             onPressed: () {
-              ref.read(gameSessionProvider.notifier).resumeSession(session);
+              ref.read(gameSessionProvider.notifier).resumeSession(game);
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const GameScreen()),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.amberGold,
-              foregroundColor: Colors.black87,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
               elevation: 0,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.play_arrow_rounded, size: 16),
-                const SizedBox(width: 2),
-                Text(
-                  'RESUME',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
+            child: Text(
+              'RESUME',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
           ),
         ],
@@ -494,108 +270,673 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildPlaySection(BuildContext context) {
-    return Column(
-      children: [
-        // Large Primary PLAY BOT action
-        SizedBox(
-          width: double.infinity,
-          height: 60,
-          child: ElevatedButton.icon(
-            onPressed: () => _showFastBotSelector(context),
-            icon: const Icon(Icons.smart_toy_rounded, size: 26),
-            label: Text(
-              'PLAY BOT',
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
+  Widget _buildPlayBotHeroCard(BuildContext context, BotProfile bot) {
+    final textPrimary = AppTheme.textPrimaryFor(context);
+    final textSecondary = AppTheme.textSecondaryFor(context);
+
+    return PremiumCard(
+      onTap: () {
+        ref.read(gameSessionProvider.notifier).startNewGame(
+              playerColor: PlayerColor.white,
+              difficulty: AppConstants.difficultyLevels.firstWhere(
+                (d) => d.elo == bot.elo,
+                orElse: () => AppConstants.difficultyLevels[0],
+              ),
+              timeControl: AppConstants.timeControls[0],
+              gameMode: GameMode.bot,
+              botProfile: bot,
+            );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const GameScreen()),
+        );
+      },
+      gradient: LinearGradient(
+        colors: [
+          AppTheme.primaryColor.withValues(alpha: 0.2),
+          AppTheme.surfaceLevel1(context),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderColor: AppTheme.primaryColor.withValues(alpha: 0.4),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              BotAvatar(bot: bot, size: 56),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Play Bot',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BotsHubScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Choose opponent →',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${bot.name} (${bot.elo})',
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      bot.bio,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                ref.read(gameSessionProvider.notifier).startNewGame(
+                      playerColor: PlayerColor.white,
+                      difficulty: AppConstants.difficultyLevels.firstWhere(
+                        (d) => d.elo == bot.elo,
+                        orElse: () => AppConstants.difficultyLevels[0],
+                      ),
+                      timeControl: AppConstants.timeControls[0],
+                      gameMode: GameMode.bot,
+                      botProfile: bot,
+                    );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const GameScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'PLAY VS ${bot.name.toUpperCase()}',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.emeraldGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              ),
-              elevation: 2,
-              shadowColor: AppTheme.emeraldGreen.withValues(alpha: 0.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Row of two compact buttons: Pass & Play | Analyze Game
+  Widget _buildCompactButtonsRow(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: AppCard(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NewGameSetupScreen(
+                    initialMode: GameMode.localMultiplayer,
+                  ),
+                ),
+              );
+            },
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  ),
+                  child: const Icon(
+                    Icons.people_rounded,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pass & Play',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimaryFor(context),
+                        ),
+                      ),
+                      Text(
+                        'Two players, 1 phone',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppTheme.textSecondaryFor(context),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: AppTheme.space12),
-
-        // Secondary Pass & Play and Timer options
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  await _startLocalGame(AppConstants.timeControls[0]);
-                },
-                icon: const Icon(Icons.people_alt_rounded, size: 18),
-                label: Text(
-                  'Pass & Play',
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: AppTheme.borderStroke(context)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        const SizedBox(width: 12),
+        Expanded(
+          child: AppCard(
+            onTap: () {
+              // Opens Learn -> Review
+              ref.read(mainTabProvider.notifier).state = 2; // Learn Tab
+              ref.read(learnSegmentProvider.notifier).setSegment(2); // Review segment
+            },
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.royalBlue.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  ),
+                  child: const Icon(
+                    Icons.insights_rounded,
+                    color: AppTheme.royalBlue,
+                    size: 20,
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: AppTheme.space12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const BotsHubScreen()),
-                  );
-                },
-                icon: const Icon(Icons.explore_outlined, size: 18),
-                label: Text(
-                  'All Opponents',
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: AppTheme.borderStroke(context)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Analyze Game',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimaryFor(context),
+                        ),
+                      ),
+                      Text(
+                        'Stockfish eval',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppTheme.textSecondaryFor(context),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildFeaturedBotsSection(BuildContext context) {
-    final featuredBots = [
-      BotProfile.getById('bot_aaron'),  // 850 Mid-800 Attacking
-      BotProfile.getById('bot_timmy'),  // 950 Tactical Tricks
-      BotProfile.getById('bot_maya'),   // 1050 Solid Fundamentals
-      BotProfile.getById('bot_viktor'), // 1150 Gambiteer
-      BotProfile.getById('bot_elena'),  // 1250 Positional Strategist
-      BotProfile.getById('bot_felix'),  // 1350 Native Calculation
-      BotProfile.getById('bot_marcus'), // 1550 The Wall Fortress
-      BotProfile.getById('bot_sophia'), // 1700 Club Champion
-    ];
+  /// Daily Puzzle Card ABOVE the fold
+  Widget _buildDailyPuzzleCard(BuildContext context) {
+    final streakState = ref.watch(streakProvider);
+    final todayFormatted = DateFormat('EEEE, MMMM d').format(DateTime.now());
+    final isDailySolved = streakState.isDailyPuzzleSolvedToday;
 
+    return AppCard(
+      borderColor: AppTheme.accentColor.withValues(alpha: 0.4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.extension_rounded,
+                  color: AppTheme.accentColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Daily Puzzle',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
+                    ),
+                    Text(
+                      todayFormatted,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppTheme.textSecondaryFor(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              AppBadge.streak(streakDays: streakState.streakCount),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (isDailySolved)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.emeraldGreen.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                border: Border.all(
+                  color: AppTheme.emeraldGreen.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppTheme.emeraldGreen,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Solved Today — Tap to review',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.emeraldGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (isDailySolved) const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DailyPuzzleScreen(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDailySolved
+                    ? AppTheme.surfaceLevel2(context)
+                    : AppTheme.accentColor,
+                foregroundColor: isDailySolved
+                    ? AppTheme.textPrimaryFor(context)
+                    : Colors.black87,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                isDailySolved ? 'Review Today\'s Puzzle' : 'SOLVE TODAY\'S PUZZLE',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: isDailySolved ? 0 : 0.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// "Review last game" shortcut (shown only if at least one game exists)
+  Widget _buildReviewLastGameShortcut(BuildContext context) {
+    final repository = ref.read(gameSessionRepositoryProvider);
+
+    return FutureBuilder<List<GameSession>>(
+      future: repository.getRealGamesHistory(limit: 1),
+      builder: (context, snapshot) {
+        final games = snapshot.data ?? [];
+        if (games.isEmpty) return const SizedBox.shrink();
+
+        final lastGame = games.first;
+        final opponentName = lastGame.gameMode == GameMode.bot
+            ? (lastGame.botProfile?.name ?? 'Bot (${lastGame.difficulty.elo})')
+            : 'Friend';
+        final moveCount = (lastGame.moveHistory.length / 2).ceil();
+
+        return Column(
+          children: [
+            AppCard(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AnalysisScreen(
+                      moves: lastGame.moveHistory,
+                      startingFen: lastGame.startingFen,
+                      gameId: lastGame.id,
+                    ),
+                  ),
+                );
+              },
+              child: Row(
+                children: [
+                  MiniBoard(
+                    fen: lastGame.startingFen,
+                    size: 48,
+                    borderRadius: AppTheme.radiusSm,
+                    showBorder: false,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Review Last Game',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.royalBlue,
+                          ),
+                        ),
+                        Text(
+                          'vs $opponentName',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimaryFor(context),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Move $moveCount • ${DateFormat('MMM d').format(lastGame.lastMoveTime)}',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppTheme.textSecondaryFor(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AnalysisScreen(
+                            moves: lastGame.moveHistory,
+                            startingFen: lastGame.startingFen,
+                            gameId: lastGame.id,
+                          ),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.royalBlue,
+                      textStyle: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    child: const Text('Review →'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppTheme.space16),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Master Campaign Card with fixed level stepper (BUG FIX: 1, 2, 3, 4)
+  Widget _buildCampaignCard(BuildContext context) {
+    final botState = ref.watch(botProgressProvider);
+    final currentLevelNum = botState.campaignUnlockedLevel;
+    final currentLevel = CampaignLevel.allLevels[currentLevelNum.clamp(1, 12) - 1];
+    final currentBot = BotProfile.allBots.firstWhere(
+      (b) => b.id == currentLevel.botId,
+      orElse: () => BotProfile.allBots.first,
+    );
+
+    // FIX: Sequential 4 levels starting from currentLevelNum (clamped so 4 steps fit 1..12)
+    final startLevel = currentLevelNum.clamp(1, 9);
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.map_rounded,
+                    color: AppTheme.accentColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Master Campaign',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimaryFor(context),
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BotCampaignScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  'View map →',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              BotAvatar(bot: currentBot, size: 48),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Level ${currentLevel.levelNumber}: ${currentLevel.title}',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                    Text(
+                      'vs ${currentBot.name} (${currentBot.elo})',
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  BotProfileSheet.show(
+                    context,
+                    currentBot,
+                    campaignLevel: currentLevel.levelNumber,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accentColor,
+                  foregroundColor: Colors.black87,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'CONTINUE',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Sequential 4-Step Level Progression Stepper
+          Row(
+            children: List.generate(4, (i) {
+              final stepLevel = startLevel + i;
+              final isCurrent = stepLevel == currentLevelNum;
+              final stars = botState.campaignStars[stepLevel] ?? 0;
+
+              return Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isCurrent
+                            ? AppTheme.accentColor
+                            : (stars > 0
+                                ? AppTheme.emeraldGreen.withValues(alpha: 0.2)
+                                : AppTheme.surfaceLevel2(context)),
+                        border: Border.all(
+                          color: isCurrent
+                              ? AppTheme.accentColor
+                              : (stars > 0
+                                  ? AppTheme.emeraldGreen
+                                  : AppTheme.borderStroke(context)),
+                          width: isCurrent ? 2 : 1,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$stepLevel',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isCurrent
+                              ? Colors.black87
+                              : AppTheme.textPrimaryFor(context),
+                        ),
+                      ),
+                    ),
+                    if (i < 3)
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          color: stars > 0
+                              ? AppTheme.emeraldGreen
+                              : AppTheme.borderStroke(context),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Bot Arena horizontal carousel across rating range
+  Widget _buildBotArenaSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
           title: 'Bot Arena',
-          subtitle: 'Featured opponents from 850 to 1700 ELO',
+          subtitle: 'Practice against distinct AI personalities',
           leadingIcon: Icons.smart_toy_rounded,
-          actionLabel: 'View All',
+          actionLabel: 'See all',
           onAction: () {
             Navigator.push(
               context,
@@ -603,496 +944,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             );
           },
         ),
-        const SizedBox(height: AppTheme.space12),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 195,
-          child: ListView.builder(
+          height: 180,
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: featuredBots.length,
+            physics: const BouncingScrollPhysics(),
+            itemCount: BotProfile.allBots.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              final bot = featuredBots[index];
-              return BotCard(
-                bot: bot,
-                isFeatured: true,
-                onPlay: () async {
-                  await _startBotMatch(bot);
-                },
-                onInspect: () => BotProfileSheet.show(context, bot),
+              final bot = BotProfile.allBots[index];
+              return SizedBox(
+                width: 165,
+                child: BotCard(
+                  bot: bot,
+                  isFeatured: true,
+                  onInspect: () {
+                    BotProfileSheet.show(context, bot);
+                  },
+                ),
               );
             },
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCampaignPreview(BuildContext context) {
-    final textPrimary = AppTheme.textPrimaryFor(context);
-    final textSecondary = AppTheme.textSecondaryFor(context);
-    final botState = ref.watch(botProgressProvider);
-    final currentLevelNum = botState.campaignUnlockedLevel;
-    final currentLevel = CampaignLevel.allLevels[currentLevelNum.clamp(1, 12) - 1];
-    final currentBot = currentLevel.bot;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppSectionHeader(
-          title: 'Master Campaign',
-          subtitle: '12-Level Ladder • Level $currentLevelNum of 12',
-          leadingIcon: Icons.military_tech_rounded,
-          actionLabel: 'View Map',
-          onAction: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const BotCampaignScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: AppTheme.space12),
-        PremiumCard(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const BotCampaignScreen()),
-            );
-          },
-          padding: const EdgeInsets.all(AppTheme.space16),
-          borderRadius: AppTheme.radiusLg,
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  BotAvatar(
-                    bot: currentBot,
-                    size: 52,
-                    showElo: false,
-                  ),
-                  const SizedBox(width: AppTheme.space12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'NEXT CHALLENGE: LEVEL $currentLevelNum',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.amberGold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          currentLevel.title,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'vs ${currentBot.name} (${currentBot.elo} ELO)',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      BotProfileSheet.show(
-                        context,
-                        currentBot,
-                        campaignLevel: currentLevel.levelNumber,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.amberGold,
-                      foregroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      'CONTINUE',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppTheme.space16),
-
-              // Level Step Progression Nodes (Preview 4 steps)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(4, (i) {
-                  final stepLevel = (currentLevelNum - 1 + i).clamp(1, 12);
-                  final isUnlocked = botState.isCampaignLevelUnlocked(stepLevel);
-                  final isCurrent = stepLevel == currentLevelNum;
-                  final stars = botState.campaignStars[stepLevel] ?? 0;
-
-                  return Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isCurrent
-                                ? AppTheme.amberGold
-                                : (stars > 0
-                                    ? AppTheme.emeraldGreen.withValues(alpha: 0.2)
-                                    : AppTheme.surfaceLevel2(context)),
-                            border: Border.all(
-                              color: isCurrent
-                                  ? AppTheme.amberGold
-                                  : (stars > 0 ? AppTheme.emeraldGreen : AppTheme.borderStroke(context)),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Center(
-                            child: stars > 0 && !isCurrent
-                                ? const Icon(Icons.check_rounded, size: 16, color: AppTheme.emeraldGreen)
-                                : Text(
-                                    '$stepLevel',
-                                    style: GoogleFonts.spaceGrotesk(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: isCurrent
-                                          ? Colors.black87
-                                          : (isUnlocked ? textPrimary : textSecondary),
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        if (i < 3)
-                          Expanded(
-                            child: Container(
-                              height: 2,
-                              color: stars > 0
-                                  ? AppTheme.emeraldGreen.withValues(alpha: 0.6)
-                                  : AppTheme.borderStroke(context),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickToolsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AppSectionHeader(
-          title: 'Quick Play',
-          subtitle: 'Daily challenges & engine review',
-          leadingIcon: Icons.flash_on_rounded,
-        ),
-        const SizedBox(height: AppTheme.space12),
-        Row(
-          children: [
-            Expanded(
-              child: PremiumCard(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const DailyPuzzleScreen()),
-                  );
-                },
-                padding: const EdgeInsets.all(AppTheme.space14),
-                borderRadius: AppTheme.radiusMd,
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.amberGold.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                      ),
-                      child: const Icon(Icons.extension_rounded, color: AppTheme.amberGold, size: 20),
-                    ),
-                    const SizedBox(width: AppTheme.space12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Daily Puzzle',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimaryFor(context),
-                            ),
-                          ),
-                          Text(
-                            'Daily tactical drill',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: AppTheme.textSecondaryFor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: AppTheme.space12),
-            Expanded(
-              child: PremiumCard(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AnalysisMenuScreen()),
-                  );
-                },
-                padding: const EdgeInsets.all(AppTheme.space14),
-                borderRadius: AppTheme.radiusMd,
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.royalBlue.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                      ),
-                      child: const Icon(Icons.insights_rounded, color: AppTheme.royalBlue, size: 20),
-                    ),
-                    const SizedBox(width: AppTheme.space12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Analyze Game',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimaryFor(context),
-                            ),
-                          ),
-                          Text(
-                            'Stockfish evaluation',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: AppTheme.textSecondaryFor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecentGamesSection(BuildContext context) {
-    return FutureBuilder<List<GameSession>>(
-      future: ref.read(gameSessionRepositoryProvider).getRealGamesHistory(limit: 5),
-      builder: (context, snapshot) {
-        final games = snapshot.data ?? [];
-        if (games.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppSectionHeader(
-              title: 'Recent Games',
-              subtitle: 'Review or resume previous sessions',
-              leadingIcon: Icons.history_rounded,
-              actionLabel: 'History',
-              onAction: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const GameHistoryScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: AppTheme.space12),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: games.length,
-              itemBuilder: (context, index) {
-                final game = games[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _buildRecentGameTile(context, game),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildRecentGameTile(BuildContext context, GameSession game) {
-    final textPrimary = AppTheme.textPrimaryFor(context);
-    final textSecondary = AppTheme.textSecondaryFor(context);
-    final opponentName = game.gameMode == GameMode.bot
-        ? (game.botProfile?.name ?? 'Bot (${game.difficulty.elo})')
-        : 'Friend';
-    final isCompleted = game.isCompleted;
-    final moveCount = (game.moveHistory.length / 2).ceil();
-
-    final resultText = !isCompleted
-        ? 'In Progress'
-        : (game.result == GameResult.whiteWins
-            ? (game.playerColor == PlayerColor.white ? 'Victory' : 'Defeat')
-            : (game.result == GameResult.blackWins
-                ? (game.playerColor == PlayerColor.black ? 'Victory' : 'Defeat')
-                : 'Draw'));
-
-    final resultColor = !isCompleted
-        ? AppTheme.amberGold
-        : (resultText == 'Victory'
-            ? AppTheme.emeraldGreen
-            : (resultText == 'Defeat' ? AppTheme.crimsonRed : AppTheme.royalBlue));
-
-    return PremiumCard(
-      onTap: () {
-        if (!isCompleted) {
-          // Resume game
-          ref.read(gameSessionProvider.notifier).resumeSession(game);
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const GameScreen()),
-          );
-        } else {
-          // Review game
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AnalysisScreen(
-                moves: game.moveHistory,
-                startingFen: game.startingFen,
-                gameId: game.id,
-              ),
-            ),
-          );
-        }
-      },
-      padding: const EdgeInsets.all(AppTheme.space12),
-      borderRadius: AppTheme.radiusMd,
-      child: Row(
-        children: [
-          MiniBoard(
-            fen: game.startingFen,
-            size: 52,
-            borderRadius: AppTheme.radiusSm,
-            showBorder: false,
-          ),
-          const SizedBox(width: AppTheme.space12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'vs $opponentName',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: textPrimary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: resultColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                      ),
-                      child: Text(
-                        resultText,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: resultColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Move $moveCount • ${DateFormat('MMM d').format(game.lastMoveTime)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 11, color: textSecondary),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            onPressed: () {
-              if (!isCompleted) {
-                ref.read(gameSessionProvider.notifier).resumeSession(game);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const GameScreen()),
-                );
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AnalysisScreen(
-                      moves: game.moveHistory,
-                      startingFen: game.startingFen,
-                      gameId: game.id,
-                    ),
-                  ),
-                );
-              }
-            },
-            child: Text(
-              !isCompleted ? 'Resume' : 'Review',
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: !isCompleted ? AppTheme.amberGold : AppTheme.emeraldGreen,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

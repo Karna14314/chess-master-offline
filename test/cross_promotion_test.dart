@@ -73,8 +73,8 @@ void main() {
 
         // Verify standard 4 tabs are present
         expect(find.text('Play'), findsOneWidget);
+        expect(find.text('Puzzles'), findsOneWidget);
         expect(find.text('Learn'), findsOneWidget);
-        expect(find.text('Review'), findsOneWidget);
         expect(find.text('Profile'), findsOneWidget);
 
         // Verify 'More' tab is NOT present

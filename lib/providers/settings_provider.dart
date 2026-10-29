@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chess_master/core/theme/board_themes.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/core/services/notification_service.dart';
+import 'package:chess_master/core/services/daily_puzzle_notification_service.dart';
 import 'package:chess_master/core/services/audio_service.dart';
 
 /// Provider for user settings
@@ -30,6 +32,7 @@ class AppSettings {
   final ThemePreset themePreset;
   final BoardThemeType boardTheme;
   final PieceSetType pieceSet;
+  final ThemeMode themeMode;
   final bool showCoordinates;
   final bool showLegalMoves;
   final bool showLastMove;
@@ -41,6 +44,7 @@ class AppSettings {
   final int lastDifficultyLevel;
   final int lastTimeControlIndex;
   final bool dailyPuzzleNotificationEnabled;
+  final TimeOfDay dailyPuzzleReminderTime;
   final bool streakNotificationEnabled;
   final bool showWinPercent;
   final bool autoAnalyzeAfterGame;
@@ -49,6 +53,7 @@ class AppSettings {
     this.themePreset = ThemePreset.emerald,
     this.boardTheme = BoardThemeType.forestGreen,
     this.pieceSet = PieceSetType.traditional,
+    this.themeMode = ThemeMode.dark,
     this.showCoordinates = true,
     this.showLegalMoves = true,
     this.showLastMove = true,
@@ -60,6 +65,7 @@ class AppSettings {
     this.lastDifficultyLevel = 5,
     this.lastTimeControlIndex = 0,
     this.dailyPuzzleNotificationEnabled = true,
+    this.dailyPuzzleReminderTime = const TimeOfDay(hour: 9, minute: 0),
     this.streakNotificationEnabled = true,
     this.showWinPercent = true,
     this.autoAnalyzeAfterGame = false,
@@ -76,6 +82,7 @@ class AppSettings {
     ThemePreset? themePreset,
     BoardThemeType? boardTheme,
     PieceSetType? pieceSet,
+    ThemeMode? themeMode,
     bool? showCoordinates,
     bool? showLegalMoves,
     bool? showLastMove,
@@ -87,6 +94,7 @@ class AppSettings {
     int? lastDifficultyLevel,
     int? lastTimeControlIndex,
     bool? dailyPuzzleNotificationEnabled,
+    TimeOfDay? dailyPuzzleReminderTime,
     bool? streakNotificationEnabled,
     bool? showWinPercent,
     bool? autoAnalyzeAfterGame,
@@ -95,6 +103,7 @@ class AppSettings {
       themePreset: themePreset ?? this.themePreset,
       boardTheme: boardTheme ?? this.boardTheme,
       pieceSet: pieceSet ?? this.pieceSet,
+      themeMode: themeMode ?? this.themeMode,
       showCoordinates: showCoordinates ?? this.showCoordinates,
       showLegalMoves: showLegalMoves ?? this.showLegalMoves,
       showLastMove: showLastMove ?? this.showLastMove,
@@ -107,6 +116,8 @@ class AppSettings {
       lastTimeControlIndex: lastTimeControlIndex ?? this.lastTimeControlIndex,
       dailyPuzzleNotificationEnabled:
           dailyPuzzleNotificationEnabled ?? this.dailyPuzzleNotificationEnabled,
+      dailyPuzzleReminderTime:
+          dailyPuzzleReminderTime ?? this.dailyPuzzleReminderTime,
       streakNotificationEnabled:
           streakNotificationEnabled ?? this.streakNotificationEnabled,
       showWinPercent: showWinPercent ?? this.showWinPercent,
@@ -155,6 +166,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     final dailyPuzzleNotif =
         prefs.getBool('dailyPuzzleNotificationEnabled') ?? true;
     final streakNotif = prefs.getBool('streakNotificationEnabled') ?? true;
+    final reminderHour = prefs.getInt('dailyPuzzleReminderHour') ?? 9;
+    final reminderMinute = prefs.getInt('dailyPuzzleReminderMinute') ?? 0;
 
     final savedPresetIdx = prefs.getInt('themePreset') ?? ThemePreset.emerald.index;
     final themePreset = ThemePreset.values[savedPresetIdx.clamp(0, ThemePreset.values.length - 1)];
@@ -169,10 +182,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       legacyIndex: savedPieceSetIdx,
     );
 
+    final savedThemeModeStr = prefs.getString('app_theme_mode') ?? 'dark';
+    final themeMode = savedThemeModeStr == 'light'
+        ? ThemeMode.light
+        : (savedThemeModeStr == 'system' ? ThemeMode.system : ThemeMode.dark);
+
     state = AppSettings(
       themePreset: themePreset,
       boardTheme: boardTheme,
       pieceSet: pieceSet,
+      themeMode: themeMode,
       showCoordinates: prefs.getBool('showCoordinates') ?? true,
       showLegalMoves: prefs.getBool('showLegalMoves') ?? true,
       showLastMove: prefs.getBool('showLastMove') ?? true,
@@ -185,6 +204,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       lastDifficultyLevel: prefs.getInt('lastDifficultyLevel') ?? 5,
       lastTimeControlIndex: prefs.getInt('lastTimeControlIndex') ?? 0,
       dailyPuzzleNotificationEnabled: dailyPuzzleNotif,
+      dailyPuzzleReminderTime: TimeOfDay(hour: reminderHour, minute: reminderMinute),
       streakNotificationEnabled: streakNotif,
       showWinPercent: prefs.getBool('showWinPercent') ?? true,
       autoAnalyzeAfterGame: prefs.getBool('autoAnalyzeAfterGame') ?? false,
@@ -208,6 +228,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
     await prefs.setInt('themePreset', s.themePreset.index);
     await prefs.setInt('boardTheme', s.boardTheme.index);
+    final modeStr = s.themeMode == ThemeMode.light
+        ? 'light'
+        : (s.themeMode == ThemeMode.system ? 'system' : 'dark');
+    await prefs.setString('app_theme_mode', modeStr);
     // Persist piece sets by name: the enum was trimmed to implemented
     // styles, so raw indices are no longer stable across versions.
     await prefs.setString('pieceSetName', s.pieceSet.name);
@@ -226,12 +250,19 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       'dailyPuzzleNotificationEnabled',
       s.dailyPuzzleNotificationEnabled,
     );
+    await prefs.setInt('dailyPuzzleReminderHour', s.dailyPuzzleReminderTime.hour);
+    await prefs.setInt('dailyPuzzleReminderMinute', s.dailyPuzzleReminderTime.minute);
     await prefs.setBool(
       'streakNotificationEnabled',
       s.streakNotificationEnabled,
     );
     await prefs.setBool('showWinPercent', s.showWinPercent);
     await prefs.setBool('autoAnalyzeAfterGame', s.autoAnalyzeAfterGame);
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    state = state.copyWith(themeMode: mode);
+    _saveSettings();
   }
 
   void setThemePreset(ThemePreset preset) {
@@ -245,21 +276,42 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   /// Enabling a reminder first requests OS permission (Android 13+).
   /// Returns true when the reminder is ON afterwards.
-  Future<bool> toggleDailyPuzzleNotification() async {
+  Future<bool> toggleDailyPuzzleNotification({int streakCount = 0, bool isTodaySolved = false}) async {
     final newValue = !state.dailyPuzzleNotificationEnabled;
     if (newValue) {
-      final granted =
-          await NotificationService.instance.requestPermissions();
-      if (!granted) return false;
+      final granted = await DailyPuzzleNotificationService.instance.requestPermission();
+      if (!granted) {
+        state = state.copyWith(dailyPuzzleNotificationEnabled: false);
+        _saveSettings();
+        return false;
+      }
       state = state.copyWith(dailyPuzzleNotificationEnabled: true);
       _saveSettings();
-      NotificationService.instance.scheduleDailyPuzzleReminder();
+      DailyPuzzleNotificationService.instance.scheduleRolling7Days(
+        hour: state.dailyPuzzleReminderTime.hour,
+        minute: state.dailyPuzzleReminderTime.minute,
+        streakCount: streakCount,
+        isTodaySolved: isTodaySolved,
+      );
       return true;
     }
     state = state.copyWith(dailyPuzzleNotificationEnabled: false);
     _saveSettings();
-    NotificationService.instance.cancelDailyPuzzleReminder();
+    DailyPuzzleNotificationService.instance.cancelAll();
     return false;
+  }
+
+  void setDailyPuzzleReminderTime(TimeOfDay time, {int streakCount = 0, bool isTodaySolved = false}) {
+    state = state.copyWith(dailyPuzzleReminderTime: time);
+    _saveSettings();
+    if (state.dailyPuzzleNotificationEnabled) {
+      DailyPuzzleNotificationService.instance.scheduleRolling7Days(
+        hour: time.hour,
+        minute: time.minute,
+        streakCount: streakCount,
+        isTodaySolved: isTodaySolved,
+      );
+    }
   }
 
   /// Enabling a reminder first requests OS permission (Android 13+).
