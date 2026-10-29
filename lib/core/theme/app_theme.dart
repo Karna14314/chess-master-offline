@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// App-wide theme configuration using Material 3
@@ -13,13 +12,13 @@ class AppTheme {
 
   // Secondary Colors
   static const Color secondaryColor = Color(0xFF8D6E63);
-  static const Color accentColor = Color(0xFFFFD54F);
+  static const Color accentColor = Color(0xFFFF6D00); // Chess Orange Accent
 
-  // Background Colors
-  static const Color backgroundDark = Color(0xFF0D0D0D); // Deep Obsidian
-  static const Color surfaceDark = Color(0xFF1A1A1A); // Lighter Grey
-  static const Color cardDark = Color(0xFF1A1A1A); // Lighter Grey
-  static const Color borderColor = Color(0xFF333333); // Border color
+  // Background Colors (Chess.com Charcoal Feel)
+  static const Color backgroundDark = Color(0xFF161512); // Charcoal background
+  static const Color surfaceDark = Color(0xFF262421); // Card surface
+  static const Color cardDark = Color(0xFF262421); // Card surface
+  static const Color borderColor = Color(0xFF383531); // Border color
 
   static const Color backgroundLight = Color(0xFFF8F9FA);
   static const Color surfaceLight = Color(0xFFFFFFFF);
@@ -110,11 +109,11 @@ class AppTheme {
   static const Color rarityMaster = Color(0xFFEC4899);
 
   // Grandmaster Design System: Layered Surfaces
-  static const Color surface0Dark = Color(0xFF0D0F12); // Obsidian base
-  static const Color surface1Dark = Color(0xFF161A20); // Card surface
-  static const Color surface2Dark = Color(0xFF1F252E); // Elevated / selected
-  static const Color surface3Dark = Color(0xFF2A323D); // Modal / sheet
-  static const Color borderStrokeDark = Color(0xFF262D37);
+  static const Color surface0Dark = Color(0xFF161512); // Charcoal base
+  static const Color surface1Dark = Color(0xFF262421); // Card surface
+  static const Color surface2Dark = Color(0xFF2C2A26); // Elevated / selected
+  static const Color surface3Dark = Color(0xFF383531); // Modal / sheet
+  static const Color borderStrokeDark = Color(0xFF383531);
 
   static const Color surface0Light = Color(0xFFF8F9FA); // Pure paper base
   static const Color surface1Light = Color(0xFFFFFFFF); // Card surface

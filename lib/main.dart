@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
+import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/core/services/audio_service.dart';
 import 'package:chess_master/core/services/diagnostics_service.dart';
 import 'package:chess_master/core/services/notification_service.dart';
+import 'package:chess_master/core/services/daily_puzzle_notification_service.dart';
+import 'package:chess_master/screens/puzzles/daily_puzzle_screen.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:chess_master/core/services/opening_service.dart';
 import 'package:chess_master/core/services/stockfish_lifecycle_observer.dart';
 import 'package:chess_master/core/services/lesson_service.dart';
@@ -14,6 +19,7 @@ import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
   StockfishLifecycleObserver.ensureRegistered();
 
   // Set preferred orientations (portrait only)
@@ -45,9 +51,31 @@ void main() async {
         debugPrint('Diagnostics initialization failed: $e');
       }
 
-      // Local Notification Service
+      // Local Notification Services
       try {
         await NotificationService.instance.initialize();
+        await DailyPuzzleNotificationService.instance.initialize(
+          onNotificationTap: (NotificationResponse response) {
+            if (response.payload == 'daily_puzzle') {
+              appNavigatorKey.currentState?.push(
+                MaterialPageRoute(
+                  builder: (context) => const DailyPuzzleScreen(),
+                ),
+              );
+            }
+          },
+        );
+
+        final plugin = FlutterLocalNotificationsPlugin();
+        final launchDetails = await plugin.getNotificationAppLaunchDetails();
+        if (launchDetails?.didNotificationLaunchApp == true &&
+            launchDetails?.notificationResponse?.payload == 'daily_puzzle') {
+          appNavigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (context) => const DailyPuzzleScreen(),
+            ),
+          );
+        }
       } catch (e) {
         debugPrint('Notification initialization failed: $e');
       }
@@ -75,17 +103,22 @@ void main() async {
   });
 }
 
-class ChessMasterApp extends StatelessWidget {
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
+class ChessMasterApp extends ConsumerWidget {
   const ChessMasterApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'ChessMaster Offline',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: settings.themeMode,
       home: const AppOnboardingGateway(),
     );
   }

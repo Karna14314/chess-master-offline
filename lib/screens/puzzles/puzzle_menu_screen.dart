@@ -7,10 +7,7 @@ import 'package:chess_master/screens/puzzles/puzzle_screen.dart';
 import 'package:chess_master/screens/puzzles/daily_puzzle_screen.dart';
 import 'package:chess_master/screens/puzzles/puzzle_history_screen.dart';
 import 'package:chess_master/providers/streak_provider.dart';
-import 'package:chess_master/screens/lessons/lessons_screen.dart';
-import 'package:chess_master/screens/openings/opening_playbook_screen.dart';
 import 'package:chess_master/widgets/shared/app_card.dart';
-import 'package:chess_master/widgets/shared/app_badge.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -108,128 +105,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
 
               // Stats card
               _StatsCard(stats: stats),
-              const SizedBox(height: 28),
-
-              // Curriculum & Strategy Section (Unified Learn Hub)
-              Text(
-                'Curriculum & Openings',
-                style: GoogleFonts.inter(
-                  color: AppTheme.textPrimaryFor(context),
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 14),
-              AppCard(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LessonsScreen()),
-                  );
-                },
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.school_rounded, color: Colors.white, size: 22),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Chess Lessons',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: AppTheme.textPrimaryFor(context),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              AppBadge.status(label: '40+ TOPICS', color: const Color(0xFFD97706)),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Tactics, Checkmates, Endgames & Strategy',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: AppTheme.textSecondaryFor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded, color: Color(0xFFD97706), size: 24),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              AppCard(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const OpeningPlaybookScreen()),
-                  );
-                },
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 22),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Opening Playbook',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: AppTheme.textPrimaryFor(context),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              AppBadge.status(label: '80 OPENINGS', color: const Color(0xFF8B5CF6)),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Explore Sicilian, Italian, French, Queen\'s Gambit',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: AppTheme.textSecondaryFor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded, color: Color(0xFF8B5CF6), size: 24),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               // Quick play section
               Text(

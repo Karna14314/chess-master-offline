@@ -43,7 +43,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Profile & Stats',
+          'Profile',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -68,12 +68,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                 builder: (context) => const SettingsScreen(),
               ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed:
-                () => ref.read(statisticsProvider.notifier).loadStatistics(),
           ),
         ],
       ),

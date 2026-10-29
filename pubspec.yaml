@@ -36,6 +36,9 @@ dependencies:
   intl: ^0.20.2
   share_plus: ^10.1.4
   flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.1
+  flutter_timezone: ^3.0.1
+  clock: ^1.1.2
   in_app_review: ^2.0.9
   audioplayers: ^6.1.0
   vibration: ^2.0.1

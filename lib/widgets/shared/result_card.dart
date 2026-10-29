@@ -184,7 +184,7 @@ class ResultCard extends StatelessWidget {
                       const SizedBox(width: AppTheme.space12),
                       Expanded(
                         child: AppButton.outlined(
-                          label: 'Analyse',
+                          label: 'Review Game',
                           icon: Icons.insights_rounded,
                           onPressed: onAnalyse,
                           size: AppButtonSize.medium,
