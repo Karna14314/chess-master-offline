@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/analysis/pgn_import_screen.dart';
 import 'package:chess_master/providers/settings_provider.dart';
@@ -9,7 +8,6 @@ import 'package:chess_master/screens/settings/settings_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  GoogleFonts.config.allowRuntimeFetching = false;
 
   group('Theme-Aware Color Helpers', () {
     testWidgets('cardColor returns cardLight in light mode', (tester) async {

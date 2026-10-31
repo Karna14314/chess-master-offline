@@ -7,7 +7,6 @@ import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_piece.dart';
 import 'package:chess_master/screens/history/game_history_screen.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
@@ -64,7 +63,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 'Settings',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               background: Container(
                 decoration: BoxDecoration(
@@ -193,14 +192,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Game History & PGN Archive',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textPrimaryFor(context),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     subtitle: Text(
                       'Browse past matches, replay moves, and export PGN',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
@@ -281,7 +280,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     Expanded(
                                       child: Text(
                                         'Notifications disabled in system settings',
-                                        style: GoogleFonts.inter(
+                                        style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
                                           color: AppTheme.crimsonRed,
@@ -293,7 +292,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 const SizedBox(height: 6),
                                 Text(
                                   'To receive daily puzzle reminders, allow notifications for ChessMaster in Android System Settings.',
-                                  style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textSecondaryFor(context)),
+                                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryFor(context)),
                                 ),
                                 const SizedBox(height: 10),
                                 OutlinedButton.icon(
@@ -318,21 +317,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ListTile(
                       title: Text(
                         'Reminder Time',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: AppTheme.textPrimaryFor(context),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       subtitle: Text(
                         'Daily local notification delivery time',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: AppTheme.textSecondaryFor(context),
                           fontSize: 12,
                         ),
                       ),
                       trailing: Text(
                         settings.dailyPuzzleReminderTime.format(context),
-                        style: GoogleFonts.spaceGrotesk(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryColor,
@@ -372,13 +371,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Reset Rating & Progress',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: Colors.redAccent,
                       ),
                     ),
                     subtitle: Text(
                       'Reset Game ELO to baseline 400',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
@@ -403,13 +402,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Our Other Games',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
                     subtitle: Text(
                       'Explore ad-free games by Karna Digital',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
@@ -428,13 +427,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Rate Us on Play Store',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
                     subtitle: Text(
                       'Love the app? Leave a review!',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
@@ -453,13 +452,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Welcome Tutorial & Skill Setup',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
                     subtitle: Text(
                       'Revisit onboarding guide & AI difficulty setup',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textSecondaryFor(context),
                         fontSize: 12,
                       ),
@@ -485,7 +484,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Open Source & Credits',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
@@ -513,7 +512,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     title: Text(
                       'Licenses',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textPrimaryFor(context),
                       ),
                     ),
@@ -546,7 +545,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(width: 8),
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppTheme.primaryColor,
@@ -674,11 +673,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         title: Text(
           'Reset Rating & Stats?',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         content: Text(
           'This will reset your Game ELO to baseline (400 Novice) and clear match history, allowing you to climb sequentially with the balanced rating system.\n\nPuzzle ratings and achievements are preserved.',
-          style: GoogleFonts.inter(fontSize: 13, height: 1.4),
+          style: TextStyle(fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
@@ -731,7 +730,7 @@ class _ThemePresetSelector extends StatelessWidget {
             children: [
               Text(
                 'Theme Preset',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimaryFor(context),
@@ -740,7 +739,7 @@ class _ThemePresetSelector extends StatelessWidget {
               const Spacer(),
               Text(
                 currentPreset.displayName,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: currentPreset.accentColor,
@@ -753,7 +752,7 @@ class _ThemePresetSelector extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Changes app colors, board aesthetics, and piece styles',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 12,
               color: AppTheme.textSecondaryFor(context),
             ),
@@ -828,7 +827,7 @@ class _ThemePresetSelector extends StatelessWidget {
                         children: [
                           Text(
                             preset.displayName,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                               color: isSelected
@@ -838,7 +837,7 @@ class _ThemePresetSelector extends StatelessWidget {
                           ),
                           Text(
                             boardTheme.name,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 10,
                               color: AppTheme.textSecondaryFor(context),
                             ),
@@ -879,7 +878,7 @@ class _BoardThemeSelector extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
           child: Text(
             'Board Theme',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppTheme.textPrimaryFor(context),
@@ -939,7 +938,7 @@ class _BoardThemeSelector extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       boardTheme.name,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
@@ -977,7 +976,7 @@ class _PieceSetSelector extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
           child: Text(
             'Piece Set',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppTheme.textPrimaryFor(context),
@@ -1029,7 +1028,7 @@ class _PieceSetSelector extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         pieceSet.name,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight:
                               isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1074,7 +1073,7 @@ class _AnimationSpeedSelector extends StatelessWidget {
         children: [
           Text(
             'Animation Speed',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppTheme.textPrimaryFor(context),
@@ -1105,7 +1104,7 @@ class _AnimationSpeedSelector extends StatelessWidget {
                           alignment: Alignment.center,
                           child: Text(
                             speed.label,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               color:
                                   isSelected
                                       ? Colors.white
@@ -1148,7 +1147,7 @@ class _ThemeModeSelector extends StatelessWidget {
         children: [
           Text(
             'Theme Mode',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppTheme.textPrimaryFor(context),
@@ -1187,7 +1186,7 @@ class _ThemeModeSelector extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               color: isSelected ? Colors.white : AppTheme.textSecondaryFor(context),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 12,
@@ -1218,14 +1217,14 @@ class _SwitchSetting extends StatelessWidget {
     return SwitchListTile(
       title: Text(
         title,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           color: AppTheme.textPrimaryFor(context),
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           color: AppTheme.textSecondaryFor(context),
           fontSize: 12,
         ),
@@ -1262,11 +1261,11 @@ class _InfoRow extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(color: AppTheme.textPrimaryFor(context)),
+            style: TextStyle(color: AppTheme.textPrimaryFor(context)),
           ),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               color: AppTheme.textSecondaryFor(context),
               fontWeight: FontWeight.w500,
             ),

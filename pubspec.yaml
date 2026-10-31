@@ -29,7 +29,6 @@ dependencies:
   # UI Components
   flutter_svg: ^2.0.17
   fl_chart: ^0.70.2
-  google_fonts: ^6.2.1
 
   # Utilities
   uuid: ^4.5.1
@@ -72,4 +71,17 @@ flutter:
     - assets/sounds/
     - assets/puzzles/
     - assets/lessons/
+    - assets/fonts/
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
 

@@ -9,7 +9,6 @@ import 'package:chess_master/screens/puzzles/puzzle_history_screen.dart';
 import 'package:chess_master/providers/streak_provider.dart';
 import 'package:chess_master/widgets/shared/app_card.dart';
 import 'package:intl/intl.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Puzzle mode selection
 enum PuzzleMode {
@@ -61,7 +60,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
         elevation: 0,
         title: Text(
           'Puzzles',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimaryFor(context),
           ),
@@ -110,7 +109,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               // Quick play section
               Text(
                 'Quick Play',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textPrimaryFor(context),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -145,7 +144,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               // Custom training section
               Text(
                 'Custom Training',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textPrimaryFor(context),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -166,7 +165,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
               // Theme selector
               Text(
                 'Practice by Theme',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textPrimaryFor(context),
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -209,7 +208,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
         ),
         title: Text(
           title,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
             color: AppTheme.textPrimaryFor(context),
@@ -217,7 +216,7 @@ class _PuzzleMenuScreenState extends ConsumerState<PuzzleMenuScreen> {
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.textSecondaryFor(context),
             fontSize: 13,
           ),
@@ -329,7 +328,7 @@ class _JourneyHeroCard extends StatelessWidget {
             children: [
               Text(
                 'Puzzle Journey',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.textPrimaryFor(context),
@@ -346,7 +345,7 @@ class _JourneyHeroCard extends StatelessWidget {
                 ),
                 child: Text(
                   '${journey.completionPercent.toStringAsFixed(1)}%',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
@@ -358,7 +357,7 @@ class _JourneyHeroCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Level ${journey.currentLevel} / $kTotalJourneyLevels',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppTheme.textPrimaryFor(context),
@@ -381,7 +380,7 @@ class _JourneyHeroCard extends StatelessWidget {
                     children: [
                       Text(
                         '${journey.solvedCount}',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.green,
@@ -389,7 +388,7 @@ class _JourneyHeroCard extends StatelessWidget {
                       ),
                       Text(
                         'Solved',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppTheme.textSecondaryFor(context),
                         ),
@@ -413,7 +412,7 @@ class _JourneyHeroCard extends StatelessWidget {
                     children: [
                       Text(
                         '${journey.remainingCount}',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimaryFor(context),
@@ -421,7 +420,7 @@ class _JourneyHeroCard extends StatelessWidget {
                       ),
                       Text(
                         'Remaining',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppTheme.textSecondaryFor(context),
                         ),
@@ -460,7 +459,7 @@ class _JourneyHeroCard extends StatelessWidget {
               ),
               child: Text(
                 buttonText,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),
@@ -548,7 +547,7 @@ class _StatsCard extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimaryFor(context),
@@ -556,7 +555,7 @@ class _StatsCard extends StatelessWidget {
         ),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 12,
             color: AppTheme.textSecondaryFor(context),
             fontWeight: FontWeight.w500,
@@ -599,7 +598,7 @@ class _EloRangeSelector extends StatelessWidget {
             children: [
               Text(
                 '$minElo',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textPrimaryFor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -607,14 +606,14 @@ class _EloRangeSelector extends StatelessWidget {
               ),
               Text(
                 'Rating Range',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textSecondaryFor(context),
                   fontSize: 12,
                 ),
               ),
               Text(
                 '$maxElo',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textPrimaryFor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -651,7 +650,7 @@ class _EloRangeSelector extends StatelessWidget {
               ),
               child: Text(
                 'Start Practice',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -694,7 +693,7 @@ class _ThemeSelector extends StatelessWidget {
                       selectedColor: AppTheme.primaryColor,
                       backgroundColor: AppTheme.cardColor(context),
                       disabledColor: AppTheme.cardColor(context),
-                      labelStyle: GoogleFonts.inter(
+                      labelStyle: TextStyle(
                         color:
                             isSelected
                                 ? Colors.white
@@ -733,7 +732,7 @@ class _ThemeSelector extends StatelessWidget {
             ),
             child: Text(
               'Start ${_formatTheme(selectedTheme)}',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -770,20 +769,7 @@ class _DailyPuzzleHeroCard extends ConsumerWidget {
     final todayFormatted = DateFormat('EEEE, MMMM d').format(DateTime.now());
     final isDailySolved = streakState.isDailyPuzzleSolvedToday;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.amber.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -808,7 +794,7 @@ class _DailyPuzzleHeroCard extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Text(
                     'Daily Puzzle',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimaryFor(context),
@@ -819,7 +805,7 @@ class _DailyPuzzleHeroCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF6D00).withValues(alpha: 0.15),
+                  color: AppTheme.amberGold.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -829,10 +815,10 @@ class _DailyPuzzleHeroCard extends ConsumerWidget {
                     const SizedBox(width: 4),
                     Text(
                       '${streakState.streakCount} Day Streak',
-                      style: GoogleFonts.inter(
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFFFF6D00),
+                        color: AppTheme.amberGold,
                       ),
                     ),
                   ],
@@ -843,7 +829,7 @@ class _DailyPuzzleHeroCard extends ConsumerWidget {
           const SizedBox(height: 10),
           Text(
             todayFormatted,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: AppTheme.textSecondaryFor(context),
@@ -851,63 +837,68 @@ class _DailyPuzzleHeroCard extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           if (isDailySolved)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.green.withValues(alpha: 0.4),
+            Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppTheme.emeraldGreen,
+                  size: 18,
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 18,
+                const SizedBox(width: 8),
+                Text(
+                  'Solved Today',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.emeraldGreen,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Solved — tap Review to replay',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
+                ),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: onStart,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.surfaceLevel2(context),
+                    foregroundColor: AppTheme.textPrimaryFor(context),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Review puzzle',
+                    style: TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
                     ),
                   ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onStart,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDailySolved
-                    ? AppTheme.cardColor(context)
-                    : Colors.amber[700] ?? Colors.amber,
-                foregroundColor:
-                    isDailySolved
-                        ? AppTheme.textPrimaryFor(context)
-                        : Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              child: Text(
-                isDailySolved ? 'Review Today\'s Puzzle →' : 'Solve Today\'s Puzzle →',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+              ],
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onStart,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'SOLVE TODAY\'S PUZZLE',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
@@ -14,7 +13,8 @@ import 'package:chess_master/widgets/shared/app_card.dart';
 import 'package:chess_master/widgets/shared/themed_board_container.dart';
 
 class OpeningPlaybookScreen extends ConsumerStatefulWidget {
-  const OpeningPlaybookScreen({super.key});
+  final bool showAppBar;
+  const OpeningPlaybookScreen({super.key, this.showAppBar = false});
 
   @override
   ConsumerState<OpeningPlaybookScreen> createState() =>
@@ -52,20 +52,62 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final openings = _getFilteredOpenings();
+    final openingService = OpeningService.instance;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Opening Playbook',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-      ),
-      body: Column(
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: const Text(
+                'Opening Playbook',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              centerTitle: false,
+            )
+          : null,
+      body: FutureBuilder<void>(
+        future: openingService.initialize(),
+        builder: (context, snapshot) {
+          if (!openingService.isLoaded &&
+              snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (!openingService.isLoaded && snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: AppTheme.error,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Failed to load openings',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textPrimaryFor(context),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => setState(() {}),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final openings = _getFilteredOpenings();
+
+          return Column(
         children: [
           // Search & Filter Header
           Padding(
@@ -78,7 +120,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
                   onChanged: (val) => setState(() => _searchQuery = val),
                   decoration: InputDecoration(
                     hintText: 'Search openings (e.g. Sicilian, C50, e4)...',
-                    hintStyle: GoogleFonts.inter(
+                    hintStyle: TextStyle(
                       fontSize: 14,
                       color: AppTheme.textHintFor(context),
                     ),
@@ -146,7 +188,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
               children: [
                 Text(
                   '${openings.length} Openings Found',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textSecondaryFor(context),
@@ -154,7 +196,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
                 ),
                 Text(
                   '100% Offline Master Theory',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: AppTheme.primaryColor,
@@ -179,7 +221,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
                         const SizedBox(height: 12),
                         Text(
                           'No openings matched "$_searchQuery"',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.textSecondaryFor(context),
@@ -199,8 +241,10 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
                   ),
           ),
         ],
-      ),
-    );
+      );
+    },
+  ),
+);
   }
 
   Widget _buildCategoryChip(String category) {
@@ -223,7 +267,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
         ),
         child: Text(
           category,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             color: isSelected
@@ -259,7 +303,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
                   ),
                   child: Text(
                     opening.eco,
-                    style: GoogleFonts.robotoMono(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -270,7 +314,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
                 Expanded(
                   child: Text(
                     opening.category,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: AppTheme.textHintFor(context),
@@ -281,7 +325,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
                 ),
                 Text(
                   '${opening.plies} plies',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textSecondaryFor(context),
@@ -294,7 +338,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
             // Opening Name
             Text(
               opening.name,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.textPrimaryFor(context),
@@ -311,7 +355,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
               ),
               child: Text(
                 opening.formattedMoves,
-                style: GoogleFonts.robotoMono(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.primaryColor,
@@ -324,7 +368,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
             // category never read the same.
             Text(
               opening.displayGoal,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 13,
                 height: 1.35,
                 color: AppTheme.textSecondaryFor(context),
@@ -353,7 +397,7 @@ class _OpeningPlaybookScreenState extends ConsumerState<OpeningPlaybookScreen> {
                   ),
                   child: Text(
                     theme,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.primaryColor,
@@ -578,7 +622,7 @@ class _InteractiveOpeningModalState
                             ),
                             child: Text(
                               opening.eco,
-                              style: GoogleFonts.robotoMono(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -589,7 +633,7 @@ class _InteractiveOpeningModalState
                           Expanded(
                             child: Text(
                               opening.name,
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: AppTheme.textPrimaryFor(context),
@@ -661,7 +705,7 @@ class _InteractiveOpeningModalState
                           _currentPly == 0
                               ? 'Starting Position'
                               : 'Ply $_currentPly of ${opening.movesSan.length} (${opening.movesSan[_currentPly - 1]})',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.textPrimaryFor(context),
@@ -692,7 +736,7 @@ class _InteractiveOpeningModalState
                       child: Text(
                         opening.noteForPly(_currentPly),
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
                           height: 1.4,
@@ -715,7 +759,7 @@ class _InteractiveOpeningModalState
                             children: [
                               Text(
                                 'Drill the line',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                   color: AppTheme.textPrimaryFor(context),
@@ -743,7 +787,7 @@ class _InteractiveOpeningModalState
                           if (!_drillDone) ...[
                             Text(
                               'Move ${_drillPly + 1} of ${opening.movesSan.length} — ${_drillPly % 2 == 0 ? 'White' : 'Black'} to move. Find the book move.',
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.textPrimaryFor(context),
@@ -765,7 +809,7 @@ class _InteractiveOpeningModalState
                                   ),
                                   child: Text(
                                     san,
-                                    style: GoogleFonts.robotoMono(
+                                    style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -784,7 +828,7 @@ class _InteractiveOpeningModalState
                                 Expanded(
                                   child: Text(
                                     'Line complete with $_drillMistakes mistake${_drillMistakes == 1 ? '' : 's'} — drill again to lock it in.',
-                                    style: GoogleFonts.inter(
+                                    style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       color: AppTheme.textPrimaryFor(context),
@@ -804,7 +848,7 @@ class _InteractiveOpeningModalState
                             const SizedBox(height: 4),
                             Text(
                               _drillFeedback,
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontStyle: FontStyle.italic,
                                 height: 1.4,
@@ -825,7 +869,7 @@ class _InteractiveOpeningModalState
                       children: [
                         Text(
                           'Move Sequence',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: AppTheme.textPrimaryFor(context),
@@ -834,7 +878,7 @@ class _InteractiveOpeningModalState
                         const SizedBox(height: 8),
                         Text(
                           opening.formattedMoves,
-                          style: GoogleFonts.robotoMono(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.primaryColor,
@@ -852,7 +896,7 @@ class _InteractiveOpeningModalState
                       children: [
                         Text(
                           'Strategic Overview',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: AppTheme.textPrimaryFor(context),
@@ -861,7 +905,7 @@ class _InteractiveOpeningModalState
                         const SizedBox(height: 8),
                         Text(
                           opening.description,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 13,
                             height: 1.45,
                             color: AppTheme.textSecondaryFor(context),
@@ -870,7 +914,7 @@ class _InteractiveOpeningModalState
                         const SizedBox(height: 12),
                         Text(
                           'Key Tactical & Positional Themes:',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.textPrimaryFor(context),
@@ -888,7 +932,7 @@ class _InteractiveOpeningModalState
                                 Expanded(
                                   child: Text(
                                     theme,
-                                    style: GoogleFonts.inter(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       color: AppTheme.textSecondaryFor(context),
                                     ),
@@ -910,7 +954,7 @@ class _InteractiveOpeningModalState
                     icon: const Icon(Icons.school_rounded),
                     label: Text(
                       'Drill the line',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
@@ -930,7 +974,7 @@ class _InteractiveOpeningModalState
                     icon: const Icon(Icons.play_arrow_rounded),
                     label: Text(
                       'Play final position vs AI',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),

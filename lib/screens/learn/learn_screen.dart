@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/lessons/lessons_screen.dart';
@@ -54,7 +53,7 @@ class LearnScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           'Learn',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             color: textPrimary,
           ),
@@ -118,7 +117,7 @@ class LearnScreen extends ConsumerWidget {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               color: isSelected ? Colors.white : AppTheme.textSecondaryFor(context),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/services/lesson_service.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/lessons/lesson_player_screen.dart';
@@ -11,7 +10,8 @@ const Color _accentGold = Color(0xFFF59E0B);
 const Color _successGreen = Color(0xFF2E7D32);
 
 class LessonsScreen extends ConsumerStatefulWidget {
-  const LessonsScreen({super.key});
+  final bool showAppBar;
+  const LessonsScreen({super.key, this.showAppBar = false});
 
   @override
   ConsumerState<LessonsScreen> createState() => _LessonsScreenState();
@@ -115,33 +115,90 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
   @override
   Widget build(BuildContext context) {
     final lessonService = LessonService.instance;
-    final sections = lessonService.sections;
-    final totalChapters = lessonService.totalChaptersCount;
-    final completedChapters = lessonService.completedChaptersCount;
-    final overallProgress = totalChapters > 0 ? (completedChapters / totalChapters) : 0.0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Chess Lessons',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu_book_rounded),
-            tooltip: 'Opening Playbook',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const OpeningPlaybookScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: CustomScrollView(
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: const Text(
+                'Chess Lessons',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.menu_book_rounded),
+                  tooltip: 'Opening Playbook',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const OpeningPlaybookScreen(showAppBar: true)),
+                    );
+                  },
+                ),
+              ],
+            )
+          : null,
+      body: FutureBuilder<void>(
+        future: lessonService.initialize(),
+        builder: (context, snapshot) {
+          if (!lessonService.isLoaded &&
+              snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (!lessonService.isLoaded && snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: AppTheme.error,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Failed to load curriculum',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textPrimaryFor(context),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => setState(() {}),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final sections = lessonService.sections;
+          final totalChapters = lessonService.totalChaptersCount;
+          final completedChapters = lessonService.completedChaptersCount;
+          final overallProgress =
+              totalChapters > 0 ? (completedChapters / totalChapters) : 0.0;
+
+          // Check if any section has matching categories
+          final totalMatches = sections.fold<int>(0, (sum, section) {
+            final matches = section.categories.where((cat) {
+              final matchesDifficulty = _selectedDifficulty == 'All' ||
+                  cat.difficulty.toLowerCase() == _selectedDifficulty.toLowerCase();
+              final q = _searchQuery.trim().toLowerCase();
+              final matchesQuery = q.isEmpty ||
+                  cat.title.toLowerCase().contains(q) ||
+                  cat.subtitle.toLowerCase().contains(q);
+              return matchesDifficulty && matchesQuery;
+            }).length;
+            return sum + matches;
+          });
+
+          return CustomScrollView(
         slivers: [
           // 1. Overall Progress Header Card
           SliverToBoxAdapter(
@@ -173,7 +230,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                             children: [
                               Text(
                                 'Structured Mastery Curriculum',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                   color: AppTheme.textPrimaryFor(context),
@@ -182,7 +239,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 '$completedChapters of $totalChapters Exercises Mastered (${(overallProgress * 100).toInt()}%)',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(
                                   fontSize: 13,
                                   color: AppTheme.textHintFor(context),
                                 ),
@@ -231,7 +288,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                             Expanded(
                               child: Text(
                                 'Explore Master Opening Playbook (50+ Openings)',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: _accentGold,
@@ -264,7 +321,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                     onChanged: (val) => setState(() => _searchQuery = val),
                     decoration: InputDecoration(
                       hintText: 'Search 40+ categories (e.g. Pin, Fork, Back Rank)...',
-                      hintStyle: GoogleFonts.inter(
+                      hintStyle: TextStyle(
                         fontSize: 14,
                         color: AppTheme.textHintFor(context),
                       ),
@@ -303,16 +360,16 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                           child: FilterChip(
                             label: Text(
                               diff,
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                color: isSelected ? Colors.black : AppTheme.textPrimaryFor(context),
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                color: isSelected ? Colors.white : AppTheme.textSecondaryFor(context),
                               ),
                             ),
                             selected: isSelected,
-                            selectedColor: _accentGold,
-                            backgroundColor: AppTheme.cardColor(context),
-                            checkmarkColor: Colors.black,
+                            selectedColor: AppTheme.primaryColor,
+                            backgroundColor: AppTheme.surfaceLevel2(context),
+                            checkmarkColor: Colors.white,
                             onSelected: (_) {
                               setState(() => _selectedDifficulty = diff);
                             },
@@ -329,27 +386,72 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
           // 3. Sections and 40+ Categories
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, sectionIndex) {
-                final section = sections[sectionIndex];
+          if (totalMatches == 0)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.search_off_rounded,
+                      size: 48,
+                      color: AppTheme.textHintFor(context),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No lessons found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimaryFor(context),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Try adjusting your search query or difficulty filter.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondaryFor(context),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _searchController.clear();
+                          _searchQuery = '';
+                          _selectedDifficulty = 'All';
+                        });
+                      },
+                      child: const Text('Reset Filters'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, sectionIndex) {
+                  final section = sections[sectionIndex];
 
-                // Filter categories within section
-                final filteredCategories = section.categories.where((cat) {
-                  final matchesDifficulty = _selectedDifficulty == 'All' ||
-                      cat.difficulty.toLowerCase() == _selectedDifficulty.toLowerCase();
-                  final q = _searchQuery.trim().toLowerCase();
-                  final matchesQuery = q.isEmpty ||
-                      cat.title.toLowerCase().contains(q) ||
-                      cat.subtitle.toLowerCase().contains(q);
-                  return matchesDifficulty && matchesQuery;
-                }).toList();
+                  // Filter categories within section
+                  final filteredCategories = section.categories.where((cat) {
+                    final matchesDifficulty = _selectedDifficulty == 'All' ||
+                        cat.difficulty.toLowerCase() == _selectedDifficulty.toLowerCase();
+                    final q = _searchQuery.trim().toLowerCase();
+                    final matchesQuery = q.isEmpty ||
+                        cat.title.toLowerCase().contains(q) ||
+                        cat.subtitle.toLowerCase().contains(q);
+                    return matchesDifficulty && matchesQuery;
+                  }).toList();
 
-                if (filteredCategories.isEmpty) {
-                  return const SizedBox();
-                }
+                  if (filteredCategories.isEmpty) {
+                    return const SizedBox();
+                  }
 
-                return Padding(
+                  return Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,7 +467,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                           const SizedBox(width: 8),
                           Text(
                             section.title,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: AppTheme.textPrimaryFor(context),
@@ -374,7 +476,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                           const Spacer(),
                           Text(
                             '${filteredCategories.length} topics',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 12,
                               color: AppTheme.textHintFor(context),
                             ),
@@ -384,7 +486,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         section.description,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textHintFor(context),
                         ),
@@ -451,7 +553,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                                           Expanded(
                                             child: Text(
                                               cat.title,
-                                              style: GoogleFonts.inter(
+                                              style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w700,
                                                 color: AppTheme.textPrimaryFor(context),
@@ -460,20 +562,34 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                                           ),
                                           Container(
                                             padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
+                                              horizontal: 8,
+                                              vertical: 3,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: diffColor.withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(4),
+                                              color: AppTheme.surfaceLevel2(context),
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
-                                            child: Text(
-                                              cat.difficulty,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w700,
-                                                color: diffColor,
-                                              ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: 6,
+                                                  height: 6,
+                                                  decoration: BoxDecoration(
+                                                    color: diffColor,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  cat.difficulty,
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: AppTheme.textSecondaryFor(context),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ],
@@ -483,7 +599,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                                         cat.subtitle,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.inter(
+                                        style: TextStyle(
                                           fontSize: 12,
                                           color: AppTheme.textHintFor(context),
                                         ),
@@ -510,7 +626,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                                           const SizedBox(width: 10),
                                           Text(
                                             '$completed/$total',
-                                            style: GoogleFonts.inter(
+                                            style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
                                               color: AppTheme.textHintFor(context),
@@ -539,7 +655,9 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
             ),
           ),
         ],
-      ),
-    );
+      );
+    },
+  ),
+);
   }
 }

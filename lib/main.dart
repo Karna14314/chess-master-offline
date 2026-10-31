@@ -1,7 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/settings_provider.dart';
@@ -19,7 +19,17 @@ import 'package:chess_master/screens/onboarding/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  GoogleFonts.config.allowRuntimeFetching = false;
+
+  // Register Inter font license
+  LicenseRegistry.addLicense(() async* {
+    final license = await rootBundle.loadString('assets/fonts/OFL.txt');
+    yield LicenseEntryWithLineBreaks(['Inter'], license);
+  });
+
+  // Bound image cache to prevent OutOfMemoryErrors during extended sessions
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 30 * 1024 * 1024; // 30 MB
+  PaintingBinding.instance.imageCache.maximumSize = 100;
+
   StockfishLifecycleObserver.ensureRegistered();
 
   // Set preferred orientations (portrait only)

@@ -190,7 +190,7 @@ void main() {
 
       expect(find.text('Bot Arena'), findsOneWidget);
       expect(find.text('Daily Puzzle'), findsOneWidget);
-      expect(find.text('Quick Play'), findsOneWidget);
+      expect(find.text('Pass & Play'), findsOneWidget);
       expect(find.text('Analyze Game'), findsOneWidget);
     });
   });

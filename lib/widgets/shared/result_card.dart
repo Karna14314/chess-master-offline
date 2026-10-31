@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/widgets/shared/app_button.dart';
 
@@ -111,7 +110,7 @@ class ResultCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     title,
-                    style: GoogleFonts.spaceGrotesk(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: outcomeColor,
@@ -122,7 +121,7 @@ class ResultCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle!,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 13,
                         color: textSecondary,
                       ),
@@ -234,7 +233,7 @@ class ResultCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 11, color: textSecondary),
+            style: TextStyle(fontSize: 11, color: textSecondary),
           ),
           const SizedBox(height: 2),
           Row(
@@ -246,7 +245,7 @@ class ResultCard extends StatelessWidget {
               ],
               Text(
                 value,
-                style: GoogleFonts.spaceGrotesk(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textPrimary,
@@ -258,7 +257,7 @@ class ResultCard extends StatelessWidget {
             const SizedBox(height: 1),
             Text(
               delta,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: deltaColor ?? textSecondary,

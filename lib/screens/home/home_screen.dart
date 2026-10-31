@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/bot_profile.dart';
@@ -110,7 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // App Title
         Text(
           'ChessMaster',
-          style: GoogleFonts.spaceGrotesk(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: textPrimary,
@@ -215,7 +214,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Text(
                     'GAME IN PROGRESS',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.accentColor,
@@ -225,7 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'vs $opponentName',
-                  style: GoogleFonts.spaceGrotesk(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: textPrimary,
@@ -235,7 +234,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 Text(
                   'Move ${(game.moveHistory.length / 2).ceil()} • ${game.timeControl.name}',
-                  style: GoogleFonts.inter(fontSize: 12, color: textSecondary),
+                  style: TextStyle(fontSize: 12, color: textSecondary),
                 ),
               ],
             ),
@@ -259,7 +258,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             child: Text(
               'RESUME',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -314,7 +313,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Text(
                           'Play Bot',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.primaryColor,
@@ -332,7 +331,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           },
                           child: Text(
                             'Choose opponent →',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: AppTheme.primaryColor,
@@ -344,7 +343,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 2),
                     Text(
                       '${bot.name} (${bot.elo})',
-                      style: GoogleFonts.spaceGrotesk(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: textPrimary,
@@ -354,7 +353,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     Text(
                       bot.bio,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 12,
                         color: textSecondary,
                       ),
@@ -397,7 +396,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               child: Text(
                 'PLAY VS ${bot.name.toUpperCase()}',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                   letterSpacing: 0.5,
@@ -447,15 +446,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         'Pass & Play',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimaryFor(context),
                         ),
                       ),
                       Text(
-                        'Two players, 1 phone',
-                        style: GoogleFonts.inter(
+                        'Same device',
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppTheme.textSecondaryFor(context),
                         ),
@@ -482,12 +481,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.royalBlue.withValues(alpha: 0.15),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                   ),
                   child: const Icon(
                     Icons.insights_rounded,
-                    color: AppTheme.royalBlue,
+                    color: AppTheme.primaryColor,
                     size: 20,
                   ),
                 ),
@@ -498,7 +497,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         'Analyze Game',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimaryFor(context),
@@ -506,7 +505,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       Text(
                         'Stockfish eval',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppTheme.textSecondaryFor(context),
                         ),
@@ -531,7 +530,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isDailySolved = streakState.isDailyPuzzleSolvedToday;
 
     return AppCard(
-      borderColor: AppTheme.accentColor.withValues(alpha: 0.4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -556,7 +554,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       'Daily Puzzle',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimaryFor(context),
@@ -564,7 +562,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     Text(
                       todayFormatted,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppTheme.textSecondaryFor(context),
                       ),
@@ -577,71 +575,82 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 12),
           if (isDailySolved)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              decoration: BoxDecoration(
-                color: AppTheme.emeraldGreen.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                border: Border.all(
-                  color: AppTheme.emeraldGreen.withValues(alpha: 0.4),
+            Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppTheme.emeraldGreen,
+                  size: 18,
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.check_circle_rounded,
+                const SizedBox(width: 8),
+                Text(
+                  'Solved Today',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: AppTheme.emeraldGreen,
-                    size: 18,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Solved Today — Tap to review',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
+                ),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DailyPuzzleScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.surfaceLevel2(context),
+                    foregroundColor: AppTheme.textPrimaryFor(context),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Review puzzle',
+                    style: TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.emeraldGreen,
                     ),
                   ),
-                ],
-              ),
-            ),
-          if (isDailySolved) const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DailyPuzzleScreen(),
+                ),
+              ],
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DailyPuzzleScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDailySolved
-                    ? AppTheme.surfaceLevel2(context)
-                    : AppTheme.accentColor,
-                foregroundColor: isDailySolved
-                    ? AppTheme.textPrimaryFor(context)
-                    : Colors.black87,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  elevation: 0,
                 ),
-                elevation: 0,
-              ),
-              child: Text(
-                isDailySolved ? 'Review Today\'s Puzzle' : 'SOLVE TODAY\'S PUZZLE',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: isDailySolved ? 0 : 0.5,
+                child: const Text(
+                  'SOLVE TODAY\'S PUZZLE',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -652,7 +661,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final repository = ref.read(gameSessionRepositoryProvider);
 
     return FutureBuilder<List<GameSession>>(
-      future: repository.getRealGamesHistory(limit: 1),
+      future: repository.getCompletedRealGames(limit: 1),
       builder: (context, snapshot) {
         final games = snapshot.data ?? [];
         if (games.isEmpty) return const SizedBox.shrink();
@@ -693,15 +702,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Text(
                           'Review Last Game',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.royalBlue,
+                            color: AppTheme.primaryColor,
                           ),
                         ),
                         Text(
                           'vs $opponentName',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textPrimaryFor(context),
@@ -711,7 +720,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         Text(
                           'Move $moveCount • ${DateFormat('MMM d').format(lastGame.lastMoveTime)}',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 11,
                             color: AppTheme.textSecondaryFor(context),
                           ),
@@ -734,7 +743,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: AppTheme.royalBlue,
-                      textStyle: GoogleFonts.inter(
+                      textStyle: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -781,7 +790,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Master Campaign',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimaryFor(context),
@@ -800,7 +809,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 },
                 child: Text(
                   'View map →',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.primaryColor,
@@ -812,7 +821,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              BotAvatar(bot: currentBot, size: 48),
+              BotAvatar(bot: currentBot, size: 48, showElo: false),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -820,7 +829,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       'Level ${currentLevel.levelNumber}: ${currentLevel.title}',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.accentColor,
@@ -828,7 +837,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     Text(
                       'vs ${currentBot.name} (${currentBot.elo})',
-                      style: GoogleFonts.spaceGrotesk(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimaryFor(context),
@@ -856,7 +865,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 child: Text(
                   'CONTINUE',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                     letterSpacing: 0.5,
@@ -899,7 +908,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       alignment: Alignment.center,
                       child: Text(
                         '$stepLevel',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: isCurrent

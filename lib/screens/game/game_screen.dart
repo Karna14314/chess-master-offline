@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
 import 'package:chess_master/providers/engine_provider.dart';
@@ -200,7 +199,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                                 ? gameState.botProfile!.name
                                 : 'Bot (${gameState.difficulty.elo})')
                             : 'Pass & Play',
-                        style: GoogleFonts.spaceGrotesk(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: textPrimary,
@@ -218,7 +217,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         ),
                         child: Text(
                           '${gameState.botProfile!.elo}',
-                          style: GoogleFonts.spaceGrotesk(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: gameState.botProfile!.tier.color,
@@ -232,7 +231,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   gameState.timeControl.hasTimer
                       ? gameState.timeControl.displayString
                       : 'Casual / No Clock',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 11,
                     color: textSecondary,
                   ),
@@ -466,7 +465,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         : (gameState.gameMode == GameMode.bot
                             ? "Bot (${gameState.difficulty.elo})"
                             : "Opponent"),
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimaryFor(context),
                       fontSize: 12,
@@ -499,7 +498,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   // Player summary
                   Text(
                     "You",
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimaryFor(context),
                       fontSize: 12,
@@ -853,7 +852,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               const SizedBox(width: 8),
               Text(
                 'Engine Hint',
-                style: GoogleFonts.spaceGrotesk(
+                style: TextStyle(
                   color: AppTheme.textPrimaryFor(dialogCtx),
                   fontWeight: FontWeight.bold,
                 ),
@@ -866,7 +865,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             children: [
               Text(
                 'Best Move: ${hint.bestMove}',
-                style: GoogleFonts.spaceGrotesk(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   color: AppTheme.primaryColor,
@@ -875,7 +874,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               const SizedBox(height: 8),
               Text(
                 hint.explanation,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textSecondaryFor(dialogCtx),
                   fontSize: 13,
                 ),
@@ -888,7 +887,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     const SizedBox(width: 4),
                     Text(
                       'Motif: ${hint.tacticalMotif}',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textPrimaryFor(dialogCtx),
                         fontStyle: FontStyle.italic,
                         fontSize: 12,
@@ -918,14 +917,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLg)),
         title: Text(
           'Resign Match?',
-          style: GoogleFonts.spaceGrotesk(
+          style: TextStyle(
             color: AppTheme.textPrimaryFor(innerContext),
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
           'Are you sure you want to resign? This will count as a loss in your match history.',
-          style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(innerContext)),
+          style: TextStyle(color: AppTheme.textSecondaryFor(innerContext)),
         ),
         actions: [
           TextButton(
@@ -957,14 +956,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLg)),
         title: Text(
           'Offer Draw?',
-          style: GoogleFonts.spaceGrotesk(
+          style: TextStyle(
             color: AppTheme.textPrimaryFor(innerContext),
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
           'Offer a draw to your opponent for this game?',
-          style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(innerContext)),
+          style: TextStyle(color: AppTheme.textSecondaryFor(innerContext)),
         ),
         actions: [
           TextButton(

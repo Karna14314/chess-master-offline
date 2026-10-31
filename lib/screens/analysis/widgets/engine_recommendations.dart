@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/models/chess_models.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Convert a list of UCI moves to SAN given a starting FEN.
 List<String> _uciToSan(String startingFen, List<String> uciMoves) {
@@ -94,7 +93,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
                 const SizedBox(width: 8),
                 Text(
                   'Engine Analysis',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: AppTheme.textPrimaryFor(context),
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -114,7 +113,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
                 ],
                 Text(
                   'Depth $currentDepth',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: AppTheme.textHintFor(context),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -132,7 +131,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
               child: Center(
                 child: Text(
                   'Analyzing position...',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: AppTheme.textHintFor(context),
                   ),
                 ),
@@ -156,7 +155,7 @@ class _EngineRecommendationsState extends State<EngineRecommendations> {
                 child: Center(
                   child: Text(
                     _expanded ? 'Show Less' : 'Show More',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -220,7 +219,7 @@ class _EngineLineRow extends StatelessWidget {
             child: Center(
               child: Text(
                 line.evalDisplay,
-                style: GoogleFonts.spaceMono(
+                style: TextStyle(
                   color: evalColor,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
@@ -236,7 +235,7 @@ class _EngineLineRow extends StatelessWidget {
               children: [
                 Text(
                   bestMove,
-                  style: GoogleFonts.spaceMono(
+                  style: TextStyle(
                     color: AppTheme.primaryColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -246,7 +245,7 @@ class _EngineLineRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     continuation,
-                    style: GoogleFonts.spaceMono(
+                    style: TextStyle(
                       color: AppTheme.textHintFor(context),
                       fontSize: 13,
                     ),

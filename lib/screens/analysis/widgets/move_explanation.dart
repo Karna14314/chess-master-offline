@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class MoveExplanation extends StatelessWidget {
   final MoveAnalysis? analysis;
@@ -36,7 +35,7 @@ class MoveExplanation extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Move Explanation',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textPrimaryFor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -47,7 +46,7 @@ class MoveExplanation extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             explanationText,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               color: AppTheme.textSecondaryFor(context),
               fontSize: 14,
               height: 1.5,
@@ -72,7 +71,7 @@ class MoveExplanation extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Better was ${analysis!.bestMoveSan}',
-                    style: GoogleFonts.spaceMono(
+                    style: TextStyle(
                       color: AppTheme.textPrimaryFor(context),
                       fontWeight: FontWeight.w600,
                       fontSize: 14,

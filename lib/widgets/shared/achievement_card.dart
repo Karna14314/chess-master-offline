@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/achievement_provider.dart';
 import 'package:chess_master/widgets/shared/app_card.dart';
@@ -101,7 +100,7 @@ class AchievementCard extends StatelessWidget {
                           achievement.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: textPrimary,
@@ -117,7 +116,7 @@ class AchievementCard extends StatelessWidget {
                         ),
                         child: Text(
                           rarity.label,
-                          style: GoogleFonts.spaceGrotesk(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: rarityColor,
@@ -131,7 +130,7 @@ class AchievementCard extends StatelessWidget {
                     achievement.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       color: textSecondary,
                     ),
@@ -140,7 +139,7 @@ class AchievementCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Unlocked ${achievement.unlockedDate}',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 10,
                         color: rarityColor,
                         fontWeight: FontWeight.w600,
@@ -150,7 +149,7 @@ class AchievementCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       progressText!,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primaryColor,

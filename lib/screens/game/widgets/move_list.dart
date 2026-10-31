@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/game_model.dart';
 
@@ -29,7 +28,7 @@ class MoveList extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           'Game in progress • White to move',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 12,
             fontStyle: FontStyle.italic,
             color: AppTheme.textSecondaryFor(context).withValues(alpha: 0.7),
@@ -66,7 +65,7 @@ class MoveList extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
                         '$moveNum.',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: textSecondary.withValues(alpha: 0.6),
@@ -149,7 +148,7 @@ class MoveList extends StatelessWidget {
           children: [
             Text(
               san,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected ? AppTheme.primaryColor : textPrimary,
@@ -201,7 +200,7 @@ class MoveTableSheet extends StatelessWidget {
               children: [
                 Text(
                   'Move History (${moves.length} moves)',
-                  style: GoogleFonts.spaceGrotesk(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: textPrimary,
@@ -222,7 +221,7 @@ class MoveTableSheet extends StatelessWidget {
                 ? Center(
                     child: Text(
                       'No moves played yet',
-                      style: GoogleFonts.inter(color: textSecondary),
+                      style: TextStyle(color: textSecondary),
                     ),
                   )
                 : ListView.builder(
@@ -249,7 +248,7 @@ class MoveTableSheet extends StatelessWidget {
                               width: 36,
                               child: Text(
                                 '$moveNum.',
-                                style: GoogleFonts.spaceGrotesk(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                   color: textSecondary,
@@ -273,7 +272,7 @@ class MoveTableSheet extends StatelessWidget {
                                   ),
                                   child: Text(
                                     whiteMove.san,
-                                    style: GoogleFonts.inter(
+                                    style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: currentMoveIndex == whiteIdx
                                           ? FontWeight.bold
@@ -305,7 +304,7 @@ class MoveTableSheet extends StatelessWidget {
                                         ),
                                         child: Text(
                                           blackMove.san,
-                                          style: GoogleFonts.inter(
+                                          style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: currentMoveIndex == blackIdx
                                                 ? FontWeight.bold

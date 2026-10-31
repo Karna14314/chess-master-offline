@@ -27,6 +27,9 @@ class _MockGameSessionRepository implements GameSessionRepository {
   Future<List<GameSession>> getUnfinishedGames({int? limit}) async => [];
 
   @override
+  Future<List<GameSession>> getCompletedRealGames({int? limit}) async => [];
+
+  @override
   Future<List<GameSession>> getRealGamesHistory({int? limit}) async => [];
 
   @override

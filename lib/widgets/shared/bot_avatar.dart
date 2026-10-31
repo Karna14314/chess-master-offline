@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/models/bot_profile.dart';
 
 /// Animated, theme-rich character avatar for Chess.com-style bots
@@ -192,7 +191,7 @@ class _BotAvatarState extends State<BotAvatar>
               ),
               child: Text(
                 '${widget.bot.elo}',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/bot_profile.dart';
 import 'package:chess_master/widgets/shared/app_card.dart';
@@ -63,7 +62,7 @@ class BotCard extends StatelessWidget {
                         bot.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                           color: textPrimary,
@@ -80,7 +79,7 @@ class BotCard extends StatelessWidget {
                       ),
                       child: Text(
                         '${bot.elo}',
-                        style: GoogleFonts.spaceGrotesk(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: tierColor,
@@ -94,7 +93,7 @@ class BotCard extends StatelessWidget {
                   bot.bio,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     color: textSecondary,
                     height: 1.25,
@@ -104,7 +103,7 @@ class BotCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     recordText!,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: textSecondary,
@@ -132,7 +131,7 @@ class BotCard extends StatelessWidget {
               ),
               child: Text(
                 'PLAY',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                   letterSpacing: 0.5,
@@ -174,7 +173,7 @@ class BotCard extends StatelessWidget {
                   bot.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: textPrimary,
@@ -190,7 +189,7 @@ class BotCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${bot.elo} ELO',
-                    style: GoogleFonts.spaceGrotesk(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: tierColor,
@@ -216,7 +215,7 @@ class BotCard extends StatelessWidget {
                   ),
                   child: Text(
                     'PLAY',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       letterSpacing: 0.5,
