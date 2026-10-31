@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/services/notification_service.dart';
@@ -145,7 +144,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       onPressed: _completeOnboarding,
                       child: Text(
                         'Skip',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: textSecondary,
                           fontWeight: FontWeight.bold,
                         ),
@@ -213,7 +212,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   child: Text(
                     _currentPage == 2 ? 'Get Started' : 'Continue',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -252,7 +251,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 32),
           Text(
             '100% Offline & Ad-Free',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: textPrimary,
@@ -262,7 +261,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 12),
           Text(
             'Play chess anytime, anywhere with zero ads, zero accounts, and zero data tracking. Your privacy stays on your device.',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 15,
               height: 1.5,
               color: textSecondary,
@@ -289,7 +288,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         children: [
           Text(
             'Select Your Skill Level',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
               color: textPrimary,
@@ -298,7 +297,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 8),
           Text(
             'We\'ll set your initial Stockfish AI difficulty so games feel just right.',
-            style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
+            style: TextStyle(fontSize: 14, color: textSecondary),
           ),
           const SizedBox(height: 24),
 
@@ -393,7 +392,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: isSelected ? AppTheme.primaryColor : textPrimary,
@@ -402,7 +401,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 12,
                         color: textSecondary,
                       ),
@@ -441,7 +440,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 24),
           Text(
             'Everything You Need',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: textPrimary,
@@ -450,7 +449,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 8),
           Text(
             'Improve your tactics, analyze your games, and maintain your daily streak.',
-            style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
+            style: TextStyle(fontSize: 14, color: textSecondary),
           ),
           const SizedBox(height: 28),
 
@@ -511,7 +510,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     children: [
                       Text(
                         'Daily reminders',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: textPrimary,
@@ -519,7 +518,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                       Text(
                         'Puzzle + streak nudges (change anytime in Settings)',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 12,
                           color: textSecondary,
                         ),
@@ -566,7 +565,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textPrimary,
@@ -575,7 +574,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(fontSize: 13, color: textSecondary),
+                style: TextStyle(fontSize: 13, color: textSecondary),
               ),
             ],
           ),

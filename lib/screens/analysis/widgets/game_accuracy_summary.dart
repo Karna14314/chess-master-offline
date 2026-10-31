@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class GameAccuracySummary extends StatelessWidget {
   final GameAnalysis analysis;
@@ -62,7 +61,7 @@ class GameAccuracySummary extends StatelessWidget {
                   children: [
                     Text(
                       '$accuracyStr%',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimaryFor(context),
@@ -74,7 +73,7 @@ class GameAccuracySummary extends StatelessWidget {
                           : (isExcellent
                               ? 'Outstanding Accuracy'
                               : 'Game Review'),
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 12,
                         color:
                             isInProgress
@@ -119,7 +118,7 @@ class GameAccuracySummary extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   openingName!,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppTheme.textSecondaryFor(context),
                   ),
@@ -195,7 +194,7 @@ class GameAccuracySummary extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Avg CPL: ${analysis.averageCpl.toInt()}',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               color: AppTheme.textHintFor(context),
               fontSize: 12,
             ),
@@ -230,7 +229,7 @@ class _MiniSideAccuracy extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           '${accuracy.toStringAsFixed(0)}%',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimaryFor(context),
@@ -263,7 +262,7 @@ class _CompactChip extends StatelessWidget {
       ),
       child: Text(
         '$label: $value',
-        style: GoogleFonts.inter(
+        style: TextStyle(
           color: color,
           fontWeight: FontWeight.w600,
           fontSize: 11,

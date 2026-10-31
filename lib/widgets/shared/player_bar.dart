@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/screens/game/widgets/chess_piece.dart';
@@ -117,7 +116,7 @@ class PlayerBar extends ConsumerWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: textPrimary,
@@ -134,7 +133,7 @@ class PlayerBar extends ConsumerWidget {
                           ),
                           child: Text(
                             '$elo',
-                            style: GoogleFonts.spaceGrotesk(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               color: textPrimary,
@@ -179,7 +178,7 @@ class PlayerBar extends ConsumerWidget {
                           ),
                           child: Text(
                             '+$materialAdvantage',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.emeraldGreen,

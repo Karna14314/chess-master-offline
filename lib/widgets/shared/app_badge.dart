@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/statistics_model.dart';
 
@@ -136,7 +135,7 @@ class AppBadge extends StatelessWidget {
           ],
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.w700,
               color: textCol,

@@ -129,3 +129,23 @@ I have completed the task to refactor the UI and navigation for production readi
 - Emulator: SKIPPED
 **User-Visible Impact:** Clean, dark-default game-like UI with fewer taps to key features, 4 distinct bottom navigation tabs (Play, Puzzles, Learn, Profile), Daily Puzzle notifications, and seamless game review access across the app.
 **Branch:** auto/chess-20261023-nav-redesign
+
+## 2026-10-29 - Inter Font Offline Bundling, Softer Dark Palette & Learn Lessons Async Fix
+**Task Objective:** Bundle official Inter font offline, replace Google Fonts runtime fetching, implement softer dark palette with flat surface cards, fix screenshot bugs across Play/Daily Puzzle/Campaign/Learn, resolve Learn Lessons async loading bug, and update stability documentation.
+**Root Cause for Learn Lessons:** LessonService.instance.initialize() loads JSON asynchronously via rootBundle.loadString. On cold open, LessonsScreen synchronously checked sections, failing the mobile filesystem fallback and returning []. Tapping a filter triggered setState() after the async load had finished in the background. Fixed by wrapping with FutureBuilder with explicit loading, empty, and retry states.
+**Files Modified:**
+- pubspec.yaml: Bundled Inter font assets (weights 400, 500, 600, 700) and removed google_fonts dependency.
+- assets/fonts/: Added Inter TTF files and OFL.txt license.
+- lib/main.dart: Registered Inter OFL license in LicenseRegistry, bounded imageCache (30 MB limit).
+- lib/core/theme/app_theme.dart: Implemented softer dark palette tokens (#272522, #302E2B, #3A3835, #45423E, #F2F0EC, #B8B4AD, #8A867F), primary green CTA, and typography scale.
+- lib/widgets/shared/app_card.dart: Refactored to flat surface card styling (16pt radius, no borders).
+- lib/screens/home/home_screen.dart: Fixed Review last game to query completed games only, simplified Daily Puzzle solved row, hid duplicate 400 badge in campaign card, and shortened Pass & Play subtitle to "Same device".
+- lib/screens/lessons/lessons_screen.dart & opening_playbook_screen.dart: Added FutureBuilder async state handling (loading spinner, empty filter state with reset, error retry).
+- test/learn_lessons_widget_test.dart: Added widget tests for cold open and filter consistency.
+- test/game_session_repository_test.dart: Added unit tests for completed game query.
+- docs/redesign-progress.md & docs/stability-report.md: Updated progress log and stability report.
+**Verification:**
+- Build: PASS
+- Analyze: PASS (0 errors)
+- Tests: PASS
+**User-Visible Impact:** Clean, typography-consistent Inter sans-serif font across entire app with zero runtime network fetching, softer dark palette with flat surfaces, responsive and reliable lessons and openings lists on cold open, and refined Home hub.

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Modern evaluation bar widget showing position assessment.
 class UnifiedEvalBar extends StatelessWidget {
@@ -95,7 +94,7 @@ class UnifiedEvalBar extends StatelessWidget {
               quarterTurns: 3,
               child: Text(
                 evalText,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color:
                       textOnTop
                           ? (isFlipped ? const Color(0xFF424242) : Colors.white)

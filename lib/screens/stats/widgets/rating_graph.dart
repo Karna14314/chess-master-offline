@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/statistics_model.dart';
 import 'package:chess_master/widgets/shared/app_card.dart';
@@ -112,7 +111,7 @@ class RatingGraph extends StatelessWidget {
                 children: [
                   Text(
                     'Rating History',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: textPrimary,
@@ -121,7 +120,7 @@ class RatingGraph extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${_getRatingTier(currentElo)} • ${eloHistory.length} ${eloHistory.length == 1 ? 'game' : 'games'} played',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       color: textSecondary,
                     ),
@@ -142,7 +141,7 @@ class RatingGraph extends StatelessWidget {
                       ),
                       child: Text(
                         netChange > 0 ? '+$netChange' : '$netChange',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: netChange > 0 ? AppTheme.emeraldGreen : Colors.red,
@@ -158,7 +157,7 @@ class RatingGraph extends StatelessWidget {
                     ),
                     child: Text(
                       '$currentElo ELO',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: eloColor,
@@ -191,7 +190,7 @@ class RatingGraph extends StatelessWidget {
                       interval: (maxElo - minElo) > 300 ? 100 : 50,
                       getTitlesWidget: (value, meta) => Text(
                         value.toInt().toString(),
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 10,
                           color: AppTheme.textHintFor(context),
                         ),
@@ -206,9 +205,9 @@ class RatingGraph extends StatelessWidget {
                       getTitlesWidget: (value, meta) {
                         final valInt = value.toInt();
                         if (valInt == 0) {
-                          return Text('Start', style: GoogleFonts.inter(fontSize: 10, color: textSecondary));
+                          return Text('Start', style: TextStyle(fontSize: 10, color: textSecondary));
                         }
-                        return Text('G$valInt', style: GoogleFonts.inter(fontSize: 10, color: textSecondary));
+                        return Text('G$valInt', style: TextStyle(fontSize: 10, color: textSecondary));
                       },
                     ),
                   ),
@@ -256,7 +255,7 @@ class RatingGraph extends StatelessWidget {
                         if (index == 0) {
                           return LineTooltipItem(
                             'Starting Rating\n$baseline ELO',
-                            GoogleFonts.inter(
+                            TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -269,7 +268,7 @@ class RatingGraph extends StatelessWidget {
                         final deltaStr = delta >= 0 ? '+$delta' : '$delta';
                         return LineTooltipItem(
                           'Game ${snapshot.gameNumber}\n${snapshot.elo} ELO ($deltaStr)',
-                          GoogleFonts.inter(
+                          TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -299,7 +298,7 @@ class RatingGraph extends StatelessWidget {
                     children: [
                       Text(
                         'Next Milestone: ${progressData.targetTier} (${progressData.targetElo} ELO)',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: textPrimary,
@@ -307,7 +306,7 @@ class RatingGraph extends StatelessWidget {
                       ),
                       Text(
                         '${progressData.pointsNeeded} ELO to go',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: eloColor,
@@ -357,7 +356,7 @@ class RatingGraph extends StatelessWidget {
             children: [
               Text(
                 'Rating Journey',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textPrimary,
@@ -372,7 +371,7 @@ class RatingGraph extends StatelessWidget {
                 ),
                 child: Text(
                   '$currentElo ELO • $tierName',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: eloColor,
@@ -384,7 +383,7 @@ class RatingGraph extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Your rating begins at $currentElo ELO ($tierName). Defeat bots to climb the ladder — rating gains advance sequentially while losses dip realistically.',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 13,
               color: textSecondary,
               height: 1.4,
@@ -434,7 +433,7 @@ class RatingGraph extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
               color: isCurrent ? color : AppTheme.textPrimaryFor(context),
@@ -443,7 +442,7 @@ class RatingGraph extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             elo,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               color: isCurrent ? color : AppTheme.textSecondaryFor(context),
               fontWeight: FontWeight.w600,

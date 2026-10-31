@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/main_screen.dart';
 import 'package:chess_master/core/services/database_service.dart';
@@ -10,7 +9,6 @@ import 'widget_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  GoogleFonts.config.allowRuntimeFetching = false;
 
   group('Theme Support Tests', () {
     testWidgets('AppTheme defines distinct light and dark ThemeData', (

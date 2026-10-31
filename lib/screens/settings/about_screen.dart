@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -48,7 +47,7 @@ class _AboutScreenState extends State<AboutScreen> {
         ),
         title: Text(
           'Open Source & Credits',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.textPrimaryFor(context),
             fontWeight: FontWeight.bold,
           ),
@@ -61,7 +60,7 @@ class _AboutScreenState extends State<AboutScreen> {
           children: [
             Text(
               'About Chess Master',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textPrimaryFor(context),
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -70,7 +69,7 @@ class _AboutScreenState extends State<AboutScreen> {
             const SizedBox(height: 8),
             Text(
               'Version: $_version',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textSecondaryFor(context),
                 fontSize: 16,
               ),
@@ -102,7 +101,7 @@ class _AboutScreenState extends State<AboutScreen> {
             const SizedBox(height: 16),
             Text(
               'Lichess is a free and open-source chess platform. We gratefully acknowledge the Lichess community for making this dataset publicly available.',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textSecondaryFor(context),
                 fontSize: 16,
               ),
@@ -136,7 +135,7 @@ class _AboutScreenState extends State<AboutScreen> {
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.textPrimaryFor(context),
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -145,7 +144,7 @@ class _AboutScreenState extends State<AboutScreen> {
         const SizedBox(height: 8),
         Text(
           content,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.textSecondaryFor(context),
             fontSize: 16,
             height: 1.5,

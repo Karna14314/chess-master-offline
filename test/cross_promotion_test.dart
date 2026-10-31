@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/screens/main_screen.dart';
 import 'package:chess_master/screens/more/more_screen.dart';
 import 'package:chess_master/core/services/database_service.dart';
@@ -48,7 +47,6 @@ class _MockHttpOverrides extends HttpOverrides {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  GoogleFonts.config.allowRuntimeFetching = false;
 
   setUpAll(() {
     HttpOverrides.global = _MockHttpOverrides();

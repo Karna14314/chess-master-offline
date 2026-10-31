@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 
 enum AppButtonVariant { primary, secondary, outlined, ghost }
@@ -129,7 +128,7 @@ class AppButton extends StatelessWidget {
         ],
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: fontSize,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.2,

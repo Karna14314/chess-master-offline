@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class InteractiveEvalGraph extends StatelessWidget {
   /// Evaluation series where index i is the position AFTER i plies, so
@@ -36,7 +35,7 @@ class InteractiveEvalGraph extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           'No evaluation data',
-          style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
+          style: TextStyle(color: AppTheme.textSecondaryFor(context)),
         ),
       );
     }
@@ -71,7 +70,7 @@ class InteractiveEvalGraph extends StatelessWidget {
             padding: const EdgeInsets.only(left: 8, bottom: 8),
             child: Text(
               'Evaluation Graph',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textPrimaryFor(context),
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -130,7 +129,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                           meta: meta,
                           child: Text(
                             '$moveNum',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               color: AppTheme.textHintFor(context),
                               fontSize: 10,
                             ),
@@ -152,7 +151,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                           meta: meta,
                           child: Text(
                             value.toInt().toString(),
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               color: AppTheme.textHintFor(context),
                               fontSize: 10,
                             ),
@@ -239,7 +238,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                         if (ply < 0) {
                           return LineTooltipItem(
                             'Start\n$sign${spot.y.toStringAsFixed(2)}',
-                            GoogleFonts.spaceMono(
+                            TextStyle(
                               color: Colors.white,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -250,7 +249,7 @@ class InteractiveEvalGraph extends StatelessWidget {
                         final isWhiteMove = ply % 2 == 0;
                         return LineTooltipItem(
                           'Move $moveNum${isWhiteMove ? '' : '...'}\n$sign${spot.y.toStringAsFixed(2)}',
-                          GoogleFonts.spaceMono(
+                          TextStyle(
                             color: Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
