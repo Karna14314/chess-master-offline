@@ -63,6 +63,19 @@ class GameSessionRepository {
     return results.map((map) => GameSession.fromMap(map)).toList();
   }
 
+  /// Get completed real games (for Review last game shortcut)
+  Future<List<GameSession>> getCompletedRealGames({int? limit}) async {
+    final db = await _db;
+    final results = await db.query(
+      'saved_games',
+      where: 'result IS NOT NULL AND isPuzzle = 0 AND gameMode NOT IN (2, 3)',
+      orderBy: 'lastMoveTimeMs DESC',
+      limit: limit,
+    );
+
+    return results.map((map) => GameSession.fromMap(map)).toList();
+  }
+
   /// Get real games history (finished and unfinished)
   Future<List<GameSession>> getRealGamesHistory({int? limit}) async {
     final db = await _db;

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/settings_provider.dart';
 import 'package:chess_master/providers/streak_provider.dart';
@@ -66,19 +65,19 @@ class _DailyPuzzleReminderBottomSheetState
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.accentColor.withValues(alpha: 0.15),
+              color: AppTheme.primaryColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.notifications_active_rounded,
-              color: AppTheme.accentColor,
+              color: AppTheme.primaryColor,
               size: 28,
             ),
           ),
           const SizedBox(height: 16),
           Text(
             'Want a daily puzzle reminder?',
-            style: GoogleFonts.spaceGrotesk(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: textPrimary,
@@ -88,7 +87,7 @@ class _DailyPuzzleReminderBottomSheetState
           const SizedBox(height: 8),
           Text(
             'Keep your tactic skills sharp with a quick 2-minute daily chess puzzle.',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 13,
               color: textSecondary,
             ),
@@ -119,7 +118,7 @@ class _DailyPuzzleReminderBottomSheetState
                       const SizedBox(width: 10),
                       Text(
                         'Reminder Time',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: textPrimary,
@@ -129,7 +128,7 @@ class _DailyPuzzleReminderBottomSheetState
                   ),
                   Text(
                     _selectedTime.format(context),
-                    style: GoogleFonts.spaceGrotesk(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
@@ -156,7 +155,7 @@ class _DailyPuzzleReminderBottomSheetState
                   ),
                   child: Text(
                     'Not now',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -178,7 +177,7 @@ class _DailyPuzzleReminderBottomSheetState
                   ),
                   child: Text(
                     'Remind me',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),

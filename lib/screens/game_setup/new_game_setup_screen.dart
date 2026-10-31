@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/game_session_viewmodel.dart';
@@ -41,7 +40,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
             pinned: true,
             title: Text(
               'New Game',
-              style: GoogleFonts.spaceGrotesk(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimaryFor(context),
@@ -114,7 +113,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
               ),
               child: Text(
                 'Start Game',
-                style: GoogleFonts.spaceGrotesk(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
@@ -130,7 +129,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: GoogleFonts.spaceGrotesk(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: AppTheme.textSecondaryFor(context),
@@ -150,14 +149,14 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
           children: [
             Text(
               'Difficulty: Level ${_difficultyLevel.toInt()}',
-              style: GoogleFonts.spaceGrotesk(
+              style: TextStyle(
                 fontSize: 16,
                 color: AppTheme.textPrimaryFor(context),
               ),
             ),
             Text(
               '~${diffInfo.elo} ELO (${diffInfo.name})',
-              style: GoogleFonts.spaceGrotesk(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppTheme.primaryColor,
                 fontWeight: FontWeight.w600,
@@ -250,7 +249,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
             ),
             child: Text(
               timer.displayString,
-              style: GoogleFonts.spaceGrotesk(
+              style: TextStyle(
                 color:
                     isSelected
                         ? AppTheme.textPrimaryFor(context)
@@ -301,7 +300,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                 _isCustomTimer
                     ? 'Custom $_customMinutes+$_customIncrement'
                     : 'Custom...',
-                style: GoogleFonts.spaceGrotesk(
+                style: TextStyle(
                   color:
                       _isCustomTimer
                           ? AppTheme.textPrimaryFor(context)
@@ -382,7 +381,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                           const SizedBox(width: 8),
                           Text(
                             'Custom Time Control',
-                            style: GoogleFonts.spaceGrotesk(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: textPrimary,
@@ -404,7 +403,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                         ),
                         child: Text(
                           '$tempMinutes min + ${tempIncrement}s',
-                          style: GoogleFonts.spaceGrotesk(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
@@ -421,7 +420,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                     children: [
                       Text(
                         'Time per Player',
-                        style: GoogleFonts.spaceGrotesk(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: textPrimary,
@@ -429,7 +428,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                       ),
                       Text(
                         '$tempMinutes minutes',
-                        style: GoogleFonts.spaceGrotesk(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryColor,
@@ -471,7 +470,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                                     (_) =>
                                         setSheetState(() => tempMinutes = m),
                                 selectedColor: AppTheme.primaryColor,
-                                labelStyle: GoogleFonts.inter(
+                                labelStyle: TextStyle(
                                   color: isCur ? Colors.white : textPrimary,
                                   fontSize: 12,
                                   fontWeight:
@@ -492,7 +491,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                     children: [
                       Text(
                         'Increment per Move',
-                        style: GoogleFonts.spaceGrotesk(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: textPrimary,
@@ -500,7 +499,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                       ),
                       Text(
                         '$tempIncrement seconds',
-                        style: GoogleFonts.spaceGrotesk(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryColor,
@@ -543,7 +542,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                                       () => tempIncrement = inc,
                                     ),
                                 selectedColor: AppTheme.primaryColor,
-                                labelStyle: GoogleFonts.inter(
+                                labelStyle: TextStyle(
                                   color: isCur ? Colors.white : textPrimary,
                                   fontSize: 12,
                                   fontWeight:
@@ -575,7 +574,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                           ),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               color: textSecondary,
                               fontWeight: FontWeight.w600,
                             ),
@@ -604,7 +603,7 @@ class _NewGameSetupScreenState extends ConsumerState<NewGameSetupScreen> {
                           ),
                           child: Text(
                             'Apply Time',
-                            style: GoogleFonts.spaceGrotesk(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
                             ),

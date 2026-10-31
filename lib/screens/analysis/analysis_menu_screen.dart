@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
 import 'package:chess_master/screens/analysis/pgn_import_screen.dart';
@@ -15,7 +14,8 @@ import 'package:chess_master/screens/history/game_history_screen.dart';
 
 /// Enhanced analysis menu screen matching the new requirements
 class AnalysisMenuScreen extends ConsumerWidget {
-  const AnalysisMenuScreen({super.key});
+  final bool showAppBar;
+  const AnalysisMenuScreen({super.key, this.showAppBar = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,14 +24,16 @@ class AnalysisMenuScreen extends ConsumerWidget {
         gameSession != null && gameSession.moveHistory.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        title: Text(
-          'Game Analysis',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-        ),
-      ),
+      appBar: showAppBar
+          ? AppBar(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              elevation: 0,
+              title: const Text(
+                'Game Analysis',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            )
+          : null,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -42,7 +44,7 @@ class AnalysisMenuScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Analyze your games using Stockfish.',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 16,
                       color: AppTheme.textSecondaryFor(context),
                     ),
@@ -160,7 +162,7 @@ class AnalysisMenuScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
                           Text(
                             'No analyzed games yet',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 18,
                               color: AppTheme.textSecondaryFor(context),
                               fontWeight: FontWeight.bold,
@@ -169,7 +171,7 @@ class AnalysisMenuScreen extends ConsumerWidget {
                           const SizedBox(height: 8),
                           Text(
                             'Play a game or import a PGN to get started.',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 14,
                               color: AppTheme.textHintFor(context),
                             ),
@@ -236,7 +238,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Text(
         title,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: AppTheme.textPrimaryFor(context),
@@ -283,7 +285,7 @@ class _AnalysisOptionCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textPrimaryFor(context),
@@ -292,7 +294,7 @@ class _AnalysisOptionCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppTheme.textSecondaryFor(context),
                     height: 1.3,
@@ -377,7 +379,7 @@ class _SavedGameCard extends StatelessWidget {
                   isHuman ? 'Human Game' : 'vs $opponent',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textPrimaryFor(context),
@@ -391,7 +393,7 @@ class _SavedGameCard extends StatelessWidget {
                     AppBadge.status(label: result, color: badgeColor, icon: badgeIcon),
                     Text(
                       '• ${game.moveHistory.length} moves',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.textSecondaryFor(context),
                       ),
@@ -407,7 +409,7 @@ class _SavedGameCard extends StatelessWidget {
               if (game.whiteAccuracy != null)
                 Text(
                   '${game.whiteAccuracy!.toStringAsFixed(1)}%',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: _getAccuracyColor(game.whiteAccuracy!),
@@ -416,7 +418,7 @@ class _SavedGameCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 dateStr,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 11,
                   color: AppTheme.textHintFor(context),
                 ),

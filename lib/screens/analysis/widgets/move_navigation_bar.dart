@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class MoveNavigationBar extends StatelessWidget {
   final bool canGoPrevious;
@@ -68,7 +67,7 @@ class MoveNavigationBar extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     child: Text(
                       'Move $currentMove / $totalMoves',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.textPrimaryFor(context),
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -205,7 +204,7 @@ class _JumpButton extends StatelessWidget {
               child: Text(
                 label,
                 maxLines: 1,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: displayColor,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,

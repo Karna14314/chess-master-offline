@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/bot_profile.dart';
@@ -64,7 +63,7 @@ class _BotsHubScreenState extends ConsumerState<BotsHubScreen>
       appBar: AppBar(
         title: Text(
           'Bot Arena',
-          style: GoogleFonts.spaceGrotesk(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             color: textPrimary,
           ),
@@ -87,7 +86,7 @@ class _BotsHubScreenState extends ConsumerState<BotsHubScreen>
                 const SizedBox(width: 4),
                 Text(
                   '${botState.totalBotStars} Stars',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                     color: Colors.amber[800] ?? Colors.amber,
@@ -139,7 +138,7 @@ class _BotsHubScreenState extends ConsumerState<BotsHubScreen>
                       children: [
                         Text(
                           '12-Level Master Campaign',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -148,7 +147,7 @@ class _BotsHubScreenState extends ConsumerState<BotsHubScreen>
                         const SizedBox(height: 2),
                         Text(
                           'Level ${botState.campaignUnlockedLevel}/12 Unlocked • Earn Badges',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 12,
                             color: Colors.white70,
                           ),

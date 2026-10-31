@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 
 /// Thumb-zone in-game action bar container with standardized button slots.
@@ -84,7 +83,7 @@ class BottomActionItem extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w500,
                 color: effectiveColor,

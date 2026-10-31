@@ -109,11 +109,11 @@ class PuzzleInfo extends StatelessWidget {
   }
 
   Color _getRatingColor(int rating) {
-    if (rating < 1200) return Colors.green;
-    if (rating < 1600) return Colors.blue;
-    if (rating < 2000) return Colors.purple;
-    if (rating < 2400) return Colors.orange;
-    return Colors.red;
+    if (rating < 1200) return AppTheme.primaryColor;
+    if (rating < 1600) return const Color(0xFF3B82F6);
+    if (rating < 2000) return const Color(0xFF8B5CF6);
+    if (rating < 2400) return AppTheme.amberGold;
+    return const Color(0xFFEF4444);
   }
 
   String _formatTheme(String theme) {

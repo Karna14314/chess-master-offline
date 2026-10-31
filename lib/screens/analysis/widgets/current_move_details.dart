@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class CurrentMoveDetails extends StatelessWidget {
   final MoveAnalysis? analysis;
@@ -51,7 +50,7 @@ class CurrentMoveDetails extends StatelessWidget {
                       children: [
                         Text(
                           analysis!.san,
-                          style: GoogleFonts.spaceMono(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textPrimaryFor(context),
@@ -61,7 +60,7 @@ class CurrentMoveDetails extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             classification.symbol,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: color,
@@ -73,7 +72,7 @@ class CurrentMoveDetails extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       classification.name,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: color,
@@ -90,7 +89,7 @@ class CurrentMoveDetails extends StatelessWidget {
                   if (analysis!.engineLines.isNotEmpty)
                     Text(
                       'Depth ${analysis!.engineLines.first.depth}',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.textHintFor(context),
                       ),
@@ -166,7 +165,7 @@ class _EvalChangeWidget extends StatelessWidget {
     if (evalLoss.abs() <= 0.05) {
       return Text(
         '0.0',
-        style: GoogleFonts.spaceMono(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.bold,
           color: AppTheme.textSecondaryFor(context),
@@ -190,7 +189,7 @@ class _EvalChangeWidget extends StatelessWidget {
         const SizedBox(width: 2),
         Text(
           isPositive ? '+$displayValue' : '-$displayValue',
-          style: GoogleFonts.spaceMono(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
             color: color,

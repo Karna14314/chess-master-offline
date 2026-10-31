@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/campaign_model.dart';
 import 'package:chess_master/providers/bot_progress_provider.dart';
@@ -22,7 +21,7 @@ class BotCampaignScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           'Campaign Map',
-          style: GoogleFonts.spaceGrotesk(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             color: textPrimary,
           ),
@@ -45,7 +44,7 @@ class BotCampaignScreen extends ConsumerWidget {
                 const SizedBox(width: 4),
                 Text(
                   '${botState.totalCampaignStars}/36 Stars',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                     color: Colors.amber[800] ?? Colors.amber,
@@ -133,7 +132,7 @@ class BotCampaignScreen extends ConsumerWidget {
               children: [
                 Text(
                   'WORLD $worldNumber: $title',
-                  style: GoogleFonts.spaceGrotesk(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: color,
@@ -142,7 +141,7 @@ class BotCampaignScreen extends ConsumerWidget {
                 ),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 11,
                     color: AppTheme.textSecondaryFor(context),
                   ),
@@ -244,7 +243,7 @@ class BotCampaignScreen extends ConsumerWidget {
                         : (isUnlocked
                             ? Text(
                                 '${level.levelNumber}',
-                                style: GoogleFonts.spaceGrotesk(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   color: isCurrent ? Colors.black87 : textPrimary,
@@ -325,7 +324,7 @@ class BotCampaignScreen extends ConsumerWidget {
                                     level.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.inter(
+                                    style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                       color: textPrimary,
@@ -342,7 +341,7 @@ class BotCampaignScreen extends ConsumerWidget {
                                     ),
                                     child: Text(
                                       'ACTIVE',
-                                      style: GoogleFonts.inter(
+                                      style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.black87,
@@ -355,7 +354,7 @@ class BotCampaignScreen extends ConsumerWidget {
                             const SizedBox(height: 2),
                             Text(
                               'vs ${bot.name} (${bot.elo} ELO)',
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontSize: 11,
                                 color: textSecondary,
                               ),
@@ -372,7 +371,7 @@ class BotCampaignScreen extends ConsumerWidget {
                                   ),
                                   child: Text(
                                     level.rewardBadge,
-                                    style: GoogleFonts.inter(
+                                    style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.primaryColor,

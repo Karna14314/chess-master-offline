@@ -3,7 +3,6 @@ import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/home/home_screen.dart';
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Tutorial intro screen shown after onboarding completes.
 /// Presents a quick 1-move checkmate puzzle to give new players an instant win.
@@ -130,7 +129,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
           const SizedBox(height: 32),
           Text(
             'Welcome to ChessMaster!',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimaryFor(context),
@@ -140,7 +139,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
           const SizedBox(height: 16),
           Text(
             'Let\'s play a quick game to get you started. You\'ll play as White and try to find checkmate in 1 move.',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 15,
               height: 1.5,
               color: AppTheme.textSecondaryFor(context),
@@ -164,7 +163,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
               ),
               child: Text(
                 'Let\'s Go!',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -181,7 +180,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
             },
             child: Text(
               'Skip (go to home)',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textSecondaryFor(context),
               ),
             ),
@@ -205,7 +204,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
           const SizedBox(height: 24),
           Text(
             'How to Move Pieces',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimaryFor(context),
@@ -249,7 +248,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
               ),
               child: Text(
                 'Try It!',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -279,7 +278,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
           child: Center(
             child: Text(
               step,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -294,7 +293,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimaryFor(context),
@@ -303,7 +302,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
               const SizedBox(height: 4),
               Text(
                 description,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 13,
                   height: 1.4,
                   color: AppTheme.textSecondaryFor(context),
@@ -325,7 +324,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
             children: [
               Text(
                 'Checkmate in 1 Move',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.textPrimaryFor(context),
@@ -336,7 +335,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
                 _isSolved
                     ? 'Correct! You found checkmate.'
                     : 'White to move. Find the winning move.',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 14,
                   color: AppTheme.textSecondaryFor(context),
                 ),
@@ -346,7 +345,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
               if (!_isSolved)
                 Text(
                   'Hint: Promote the pawn for checkmate!',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 13,
                     color: Colors.orange.shade600,
                     fontStyle: FontStyle.italic,
@@ -390,7 +389,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
                 const SizedBox(height: 20),
                 Text(
                   'Excellent!',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textPrimaryFor(context),
@@ -399,7 +398,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'You just delivered checkmate! Now you\'re ready to play for real.',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 14,
                     height: 1.5,
                     color: AppTheme.textSecondaryFor(context),
@@ -428,7 +427,7 @@ class _TutorialIntroScreenState extends State<TutorialIntroScreen> {
                     ),
                     child: Text(
                       'Go to Home',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),

@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/screens/analysis/analysis_screen.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/models/game_model.dart';
 
@@ -34,7 +33,7 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
         elevation: 0,
         title: Text(
           'Import PGN',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
@@ -45,7 +44,7 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
             children: [
               Text(
                 'Paste your PGN',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.textPrimaryFor(context),
@@ -54,7 +53,7 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
               const SizedBox(height: 8),
               Text(
                 'Analyze games from any chess platform. Paste the PGN string below.',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 14,
                   color: AppTheme.textSecondaryFor(context),
                   height: 1.5,
@@ -80,14 +79,14 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                     controller: _pgnController,
                     maxLines: null,
                     expands: true,
-                    style: GoogleFonts.spaceMono(
+                    style: TextStyle(
                       fontSize: 13,
                       color: AppTheme.textPrimaryFor(context),
                     ),
                     decoration: InputDecoration(
                       hintText:
                           '[Event "Casual Game"]\n[Site "?"]\n[Date "2024.01.01"]\n...\n\n1. e4 e5 2. Nf3 Nc6 ...',
-                      hintStyle: GoogleFonts.spaceMono(
+                      hintStyle: TextStyle(
                         fontSize: 13,
                         color: AppTheme.textHintFor(context),
                       ),
@@ -119,7 +118,7 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.error,
                           ),
@@ -157,7 +156,7 @@ class _PgnImportScreenState extends ConsumerState<PgnImportScreen> {
                         : const Icon(Icons.analytics),
                 label: Text(
                   _isParsing ? 'Parsing...' : 'Analyze Game',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

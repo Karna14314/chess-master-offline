@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/services/lesson_service.dart';
 import 'package:chess_master/providers/achievement_provider.dart';
@@ -152,7 +151,7 @@ class AchievementsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         '$unlockedCount / ${achievements.length} Unlocked',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimaryFor(context),
@@ -191,7 +190,7 @@ class AchievementsScreen extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Text(
                     category.title,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimaryFor(context),

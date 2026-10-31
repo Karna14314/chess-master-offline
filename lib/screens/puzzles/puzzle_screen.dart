@@ -8,7 +8,6 @@ import 'package:chess_master/providers/journey_provider.dart';
 import 'package:chess_master/screens/puzzles/widgets/puzzle_board_widget.dart';
 import 'package:chess_master/widgets/shared/app_badge.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Puzzle training screen
 class PuzzleScreen extends ConsumerStatefulWidget {
@@ -137,7 +136,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
         centerTitle: true,
         title: Text(
           _getAppBarTitle(state.mode),
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           _buildAppBarAction(state),
@@ -174,7 +173,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
           const SizedBox(height: 16),
           Text(
             state.errorMessage!,
-            style: GoogleFonts.inter(color: AppTheme.textSecondaryFor(context)),
+            style: TextStyle(color: AppTheme.textSecondaryFor(context)),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -189,7 +188,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             ),
             child: Text(
               'Retry',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -288,7 +287,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const SizedBox(width: 8),
             Text(
               state.errorMessage ?? "Wrong Move! Try Again",
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.error,
                 fontWeight: FontWeight.bold,
               ),
@@ -303,7 +302,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 ),
                 child: Text(
                   '$delta (${state.currentRating})',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: AppTheme.error,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -346,7 +345,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const SizedBox(width: 8),
             Text(
               message,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: Colors.green,
                 fontWeight: FontWeight.bold,
               ),
@@ -361,7 +360,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 ),
                 child: Text(
                   '+$delta',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -377,7 +376,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
     return Text(
       state.isWhiteTurn ? "White to Move" : "Black to Move",
       key: const ValueKey('turn'),
-      style: GoogleFonts.inter(
+      style: TextStyle(
         color: AppTheme.textSecondaryFor(context),
         fontWeight: FontWeight.w600,
       ),
@@ -553,7 +552,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const SizedBox(width: 5),
             Text(
               '${journey.currentLevel}/$kTotalJourneyLevels',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
                 color: Colors.teal,
@@ -580,7 +579,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const SizedBox(width: 5),
             Text(
               '${state.currentRating} ELO',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
                 color: AppTheme.primaryColor,
@@ -607,7 +606,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
             const SizedBox(width: 5),
             Text(
               'Random',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
                 color: Colors.purple,
@@ -633,7 +632,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
           const SizedBox(width: 5),
           Text(
             '${state.currentRating}',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 12,
               color: AppTheme.textPrimaryFor(context),
@@ -715,7 +714,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
               if (isJourney)
                 Text(
                   '${journey.solvedCount} / $kTotalJourneyLevels',
-                  style: GoogleFonts.spaceGrotesk(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.teal,
@@ -726,7 +725,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
               else
                 Text(
                   '${puzzle.rating} ELO',
-                  style: GoogleFonts.spaceGrotesk(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: textPrimary,
@@ -752,7 +751,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
               children: [
                 Text(
                   'Puzzle #${puzzle.id}',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                     color: textSecondary,
@@ -761,7 +760,7 @@ class _PuzzleScreenState extends ConsumerState<PuzzleScreen> {
                 if (puzzle.themes.isNotEmpty)
                   Text(
                     puzzle.themes.first,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: AppTheme.primaryColor,

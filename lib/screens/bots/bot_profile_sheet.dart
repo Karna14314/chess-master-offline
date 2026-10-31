@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/models/bot_profile.dart';
@@ -90,7 +89,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
             // Bot Name & Tier
             Text(
               widget.bot.name,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: textPrimary,
@@ -112,7 +111,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
                   ),
                   child: Text(
                     '${widget.bot.tier.displayName} • ${widget.bot.elo} ELO',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: tierColor,
@@ -137,7 +136,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
                         const SizedBox(width: 4),
                         Text(
                           '${stats.bestStars}/3 Stars',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: Colors.amber,
@@ -163,7 +162,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
               child: Text(
                 '"${widget.bot.quote}"',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 13,
                   fontStyle: FontStyle.italic,
                   color: textSecondary,
@@ -181,7 +180,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
                 return Chip(
                   label: Text(
                     tag,
-                    style: GoogleFonts.inter(fontSize: 11, color: textPrimary),
+                    style: TextStyle(fontSize: 11, color: textPrimary),
                   ),
                   backgroundColor: isDark
                       ? Colors.white.withValues(alpha: 0.08)
@@ -259,7 +258,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
                       onSelected: (_) =>
                           setState(() => _selectedHandicap = mode),
                       selectedColor: AppTheme.primaryColor,
-                      labelStyle: GoogleFonts.inter(
+                      labelStyle: TextStyle(
                         color: isSelected ? Colors.white : textPrimary,
                         fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
@@ -293,7 +292,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
                     const SizedBox(width: 8),
                     Text(
                       'PLAY VS ${widget.bot.name.toUpperCase()}',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -314,7 +313,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
       alignment: Alignment.centerLeft,
       child: Text(
         label,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: color,
@@ -328,7 +327,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
       children: [
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: color,
@@ -337,7 +336,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
         const SizedBox(height: 2),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 12,
             color: Colors.grey,
           ),
@@ -374,7 +373,7 @@ class _BotProfileSheetState extends ConsumerState<BotProfileSheet> {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               color: isSelected

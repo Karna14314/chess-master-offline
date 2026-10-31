@@ -6,7 +6,6 @@ import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 import 'package:chess_master/providers/statistics_provider.dart';
 import 'package:chess_master/models/statistics_model.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/providers/achievement_provider.dart';
 import 'package:chess_master/providers/bot_progress_provider.dart';
 import 'package:chess_master/models/bot_profile.dart';
@@ -44,7 +43,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       appBar: AppBar(
         title: Text(
           'Profile',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
@@ -176,7 +175,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               children: [
                 Text(
                   'Player Profile',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textPrimaryFor(context),
@@ -204,7 +203,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   archetypeDesc,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.textSecondaryFor(context),
                   ),
@@ -288,7 +287,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: _StatCard(
                 icon: Icons.emoji_events,
-                iconColor: Colors.amber,
+                iconColor: AppTheme.amberGold,
                 title: 'Win Rate',
                 value: '${stats.winRate.toStringAsFixed(1)}%',
               ),
@@ -301,7 +300,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: _StatCard(
                 icon: Icons.smart_toy_outlined,
-                iconColor: Colors.orange,
+                iconColor: AppTheme.primaryColor,
                 title: 'Bots Beaten',
                 value: botsBeaten.toString(),
               ),
@@ -310,7 +309,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: _StatCard(
                 icon: Icons.military_tech_outlined,
-                iconColor: Colors.deepOrange,
+                iconColor: AppTheme.amberGold,
                 title: 'Strongest Bot',
                 value:
                     stats.strongestBotEloBeaten > 0
@@ -326,7 +325,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: _StatCard(
                 icon: Icons.extension,
-                iconColor: Colors.purple,
+                iconColor: AppTheme.primaryColor,
                 title: 'Puzzles Solved',
                 value: '${stats.puzzlesSolved}/${stats.puzzlesAttempted}',
               ),
@@ -335,7 +334,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: _StatCard(
                 icon: Icons.trending_up,
-                iconColor: Colors.cyan,
+                iconColor: AppTheme.primaryColor,
                 title: 'Peak Puzzle',
                 value: stats.highestPuzzleRating.toString(),
               ),
@@ -348,7 +347,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: _StatCard(
                 icon: Icons.analytics_outlined,
-                iconColor: Colors.teal,
+                iconColor: AppTheme.primaryColor,
                 title: 'Games Analysed',
                 value: stats.gamesAnalysed.toString(),
               ),
@@ -357,7 +356,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: _StatCard(
                 icon: Icons.local_fire_department_outlined,
-                iconColor: Colors.redAccent,
+                iconColor: AppTheme.amberGold,
                 title: 'Win Streak',
                 value: '${stats.consecutiveWins}',
               ),
@@ -410,7 +409,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                 ),
                 child: Text(
                   tierName,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: eloColor,
@@ -422,7 +421,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           const SizedBox(height: 10),
           Text(
             '$elo',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
               color: eloColor,
@@ -433,7 +432,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             children: [
               Text(
                 'Game ELO',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textSecondaryFor(context),
@@ -450,7 +449,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                 ),
                 Text(
                   '${trend > 0 ? "+" : ""}$trend',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     color: trend > 0 ? Colors.green : Colors.red,
@@ -462,7 +461,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           const SizedBox(height: 8),
           Text(
             stats.totalGames > 0 ? 'Best: ${stats.bestElo}' : 'No matches yet',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 11,
               color: AppTheme.textHintFor(context),
             ),
@@ -522,7 +521,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                 ),
                 child: Text(
                   tierName,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: puzzleColor,
@@ -534,7 +533,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           const SizedBox(height: 10),
           Text(
             '$elo',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
               color: puzzleColor,
@@ -543,7 +542,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           const SizedBox(height: 2),
           Text(
             'Puzzle Rating',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppTheme.textSecondaryFor(context),
@@ -554,7 +553,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             stats.puzzlesAttempted > 0
                 ? 'Peak: ${stats.highestPuzzleRating} • ${stats.puzzlesSolved} solved'
                 : 'Puzzles: 0 attempted',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 11,
               color: AppTheme.textHintFor(context),
             ),
@@ -768,7 +767,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               ),
               Text(
                 '${journey.completionPercent.toStringAsFixed(1)}% Done',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: AppTheme.primaryColor,
                   fontSize: 13,
@@ -1142,7 +1141,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                   children: [
                     Text(
                       '$unlockedCount / ${achievements.length} Unlocked',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                         color: AppTheme.textPrimaryFor(context),
@@ -1151,7 +1150,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                     const SizedBox(height: 2),
                     Text(
                       'View all trophies and how to earn them',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.textSecondaryFor(context),
                       ),
@@ -1203,7 +1202,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: AppTheme.space12),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimaryFor(context),
@@ -1212,7 +1211,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 12,
               color: AppTheme.textSecondaryFor(context),
             ),

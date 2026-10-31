@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/providers/puzzle_provider.dart';
@@ -108,7 +107,7 @@ class PuzzleBoardWidget extends StatelessWidget {
             ),
             title: Text(
               'Promote Pawn',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             content: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -154,7 +153,7 @@ class _PromotionButton extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 10,
               ),

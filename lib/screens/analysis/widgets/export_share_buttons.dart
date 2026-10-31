@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ExportShareButtons extends StatelessWidget {
   final String pgn;
@@ -24,7 +23,7 @@ class ExportShareButtons extends StatelessWidget {
         children: [
           Text(
             'Export & Share',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               color: AppTheme.textPrimaryFor(context),
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -92,7 +91,7 @@ class _ExportButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textPrimaryFor(context),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,

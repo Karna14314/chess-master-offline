@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/core/services/database_service.dart';
@@ -25,7 +24,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           'Puzzle History',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -49,7 +48,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Error loading puzzle history',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       color: AppTheme.textSecondaryFor(context),
                     ),
                   ),
@@ -75,7 +74,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     'No puzzles played yet',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textSecondaryFor(context),
@@ -84,7 +83,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Puzzles you tackle will appear here',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       color: AppTheme.textHintFor(context),
                     ),
                   ),
@@ -136,7 +135,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
         children: [
           Text(
             'Overall Statistics',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimaryFor(context),
@@ -187,7 +186,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimaryFor(context),
@@ -196,7 +195,7 @@ class PuzzleHistoryScreen extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 12,
             color: AppTheme.textHintFor(context),
           ),
@@ -263,7 +262,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
                 children: [
                   Text(
                     'Puzzle #$puzzleId',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: AppTheme.textPrimaryFor(context),
@@ -272,7 +271,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     dateFormat.format(lastAttempted),
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.textHintFor(context),
                     ),
@@ -285,7 +284,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
               children: [
                 Text(
                   solved ? 'Solved' : 'Failed',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: color,
@@ -294,7 +293,7 @@ class _PuzzleHistoryCard extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text(
                   '$attempts attempt${attempts == 1 ? '' : 's'}',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.textHintFor(context),
                   ),

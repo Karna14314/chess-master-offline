@@ -9,7 +9,6 @@ import 'package:chess_master/screens/puzzles/widgets/daily_puzzle_reminder_botto
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/screens/puzzles/widgets/puzzle_board_widget.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Daily puzzle screen - special UI for daily challenge
 class DailyPuzzleScreen extends ConsumerStatefulWidget {
@@ -71,11 +70,11 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
           children: [
             Text(
               'Daily Puzzle',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             Text(
               _getFormattedDate(),
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textSecondaryFor(context),
               ),
@@ -138,7 +137,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
             ),
             child: Text(
               state.isWhiteTurn ? "White to Move" : "Black to Move",
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textPrimaryFor(context),
                 fontWeight: FontWeight.w600,
               ),
@@ -221,7 +220,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
               children: [
                 Text(
                   'Daily Challenge',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -230,7 +229,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Rating: ${puzzle.rating} • ${puzzle.themes.join(", ")}',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 13,
                   ),
@@ -259,7 +258,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
           Expanded(
             child: Text(
               delta != null ? '$message ($delta)' : message,
-              style: GoogleFonts.inter(color: AppTheme.error, fontWeight: FontWeight.bold),
+              style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -282,7 +281,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
           const SizedBox(width: 8),
           Text(
             'Correct! Keep going...',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               color: Colors.green,
               fontWeight: FontWeight.bold,
             ),
@@ -311,7 +310,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                textStyle: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -327,7 +326,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                textStyle: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -349,7 +348,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                textStyle: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -366,7 +365,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                textStyle: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -392,7 +391,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              textStyle: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -410,7 +409,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              textStyle: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -453,7 +452,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
             const SizedBox(height: 32),
             Text(
               'Congratulations!',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimaryFor(context),
@@ -462,7 +461,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
             const SizedBox(height: 12),
             Text(
               'You completed today\'s puzzle!',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 16,
                 color: AppTheme.textSecondaryFor(context),
               ),
@@ -514,7 +513,7 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 4,
-                  textStyle: GoogleFonts.inter(
+                  textStyle: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -533,14 +532,14 @@ class _DailyPuzzleScreenState extends ConsumerState<DailyPuzzleScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.textSecondaryFor(context),
             fontSize: 14,
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.textPrimaryFor(context),
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -640,7 +639,7 @@ class _AutoPlaySolutionScreenState extends State<_AutoPlaySolutionScreen> {
         elevation: 0,
         title: Text(
           'Solution',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
@@ -649,7 +648,7 @@ class _AutoPlaySolutionScreenState extends State<_AutoPlaySolutionScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               'Move ${_currentMoveIndex + 1} of ${widget.puzzle.moves.length}',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.textSecondaryFor(context),
                 fontSize: 14,
               ),

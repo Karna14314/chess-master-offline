@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:chess_master/core/services/audio_service.dart';
 import 'package:chess_master/core/services/lesson_service.dart';
@@ -400,11 +399,11 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
           children: [
             Text(
               chapter.title,
-              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             Text(
               'Exercise ${_currentIndex + 1} of ${_chapters.length}',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textHintFor(context),
               ),
@@ -448,7 +447,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                     Expanded(
                       child: Text(
                         chapter.instruction,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textPrimaryFor(context),
@@ -477,7 +476,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                           const SizedBox(width: 8),
                           Text(
                             'The Idea',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: _accentGold,
@@ -488,7 +487,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                       const SizedBox(height: 8),
                       Text(
                         chapter.concept,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 14,
                           height: 1.5,
                           color: AppTheme.textPrimaryFor(context),
@@ -501,7 +500,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                           icon: const Icon(Icons.play_arrow_rounded, size: 18),
                           label: Text(
                             'Start Practicing',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -543,7 +542,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                           const SizedBox(width: 8),
                           Text(
                             'Quick Check',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: _accentGold,
@@ -554,7 +553,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                       const SizedBox(height: 8),
                       Text(
                         chapter.quizQuestion,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textPrimaryFor(context),
@@ -597,7 +596,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 chapter.quizOptions[i],
-                                style: GoogleFonts.inter(
+                                style: TextStyle(
                                   fontSize: 13,
                                   color: AppTheme.textPrimaryFor(context),
                                 ),
@@ -632,7 +631,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                       const SizedBox(width: 8),
                       Text(
                         _feedbackMessage!,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: _feedbackColor,
@@ -677,7 +676,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                           const SizedBox(width: 6),
                           Text(
                             'Hint ($_hintsShown/${chapter.hints.length})',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: _accentGold,
@@ -688,7 +687,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                       const SizedBox(height: 4),
                       Text(
                         chapter.hints[_hintsShown - 1],
-                        style: GoogleFonts.inter(fontSize: 13),
+                        style: TextStyle(fontSize: 13),
                       ),
                     ],
                   ),
@@ -705,7 +704,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                       _moveStep == 0
                           ? 'Play First Move'
                           : 'Next Move (${_moveStep + 1}/${chapter.solutionMoves.length})',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                      style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _accentGold,
@@ -733,7 +732,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                           const SizedBox(width: 8),
                           Text(
                             'Key Tactical Principle',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: _successGreen,
@@ -744,7 +743,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                       const SizedBox(height: 8),
                       Text(
                         chapter.explanation,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 13,
                           height: 1.4,
                           color: AppTheme.textPrimaryFor(context),
@@ -769,7 +768,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                               Expanded(
                                 child: Text(
                                   'Remember: ${chapter.takeaway}',
-                                  style: GoogleFonts.inter(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     fontStyle: FontStyle.italic,
@@ -796,7 +795,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                       icon: const Icon(Icons.lightbulb_outline_rounded, size: 18),
                       label: Text(
                         _hintsShown > 0 ? 'Next Hint' : 'Get Hint',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -816,7 +815,7 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
                         _isCompleted
                             ? (_currentIndex < _chapters.length - 1 ? 'Next Lesson' : 'Completed!')
                             : 'Reset',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _isCompleted ? _accentGold : AppTheme.cardColor(context),

@@ -25,14 +25,14 @@ class AppCard extends StatelessWidget {
     this.margin,
     this.color,
     this.borderColor,
-    this.borderRadius = AppTheme.radiusMd,
+    this.borderRadius = AppTheme.radiusLg,
     this.gradient,
     this.boxShadow,
     this.isSelected = false,
     this.enableHaptics = true,
   });
 
-  /// Hero card constructor with prominent padding and optional subtle ambient glow
+  /// Hero card constructor with flat surface styling and subtle primary highlight when active
   factory AppCard.hero({
     Key? key,
     required Widget child,
@@ -43,27 +43,20 @@ class AppCard extends StatelessWidget {
     Color? borderColor,
     double borderRadius = AppTheme.radiusLg,
     Gradient? gradient,
+    List<BoxShadow>? boxShadow,
     Color? glowColor,
     bool enableHaptics = true,
   }) {
-    final effectiveGlow = glowColor ?? AppTheme.emeraldGreen;
     return AppCard(
       key: key,
       onTap: onTap,
       padding: padding,
       margin: margin,
       color: color,
-      borderColor: borderColor ?? effectiveGlow.withValues(alpha: 0.35),
+      borderColor: borderColor,
       borderRadius: borderRadius,
       gradient: gradient,
-      boxShadow: [
-        BoxShadow(
-          color: effectiveGlow.withValues(alpha: 0.08),
-          blurRadius: 20,
-          spreadRadius: -2,
-          offset: const Offset(0, 6),
-        ),
-      ],
+      boxShadow: boxShadow,
       enableHaptics: enableHaptics,
       child: child,
     );
@@ -77,7 +70,7 @@ class AppCard extends StatelessWidget {
     VoidCallback? onTap,
     EdgeInsetsGeometry padding = const EdgeInsets.all(AppTheme.space12),
     EdgeInsetsGeometry? margin,
-    double borderRadius = AppTheme.radiusMd,
+    double borderRadius = AppTheme.radiusLg,
     Color? activeBorderColor,
     bool enableHaptics = true,
   }) {
@@ -89,7 +82,7 @@ class AppCard extends StatelessWidget {
       borderRadius: borderRadius,
       isSelected: isSelected,
       borderColor: isSelected
-          ? (activeBorderColor ?? AppTheme.emeraldGreen)
+          ? (activeBorderColor ?? AppTheme.primaryColor)
           : null,
       enableHaptics: enableHaptics,
       child: child,
@@ -98,16 +91,13 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final defaultBaseColor = isSelected
-        ? (isDark
-            ? AppTheme.emeraldGreen.withValues(alpha: 0.12)
-            : AppTheme.emeraldGreen.withValues(alpha: 0.08))
+        ? AppTheme.primaryColor.withValues(alpha: 0.12)
         : (color ?? AppTheme.surfaceLevel1(context));
 
-    final defaultBorderColor = isSelected
-        ? AppTheme.emeraldGreen
-        : (borderColor ?? AppTheme.borderStroke(context));
+    final effectiveBorderColor = isSelected
+        ? AppTheme.primaryColor
+        : borderColor;
 
     Widget content = Container(
       margin: margin,
@@ -115,7 +105,9 @@ class AppCard extends StatelessWidget {
         color: gradient == null ? defaultBaseColor : null,
         gradient: gradient,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: defaultBorderColor, width: isSelected ? 1.5 : 1.0),
+        border: effectiveBorderColor != null
+            ? Border.all(color: effectiveBorderColor, width: isSelected ? 1.5 : 1.0)
+            : null,
         boxShadow: boxShadow,
       ),
       child: Padding(
@@ -137,8 +129,8 @@ class AppCard extends StatelessWidget {
             onTap!();
           },
           borderRadius: BorderRadius.circular(borderRadius),
-          splashColor: AppTheme.emeraldGreen.withValues(alpha: 0.12),
-          highlightColor: AppTheme.emeraldGreen.withValues(alpha: 0.06),
+          splashColor: AppTheme.primaryColor.withValues(alpha: 0.12),
+          highlightColor: AppTheme.primaryColor.withValues(alpha: 0.06),
           child: content,
         ),
       );

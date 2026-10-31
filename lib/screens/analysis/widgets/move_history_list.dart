@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/analysis_model.dart';
 import 'package:chess_master/models/game_model.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chess_master/core/constants/app_constants.dart';
 
 class MoveHistoryList extends StatelessWidget {
@@ -54,7 +53,7 @@ class MoveHistoryList extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Move History',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.textPrimaryFor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -84,7 +83,7 @@ class MoveHistoryList extends StatelessWidget {
                       width: 24,
                       child: Text(
                         '$moveNumber.',
-                        style: GoogleFonts.spaceMono(
+                        style: TextStyle(
                           color: AppTheme.textHintFor(context),
                           fontSize: 13,
                         ),
@@ -178,7 +177,7 @@ class _MoveChip extends StatelessWidget {
           children: [
             Text(
               move.san,
-              style: GoogleFonts.spaceMono(
+              style: TextStyle(
                 color: isSelected ? Colors.white : textColor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                 fontSize: 13,
@@ -197,7 +196,7 @@ class _MoveChip extends StatelessWidget {
                 ),
                 child: Text(
                   symbol,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: isSelected ? Colors.white : (cColor ?? Colors.white),
                     fontWeight: FontWeight.bold,
                     fontSize: 11,

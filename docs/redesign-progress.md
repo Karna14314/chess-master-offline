@@ -4,12 +4,12 @@
 *Completed Audit of Codebase Structure and Architecture.*
 
 ### Current Architecture & State Management Overview
-- **State Management**: Riverpod (`flutter_riverpod`, `ConsumerWidget`, `ConsumerStatefulWidget`, `StateNotifier`, `Notifier`, `FutureProvider`, `Provider`). No new state management patterns will be introduced.
-- **Navigation Structure**: Currently 4 tabs in `MainScreen` (`HomeScreen`, `PuzzleMenuScreen`, `LearnScreen`, `StatisticsScreen`).
+- **State Management**: Riverpod (`flutter_riverpod`, `ConsumerWidget`, `ConsumerStatefulWidget`, `StateNotifier`, `Notifier`, `FutureProvider`, `Provider`).
+- **Navigation Structure**: 4 fixed tabs in `MainScreen` (`Play`, `Puzzles`, `Learn`, `Profile`).
 - **Theme, Colors & Fonts**:
   - Centralized in `lib/core/theme/app_theme.dart`.
-  - Color definitions include `primaryColor`, `backgroundDark`, `surfaceDark`, `cardDark`, `borderColor`, etc.
-  - Typography uses clean sans-serif fonts with `GoogleFonts.config.allowRuntimeFetching = false` for offline stability.
+  - Bundled Inter TTF font assets in `assets/fonts/` (`Inter-Regular.ttf`, `Inter-Medium.ttf`, `Inter-SemiBold.ttf`, `Inter-Bold.ttf`) declared in `pubspec.yaml` with zero runtime network fetching (`google_fonts` completely removed).
+  - Softer dark palette: `#272522` background, `#302E2B` surface, `#3A3835` surfaceHigh, `#45423E` outline, `#F2F0EC` textPrimary, `#B8B4AD` textSecondary, `#8A867F` textDisabled, primary green CTA, `#F0A030` amber reserved exclusively for streak/stars/achievements.
 - **Puzzles / Curriculum / Openings / Review / Campaign / Bot Arena / Settings / Profile Wiring**:
   - *Puzzles*: `lib/screens/puzzles/puzzle_menu_screen.dart` driven by `puzzle_provider.dart` and `journey_provider.dart`. Daily Puzzle tracked via `streakProvider`.
   - *Curriculum (Lessons)*: `lib/screens/lessons/lessons_screen.dart` backed by `LessonService`.
@@ -21,66 +21,43 @@
   - *Profile*: `lib/screens/stats/statistics_screen.dart` backed by `statisticsProvider` and `achievementProvider`.
 - **Notifications**: `flutter_local_notifications` (`^18.0.1`), `timezone` (`^0.10.1`), `flutter_timezone` (`^3.0.1`).
 
-## Phase 1 — Centralized Theme Engine & Dark Default Setup
-- Configured `ThemeMode.dark` as default in `MaterialApp` and `AppSettings` while persisting System / Dark / Light theme mode preferences in `SharedPreferences`.
-- Refined color palette in `AppTheme`: Chess.com-style charcoal background (`#161512`), lighter card surfaces (`#262421`), green CTA (`#2E7D32`), orange accent (`#FF6D00`).
-- Disabled runtime network font fetching (`GoogleFonts.config.allowRuntimeFetching = false;`) in `main.dart`.
-- Added Theme Mode selector (`System` / `Dark` / `Light`) to `SettingsScreen`.
+## Fix Round Updates & Design Enhancements
 
-## Phase 2 — Bottom Navigation & Settings Gear Repositioning
-- Restructured bottom navigation bar to 4 fixed tabs with visible labels: `Play` · `Puzzles` · `Learn` · `Profile`.
-- Added small orange badge dot on the Puzzles tab icon until today's Daily Puzzle is solved (`streakProvider.isDailyPuzzleSolvedToday`).
-- Created `LearnScreen` containing top segmented control (`Lessons` | `Openings` | `Review`), remembering last-selected segment.
-- Moved Settings gear icon to top-right of Profile (`StatisticsScreen`) and removed it from Play header (`HomeScreen`).
+### 1. Inter Font Bundled Assets & Theme Typography
+- Bundled Inter font weights 400, 500, 600, and 700 directly in `assets/fonts/`.
+- Configured `fontFamily: 'Inter'` in `ThemeData` for both light and dark themes.
+- Established typography scale: Screen titles (22/semibold), Section headers (18/semibold), Body (15/regular), Secondary (13/regular), Labels (12/medium).
+- Removed `google_fonts` package dependency and replaced all per-widget font overrides across 50+ files to inherit typography directly from `ThemeData`.
+- Registered Inter SIL Open Font License in Flutter `LicenseRegistry`.
 
-## Phase 3 — Play Home Hub Redesign & Campaign Stepper Fix
-- Redesigned Play home top-to-bottom:
-  a. Header with smaller app title, streak chip, stars chip (tapping chips switches to Profile tab).
-  b. Hero card: "Play Bot" with last-used opponent + ELO (default Rusty 400), "Choose opponent" link, and automatic "Resume Game" mode when an unfinished match exists.
-  c. Compact button row: "Pass & Play" and "Analyze Game" (opens Learn → Review).
-  d. Daily Puzzle card above the fold (date, streak, Solve button / checkmark state).
-  e. "Review last game" shortcut (shown dynamically if a completed game exists).
-  f. Master Campaign card with bug fix in campaign stepper (`startLevel = currentLevelNum.clamp(1, 9)` ensuring 1, 2, 3, 4 sequentially).
-  g. Bot Arena horizontal carousel across full rating range with "See all" action. Removed standalone "All Opponents" button.
+### 2. Softer Dark Palette & Flat Surface Cards
+- Updated palette tokens in `AppTheme`: `#272522` background, `#302E2B` surface, `#3A3835` surfaceHigh, `#45423E` outline.
+- Flat card surfaces (`AppCard` and `CardTheme`) with 16pt border radius and no coloured outlines or borders.
+- Replaced orange card borders and blue/teal card accents with primary green (`#2E7D32`) or neutral `surfaceHigh`.
+- Converted difficulty badges to neutral tonal chips (`surfaceHigh` background, `textSecondary` text, small coloured dot).
+- Ensured filter chips use primary green when selected.
 
-## Checkpoint Verification (Phases 1-3)
-- Executed `flutter pub get`: Dependencies resolved cleanly.
-- Executed `flutter analyze`: 0 errors, 0 warnings.
-- Verified sans-serif fonts in every screen with `GoogleFonts.config.allowRuntimeFetching = false;`.
-- Verified dark default theme, charcoal surfaces, and System/Dark/Light theme persistence.
-- Verified Settings opens from Profile gear and settings button is removed from Play header.
+### 3. Screenshot Bug Fixes
+- **Play Tab**: Updated "Review last game" shortcut to query completed games (`result IS NOT NULL`) via `getCompletedRealGames` and hide when only an in-progress game exists.
+- **Daily Puzzle Solved State**: Simplified UI to a single row containing checkmark with 'Solved Today' label and a 'Review puzzle' button.
+- **Campaign Card**: Set `showElo: false` on `BotAvatar` in the campaign card so "400" appears only once as "vs Rusty (400)".
+- **Pass & Play Subtitle**: Shortened subtitle from "Two players, 1 phone" to "Same device" to prevent text truncation.
+- **Learn Hub App Bar**: Removed redundant "Chess Lessons" app bar title when `LessonsScreen` is embedded in the `LearnScreen` hub tab.
 
-## Phase 4 — Puzzles Tab Cleanup & Review Entry Points
-- Cleaned up `PuzzleMenuScreen`: removed Curriculum & Openings sections (hosted under `Learn`). Both title and tab label are "Puzzles".
-- Unified all Review entry points to access the identical analysis flow (`AnalysisScreen` / `LearnScreen` Review segment):
-  a. Play "Analyze Game" button -> switches to Learn → Review segment.
-  b. Play "Review last game" shortcut -> opens game's `AnalysisScreen` directly.
-  c. Game-over screen (`ResultCard`) -> "Review Game" button opens `AnalysisScreen`.
-
-## Phase 5 — Profile Screen Refinement
-- Verified Profile screen (`StatisticsScreen`): displays ratings (including puzzle rating), solved puzzle count, success rate, streak, stars, achievement summary, and top-right Settings gear icon.
-- Confirmed no game history list is present in Profile (as game history lives under Learn → Review).
-
-## Phase 6 — Daily Puzzle Local Notification System
-- Added `timezone` (`^0.10.1`), `flutter_timezone` (`^3.0.1`), and `clock` (`^1.1.2`).
-- Configured Android Manifest with `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, and `ScheduledNotificationBootReceiver`.
-- Built `DailyPuzzleNotificationService` with an injectable `Clock`:
-  - Channel `'daily_puzzle'`, default importance.
-  - Inexact zoned scheduling (`AndroidScheduleMode.inexactAllowWhileIdle`).
-  - Rolling 7-day schedule window (max 1 notification/day). Cancels today's notification when solved.
-  - Notification copy: "Today's puzzle is ready" / "Keep your N-day streak going — today's puzzle is ready".
-  - Prompt timing: modal bottom sheet `DailyPuzzleReminderBottomSheet` with time picker appears after first Daily Puzzle solve. Prompts at most twice (at least 7 days apart).
-  - Integrated toggle switch & time picker into Settings screen.
-- Added comprehensive unit tests in `test/daily_puzzle_notification_test.dart` (100% pass rate).
+### 4. Learn Lessons Async Loading Fix & Widget Tests
+- **Root Cause**: `LessonService.instance.initialize()` loads JSON asynchronously via `rootBundle.loadString`. On cold open, `LessonsScreen` synchronously accessed `LessonService.instance.sections`. Since asset files on mobile devices are bundled inside the APK/IPA, `_ensureLoadedFromFileSync()` failed to load them as local filesystem paths, returning an empty list (`[]`). Tapping a filter chip triggered `setState()`, by which time the background async `initialize()` had completed.
+- **Fix**: Wrapped `LessonsScreen`, `OpeningPlaybookScreen`, and `AnalysisMenuScreen` in `FutureBuilder<void>(future: service.initialize(), ...)`. Implemented clean loading spinner state, explicit empty filter results state with reset button, and error retry state.
+- **Widget Tests**: Created `test/learn_lessons_widget_test.dart` verifying cold open non-empty lessons list, filter selection counts, and filter roundtrip consistency (All -> Beginner -> All) for both Lessons and Openings (100% pass rate).
 
 ---
 ## Implementation Roadmap
 
 - [x] Phase 0: Codebase Audit & Progress Log Documentation
-- [x] Phase 1: Theme Engine Refinement (Dark Default, Charcoal Surfaces, Sans-serif, Centralized Palette)
+- [x] Phase 1: Theme Engine Refinement (Dark Default, Charcoal Surfaces, Inter Font, Centralized Palette)
 - [x] Phase 2: Bottom Navigation Structure (4 Tabs: Play, Puzzles, Learn, Profile, Puzzles Dot Badge, Settings in Profile)
 - [x] Phase 3: Play Home Hub Redesign & Campaign Stepper Fix
-- [x] Phase 4: Puzzles & Learn Restructuring (Segmented Control: Lessons | Openings | Review)
+- [x] Phase 4: Puzzles & Learn Restructuring & Screenshot Bug Fixes
 - [x] Phase 5: Profile Screen Refinement & Settings Integration
 - [x] Phase 6: Daily Puzzle Local Notification System (Injectable Clock, Permission Timing, Rolling 7-day Schedule)
-- [ ] Phase 7: Verification & Final Polish (`flutter analyze`, `flutter test`, Manual Test Checklist)
+- [x] Phase 7: Fix Round — Inter Font, Softer Dark Palette, Screenshot Bugs & Learn Lessons Async Fix
+- [ ] Phase 8: Final Verification & Stability Pass (`flutter analyze`, `flutter test`, `flutter build apk --debug`)

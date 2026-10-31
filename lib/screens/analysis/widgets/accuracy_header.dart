@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chess_master/core/theme/app_theme.dart';
 import 'package:chess_master/models/analysis_model.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Per-side game accuracy header shown at the top of the Report tab.
 class AccuracyHeader extends StatelessWidget {
@@ -81,7 +80,7 @@ class _SideAccuracy extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textSecondaryFor(context),
@@ -92,7 +91,7 @@ class _SideAccuracy extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           '${accuracy.toStringAsFixed(1)}%',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimaryFor(context),
@@ -100,7 +99,7 @@ class _SideAccuracy extends StatelessWidget {
         ),
         Text(
           'Accuracy',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 11,
             color: AppTheme.textHintFor(context),
           ),

@@ -11,7 +11,6 @@ import 'package:chess_master/providers/achievement_provider.dart';
 import 'package:chess_master/data/repositories/game_session_repository.dart';
 import 'package:chess_master/core/services/lesson_service.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:chess_master/screens/game/widgets/chess_board.dart';
 import 'package:chess_master/screens/analysis/widgets/unified_eval_bar.dart';
@@ -233,7 +232,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         elevation: 0,
         title: Text(
           'Game Analysis',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -490,7 +489,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Analyzing Game ($percentInt%)...',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
@@ -500,7 +499,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               ),
               Text(
                 'Move $analyzedCount of $totalCount',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: AppTheme.textSecondaryFor(context),
