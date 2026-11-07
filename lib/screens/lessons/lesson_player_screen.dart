@@ -63,7 +63,14 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
   void initState() {
     super.initState();
     _chapters = LessonService.instance.getChaptersForCategory(widget.categoryId);
-    _currentIndex = widget.initialChapterIndex.clamp(0, _chapters.isEmpty ? 0 : _chapters.length - 1);
+    int startIndex = widget.initialChapterIndex;
+    if (startIndex == 0 && _chapters.isNotEmpty) {
+      final firstIncomplete = _chapters.indexWhere(
+        (c) => !LessonService.instance.isChapterCompleted(c.id),
+      );
+      if (firstIncomplete != -1) startIndex = firstIncomplete;
+    }
+    _currentIndex = startIndex.clamp(0, _chapters.isEmpty ? 0 : _chapters.length - 1);
     _loadCurrentChapter();
   }
 

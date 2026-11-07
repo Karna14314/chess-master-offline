@@ -334,6 +334,91 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                 ),
               ),
 
+              // Continue learning card
+              Builder(
+                builder: (context) {
+                  dynamic nextCat;
+                  for (final s in sections) {
+                    for (final cat in s.categories) {
+                      final done = lessonService.getCompletedCount(cat.id);
+                      final tot = cat.chapterIds.length;
+                      if (tot > 0 && done < tot) {
+                        nextCat = cat;
+                        break;
+                      }
+                    }
+                    if (nextCat != null) break;
+                  }
+                  if (nextCat == null) return const SizedBox.shrink();
+                  final cat = nextCat;
+                  final done = lessonService.getCompletedCount(cat.id);
+                  final tot = cat.chapterIds.length;
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: AppCard(
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => LessonPlayerScreen(categoryId: cat.id),
+                            ),
+                          );
+                          setState(() {});
+                        },
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: _accentGold.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.play_arrow_rounded,
+                                color: _accentGold,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Continue Learning',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: _accentGold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    cat.title,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  LinearProgressIndicator(
+                                    value: tot > 0 ? done / tot : 0,
+                                    minHeight: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right_rounded),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
               // 2. Search & Filter Bar
               SliverToBoxAdapter(
                 child: Padding(
