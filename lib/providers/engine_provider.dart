@@ -492,6 +492,7 @@ class EngineNotifier extends StateNotifier<EngineState> {
   void dispose() {
     _searchId++;
     _service.stopAnalysis();
+    unawaited(_service.dispose());
     super.dispose();
   }
 
