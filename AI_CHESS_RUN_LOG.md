@@ -149,3 +149,20 @@ I have completed the task to refactor the UI and navigation for production readi
 - Analyze: PASS (0 errors)
 - Tests: PASS
 **User-Visible Impact:** Clean, typography-consistent Inter sans-serif font across entire app with zero runtime network fetching, softer dark palette with flat surfaces, responsive and reliable lessons and openings lists on cold open, and refined Home hub.
+
+## 2026-11-07 — v1.0.95 Engine Stability, Lessons & Daily Puzzle
+
+### Summary
+- Engine hardening for Play Console v94 SIGSEGV/ANR clusters (FEN validation, readyok generations, stop handshake, native lifecycle serialization, adaptive timeouts, H1 close).
+- Fallback bot strength calibration (ELO-aware depth/blunder sampling).
+- Lessons: expanded catalog to 1,171 chapters/43 categories; progress filter chips; continue-learning card; resume from first incomplete; overflow fixes.
+- Daily puzzle streak fix.
+- UI: player bar border stabilization to prevent board shake.
+
+### Verification
+- flutter analyze --no-pub: 0 errors.
+- Engine suites: 63/63 passed; lesson suites: all passed.
+- Debug APK built and installed on device 22041219PI; app launched without crash.
+
+### Commit
+- Pushed to master (no skip ci) for CI/Play Store internal track.

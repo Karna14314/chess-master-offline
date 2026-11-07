@@ -1,5 +1,33 @@
 # Release Changelog — Chess Master Offline
 
+## Version 1.0.95 — Engine Stability, Lessons & Daily Puzzle
+
+### 🛡️ Engine Stability (SIGSEGV / ANR)
+- Hardened Stockfish usage: FEN validation (promoted pieces, en-passant, castling/rook consistency), move-list/FEN consistency checks, readyok generation tokens, ordered stop handshake.
+- Removed duplicate stop commands and double newlines; adaptive analysis timeouts (6–20s).
+- Serialized native engine lifetimes with restart cooldowns to prevent queue corruption.
+- Lowered crash circuit breaker to 2 consecutive failures.
+- Fixed bot strength calibration in fallback mode (ELO-aware depth/blunder sampling).
+
+### 📚 Lessons
+- Expanded puzzle catalog to 1,171 chapters across 43 categories.
+- Added progress filter chips (All Progress / In Progress / Completed).
+- Added "Continue Learning" card and resume from first incomplete chapter.
+- Fixed horizontal overflows in lesson screens.
+
+### 🧩 Puzzles
+- Daily puzzle streak now correctly reflects persisted streak count on completion.
+
+### 🎨 UI
+- Stabilized game board (no shake on move) by fixing player bar border width.
+
+### 🧪 Tests
+- New `engine_fen_hardening_test.dart` (13 tests) plus updated lesson counts; analyze 0 errors.
+
+---
+
+EOF# Release Changelog — Chess Master Offline
+
 ## Version 1.0.69 — Two-Tier Adaptive Analysis Pipeline & Streak Fix
 
 ### ⚡ Performance: Two-Tier Adaptive Classification Pipeline
