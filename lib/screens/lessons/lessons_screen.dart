@@ -637,12 +637,15 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                                 color: _accentGold,
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                section.title,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.textPrimaryFor(context),
+                              Expanded(
+                                child: Text(
+                                  section.title,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.textPrimaryFor(context),
+                                  ),
                                 ),
                               ),
                               const Spacer(),

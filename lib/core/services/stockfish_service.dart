@@ -151,6 +151,7 @@ class StockfishService {
   static const Duration _fallbackRetryCooldown = Duration(seconds: 30);
   int _consecutiveCrashes = 0;
   static const int _maxConsecutiveCrashes = 2; // Circuit breaker threshold
+  int _currentElo = 1320; // Last configured engine strength (for fallback bot)
 
   // RegExps for parsing engine output
   static final RegExp _scoreCpRegex = RegExp(r'score cp (-?\d+)');
@@ -199,6 +200,7 @@ class StockfishService {
     _lastEngineShutdownTime = null;
     _lastEngineShutdownWasClean = true;
     _consecutiveCrashes = 0;
+    _currentElo = 1320;
     searchTimeoutForTesting = const Duration(seconds: 30);
     _analysisTimeout = const Duration(seconds: 5);
     _analysisTimeoutWasSet = false;
@@ -1282,6 +1284,8 @@ class StockfishService {
       fen: fen,
       depth: safeDepth,
       timeLimitMs: _fallbackTimeLimit(thinkTimeMs),
+      elo: _currentElo,
+      blunderRate: _currentElo <= 800 ? 0.15 : 0.0,
     );
     return BestMoveResult(
       bestMove: result.bestMove,
@@ -1758,6 +1762,7 @@ class StockfishService {
       // delivered to an active C++ search thread is a crash trigger.
       if (_searchInFlight) await _stopCurrentSearchAndWait();
       if (_isDisposed || _useFallback) return;
+      _currentElo = clampedElo;
       _sendCommand('setoption name UCI_LimitStrength value true');
       _sendCommand('setoption name UCI_Elo value $clampedElo');
       debugPrint('ENGINE CONFIG: UCI_Elo=$clampedElo (requested=$elo)');
@@ -1773,6 +1778,7 @@ class StockfishService {
       // See setSkillLevel: never reconfigure while a search is in flight.
       if (_searchInFlight) await _stopCurrentSearchAndWait();
       if (_isDisposed || _useFallback) return;
+      _currentElo = 3190;
       _sendCommand('setoption name UCI_LimitStrength value false');
     });
   }

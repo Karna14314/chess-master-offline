@@ -57,15 +57,14 @@ class SimpleBotService {
     // Weak bots (<=500) play shallower: depth 2 keeps them visibly weaker
     // than 700+ bots beyond what blunder sampling alone achieves.
     final resolvedElo = elo ?? _eloFromBlunder(blunderRate);
-    final depthCap = resolvedElo <= 500 ? 2 : 4;
+    final depthCap = resolvedElo <= 600 ? 2 : (resolvedElo <= 1200 ? 3 : 4);
     final effectiveDepth = min(depth, depthCap);
     final cancelId = _cancelToken;
     // Random is not isolate-transferable: forward a seed instead so callers
     // can still get reproducible sampling via the `random` parameter.
     final seed = random?.nextInt(1 << 32);
-    final historyKeys = (positionHistory ?? const <String>[])
-        .map(_fenBookKey)
-        .toList();
+    final historyKeys =
+        (positionHistory ?? const <String>[]).map(_fenBookKey).toList();
     if (useOpeningBook) {
       final bookResult = _tryOpeningBook(
         fen,
@@ -109,14 +108,12 @@ class SimpleBotService {
     // when multiple replies exist; low-ELO Random bots keep full variety.
     final style = (openingStyle ?? '').toLowerCase();
     if (style.contains('italian')) {
-      final italian = candidates
-          .where((c) => _italianMoves.contains(c.move))
-          .toList();
+      final italian =
+          candidates.where((c) => _italianMoves.contains(c.move)).toList();
       if (italian.isNotEmpty) candidates = italian;
     } else if (style.contains('spanish') || style.contains('ruy')) {
-      final spanish = candidates
-          .where((c) => _spanishMoves.contains(c.move))
-          .toList();
+      final spanish =
+          candidates.where((c) => _spanishMoves.contains(c.move)).toList();
       if (spanish.isNotEmpty) candidates = spanish;
     }
 
@@ -467,7 +464,8 @@ class SimpleBotService {
     final piece = m['piece']?.toString().toLowerCase() ?? '';
     final isKnight = piece.contains('knight') || piece == 'n';
     final isBishop = piece.contains('bishop') || piece == 'b';
-    final to = m['to'] as String? ?? (uci.length >= 4 ? uci.substring(2, 4) : '');
+    final to =
+        m['to'] as String? ?? (uci.length >= 4 ? uci.substring(2, 4) : '');
     final from = m['from'] as String? ?? uci.substring(0, 2);
     final moveNo = board.move_number;
 
@@ -538,7 +536,11 @@ class SimpleBotService {
       final from = uci.substring(0, 2);
       final to = uci.substring(2, 4);
       final promo = uci.length > 4 ? uci.substring(4, 5) : null;
-      board.move({'from': from, 'to': to, if (promo != null) 'promotion': promo});
+      board.move({
+        'from': from,
+        'to': to,
+        if (promo != null) 'promotion': promo,
+      });
       final after = _fenBookKey(board.fen);
       board.undo();
       return after == key;
@@ -609,10 +611,11 @@ class SimpleBotService {
       return pool[1 + rng.nextInt(pool.length - 1)];
     }
     // Softmax by score/temperature.
-    final weights = pool.map((s) {
-      final d = (s.score - best).toDouble(); // <= 0
-      return exp(d / (temp * 100.0));
-    }).toList();
+    final weights =
+        pool.map((s) {
+          final d = (s.score - best).toDouble(); // <= 0
+          return exp(d / (temp * 100.0));
+        }).toList();
     var total = weights.fold<double>(0, (a, b) => a + b);
     var roll = rng.nextDouble() * total;
     for (var i = 0; i < pool.length; i++) {

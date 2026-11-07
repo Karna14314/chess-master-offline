@@ -849,27 +849,30 @@ class _LessonPlayerScreenState extends ConsumerState<LessonPlayerScreen> {
               const SizedBox(height: 8),
 
               // Step indicator scrubber
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_chapters.length, (idx) {
-                  final isCurrent = idx == _currentIndex;
-                  final isDone = LessonService.instance.isChapterCompleted(_chapters[idx].id);
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_chapters.length, (idx) {
+                    final isCurrent = idx == _currentIndex;
+                    final isDone = LessonService.instance.isChapterCompleted(_chapters[idx].id);
 
-                  return GestureDetector(
-                    onTap: () => _goToChapter(idx),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                      width: isCurrent ? 24 : 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: isCurrent
-                            ? _accentGold
-                            : (isDone ? _successGreen : Colors.grey.withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(5),
+                    return GestureDetector(
+                      onTap: () => _goToChapter(idx),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                        width: isCurrent ? 24 : 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: isCurrent
+                              ? _accentGold
+                              : (isDone ? _successGreen : Colors.grey.withValues(alpha: 0.3)),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
             ],
           ),
