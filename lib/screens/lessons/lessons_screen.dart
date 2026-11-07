@@ -21,7 +21,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedDifficulty = 'All';
-  String _progressFilter = 'All'; // All / In Progress / Completed
+  String _progressFilter = 'All Progress'; // All / In Progress / Completed
 
   @override
   void dispose() {
@@ -444,7 +444,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children:
-                          ['All', 'In Progress', 'Completed'].map((f) {
+                          ['All Progress', 'In Progress', 'Completed'].map((f) {
                             final isSelected = _progressFilter == f;
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
