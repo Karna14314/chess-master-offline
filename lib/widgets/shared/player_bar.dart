@@ -56,7 +56,7 @@ class PlayerBar extends ConsumerWidget {
             color: isActive
                 ? accentColor.withValues(alpha: 0.6)
                 : AppTheme.borderStroke(context),
-            width: isActive ? 1.5 : 1.0,
+            width: 1.5,
           ),
           boxShadow: isActive
               ? [
