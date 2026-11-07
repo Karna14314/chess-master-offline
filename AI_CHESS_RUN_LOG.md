@@ -166,3 +166,17 @@ I have completed the task to refactor the UI and navigation for production readi
 
 ### Commit
 - Pushed to master (no skip ci) for CI/Play Store internal track.
+## 2024-10-28
+**Status:** SUCCESS ✅
+**Category:** C — UI Enhancement
+**Task:** Fixed UI overflow issues in the MoveNavigationBar.
+**Files Changed:**
+- lib/screens/analysis/widgets/move_navigation_bar.dart: Wrapped navigation buttons in Expanded and set TextOverflow.ellipsis in FittedBox.
+**Verification:**
+- Build: PASS
+- Tests: PASS
+- Emulator: SKIPPED
+**User-Visible Impact:** MoveNavigationBar now correctly adapts to horizontally constrained screens, preventing layout overflow exceptions.
+**Commit:** (see below)
+**Branch:** auto/chess-20241028-fix-move-nav-bar
+**Notes:**
