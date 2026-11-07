@@ -1754,6 +1754,10 @@ class StockfishService {
     final clampedElo = elo.clamp(1320, 3190);
     return _executionQueue.run(() async {
       if (_isDisposed || _useFallback) return;
+      // Never configure strength while a search is running: a setoption
+      // delivered to an active C++ search thread is a crash trigger.
+      if (_searchInFlight) await _stopCurrentSearchAndWait();
+      if (_isDisposed || _useFallback) return;
       _sendCommand('setoption name UCI_LimitStrength value true');
       _sendCommand('setoption name UCI_Elo value $clampedElo');
       debugPrint('ENGINE CONFIG: UCI_Elo=$clampedElo (requested=$elo)');
@@ -1765,6 +1769,9 @@ class StockfishService {
   Future<void> setMaxStrength() {
     if (_isDisposed || _useFallback) return Future.value();
     return _executionQueue.run(() async {
+      if (_isDisposed || _useFallback) return;
+      // See setSkillLevel: never reconfigure while a search is in flight.
+      if (_searchInFlight) await _stopCurrentSearchAndWait();
       if (_isDisposed || _useFallback) return;
       _sendCommand('setoption name UCI_LimitStrength value false');
     });

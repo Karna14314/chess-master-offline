@@ -128,4 +128,22 @@ Two engine-related baseline failures were fixed in this branch:
 
 - Native SIGSEGV/ANR cannot be reproduced without an Android device/emulator; the verification is prevention plus protocol-level regression coverage with a fake engine.
 - The plugin still exposes only process-wide native stream queues. The new serialization/cooldown protocol keeps lifetimes strictly sequential, but any future code path that constructs a second native `Stockfish` instance concurrently would bypass these guarantees and must be avoided.
-- `ucinewgame` / `setSkillLevel` during an in-flight search remain serialized behind the active search rather than preceded by an awaited stop (H1). This is unchanged by the v1.0.94 work and remains the main residual engine-safety gap.
+## 7. Next steps (gaps and product follow-ups)
+
+### Engine / ANR hygiene
+- Run on a real Android device/emulator: capture Play Console-style traces to confirm the SIGSEGV/ANR clusters are gone (cannot be reproduced in this sandbox).
+- Build gate: `flutter build apk --debug` (blocked here by missing Android SDK/NDK).
+- Wire `StockfishService.dispose()` into app/notifier teardown if process-exit leak becomes a concern (currently isolate lives until process exit).
+- Close `_outputController` on dispose (A4) — minor; controller currently lives for process lifetime.
+- Keep live-analysis UI updates at ~200 ms (already in place).
+
+### Lessons UI reorganisation (suggestions)
+- Split the Learn screen into three clear tabs: **Lessons** (curriculum chapters), **Practice** (themed puzzle sets), **Progress** (stats, achievements, streaks).
+- Each lesson card: title, difficulty badge, estimated time, progress ring, and a single primary "Continue"/"Start" action; move secondary actions into a overflow menu.
+- Add a persistent breadcrumb (Chapter → Lesson → Step) and a "Resume where you left off" card at the top.
+- Group lessons by skill level with collapsible sections and a search/filter bar.
+- Show completion state and next recommended lesson; avoid nested scrollables.
+- Keep heavy JSON parsing off the UI isolate (already async) and cache parsed curriculum.
+
+### Daily puzzle
+- Streak state now reflects the persisted count on completion (fixed). Consider showing the updated streak in the completion screen and animating the badge on the menu.
