@@ -47,7 +47,7 @@ void main() {
       final forkCategory = service.getCategory('tactic_fork');
       expect(forkCategory, isNotNull);
       expect(forkCategory!.title, equals('The Fork'));
-      expect(forkCategory.chapterIds.length, equals(40));
+      expect(forkCategory.chapterIds.length, equals(60));
 
       final first = service.getChapter(forkCategory.chapterIds.first);
       expect(first, isNotNull);
@@ -74,7 +74,7 @@ void main() {
               .map((id) => service.getChapter(id)!)
               .where((c) => c.hasQuiz)
               .toList();
-      expect(quizzed.length, equals(13)); // 40 ~/ 3
+      expect(quizzed.length, equals(20)); // 60 ~/ 3
       final questions = quizzed.map((c) => c.quizQuestion).toSet();
       expect(questions.length, greaterThanOrEqualTo(3));
       final answers = quizzed.map((c) => c.quizAnswer).toSet();
@@ -87,7 +87,7 @@ void main() {
       expect(rookCategory!.title, contains('Rook Endgames'));
 
       final chapters = service.getChaptersForCategory('end_rook_endings');
-      expect(chapters.length, equals(30));
+      expect(chapters.length, equals(45));
     });
 
     test('Opening lessons carry plans, not stubs', () {
