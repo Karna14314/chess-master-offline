@@ -84,9 +84,41 @@ class StockfishService {
 
   @visibleForTesting
   Duration searchTimeoutForTesting = const Duration(seconds: 30);
+
+  // Production analysis budget is adaptive (see _effectiveAnalysisTimeout).
+  // Tests may pin a fixed value through analysisTimeoutForTesting; doing so
+  // flips _analysisTimeoutWasSet so the adaptive path is bypassed.
+  Duration _analysisTimeout = const Duration(seconds: 5);
+  bool _analysisTimeoutWasSet = false;
+
   @visibleForTesting
-  Duration analysisTimeoutForTesting = const Duration(seconds: 5);
+  Duration get analysisTimeoutForTesting => _analysisTimeout;
+
+  @visibleForTesting
+  set analysisTimeoutForTesting(Duration value) {
+    _analysisTimeout = value;
+    _analysisTimeoutWasSet = true;
+  }
+
   bool _skipReadyOkForTesting = false;
+
+  // Counts "readyok" lines received from the engine. A waiter records the
+  // count when it issues its own "isready" and only accepts a response that
+  // arrived afterwards, so a stale readyok from an earlier handshake can no
+  // longer release a stop/position wait early.
+  int _readyokCount = 0;
+
+  // After the native engine is torn down it must not be restarted
+  // immediately. The plugin's C++ engine shares process-wide fakein/fakeout
+  // stream queues (and other Stockfish globals), so a new instance that
+  // starts before the old stockfish_main() loop has returned can corrupt the
+  // old instance's shutdown and race on those globals. A short cooldown (and
+  // a longer one when shutdown was not acknowledged) keeps engine lifetimes
+  // strictly sequential.
+  DateTime? _lastEngineShutdownTime;
+  bool _lastEngineShutdownWasClean = true;
+  static const Duration _engineRestartCooldown = Duration(milliseconds: 500);
+  static const Duration _uncleanEngineRestartCooldown = Duration(seconds: 5);
 
   // Flag to simulate binary check failure for testing or if on unsupported platform
   bool _forceFallback = false;
@@ -106,7 +138,9 @@ class StockfishService {
   // Initialization lifecycle
   Completer<void>?
   _engineReadyCompleter; // Completed when isolate reports engine binary loaded
-  Completer<void>? _isolateDisposedCompleter; // Completed when isolate acknowledges dispose
+  Completer<void>?
+  _isolateDisposedCompleter; // Completed when isolate acknowledges dispose
+  bool _isolateDisposeWasClean = false; // Native UCI loop confirmed exited
 
   // Phase 2: Lifecycle management
   bool _isDisposed = false;
@@ -116,7 +150,7 @@ class StockfishService {
   DateTime? _lastFallbackTime;
   static const Duration _fallbackRetryCooldown = Duration(seconds: 30);
   int _consecutiveCrashes = 0;
-  static const int _maxConsecutiveCrashes = 3; // Circuit breaker threshold
+  static const int _maxConsecutiveCrashes = 2; // Circuit breaker threshold
 
   // RegExps for parsing engine output
   static final RegExp _scoreCpRegex = RegExp(r'score cp (-?\d+)');
@@ -161,13 +195,18 @@ class StockfishService {
     _activeSearchId = 0;
     _searchInFlight = false;
     _skipReadyOkForTesting = false;
+    _readyokCount = 0;
+    _lastEngineShutdownTime = null;
+    _lastEngineShutdownWasClean = true;
     _consecutiveCrashes = 0;
     searchTimeoutForTesting = const Duration(seconds: 30);
-    analysisTimeoutForTesting = const Duration(seconds: 10);
+    _analysisTimeout = const Duration(seconds: 5);
+    _analysisTimeoutWasSet = false;
     _engineIsolate = null;
     _engineCommandPort = null;
     _engineResponsePort = null;
     _engineResponseSubscription = null;
+    _isolateDisposeWasClean = false;
     _commandQueue.clear();
     _executionQueue.clear();
     _outputController = StreamController<String>.broadcast();
@@ -193,13 +232,31 @@ class StockfishService {
     _isEngineBusy = false;
     _searchInFlight = false;
     _skipReadyOkForTesting = immediateReadyOk;
+    _readyokCount = 0;
     if (commandPort != null) _engineCommandPort = commandPort;
     statusNotifier.value = EngineStatus.ready;
   }
 
   /// Injects a raw engine output line as if it came from the engine isolate.
   @visibleForTesting
-  void emitEngineLineForTesting(String line) => _outputController.add(line);
+  void emitEngineLineForTesting(String line) => _handleEngineStdoutLine(line);
+
+  /// Single entry point for engine stdout, shared by the real isolate listener
+  /// and the fake engine used in tests. Keeping readyok accounting here (rather
+  /// than inside individual waiters) is what makes request/response generations
+  /// observable by [_waitForReadyOk] and [_stopCurrentSearchAndWait].
+  void _handleEngineStdoutLine(String line) {
+    if (line.trim().isEmpty) return;
+    if (line.contains('readyok')) {
+      _readyokCount++;
+      _isReady = true;
+      _consecutiveCrashes = 0; // Reset crash counter on successful ready
+      statusNotifier.value = EngineStatus.ready;
+      // Process any queued commands now that engine is fully initialized
+      _processCommandQueue();
+    }
+    _outputController.add(line);
+  }
 
   /// Whether any listener is currently subscribed to the output stream.
   /// Used by tests to verify subscriptions are always cleaned up.
@@ -210,6 +267,31 @@ class StockfishService {
   /// the engine is never left wedged after timeouts/errors.
   @visibleForTesting
   bool get isEngineBusyForTesting => _isEngineBusy;
+
+  /// Drives [_waitForReadyOk] directly so tests can verify that only a fresh
+  /// readyok (one received after the request) releases the wait.
+  @visibleForTesting
+  Future<bool> waitForReadyOkForTesting({Duration? timeout}) =>
+      _waitForReadyOk(timeout: timeout);
+
+  /// Re-enables real readyok waits after [setReadyForTesting] short-circuited
+  /// them, so protocol-ordering tests can exercise the stop handshake.
+  @visibleForTesting
+  void disableImmediateReadyOkForTesting() => _skipReadyOkForTesting = false;
+
+  /// Drives [_stopCurrentSearchAndWait] directly for stop-handshake tests.
+  @visibleForTesting
+  Future<void> stopCurrentSearchAndWaitForTesting() =>
+      _stopCurrentSearchAndWait();
+
+  /// Exposes the production analysis budget so tests can assert that deep
+  /// searches are no longer capped at the old flat 5 s timeout.
+  @visibleForTesting
+  Duration effectiveAnalysisTimeoutForTesting({
+    required int depth,
+    required int multiPv,
+    int? nodes,
+  }) => _effectiveAnalysisTimeout(depth: depth, multiPv: multiPv, nodes: nodes);
 
   /// Initialize the Stockfish engine via proper UCI protocol handshake.
   ///
@@ -436,8 +518,10 @@ class StockfishService {
     }
   }
 
-  /// Wait for readyok response after sending position or other commands.
-  /// This ensures Stockfish has fully processed the position before we start search.
+  /// Wait for a *fresh* readyok response after sending isready.
+  /// This ensures Stockfish has fully processed the position before we start
+  /// the search and keeps a stale readyok from an earlier handshake from
+  /// releasing the wait early.
   /// Returns true if readyok received, false on timeout.
   /// The output-stream subscription is guaranteed to be cancelled on every exit
   /// path (readyok, timeout, error) via `finally`.
@@ -445,20 +529,24 @@ class StockfishService {
     if (_skipReadyOkForTesting) return true;
 
     final effectiveTimeout = timeout ?? const Duration(milliseconds: 500);
-    final stopwatch = Stopwatch()..start();
-
+    // Capture the response generation before sending the request. Only a
+    // readyok counted after this point can satisfy this waiter.
+    final targetResponseCount = _readyokCount + 1;
     final completer = Completer<bool>();
+
     final subscription = _outputController.stream.listen((line) {
-      if (line.contains('readyok') && !completer.isCompleted) {
+      if (_readyokCount >= targetResponseCount &&
+          line.contains('readyok') &&
+          !completer.isCompleted) {
         completer.complete(true);
       }
     });
 
-    // Send isready command
-    _sendCommand('isready');
-
     try {
-      // Wait for readyok or timeout
+      if (_readyokCount >= targetResponseCount) return true;
+
+      _sendCommand('isready');
+
       return await completer.future.timeout(
         effectiveTimeout,
         onTimeout: () {
@@ -469,7 +557,6 @@ class StockfishService {
     } catch (e) {
       return false;
     } finally {
-      stopwatch.stop();
       await subscription.cancel();
     }
   }
@@ -496,10 +583,9 @@ class StockfishService {
       while (_commandQueue.isNotEmpty) {
         final cmd = _commandQueue.removeAt(0);
         try {
-          _engineCommandPort?.send({
-            'type': 'stdin',
-            'command': '${cmd.command}\n',
-          });
+          // The plugin's stdin setter appends a newline itself. Sending one
+          // here produced an extra blank UCI command on every write.
+          _engineCommandPort?.send({'type': 'stdin', 'command': cmd.command});
           // Small delay between commands to prevent overwhelming the engine
           await Future.delayed(const Duration(milliseconds: 10));
         } catch (e) {
@@ -519,7 +605,7 @@ class StockfishService {
   void _sendCommandDirect(String command) {
     if (_isDisposed || _useFallback) return;
     debugPrint('ENGINE INIT: $command');
-    _engineCommandPort?.send({'type': 'stdin', 'command': '$command\n'});
+    _engineCommandPort?.send({'type': 'stdin', 'command': command});
   }
 
   /// Wait for a specific pattern to appear in the engine's output stream.
@@ -642,6 +728,42 @@ class StockfishService {
     List<String>? moves,
   ) => _areMovesLegal(fen, startingFen, moves);
 
+  /// Compact signature (board, side to move, normalized castling rights) used
+  /// to confirm that a starting FEN plus a move list really describes the
+  /// current position. Clocks and the ep square are deliberately ignored:
+  /// different FEN producers represent them slightly differently, and
+  /// Stockfish derives both from the move list anyway.
+  static String _positionSignature(String fen) {
+    final parts = fen.trim().split(_fenSpaceRegex);
+    if (parts.length < 3) return fen.trim();
+    final castling =
+        parts[2] == '-' ? '-' : (parts[2].split('')..sort()).join();
+    return '${parts[0]} ${parts[1]} $castling';
+  }
+
+  /// Apply [moves] to [startingFen] and verify the resulting board matches
+  /// [fen]. A mismatch means the UI position and the engine's move list have
+  /// diverged; sending the list would make Stockfish analyze a different
+  /// position than the one shown on screen.
+  bool _movesLeadToFen(String fen, String startingFen, List<String> moves) {
+    try {
+      final chess = chess_lib.Chess.fromFEN(startingFen);
+      for (final moveStr in moves) {
+        if (moveStr.length < 4) return false;
+        final moveObj = {
+          'from': moveStr.substring(0, 2),
+          'to': moveStr.substring(2, 4),
+          if (moveStr.length > 4) 'promotion': moveStr[4],
+        };
+        if (chess.move(moveObj) == false) return false;
+      }
+      return _positionSignature(chess.fen) == _positionSignature(fen);
+    } catch (e) {
+      debugPrint('Move sequence / FEN consistency check failed: $e');
+      return false;
+    }
+  }
+
   /// Expand a FEN rank (e.g. `r1bqkbnr`) into 8 square chars
   /// (empty squares as `' '`) for home-square checks.
   static List<String> _expandRank(String rank) {
@@ -743,13 +865,13 @@ class StockfishService {
     // Pawn count sanity (max 8 per side)
     if (whitePawnCount > 8 || blackPawnCount > 8) return false;
 
-    // Promotion sanity: non-pawn pieces beyond the starting set indicate promotions.
-    // Max 8 promotions per side (all 8 pawns promote). Starting pieces: Q,B,R,N = 4 types.
-    // If you have > 4 non-pawn pieces (e.g., 3 queens), some pawns must have promoted.
-    // Upper bound: starting 6 non-pawn pieces (Q+B+R+N = 4, but you start with 8 non-pawn
-    // pieces: KQRBNB NK = 8) minus captures plus promotions. Simple check: max 14 non-pawn
-    // pieces (8 original - 1 king + 7 promoted = 14, but captures reduce this).
-    if (whiteNonPawnCount > 8 || blackNonPawnCount > 8) return false;
+    // Promotion sanity: a side starts with 8 non-pawn pieces (including the
+    // king). Every additional queen/rook/bishop/knight must have come from a
+    // promotion, and a promoted pawn is no longer a pawn, so the total men per
+    // side is capped at 16. The non-pawn count alone can therefore reach 15
+    // (king + 15 promoted pieces) in a legal position — the old cap of 8
+    // rejected legal promoted-piece positions and pushed them to fallback.
+    if (whiteNonPawnCount > 15 || blackNonPawnCount > 15) return false;
 
     // Color check
     final color = parts[1];
@@ -766,11 +888,13 @@ class StockfishService {
       if (castling.contains('K') && !rows[7].contains('K')) return false;
       // White king on e1 for any white castling
       if ((castling.contains('K') || castling.contains('Q')) &&
-          whiteKingRow != 7)
+          whiteKingRow != 7) {
         return false;
+      }
       if ((castling.contains('k') || castling.contains('q')) &&
-          blackKingRow != 0)
+          blackKingRow != 0) {
         return false;
+      }
     }
 
     // En passant check
@@ -789,6 +913,24 @@ class StockfishService {
       }
       if (epRank == '3' && color != 'b') {
         return false;
+      }
+
+      // Beyond the rank check, the ep square only makes sense if the target
+      // is empty and the double-pushed pawn's origin is empty. Do NOT require
+      // an adjacent capturing pawn: FEN producers commonly record the skipped
+      // square even when no capture is available (e.g. after 1.e4), and
+      // Stockfish clears an unusable ep square internally anyway.
+      final epFile = ep.codeUnitAt(0) - 0x61; // 'a'
+      if (epRank == '6') {
+        final target = _expandRank(rows[2]); // rank 6
+        final origin = _expandRank(rows[1]); // rank 7
+        if (target[epFile] != ' ') return false;
+        if (origin[epFile] != ' ') return false;
+      } else {
+        final target = _expandRank(rows[5]); // rank 3
+        final origin = _expandRank(rows[6]); // rank 2
+        if (target[epFile] != ' ') return false;
+        if (origin[epFile] != ' ') return false;
       }
     }
 
@@ -869,6 +1011,15 @@ class StockfishService {
     if (!_areMovesLegal(fen, startingFen, moves)) {
       debugPrint(
         'Moves sequence not legal for position command; falling back to current FEN',
+      );
+      return 'position fen $cleanFen';
+    }
+    // A legal move list that ends somewhere other than the displayed position
+    // is just as dangerous: the engine would analyze a different board than
+    // the UI. Fall back to the single current FEN in that case.
+    if (!_movesLeadToFen(fen, startingFen, moves)) {
+      debugPrint(
+        'Moves sequence does not reproduce the current FEN; falling back to current FEN',
       );
       return 'position fen $cleanFen';
     }
@@ -1143,6 +1294,37 @@ class StockfishService {
     return thinkTimeMs.clamp(500, 1200);
   }
 
+  /// Search budget for [analyzePosition].
+  ///
+  /// Production used a flat 5 s budget (the test-named field had leaked into
+  /// the production path). A depth-12 / MultiPV-3 search routinely exceeds
+  /// that on low-end devices, so every analysis ended in stop + fallback,
+  /// producing repeated engine churn while the user was trying to interact
+  /// with the app. The budget now scales with requested depth and MultiPV,
+  /// clamped to a range that still guarantees a bounded wait.
+  ///
+  /// Tests that need a deterministic short timeout set
+  /// [analysisTimeoutForTesting], which bypasses this calculation.
+  Duration _effectiveAnalysisTimeout({
+    required int depth,
+    required int multiPv,
+    int? nodes,
+  }) {
+    if (_analysisTimeoutWasSet) return _analysisTimeout;
+    if (nodes != null) {
+      // Node-bounded searches are deterministic; allow a fixed generous
+      // budget that does not depend on device speed.
+      return const Duration(seconds: 10);
+    }
+    final depthBudgetMs = 2000 + depth * 750;
+    final multiPvBudgetMs = 1500 + multiPv * 1000;
+    final requested =
+        depthBudgetMs > multiPvBudgetMs ? depthBudgetMs : multiPvBudgetMs;
+    final budgetMs =
+        requested < 6000 ? 6000 : (requested > 20000 ? 20000 : requested);
+    return Duration(milliseconds: budgetMs);
+  }
+
   /// Analyze a position and get multiple lines
   /// Returns evaluation and top engine lines
   /// [startingFen] and [moves] are optional; when provided the engine is told
@@ -1403,7 +1585,8 @@ class StockfishService {
               // analysis does not flood the UI isolate with setState work
               // (PlatformTaskQueue / input-dispatching ANR source). Keep only
               // the latest line; consumers recompute from it.
-              final shouldNotify = currentDepth > lastUiDepth ||
+              final shouldNotify =
+                  currentDepth > lastUiDepth ||
                   now.difference(lastUiUpdate).inMilliseconds >= 200;
               if (onUpdate != null && mainEvaluation != null && shouldNotify) {
                 lastUiUpdate = now;
@@ -1513,12 +1696,18 @@ class StockfishService {
         // bestmove handler, not from the search bound itself.)
         _sendCommand(nodes != null ? 'go nodes $nodes' : 'go depth $depth');
         final searchStarted = DateTime.now();
+        final analysisBudget = _effectiveAnalysisTimeout(
+          depth: depth,
+          multiPv: multiPv,
+          nodes: nodes,
+        );
 
         final searchResult = await completer.future.timeout(
-          analysisTimeoutForTesting, // Short timeout for analysis to switch to basic if stuck
+          analysisBudget,
           onTimeout: () async {
             debugPrint(
-              'ENGINE RECOVERY → Analysis timeout for FEN: $fen, using fallback',
+              'ENGINE RECOVERY → Analysis timeout after ${analysisBudget.inMilliseconds}ms '
+              'for FEN: $fen, using fallback',
             );
             _sendCommand('stop');
             await _stopCurrentSearchAndWait();
@@ -1654,37 +1843,54 @@ class StockfishService {
   /// invalidates the active search id FIRST so an in-flight search completes
   /// with a partial result on the next engine line instead of hanging on its
   /// full timeout while holding the execution-queue slot, then asks the
-  /// engine to stop. The trailing `isready` guarantees engine output arrives
-  /// (bestmove and/or readyok) to release the orphaned search promptly.
+  /// engine to stop.
+  ///
+  /// The stop/isready pair is written directly to the isolate (bypassing the
+  /// serialized command queue) so a lifecycle pause interrupts the native
+  /// search immediately. It is intentionally NOT also enqueued: the
+  /// duplicate pair used to race the direct write and deliver `stop` to the
+  /// next search's `go`.
   void stopAnalysis() {
     if (_isDisposed) return;
     _activeSearchId++;
     if (_useFallback) return;
     try {
-      _engineCommandPort?.send({'type': 'stdin', 'command': 'stop\n'});
-      _engineCommandPort?.send({'type': 'stdin', 'command': 'isready\n'});
+      _engineCommandPort?.send({'type': 'stdin', 'command': 'stop'});
+      _engineCommandPort?.send({'type': 'stdin', 'command': 'isready'});
     } catch (_) {}
-    _sendCommand('stop');
-    _sendCommand('isready');
   }
 
   /// Stop current search and wait for it to finish (for intentional search replacement).
   /// Guarantees that Stockfish worker threads are no longer searching before continuing.
-  /// If the engine fails to acknowledge 'stop' within 3.0 seconds, the isolate is killed
-  /// and cleanly restarted to prevent sending commands to an active C++ search thread (which causes SIGSEGV).
+  /// A stop is only considered complete once the engine has emitted `bestmove`
+  /// for the in-flight search AND a readyok that arrived after the isready sent
+  /// below. If the engine fails to acknowledge within 3.0 seconds, the isolate
+  /// is killed and cleanly restarted to prevent sending commands to an active
+  /// C++ search thread (which causes SIGSEGV).
   Future<void> _stopCurrentSearchAndWait() async {
     if (_skipReadyOkForTesting) {
       _searchInFlight = false;
       return;
     }
-    if (!_searchInFlight && !_isEngineBusy) return;
 
+    final searchWasInFlight = _searchInFlight;
+    if (!searchWasInFlight && !_isEngineBusy) return;
+
+    // Only a readyok produced after this isready may release the wait, and
+    // only once the in-flight search has actually reported bestmove.
+    final targetResponseCount = _readyokCount + 1;
+    var sawBestmove = !searchWasInFlight;
     final completer = Completer<void>();
-    StreamSubscription<String>? subscription;
 
-    subscription = _outputController.stream.listen((line) {
+    final subscription = _outputController.stream.listen((line) {
       final trimmed = line.trim();
-      if ((trimmed.startsWith('bestmove') || trimmed == 'readyok') &&
+      if (trimmed.startsWith('bestmove')) {
+        sawBestmove = true;
+        _searchInFlight = false;
+      }
+      if (trimmed == 'readyok' &&
+          _readyokCount >= targetResponseCount &&
+          sawBestmove &&
           !completer.isCompleted) {
         completer.complete();
       }
@@ -1748,9 +1954,29 @@ class StockfishService {
     return future;
   }
 
+  /// Wait until it is safe to spawn a new native engine after the previous
+  /// one was shut down. A clean shutdown (native UCI loop actually exited)
+  /// only needs a short settling delay; an unacknowledged shutdown waits
+  /// longer so a still-running `stockfish_main()` cannot overlap the new one.
+  Future<void> _awaitEngineRestartCooldown() async {
+    final lastShutdown = _lastEngineShutdownTime;
+    if (lastShutdown == null) return;
+    final cooldown =
+        _lastEngineShutdownWasClean
+            ? _engineRestartCooldown
+            : _uncleanEngineRestartCooldown;
+    final elapsed = DateTime.now().difference(lastShutdown);
+    if (elapsed < cooldown) {
+      await Future<void>.delayed(cooldown - elapsed);
+    }
+  }
+
   Future<void> _startEngineIsolate() async {
     if (_isDisposed) throw Exception('Cannot start engine after dispose');
     if (_engineIsolate != null) return;
+
+    await _awaitEngineRestartCooldown();
+    if (_isDisposed) throw Exception('Cannot start engine after dispose');
 
     _engineSessionId++;
     final sessionId = _engineSessionId;
@@ -1792,6 +2018,8 @@ class StockfishService {
       _isEngineBusy = false;
       _engineCommandPort = null;
       _engineIsolate = null;
+      _lastEngineShutdownTime = DateTime.now();
+      _lastEngineShutdownWasClean = false;
       _enableFallback('Isolate error: $message');
       deathPort.close();
     });
@@ -1805,6 +2033,8 @@ class StockfishService {
         _isEngineBusy = false;
         _engineCommandPort = null;
         _engineIsolate = null;
+        _lastEngineShutdownTime = DateTime.now();
+        _lastEngineShutdownWasClean = false;
         _enableFallback('Isolate exited unexpectedly');
       }
       exitPort.close();
@@ -1825,22 +2055,13 @@ class StockfishService {
         final type = message['type'] as String;
         if (type == 'stdout') {
           final line = message['line'] as String;
-          if (line.trim().isNotEmpty) {
-            _outputController.add(line);
-            if (line.contains('readyok')) {
-              _isReady = true;
-              _consecutiveCrashes =
-                  0; // Reset crash counter on successful ready
-              statusNotifier.value = EngineStatus.ready;
-              // Process any queued commands now that engine is fully initialized
-              _processCommandQueue();
-            }
-          }
+          _handleEngineStdoutLine(line);
         } else if (type == 'engine_ready') {
           // Engine isolate reports the binary loaded and is accepting commands
           _engineReadyCompleter?.complete();
           _engineReadyCompleter = null;
         } else if (type == 'disposed') {
+          _isolateDisposeWasClean = message['clean'] as bool? ?? false;
           _isolateDisposedCompleter?.complete();
           _isolateDisposedCompleter = null;
         } else if (type == 'error') {
@@ -1870,19 +2091,28 @@ class StockfishService {
     if (_engineIsolate == null && _engineCommandPort == null) return;
     debugPrint('ENGINE LIFECYCLE → Killing engine isolate');
     _commandQueue.clear();
+    _isolateDisposeWasClean = false;
 
-    _isolateDisposedCompleter = Completer<void>();
-    try {
-      _engineCommandPort?.send({'type': 'stdin', 'command': 'stop\n'});
-      _engineCommandPort?.send({'type': 'stdin', 'command': 'quit\n'});
-      _engineCommandPort?.send({'type': 'dispose'});
-      // Handshake: wait for isolate confirmation that native engine has cleanly stopped & disposed
-      await _isolateDisposedCompleter?.future.timeout(
-        const Duration(milliseconds: 400),
-        onTimeout: () {},
-      );
-    } catch (_) {}
-    _isolateDisposedCompleter = null;
+    var cleanShutdown = false;
+    final commandPort = _engineCommandPort;
+    if (commandPort != null) {
+      _isolateDisposedCompleter = Completer<void>();
+      try {
+        // The isolate's dispose handler sends "quit" to the native UCI loop
+        // and waits for stockfish_main() to return before acknowledging. A
+        // clean ack therefore guarantees the process-wide fakein/fakeout
+        // queues are closed and safe to reopen by the next engine instance.
+        commandPort.send({'type': 'dispose'});
+        cleanShutdown = await _isolateDisposedCompleter!.future
+            .then((_) => true)
+            .timeout(
+              const Duration(milliseconds: 3000),
+              onTimeout: () => false,
+            );
+        cleanShutdown = cleanShutdown && _isolateDisposeWasClean;
+      } catch (_) {}
+      _isolateDisposedCompleter = null;
+    }
 
     _engineSessionId++;
     await _engineResponseSubscription?.cancel();
@@ -1899,6 +2129,9 @@ class StockfishService {
     _isEngineBusy = false;
     _searchInFlight = false;
 
+    _lastEngineShutdownTime = DateTime.now();
+    _lastEngineShutdownWasClean = cleanShutdown;
+
     _engineReadyCompleter?.complete();
     _engineReadyCompleter = null;
   }
@@ -1910,77 +2143,159 @@ void _stockfishIsolateEntryPoint(SendPort sendPort) {
   sendPort.send(commandPort.sendPort);
 
   Stockfish? stockfish;
+  // Commands are processed strictly in order. In particular, an `init` must
+  // not construct a new native engine while a previous one is still shutting
+  // down, and a `dispose` ack must be sent only after the native UCI loop has
+  // actually exited.
+  var pending = Future<void>.value();
+
+  Future<void> handleCommand(Map<String, dynamic> message) async {
+    final type = message['type'] as String;
+
+    switch (type) {
+      case 'init':
+        final previous = stockfish;
+        stockfish = null;
+        if (previous != null) {
+          await _disposeStockfishSafely(previous);
+        }
+        try {
+          final engine = Stockfish();
+          stockfish = engine;
+          engine.stdout.listen((line) {
+            sendPort.send({'type': 'stdout', 'line': line});
+          });
+
+          // Signal readiness only once the engine actually reaches the
+          // ready state. Announcing right after the constructor meant the
+          // main thread sent "uci" while the engine was still starting;
+          // the write was rejected with "Bad state: Stockfish is not
+          // ready", and initialize() then waited the full 5s for a uciok
+          // that could never arrive — every attempt failed and the service
+          // latched to the fallback evaluator on cold start.
+          if (engine.state.value == StockfishState.ready) {
+            sendPort.send({'type': 'engine_ready'});
+          } else {
+            late final VoidCallback listener;
+            listener = () {
+              final st = engine.state.value;
+              if (st == StockfishState.ready) {
+                engine.state.removeListener(listener);
+                sendPort.send({'type': 'engine_ready'});
+              } else if (st == StockfishState.error ||
+                  st == StockfishState.disposed) {
+                engine.state.removeListener(listener);
+                sendPort.send({
+                  'type': 'error',
+                  'message': 'Engine reached $st before becoming ready',
+                });
+              }
+            };
+            engine.state.addListener(listener);
+          }
+        } catch (e) {
+          sendPort.send({
+            'type': 'error',
+            'message': 'Stockfish() constructor failed: $e',
+          });
+        }
+        break;
+      case 'stdin':
+        final command = message['command'] as String;
+        try {
+          stockfish?.stdin = command;
+        } catch (e) {
+          sendPort.send({
+            'type': 'error',
+            'message': 'stdin command failed: $e (command: $command)',
+          });
+        }
+        break;
+      case 'dispose':
+        final engine = stockfish;
+        stockfish = null;
+        var clean = false;
+        try {
+          if (engine != null) {
+            clean = await _disposeStockfishSafely(engine);
+          }
+        } catch (_) {
+          clean = false;
+        } finally {
+          try {
+            sendPort.send({'type': 'disposed', 'clean': clean});
+          } catch (_) {}
+        }
+        break;
+    }
+  }
 
   commandPort.listen((message) {
-    if (message is Map<String, dynamic>) {
-      final type = message['type'] as String;
-
-      switch (type) {
-        case 'init':
-          try {
-            stockfish?.dispose();
-          } catch (_) {}
-          try {
-            stockfish = Stockfish();
-            stockfish!.stdout.listen((line) {
-              sendPort.send({'type': 'stdout', 'line': line});
-            });
-
-            // Signal readiness only once the engine actually reaches the
-            // ready state. Announcing right after the constructor meant the
-            // main thread sent "uci" while the engine was still starting;
-            // the write was rejected with "Bad state: Stockfish is not
-            // ready", and initialize() then waited the full 5s for a uciok
-            // that could never arrive — every attempt failed and the service
-            // latched to the fallback evaluator on cold start.
-            if (stockfish!.state.value == StockfishState.ready) {
-              sendPort.send({'type': 'engine_ready'});
-            } else {
-              late final VoidCallback listener;
-              listener = () {
-                final st = stockfish!.state.value;
-                if (st == StockfishState.ready) {
-                  stockfish!.state.removeListener(listener);
-                  sendPort.send({'type': 'engine_ready'});
-                } else if (st == StockfishState.error ||
-                    st == StockfishState.disposed) {
-                  stockfish!.state.removeListener(listener);
-                  sendPort.send({
-                    'type': 'error',
-                    'message': 'Engine reached $st before becoming ready',
-                  });
-                }
-              };
-              stockfish!.state.addListener(listener);
-            }
-          } catch (e) {
-            sendPort.send({
-              'type': 'error',
-              'message': 'Stockfish() constructor failed: $e',
-            });
-          }
-          break;
-        case 'stdin':
-          final command = message['command'] as String;
-          try {
-            stockfish?.stdin = command;
-          } catch (e) {
-            sendPort.send({
-              'type': 'error',
-              'message': 'stdin command failed: $e (command: $command)',
-            });
-          }
-          break;
-        case 'dispose':
-          try {
-            stockfish?.dispose();
-          } catch (_) {}
-          stockfish = null;
-          try {
-            sendPort.send({'type': 'disposed'});
-          } catch (_) {}
-          break;
-      }
-    }
+    if (message is! Map<String, dynamic>) return;
+    pending = pending.then((_) => handleCommand(message)).catchError((
+      Object error,
+      StackTrace _,
+    ) {
+      try {
+        sendPort.send({
+          'type': 'error',
+          'message': 'Isolate command failed: $error',
+        });
+      } catch (_) {}
+    });
   });
+}
+
+/// Ask the native UCI loop to exit and wait for `stockfish_main()` to return.
+///
+/// The plugin's own `dispose()` writes `quit` and immediately closes its
+/// ports without waiting. The process-global `fakein`/`fakeout` queues are
+/// only reopened/closed by `stockfish_main()` itself, so constructing the next
+/// engine while the previous loop is still winding down can interleave both
+/// engines on the same queues. Waiting for the plugin's state to become
+/// `disposed` is the only externally observable confirmation that the native
+/// loop returned (the plugin marks it from its main-port exit message).
+///
+/// Returns true when the native loop was observed exiting cleanly.
+Future<bool> _disposeStockfishSafely(Stockfish stockfish) async {
+  var nativeExited = stockfish.state.value == StockfishState.disposed;
+
+  if (stockfish.state.value == StockfishState.ready) {
+    try {
+      // The plugin's stdin setter appends the trailing newline.
+      stockfish.stdin = 'quit';
+    } catch (_) {}
+
+    if (stockfish.state.value != StockfishState.disposed) {
+      final completer = Completer<void>();
+      void onStateChanged() {
+        if (stockfish.state.value == StockfishState.disposed &&
+            !completer.isCompleted) {
+          completer.complete();
+        }
+      }
+
+      stockfish.state.addListener(onStateChanged);
+      try {
+        await completer.future.timeout(
+          const Duration(seconds: 2),
+          onTimeout: () {
+            debugPrint(
+              'ENGINE LIFECYCLE → Native quit ack timed out; forcing dispose',
+            );
+          },
+        );
+      } catch (_) {
+        // dispose() below still tears down the Dart-side wrapper.
+      } finally {
+        stockfish.state.removeListener(onStateChanged);
+      }
+      nativeExited = stockfish.state.value == StockfishState.disposed;
+    }
+  }
+
+  try {
+    stockfish.dispose();
+  } catch (_) {}
+  return nativeExited;
 }

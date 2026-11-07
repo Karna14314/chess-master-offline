@@ -147,8 +147,12 @@ class StreakNotifier extends StateNotifier<StreakState> {
 
       await recordActivity();
 
+      final currentStreak = prefs.getInt('streak_current_count') ?? 0;
       if (!mounted) return;
-      state = state.copyWith(isPuzzleSolvedToday: true);
+      state = state.copyWith(
+        isPuzzleSolvedToday: true,
+        streakCount: currentStreak == 0 ? 1 : currentStreak,
+      );
     } catch (_) {}
   }
 
@@ -161,10 +165,12 @@ class StreakNotifier extends StateNotifier<StreakState> {
 
       await recordActivity();
 
+      final currentStreak = prefs.getInt('streak_current_count') ?? 0;
       if (!mounted) return;
       state = state.copyWith(
         isPuzzleSolvedToday: true,
         isDailyPuzzleSolvedToday: true,
+        streakCount: currentStreak == 0 ? 1 : currentStreak,
       );
     } catch (_) {}
   }

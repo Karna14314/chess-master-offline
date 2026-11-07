@@ -134,6 +134,22 @@ class MockStockfishService implements StockfishService {
   ) => true;
 
   @override
+  void disableImmediateReadyOkForTesting() {}
+
+  @override
+  Future<bool> waitForReadyOkForTesting({Duration? timeout}) async => true;
+
+  @override
+  Future<void> stopCurrentSearchAndWaitForTesting() async {}
+
+  @override
+  Duration effectiveAnalysisTimeoutForTesting({
+    required int depth,
+    required int multiPv,
+    int? nodes,
+  }) => analysisTimeoutForTesting;
+
+  @override
   int mateToWhiteRelative(int rawMate, String fen) => rawMate;
 }
 

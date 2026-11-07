@@ -5,6 +5,8 @@
 **Goal:** Fix production crashes (SIGSEGV) and ANRs reported in Play Console v1.0.92. Bug fixes only — no new features, no UI changes, no refactors beyond what the fixes need.
 
 > Status: Phase 0 (audit) complete. Baseline verification run; two engine-safety fixes applied (getBestMove now sends `startingFen`+`moves` for repetition detection; sanitizeFen test assertion corrected to match documented clamp behavior).
+>
+> **v1.0.94 follow-up:** native SIGSEGV/ANR hardening applied in `StockfishService`; see §6 for root causes, fixes, and verification.
 
 ---
 
@@ -93,3 +95,37 @@ Two engine-related baseline failures were fixed in this branch:
 
 > Note on verification: native crashes (SIGSEGV) and ANRs cannot be reproduced in CI and cannot be exercised on a real device from this sandbox, so they are explicitly NOT-verified. The gate steps that *can* run here (`pub get`, `analyze`, `test`) are reported above; `build apk` is blocked by missing Android SDK.
 
+## 6. v1.0.94 hardening (Play Console crash/ANR follow-up)
+
+**Clusters addressed**
+
+| Type | Cluster |
+|------|---------|
+| Native crash | `Position::is_draw`, `Search::Worker::search` (SIGSEGV) |
+| ANR | `PlatformTaskQueue.dispatch`, `MessageQueue.nativePollOnce`, `Input dispatching timed out (No focused window)`, Dart GC/safepoint stacks |
+
+**Root causes and fixes** (all in `lib/core/services/stockfish_service.dart` unless noted)
+
+| # | Root cause | Fix |
+|---|------------|-----|
+| 1 | FEN validator rejected legal positions, forcing fallback churn while the native engine was restarted. The non-pawn cap of 8 rejected legal promoted-piece positions; malformed en-passant squares could reach the native FEN parser. | Non-pawn cap raised to the legal maximum of 15. En-passant squares must now be on the correct rank for the side to move, with an empty target and an empty double-push origin. An adjacent capturer is deliberately **not** required: FEN producers record the skipped square even when no capture exists (e.g. after 1.e4), and Stockfish clears unusable ep squares internally. Castling-right/rook consistency checks remain. |
+| 2 | `startingFen` + `moves` could diverge from the displayed `fen`. The engine then searched a different board than the UI (or a legal-but-stale move list), producing wrong evals and extra stop/restart churn. | `buildPositionCommand` now applies the move list and compares a compact position signature (board, side to move, normalized castling rights; clocks and ep ignored). Any mismatch falls back to `position fen <current fen>`. Illegal move lists still fall back as before. |
+| 3 | Stale `readyok` lines could satisfy a later handshake, so position/stop waits released before the engine had processed the new command. | Added a global `_readyokCount` generation counter fed by `_handleEngineStdoutLine` (the single stdout path for both the real isolate and the test fake). `_waitForReadyOk` only accepts a `readyok` received after its own `isready`; `_stopCurrentSearchAndWait` requires `bestmove` for the in-flight search **followed by** a fresh `readyok`, in that order. |
+| 4 | `stopAnalysis()` sent the stop/isready pair twice: once directly to the isolate and once through the serialized queue. The queued copy could deliver `stop` to the *next* search's `go`. | The direct write is now the only stop path; the duplicate queued pair was removed. The direct pair intentionally bypasses the queue so lifecycle pauses interrupt the native search immediately. |
+| 5 | The service appended `\n` to every command, but the plugin's stdin setter already appends one. Every write produced an extra blank UCI command. | Removed the service-added newline from queued, direct, and stop writes (`stockfish_chess_engine`'s `stdin` setter owns framing). |
+| 6 | Analysis used a flat 5 s timeout in production (a test-named field had leaked into the production path). A depth-12 / MultiPV-3 search routinely exceeds that on low-end devices, so analyses repeatedly hit stop + fallback while the user was interacting with the app. | Added `_effectiveAnalysisTimeout`: depth/MultiPV-scaled budget clamped to 6–20 s; node-bounded searches use a fixed 10 s. Tests can still pin a deterministic value through `analysisTimeoutForTesting`, which bypasses the adaptive calculation. |
+| 7 | Engine restarts could overlap native lifetimes. The plugin's protocol uses process-global `fakein`/`fakeout` queues and its `dispose()` does not wait for `stockfish_main()` to return, so a new engine could reopen/close queues still owned by the old loop (native memory corruption / SIGSEGV). | The isolate entry point now serializes all commands behind a pending future. Dispose sends `quit` to the UCI loop and waits for the plugin state to report that native `stockfish_main()` exited before acking `{type: 'disposed', clean: bool}`. The service waits up to 3 s for the ack, kills the isolate otherwise, and enforces a restart cooldown (500 ms after a clean shutdown, 5 s after an unclean one). Duplicate direct `stop\n`/`quit\n` writes were removed. |
+| 8 | The crash circuit breaker tolerated three consecutive failures before latching to fallback, leaving more room for repeated native restarts. | Lowered `_maxConsecutiveCrashes` from 3 to 2. |
+
+**Regression tests**
+
+- `test/engine_fen_hardening_test.dart` (new, 13 tests): promoted-piece FENs, castling/rook consistency, legal and impossible en-passant squares (including the real-world `e3`/`d6` regression FENs), move-list/FEN consistency, stale-vs-fresh `readyok` generations, ordered `bestmove` + fresh `readyok` stop handshake, and adaptive analysis budgets.
+- Existing fake-engine suites re-run green: `engine_safety_race_test`, `engine_search_race_test`, `engine_listener_lifecycle_test`, `stockfish_mate_sign_test` (22 tests); `stockfish_service_test`, `stockfish_crash_prevention_test` (23 tests).
+- `flutter analyze --no-pub`: **0 errors**, 102 info-level lints (all pre-existing `avoid_print`/style warnings in tests/tools/benchmarks). The stale `.dart_tool` package config was refreshed with `flutter pub get`; the resulting transitive lockfile bumps were discarded so the change set stays scoped to engine safety.
+- `test/widget_test.dart`'s `pumpAndSettle` timeout was reproduced on an unmodified HEAD checkout (sqflite/notifications test-environment issue), so it is pre-existing and unrelated.
+
+**Residual risk**
+
+- Native SIGSEGV/ANR cannot be reproduced without an Android device/emulator; the verification is prevention plus protocol-level regression coverage with a fake engine.
+- The plugin still exposes only process-wide native stream queues. The new serialization/cooldown protocol keeps lifetimes strictly sequential, but any future code path that constructs a second native `Stockfish` instance concurrently would bypass these guarantees and must be avoided.
+- `ucinewgame` / `setSkillLevel` during an in-flight search remain serialized behind the active search rather than preceded by an awaited stop (H1). This is unchanged by the v1.0.94 work and remains the main residual engine-safety gap.
