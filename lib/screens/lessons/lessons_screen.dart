@@ -21,6 +21,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedDifficulty = 'All';
+  String _progressFilter = 'All'; // All / In Progress / Completed
 
   @override
   void dispose() {
@@ -118,36 +119,38 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: widget.showAppBar
-          ? AppBar(
-              title: const Text(
-                'Chess Lessons',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.menu_book_rounded),
-                  tooltip: 'Opening Playbook',
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (_) => const OpeningPlaybookScreen(showAppBar: true)),
-                    );
-                  },
+      appBar:
+          widget.showAppBar
+              ? AppBar(
+                title: const Text(
+                  'Chess Lessons',
+                  style: TextStyle(fontWeight: FontWeight.w700),
                 ),
-              ],
-            )
-          : null,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.menu_book_rounded),
+                    tooltip: 'Opening Playbook',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (_) =>
+                                  const OpeningPlaybookScreen(showAppBar: true),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              )
+              : null,
       body: FutureBuilder<void>(
         future: lessonService.initialize(),
         builder: (context, snapshot) {
           if (!lessonService.isLoaded &&
               snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (!lessonService.isLoaded && snapshot.hasError) {
@@ -186,478 +189,598 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
 
           // Check if any section has matching categories
           final totalMatches = sections.fold<int>(0, (sum, section) {
-            final matches = section.categories.where((cat) {
-              final matchesDifficulty = _selectedDifficulty == 'All' ||
-                  cat.difficulty.toLowerCase() == _selectedDifficulty.toLowerCase();
-              final q = _searchQuery.trim().toLowerCase();
-              final matchesQuery = q.isEmpty ||
-                  cat.title.toLowerCase().contains(q) ||
-                  cat.subtitle.toLowerCase().contains(q);
-              return matchesDifficulty && matchesQuery;
-            }).length;
+            final matches =
+                section.categories.where((cat) {
+                  final matchesDifficulty =
+                      _selectedDifficulty == 'All' ||
+                      cat.difficulty.toLowerCase() ==
+                          _selectedDifficulty.toLowerCase();
+                  final q = _searchQuery.trim().toLowerCase();
+                  final matchesQuery =
+                      q.isEmpty ||
+                      cat.title.toLowerCase().contains(q) ||
+                      cat.subtitle.toLowerCase().contains(q);
+                  final catCompleted = lessonService.getCompletedCount(cat.id);
+                  final catTotal = cat.chapterIds.length;
+                  final catIsDone = catTotal > 0 && catCompleted >= catTotal;
+                  var matchesProgress = true;
+                  if (_progressFilter == 'In Progress') {
+                    matchesProgress = !catIsDone;
+                  }
+                  if (_progressFilter == 'Completed') {
+                    matchesProgress = catIsDone;
+                  }
+                  return matchesDifficulty && matchesQuery && matchesProgress;
+                }).length;
             return sum + matches;
           });
 
           return CustomScrollView(
-        slivers: [
-          // 1. Overall Progress Header Card
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: AppCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+            slivers: [
+              // 1. Overall Progress Header Card
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: AppCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: _accentGold.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.school_rounded,
-                            color: _accentGold,
-                            size: 24,
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: _accentGold.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.school_rounded,
+                                color: _accentGold,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Structured Mastery Curriculum',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.textPrimaryFor(context),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '$completedChapters of $totalChapters Exercises Mastered (${(overallProgress * 100).toInt()}%)',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppTheme.textHintFor(context),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: overallProgress,
+                            minHeight: 8,
+                            backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              _accentGold,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 12),
+                        // Shortcut to Opening Playbook
+                        InkWell(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const OpeningPlaybookScreen(),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _accentGold.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _accentGold.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.auto_stories_rounded,
+                                  size: 16,
+                                  color: _accentGold,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Explore Master Opening Playbook (50+ Openings)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: _accentGold,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 12,
+                                  color: _accentGold,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 2. Search & Filter Bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _searchController,
+                        onChanged: (val) => setState(() => _searchQuery = val),
+                        decoration: InputDecoration(
+                          hintText:
+                              'Search 40+ categories (e.g. Pin, Fork, Back Rank)...',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.textHintFor(context),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            color: AppTheme.textHintFor(context),
+                          ),
+                          suffixIcon:
+                              _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: const Icon(
+                                      Icons.clear_rounded,
+                                      size: 18,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                    },
+                                  )
+                                  : null,
+                          filled: true,
+                          fillColor: AppTheme.cardColor(context),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Difficulty Filter Chips
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children:
+                              [
+                                'All',
+                                'Beginner',
+                                'Intermediate',
+                                'Advanced',
+                                'Expert',
+                              ].map((diff) {
+                                final isSelected = _selectedDifficulty == diff;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: FilterChip(
+                                    label: Text(
+                                      diff,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight:
+                                            isSelected
+                                                ? FontWeight.w600
+                                                : FontWeight.w500,
+                                        color:
+                                            isSelected
+                                                ? Colors.white
+                                                : AppTheme.textSecondaryFor(
+                                                  context,
+                                                ),
+                                      ),
+                                    ),
+                                    selected: isSelected,
+                                    selectedColor: AppTheme.primaryColor,
+                                    backgroundColor: AppTheme.surfaceLevel2(
+                                      context,
+                                    ),
+                                    checkmarkColor: Colors.white,
+                                    onSelected: (_) {
+                                      setState(
+                                        () => _selectedDifficulty = diff,
+                                      );
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Progress filter chips
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children:
+                          ['All', 'In Progress', 'Completed'].map((f) {
+                            final isSelected = _progressFilter == f;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(f),
+                                selected: isSelected,
+                                selectedColor: _successGreen,
+                                backgroundColor: AppTheme.surfaceLevel2(
+                                  context,
+                                ),
+                                onSelected:
+                                    (_) => setState(() => _progressFilter = f),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+              // 3. Sections and 40+ Categories
+              if (totalMatches == 0)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 40,
+                      horizontal: 16,
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 48,
+                          color: AppTheme.textHintFor(context),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No lessons found',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimaryFor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Try adjusting your search query or difficulty filter.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.textSecondaryFor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _searchController.clear();
+                              _searchQuery = '';
+                              _selectedDifficulty = 'All';
+                            });
+                          },
+                          child: const Text('Reset Filters'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, sectionIndex) {
+                    final section = sections[sectionIndex];
+
+                    // Filter categories within section
+                    final filteredCategories =
+                        section.categories.where((cat) {
+                          final matchesDifficulty =
+                              _selectedDifficulty == 'All' ||
+                              cat.difficulty.toLowerCase() ==
+                                  _selectedDifficulty.toLowerCase();
+                          final q = _searchQuery.trim().toLowerCase();
+                          final matchesQuery =
+                              q.isEmpty ||
+                              cat.title.toLowerCase().contains(q) ||
+                              cat.subtitle.toLowerCase().contains(q);
+                          return matchesDifficulty && matchesQuery;
+                        }).toList();
+
+                    if (filteredCategories.isEmpty) {
+                      return const SizedBox();
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Section Header
+                          Row(
                             children: [
+                              Icon(
+                                _getCategoryIcon(section.icon),
+                                size: 18,
+                                color: _accentGold,
+                              ),
+                              const SizedBox(width: 8),
                               Text(
-                                'Structured Mastery Curriculum',
+                                section.title,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                   color: AppTheme.textPrimaryFor(context),
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const Spacer(),
                               Text(
-                                '$completedChapters of $totalChapters Exercises Mastered (${(overallProgress * 100).toInt()}%)',
+                                '${filteredCategories.length} topics',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   color: AppTheme.textHintFor(context),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: overallProgress,
-                        minHeight: 8,
-                        backgroundColor: Colors.grey.withValues(alpha: 0.2),
-                        valueColor: const AlwaysStoppedAnimation<Color>(_accentGold),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Shortcut to Opening Playbook
-                    InkWell(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const OpeningPlaybookScreen()),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _accentGold.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: _accentGold.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.auto_stories_rounded,
-                              size: 16,
-                              color: _accentGold,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Explore Master Opening Playbook (50+ Openings)',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: _accentGold,
-                                ),
-                              ),
-                            ),
-                            const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 12,
-                              color: _accentGold,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // 2. Search & Filter Bar
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (val) => setState(() => _searchQuery = val),
-                    decoration: InputDecoration(
-                      hintText: 'Search 40+ categories (e.g. Pin, Fork, Back Rank)...',
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.textHintFor(context),
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        color: AppTheme.textHintFor(context),
-                      ),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: AppTheme.cardColor(context),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Difficulty Filter Chips
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: ['All', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
-                          .map((diff) {
-                        final isSelected = _selectedDifficulty == diff;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(
-                              diff,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                color: isSelected ? Colors.white : AppTheme.textSecondaryFor(context),
-                              ),
-                            ),
-                            selected: isSelected,
-                            selectedColor: AppTheme.primaryColor,
-                            backgroundColor: AppTheme.surfaceLevel2(context),
-                            checkmarkColor: Colors.white,
-                            onSelected: (_) {
-                              setState(() => _selectedDifficulty = diff);
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-          // 3. Sections and 40+ Categories
-          if (totalMatches == 0)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.search_off_rounded,
-                      size: 48,
-                      color: AppTheme.textHintFor(context),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No lessons found',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimaryFor(context),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Try adjusting your search query or difficulty filter.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textSecondaryFor(context),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _searchController.clear();
-                          _searchQuery = '';
-                          _selectedDifficulty = 'All';
-                        });
-                      },
-                      child: const Text('Reset Filters'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, sectionIndex) {
-                  final section = sections[sectionIndex];
-
-                  // Filter categories within section
-                  final filteredCategories = section.categories.where((cat) {
-                    final matchesDifficulty = _selectedDifficulty == 'All' ||
-                        cat.difficulty.toLowerCase() == _selectedDifficulty.toLowerCase();
-                    final q = _searchQuery.trim().toLowerCase();
-                    final matchesQuery = q.isEmpty ||
-                        cat.title.toLowerCase().contains(q) ||
-                        cat.subtitle.toLowerCase().contains(q);
-                    return matchesDifficulty && matchesQuery;
-                  }).toList();
-
-                  if (filteredCategories.isEmpty) {
-                    return const SizedBox();
-                  }
-
-                  return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Section Header
-                      Row(
-                        children: [
-                          Icon(
-                            _getCategoryIcon(section.icon),
-                            size: 18,
-                            color: _accentGold,
-                          ),
-                          const SizedBox(width: 8),
+                          const SizedBox(height: 4),
                           Text(
-                            section.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.textPrimaryFor(context),
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '${filteredCategories.length} topics',
+                            section.description,
                             style: TextStyle(
                               fontSize: 12,
                               color: AppTheme.textHintFor(context),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        section.description,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textHintFor(context),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
+                          const SizedBox(height: 10),
 
-                      // Category Cards
-                      ...filteredCategories.map((cat) {
-                        final progress = lessonService.getCategoryProgress(cat.id);
-                        final completed = lessonService.getCompletedCount(cat.id);
-                        final total = cat.chapterIds.length;
-                        final isFullyCompleted = completed >= total && total > 0;
-                        final diffColor = _getDifficultyColor(cat.difficulty);
+                          // Category Cards
+                          ...filteredCategories.map((cat) {
+                            final progress = lessonService.getCategoryProgress(
+                              cat.id,
+                            );
+                            final completed = lessonService.getCompletedCount(
+                              cat.id,
+                            );
+                            final total = cat.chapterIds.length;
+                            final isFullyCompleted =
+                                completed >= total && total > 0;
+                            final diffColor = _getDifficultyColor(
+                              cat.difficulty,
+                            );
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: AppCard(
-                            onTap: () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => LessonPlayerScreen(categoryId: cat.id),
-                                ),
-                              );
-                              // Refresh progress upon return
-                              setState(() {});
-                            },
-                            padding: const EdgeInsets.all(14),
-                            child: Row(
-                              children: [
-                                // Category Icon
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: isFullyCompleted
-                                        ? _successGreen.withValues(alpha: 0.15)
-                                        : AppTheme.cardColor(context),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isFullyCompleted
-                                          ? _successGreen
-                                          : Colors.grey.withValues(alpha: 0.2),
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: AppCard(
+                                onTap: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => LessonPlayerScreen(
+                                            categoryId: cat.id,
+                                          ),
                                     ),
-                                  ),
-                                  child: Icon(
-                                    isFullyCompleted
-                                        ? Icons.check_circle_rounded
-                                        : _getCategoryIcon(cat.icon),
-                                    color: isFullyCompleted
-                                        ? _successGreen
-                                        : _accentGold,
-                                    size: 22,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-
-                                // Title, Subtitle, and Progress
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              cat.title,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w700,
-                                                color: AppTheme.textPrimaryFor(context),
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 3,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.surfaceLevel2(context),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Container(
-                                                  width: 6,
-                                                  height: 6,
-                                                  decoration: BoxDecoration(
-                                                    color: diffColor,
-                                                    shape: BoxShape.circle,
+                                  );
+                                  // Refresh progress upon return
+                                  setState(() {});
+                                },
+                                padding: const EdgeInsets.all(14),
+                                child: Row(
+                                  children: [
+                                    // Category Icon
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isFullyCompleted
+                                                ? _successGreen.withValues(
+                                                  alpha: 0.15,
+                                                )
+                                                : AppTheme.cardColor(context),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color:
+                                              isFullyCompleted
+                                                  ? _successGreen
+                                                  : Colors.grey.withValues(
+                                                    alpha: 0.2,
                                                   ),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  cat.difficulty,
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: AppTheme.textSecondaryFor(context),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        cat.subtitle,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppTheme.textHintFor(context),
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Row(
+                                      child: Icon(
+                                        isFullyCompleted
+                                            ? Icons.check_circle_rounded
+                                            : _getCategoryIcon(cat.icon),
+                                        color:
+                                            isFullyCompleted
+                                                ? _successGreen
+                                                : _accentGold,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+
+                                    // Title, Subtitle, and Progress
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Expanded(
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(3),
-                                              child: LinearProgressIndicator(
-                                                value: progress,
-                                                minHeight: 4,
-                                                backgroundColor:
-                                                    Colors.grey.withValues(alpha: 0.2),
-                                                valueColor: AlwaysStoppedAnimation<Color>(
-                                                  isFullyCompleted
-                                                      ? _successGreen
-                                                      : _accentGold,
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  cat.title,
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w700,
+                                                    color:
+                                                        AppTheme.textPrimaryFor(
+                                                          context,
+                                                        ),
+                                                  ),
                                                 ),
+                                              ),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 3,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.surfaceLevel2(
+                                                    context,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Container(
+                                                      width: 6,
+                                                      height: 6,
+                                                      decoration: BoxDecoration(
+                                                        color: diffColor,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      cat.difficulty,
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color:
+                                                            AppTheme.textSecondaryFor(
+                                                              context,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            cat.subtitle,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppTheme.textHintFor(
+                                                context,
                                               ),
                                             ),
                                           ),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            '$completed/$total',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppTheme.textHintFor(context),
-                                            ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(3),
+                                                  child: LinearProgressIndicator(
+                                                    value: progress,
+                                                    minHeight: 4,
+                                                    backgroundColor: Colors.grey
+                                                        .withValues(alpha: 0.2),
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(
+                                                          isFullyCompleted
+                                                              ? _successGreen
+                                                              : _accentGold,
+                                                        ),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                '$completed/$total',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppTheme.textHintFor(
+                                                    context,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: AppTheme.textHintFor(context),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: AppTheme.textHintFor(context),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                );
-              },
-              childCount: sections.length,
-            ),
-          ),
-        ],
-      );
-    },
-  ),
-);
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+                  }, childCount: sections.length),
+                ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
