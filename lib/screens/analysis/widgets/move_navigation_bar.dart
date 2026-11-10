@@ -44,16 +44,21 @@ class MoveNavigationBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _NavButton(
-                icon: Icons.fast_rewind_rounded,
-                onPressed: canGoPrevious ? onFirst : null,
+              Expanded(
+                child: _NavButton(
+                  icon: Icons.fast_rewind_rounded,
+                  onPressed: canGoPrevious ? onFirst : null,
+                ),
               ),
-              _NavButton(
-                icon: Icons.chevron_left_rounded,
-                onPressed: canGoPrevious ? onPrevious : null,
-                isLarge: true,
+              Expanded(
+                child: _NavButton(
+                  icon: Icons.chevron_left_rounded,
+                  onPressed: canGoPrevious ? onPrevious : null,
+                  isLarge: true,
+                ),
               ),
-              Flexible(
+              Expanded(
+                flex: 2,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -67,6 +72,7 @@ class MoveNavigationBar extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     child: Text(
                       'Move $currentMove / $totalMoves',
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: AppTheme.textPrimaryFor(context),
                         fontWeight: FontWeight.bold,
@@ -76,14 +82,18 @@ class MoveNavigationBar extends StatelessWidget {
                   ),
                 ),
               ),
-              _NavButton(
-                icon: Icons.chevron_right_rounded,
-                onPressed: canGoNext ? onNext : null,
-                isLarge: true,
+              Expanded(
+                child: _NavButton(
+                  icon: Icons.chevron_right_rounded,
+                  onPressed: canGoNext ? onNext : null,
+                  isLarge: true,
+                ),
               ),
-              _NavButton(
-                icon: Icons.fast_forward_rounded,
-                onPressed: canGoNext ? onLast : null,
+              Expanded(
+                child: _NavButton(
+                  icon: Icons.fast_forward_rounded,
+                  onPressed: canGoNext ? onLast : null,
+                ),
               ),
             ],
           ),
@@ -204,6 +214,7 @@ class _JumpButton extends StatelessWidget {
               child: Text(
                 label,
                 maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: displayColor,
                   fontWeight: FontWeight.w600,
