@@ -168,6 +168,14 @@ class AnalysisState {
 
 /// Analysis notifier managing game analysis
 class AnalysisNotifier extends StateNotifier<AnalysisState> {
+  static AnalysisNotifier? _activeInstance;
+
+  /// Cancels any active game or position analysis running across the app.
+  /// Safe to call from lifecycle observers when the app is backgrounded or screen turns off.
+  static void cancelRunningAnalysis() {
+    _activeInstance?.stopAnalysis();
+  }
+
   stockfish.StockfishService? _stockfish;
   final DatabaseService _db = DatabaseService.instance;
   bool _isInitialized = false;
@@ -186,7 +194,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
   /// statistics so "Games Analysed" stays accurate without a Ref here).
   Future<void> Function()? onAnalysisComplete;
 
-  AnalysisNotifier([this._stockfish]) : super(const AnalysisState());
+  AnalysisNotifier([this._stockfish]) : super(const AnalysisState()) {
+    _activeInstance = this;
+  }
 
   /// Initialize engine for analysis
   Future<void> initialize() async {
@@ -1227,6 +1237,9 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
 
   @override
   void dispose() {
+    if (_activeInstance == this) {
+      _activeInstance = null;
+    }
     _isDisposed = true;
     _analysisToken++;
     _positionAnalysisToken++;

@@ -1,8 +1,10 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chess_master/providers/analysis_provider.dart';
 import 'package:chess_master/models/game_model.dart';
 import 'package:chess_master/core/services/stockfish_service.dart';
+import 'package:chess_master/core/services/stockfish_lifecycle_observer.dart';
 
 /// Regression test for analyzeFullGame cancellation
 /// Guards against race conditions between goToMove() and analyzeFullGame()
@@ -237,6 +239,38 @@ void main() {
         final stateAtMove0 = container.read(analysisProvider);
         expect(stateAtMove0.currentMoveIndex, equals(0));
         expect(stateAtMove0.currentEval, closeTo(expectedEval, 0.5));
+      },
+    );
+
+    test(
+      'StockfishLifecycleObserver paused state cancels running analyzeFullGame',
+      () async {
+        final moves = List.generate(
+          10,
+          (i) => ChessMove(
+            from: i.isEven ? 'e2' : 'e7',
+            to: i.isEven ? 'e4' : 'e5',
+            san: i.isEven ? 'e4' : 'e5',
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isCastle: false,
+            fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
+          ),
+        );
+        await notifier.loadGame(moves: moves);
+
+        final analysisFuture = notifier.analyzeFullGame();
+        await Future.delayed(const Duration(milliseconds: 50));
+        expect(container.read(analysisProvider).isAnalyzing, isTrue);
+
+        // Simulate app backgrounding
+        StockfishLifecycleObserver().didChangeAppLifecycleState(
+          AppLifecycleState.paused,
+        );
+
+        await analysisFuture;
+        expect(container.read(analysisProvider).isAnalyzing, isFalse);
       },
     );
   });
