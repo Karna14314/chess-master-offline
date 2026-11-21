@@ -83,7 +83,7 @@ void main() {
     test('emits the full move list when startingFen and moves are provided', () {
       expect(
         service.buildPositionCommand(
-          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1 1',
+          fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2',
           startingFen:
               'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
           moves: const ['e2e4', 'e7e5'],
@@ -137,8 +137,10 @@ void main() {
         commandPort: receivePort.sendPort,
       );
 
+      const currentFen =
+          'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2';
       final resultFuture = service.getBestMove(
-        fen: startFen,
+        fen: currentFen,
         depth: 5,
         thinkTimeMs: 100,
         startingFen: startFen,

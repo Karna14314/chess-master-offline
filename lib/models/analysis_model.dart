@@ -540,13 +540,11 @@ MoveClassification classifyMoveCpl({
     }
 
     final hadMate = isMateBefore;
-    final lostMate = isMateBefore && !isMateAfter;
-
-    if (hadMate && lostMate) {
+    if (hadMate) {
       return MoveClassification.miss;
     }
 
-    if (centipawnLoss >= 200.0 || (winPercentDiff != null && winPercentDiff >= 30.0)) {
+    if (centipawnLoss >= 200.0) {
       return MoveClassification.blunder;
     }
     return MoveClassification.best;
@@ -588,27 +586,7 @@ MoveClassification classifyMoveCpl({
     return MoveClassification.miss;
   }
 
-  // ── Win-Probability Loss Thresholds (Lichess Model) ──
-  // When winPercentDiff is provided, it ALWAYS takes precedence over raw centipawns.
-  // This prevents runaway winning positions (e.g. +8.00 simplifying to +5.50) from being
-  // falsely accused as blunders, matching Lichess's classification boundaries.
-  if (winPercentDiff != null) {
-    if (winPercentDiff <= 2.0) {
-      return MoveClassification.best;
-    } else if (winPercentDiff <= 4.0) {
-      return MoveClassification.excellent;
-    } else if (winPercentDiff <= 6.0) {
-      return MoveClassification.good;
-    } else if (winPercentDiff <= 12.0) {
-      return MoveClassification.inaccuracy;
-    } else if (winPercentDiff <= 20.0) {
-      return MoveClassification.mistake;
-    } else {
-      return MoveClassification.blunder;
-    }
-  }
-
-  // ── Fallback CPL Thresholds (only used when Win% diff is absent) ──
+  // ── CPL Thresholds ──
   if (centipawnLoss <= 10.0) {
     return MoveClassification.best;
   } else if (centipawnLoss <= 20.0) {
