@@ -1513,7 +1513,8 @@ class StockfishService {
             return;
           }
 
-          if (trimmedLine.startsWith('info') && trimmedLine.contains('pv')) {
+          if (trimmedLine.startsWith('info depth') &&
+              trimmedLine.contains(' pv ')) {
             final pvMatch = _multiPvRegex.firstMatch(trimmedLine);
             final depthMatch = _depthRegex.firstMatch(trimmedLine);
             final scoreMatch = _scoreCpRegex.firstMatch(trimmedLine);
@@ -1586,13 +1587,13 @@ class StockfishService {
               }
 
               final now = DateTime.now();
-              // Throttle progressive UI updates to ~5/sec (200ms) so a long
-              // analysis does not flood the UI isolate with setState work
+              // Throttle progressive UI updates to ~4/sec (250ms) or completed depth increments (>= 8)
+              // so a long analysis does not flood the UI isolate with setState work
               // (PlatformTaskQueue / input-dispatching ANR source). Keep only
               // the latest line; consumers recompute from it.
               final shouldNotify =
-                  currentDepth > lastUiDepth ||
-                  now.difference(lastUiUpdate).inMilliseconds >= 200;
+                  (currentDepth >= 8 && currentDepth > lastUiDepth) ||
+                  now.difference(lastUiUpdate).inMilliseconds >= 250;
               if (onUpdate != null && mainEvaluation != null && shouldNotify) {
                 lastUiUpdate = now;
                 lastUiDepth = currentDepth;

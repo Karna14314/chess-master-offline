@@ -963,6 +963,12 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
           );
           stateUpdateCount++;
         }
+
+        // Cooperative yield to Flutter's PlatformTaskQueue and Android Choreographer.
+        // Prevents input dispatching ANRs during batch analysis of 60-100 move games.
+        if (i < moves.length - 1) {
+          await Future<void>.delayed(const Duration(milliseconds: 16));
+        }
       }
 
       // Searches-per-ply instrumentation. Steady state should approach 1.0:
