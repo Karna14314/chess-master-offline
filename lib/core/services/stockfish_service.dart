@@ -1479,6 +1479,7 @@ class StockfishService {
         // Keeping the TT lets the engine reuse that work.
         if (wasStopped && !isBatchAnalysis) {
           _sendCommand('ucinewgame');
+          await _waitForReadyOk(timeout: const Duration(milliseconds: 500));
         }
 
         // Set MultiPV for multiple lines
@@ -1867,9 +1868,13 @@ class StockfishService {
     if (_isDisposed) return;
     _activeSearchId++;
     if (_useFallback) return;
+    // Purge any pending go or position commands from the cancelled search so they do
+    // not fire into the engine later.
+    _commandQueue.removeWhere(
+      (cmd) => cmd.command.startsWith('go ') || cmd.command.startsWith('position '),
+    );
     try {
       _engineCommandPort?.send({'type': 'stdin', 'command': 'stop'});
-      _engineCommandPort?.send({'type': 'stdin', 'command': 'isready'});
     } catch (_) {}
   }
 
@@ -1877,7 +1882,7 @@ class StockfishService {
   /// Guarantees that Stockfish worker threads are no longer searching before continuing.
   /// A stop is only considered complete once the engine has emitted `bestmove`
   /// for the in-flight search AND a readyok that arrived after the isready sent
-  /// below. If the engine fails to acknowledge within 3.0 seconds, the isolate
+  /// below. If the engine fails to acknowledge within 1.5 seconds, the isolate
   /// is killed and cleanly restarted to prevent sending commands to an active
   /// C++ search thread (which causes SIGSEGV).
   Future<void> _stopCurrentSearchAndWait() async {
@@ -1889,9 +1894,9 @@ class StockfishService {
     final searchWasInFlight = _searchInFlight;
     if (!searchWasInFlight && !_isEngineBusy) return;
 
-    // Only a readyok produced after this isready may release the wait, and
+    // Only a readyok produced after isready may release the wait, and
     // only once the in-flight search has actually reported bestmove.
-    final targetResponseCount = _readyokCount + 1;
+    var targetResponseCount = _readyokCount + 1;
     var sawBestmove = !searchWasInFlight;
     final completer = Completer<void>();
 
@@ -1900,8 +1905,12 @@ class StockfishService {
       if (trimmed.startsWith('bestmove')) {
         sawBestmove = true;
         _searchInFlight = false;
+        // When bestmove arrives, request isready to ensure the engine has completely
+        // finished processing the stop and is ready for subsequent commands.
+        targetResponseCount = _readyokCount + 1;
+        _sendCommand('isready');
       }
-      if (trimmed == 'readyok' &&
+      if (trimmed.contains('readyok') &&
           _readyokCount >= targetResponseCount &&
           sawBestmove &&
           !completer.isCompleted) {
@@ -1910,10 +1919,12 @@ class StockfishService {
     });
 
     _sendCommand('stop');
-    _sendCommand('isready');
+    if (sawBestmove) {
+      _sendCommand('isready');
+    }
 
     try {
-      await completer.future.timeout(const Duration(milliseconds: 3000));
+      await completer.future.timeout(const Duration(milliseconds: 1500));
     } catch (_) {
       debugPrint('ENGINE RECOVERY → Engine stalled on stop; disabling engine');
       await _killEngineIfRunning();
@@ -1933,9 +1944,10 @@ class StockfishService {
       // Stop any in-flight search and await its bestmove before resetting the
       // position, so `ucinewgame` is never delivered to an active C++ search
       // thread (a SIGSEGV trigger in Position::is_draw / search<NonPV>).
-      if (_searchInFlight) await _stopCurrentSearchAndWait();
+      await _stopCurrentSearchAndWait();
       if (_isDisposed || _useFallback) return;
       _sendCommand('ucinewgame');
+      await _waitForReadyOk(timeout: const Duration(milliseconds: 1500));
     });
   }
 
