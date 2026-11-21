@@ -405,7 +405,7 @@ class StockfishService {
         ); // Single thread for stability
         _sendCommandDirect(
           'setoption name Hash value $livePlayHashMb',
-        ); // 32MB to reduce memory pressure
+        ); // 16MB to reduce memory pressure
         _sendCommandDirect('setoption name UCI_LimitStrength value true');
 
         // --- Step 5: Send "isready", wait for "readyok" ---
@@ -1788,7 +1788,7 @@ class StockfishService {
   /// Threads/Hash used for live play. Chosen for stability and low memory
   /// pressure on the widest range of devices; see initialize().
   static const int livePlayThreads = 1;
-  static const int livePlayHashMb = 16;
+  static const int livePlayHashMb = AppConstants.livePlayHashMb;
 
   /// Upper bound on threads for batch analysis.
   ///
@@ -1804,7 +1804,7 @@ class StockfishService {
   /// the result of a deterministic single-threaded search, it only avoids
   /// re-searching positions already visited.
   static const int maxAnalysisThreads = 1;
-  static const int analysisHashMb = 64;
+  static const int analysisHashMb = AppConstants.analysisHashMb;
 
   /// Threads to use for batch analysis. See [maxAnalysisThreads] for why this
   /// defaults to 1 regardless of how many cores the device has.

@@ -1245,6 +1245,7 @@ class AnalysisNotifier extends StateNotifier<AnalysisState> {
     _positionAnalysisToken++;
     _analysisOwner = null;
     _stockfish?.stopAnalysis();
+    _stockfish?.setLivePlayStrength();
     super.dispose();
   }
 }

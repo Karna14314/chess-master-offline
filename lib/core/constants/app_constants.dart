@@ -9,6 +9,10 @@ class AppConstants {
   static const String appName = 'ChessMaster Offline';
   static const String appVersion = '1.0.0';
 
+  // Engine Memory Settings
+  static const int livePlayHashMb = 16;
+  static const int analysisHashMb = 32;
+
   // Difficulty Levels
   //
   // UCI_Elo values map to Stockfish's UCI_LimitStrength range (1320–3190).
